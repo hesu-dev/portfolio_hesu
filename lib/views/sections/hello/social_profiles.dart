@@ -79,7 +79,7 @@ final List<_SocialItem> socials = [
     icon: FontAwesomeIcons.linkedin,
     url: "https://www.linkedin.com/in/%ED%9D%AC%EC%88%98-%EB%AF%BC-938105237/",
   ),
-  _SocialItem(icon: FontAwesomeIcons.twitter, url: "https://x.com/sukenelll"),
+  // _SocialItem(icon: FontAwesomeIcons.twitter, url: "https://x.com/sukenelll"),
   _SocialItem(icon: Icons.mail, url: "mailto:hs0647@naver.com"),
   // _SocialItem(
   //   icon: FontAwesomeIcons.instagram,

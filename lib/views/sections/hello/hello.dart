@@ -98,7 +98,7 @@ class Hello extends StatelessWidget {
                         ),
                       ),
                       child: Image.asset(
-                        "image/pixelphoto.png",
+                        "assets/image/pixelphoto.png",
                         fit: BoxFit.cover,
                       ),
                     ),

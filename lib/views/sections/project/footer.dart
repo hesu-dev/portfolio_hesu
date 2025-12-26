@@ -30,14 +30,14 @@ class CustomFooter extends StatelessWidget {
           Row(
             mainAxisAlignment: MainAxisAlignment.spaceAround,
             children: [
-              SectionAnimation(
-                direction: MovingFadeInDirection.leftToRight,
-                child: infoBox(
-                  icon: Icons.location_on_rounded,
-                  title: "Location",
-                  value: "Seoul",
-                ),
-              ),
+              // SectionAnimation(
+              //   direction: MovingFadeInDirection.leftToRight,
+              //   child: infoBox(
+              //     icon: Icons.location_on_rounded,
+              //     title: "Name",
+              //     value: "Min, He-su",
+              //   ),
+              // ),
               SectionAnimation(
                 direction: MovingFadeInDirection.leftToRight,
                 child: infoBox(
@@ -65,6 +65,8 @@ class CustomFooter extends StatelessWidget {
             "This website is built with Flutter. | © 2025 hesu. All Rights Reserved.",
             textAlign: TextAlign.center,
             style: TextStyle(color: textColor, fontSize: 12),
+            maxLines: 1,
+            overflow: TextOverflow.ellipsis,
           ),
         ],
       ),

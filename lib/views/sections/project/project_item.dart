@@ -39,9 +39,9 @@ class ProjectsGrid extends StatelessWidget {
                 shrinkWrap: true,
                 physics: const NeverScrollableScrollPhysics(),
                 gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
-                  crossAxisCount: (c.maxWidth ~/ 300).clamp(1, 4),
-                  mainAxisSpacing: 12,
-                  crossAxisSpacing: 12,
+                  crossAxisCount: (c.maxWidth ~/ 240).clamp(1, 4),
+                  mainAxisSpacing: 10,
+                  crossAxisSpacing: 10,
                 ),
                 itemBuilder: (context, i) {
                   final p = items[i];
@@ -53,14 +53,14 @@ class ProjectsGrid extends StatelessWidget {
                           p.title,
                           style: Theme.of(context).textTheme.titleMedium
                               ?.copyWith(fontWeight: FontWeight.w600),
-                          maxLines: 1,
+                          maxLines: 2,
                           overflow: TextOverflow.ellipsis,
                         ),
                         const SizedBox(height: 4),
                         Text(
                           p.desc,
                           style: Theme.of(context).textTheme.bodySmall,
-                          maxLines: 1,
+                          maxLines: 2,
                           overflow: TextOverflow.ellipsis,
                         ),
                         const SizedBox(height: 8),

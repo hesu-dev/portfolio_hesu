@@ -22,8 +22,8 @@ class Packages extends StatelessWidget {
       items: const [
         // title, desc, git, link
         PackageItem(
-          '코코포리아 로그 변환 사이트',
-          '*(25. 02 배포) \n React를 이용한 파이어베이스 파싱데이터 정렬 및 CSS 스타일링',
+          'CClog 변환 사이트',
+          '*(25. 02 배포) React를 이용한 파싱데이터 스타일링',
           'https://github.com/sukenell/cclog_custom',
           'https://www.postype.com/@reha-dev/post/18656933',
         ),
@@ -69,10 +69,10 @@ class PackagesList extends StatelessWidget {
                 itemCount: items.length,
                 shrinkWrap: true,
                 physics: const NeverScrollableScrollPhysics(),
-                gridDelegate: SliverGridDelegateWithMaxCrossAxisExtent(
-                  maxCrossAxisExtent: 340,
-                  crossAxisSpacing: 12,
-                  mainAxisSpacing: 12,
+                gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
+                  crossAxisCount: (c.maxWidth ~/ 240).clamp(1, 4),
+                  mainAxisSpacing: 10,
+                  crossAxisSpacing: 10,
                 ),
                 itemBuilder: (context, i) {
                   final p = items[i];
