@@ -67,7 +67,7 @@ class ProjectTxt extends StatelessWidget {
           ],
         ),
         const SizedBox(height: 30),
-        Packages(),
+        // Packages(),
       ],
     );
   }
