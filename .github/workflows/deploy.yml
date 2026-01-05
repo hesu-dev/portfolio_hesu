@@ -1,0 +1,36 @@
+name: Deploy Flutter Web to GitHub Pages
+
+on:
+  workflow_dispatch:
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+
+    steps:
+      # 1. main 브랜치 체크아웃 (앱 소스 그대로 유지)
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      # 2. Flutter 환경 세팅
+      - name: Setup Flutter
+        uses: subosito/flutter-action@v2
+        with:
+          channel: stable
+
+      # 3. 의존성 설치
+      - name: Install dependencies
+        run: flutter pub get
+
+      # 4. 웹 빌드 (앱 개발과 완전히 분리)
+      - name: Build Flutter Web
+        run: flutter build web --release --base-href /portfolio_hesu/
+
+      # 5. gh-pages 브랜치에만 배포
+      - name: Deploy to GitHub Pages
+        uses: peaceiris/actions-gh-pages@v4
+        with:
+          github_token: ${{ secrets.GITHUB_TOKEN }}
+          publish_branch: gh-pages
+          publish_dir: build/web
+          force_orphan: true
