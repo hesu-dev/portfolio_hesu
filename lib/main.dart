@@ -4,9 +4,7 @@ import 'package:flutter/gestures.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:portfolio_hesu/views/sections/contact/contact_block.dart';
-import 'package:portfolio_hesu/views/sections/project/post.dart';
 import 'package:portfolio_hesu/views/sections/project/project.dart';
-import 'package:portfolio_hesu/views/widgets/animation/bounce_arrow_btn.dart';
 import 'package:portfolio_hesu/views/widgets/custom_appbar.dart';
 import 'package:portfolio_hesu/views/widgets/custom_drawer.dart';
 import 'package:portfolio_hesu/views/widgets/section.dart';
@@ -14,6 +12,9 @@ import 'package:portfolio_hesu/views/sections/hello/hello.dart';
 import 'package:portfolio_hesu/views/sections/about/about.dart';
 import 'dart:html' as html;
 
+import 'package:flutter_localizations/flutter_localizations.dart';
+
+// import 'generated/l10n.dart';
 void main() => runApp(const PortfolioClone());
 
 class PortfolioClone extends StatefulWidget {
@@ -57,16 +58,16 @@ class _PortfolioCloneState extends State<PortfolioClone> {
   ThemeMode _mode = ThemeMode.dark;
 
   void _jumpTo(GlobalKey key) {
-    if (key == _homeKey) _goToPage(0);
-    if (key == _aboutKey) _goToPage(1);
-    if (key == _projectsKey) _goToPage(2);
-    if (key == _contactKey) _goToPage(3);
+    // if (key == _homeKey) _goToPage(0);
+    if (key == _aboutKey) _goToPage(0);
+    if (key == _projectsKey) _goToPage(1);
+    if (key == _contactKey) _goToPage(2);
   }
 
   @override
   Widget build(BuildContext context) {
     final nav = [
-      ('Home', _homeKey),
+      // ('Home', _homeKey),
       ('about', _aboutKey),
       ('Projects', _projectsKey),
       ('contact', _contactKey),
@@ -91,6 +92,12 @@ class _PortfolioCloneState extends State<PortfolioClone> {
         useMaterial3: true,
         brightness: Brightness.dark,
       ),
+      localizationsDelegates: const [
+        GlobalMaterialLocalizations.delegate,
+        GlobalCupertinoLocalizations.delegate,
+        GlobalWidgetsLocalizations.delegate,
+      ],
+      supportedLocales: const [Locale("ko"), Locale("en")],
       home: Scaffold(
         key: _scaffoldKey,
         appBar: CustomAppBar(
@@ -144,24 +151,24 @@ class _PortfolioCloneState extends State<PortfolioClone> {
                   scrollDirection: Axis.vertical,
                   onPageChanged: _savePage,
                   children: [
-                    Section(
-                      key: _homeKey,
-                      callback: () => _goToPage(1),
-                      up: false,
-                      child: Padding(
-                        padding: EdgeInsetsGeometry.symmetric(vertical: 100),
-                        child: const Hello(),
-                      ),
-                    ),
+                    // Section(
+                    //   key: _homeKey,
+                    //   callback: () => _goToPage(1),
+                    //   up: false,
+                    //   child: Padding(
+                    //     padding: EdgeInsetsGeometry.symmetric(vertical: 100),
+                    //     child: const Hello(),
+                    //   ),
+                    // ),
                     Section(
                       key: _aboutKey,
-                      callback: () => _goToPage(2),
+                      callback: () => _goToPage(1),
                       up: false,
                       child: const Aboutme(),
                     ),
                     Section(
                       key: _projectsKey,
-                      callback: () => _goToPage(3),
+                      callback: () => _goToPage(2),
                       up: false,
                       child: ProjectTxt(),
                     ),
