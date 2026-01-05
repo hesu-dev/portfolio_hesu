@@ -32,7 +32,7 @@ class ProjectTxt extends StatelessWidget {
             Project(
               'App : HiddenTag maintenance',
               'HiddenTag - 히든태그 : 어플리케이션 페이지 유지보수',
-              ['JAVA', 'JSP'], //Android
+              ['JAVA', 'Apache'], //Android
               //구글스토어
               'https://play.google.com/store/apps/details?id=ScanTag.ndk.det&pcampaignid=web_share',
               //앱스토어
@@ -43,7 +43,7 @@ class ProjectTxt extends StatelessWidget {
             Project(
               'APP : AI-Bver maintenance',
               'AI-beaver - 에이아이비버 : 어플리케이션 개발 및 유지보수',
-              ['PHP', 'Flutter'],
+              ['PHP', 'Flutter', 'Dart', 'MySQL'],
               'https://play.google.com/store/apps/details?id=com.aibver.lsmk&pcampaignid=web_share',
               '',
               '',
@@ -51,7 +51,7 @@ class ProjectTxt extends StatelessWidget {
             Project(
               '범부처통합연구지원시스템(IRIS) Rnd 참여',
               '3D증강현실 기반의 교량 점검 시스템 개발',
-              ['Unity', 'React'],
+              ['React', 'Unity'],
               '',
               '',
               'https://www.dbpia.co.kr/journal/articleDetail?nodeId=NODE11488090',

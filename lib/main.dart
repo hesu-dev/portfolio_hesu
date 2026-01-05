@@ -25,7 +25,7 @@ class PortfolioClone extends StatefulWidget {
 class _PortfolioCloneState extends State<PortfolioClone> {
   final GlobalKey<ScaffoldState> _scaffoldKey = GlobalKey<ScaffoldState>();
 
-  final _homeKey = GlobalKey();
+  // final _homeKey = GlobalKey();
   final _aboutKey = GlobalKey();
   final _projectsKey = GlobalKey();
   final _contactKey = GlobalKey();
@@ -67,9 +67,9 @@ class _PortfolioCloneState extends State<PortfolioClone> {
   Widget build(BuildContext context) {
     final nav = [
       // ('Home', _homeKey),
-      ('about', _aboutKey),
+      ('About', _aboutKey),
       ('Projects', _projectsKey),
-      ('contact', _contactKey),
+      ('Contact', _contactKey),
     ];
 
     return MaterialApp(

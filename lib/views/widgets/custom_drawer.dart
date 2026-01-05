@@ -12,7 +12,7 @@ class CustomDrawer extends StatelessWidget {
       child: ListView(
         padding: EdgeInsets.zero,
         children: [
-          const DrawerHeader(child: Text('Navigate')),
+          const DrawerHeader(child: Text('He-su')),
           ...nav.map(
             (e) => ListTile(
               title: Text(e.$1.toUpperCase()),
