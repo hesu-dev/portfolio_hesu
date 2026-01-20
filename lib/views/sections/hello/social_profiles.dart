@@ -54,10 +54,10 @@ final List<_SocialItem> socials = [
     icon: FontAwesomeIcons.github,
     url: "https://github.com/hesu-dev/",
   ),
-  _SocialItem(
-    icon: FontAwesomeIcons.blog,
-    url: "https://velog.io/@hs0647/posts",
-  ),
+  // _SocialItem(
+  //   icon: FontAwesomeIcons.blog,
+  //   url: "https://velog.io/@hs0647/posts",
+  // ),
   // _SocialItem(
   //   icon: FontAwesomeIcons.linkedin,
   //   url: "https://www.linkedin.com/in/%ED%9D%AC%EC%88%98-%EB%AF%BC-938105237/",

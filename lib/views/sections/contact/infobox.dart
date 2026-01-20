@@ -13,7 +13,7 @@ Widget infoBox({
           borderRadius: BorderRadius.circular(10),
         ),
         padding: const EdgeInsets.all(10),
-        child: Icon(icon, color: Colors.white),
+        child: Icon(icon),
       ),
       const SizedBox(width: 12),
       Column(
@@ -21,17 +21,10 @@ Widget infoBox({
         children: [
           Text(
             title,
-            style: const TextStyle(
-              fontSize: 15,
-              color: Colors.white,
-              fontWeight: FontWeight.bold,
-            ),
+            style: const TextStyle(fontSize: 15, fontWeight: FontWeight.bold),
           ),
           const SizedBox(height: 4),
-          Text(
-            value,
-            style: const TextStyle(fontSize: 15, color: Colors.white70),
-          ),
+          Text(value, style: const TextStyle(fontSize: 15)),
         ],
       ),
     ],

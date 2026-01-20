@@ -1,12 +1,10 @@
 import 'package:animated_text_kit/animated_text_kit.dart';
 import 'package:flutter/material.dart';
-import 'package:font_awesome_flutter/font_awesome_flutter.dart';
 import 'package:portfolio_hesu/views/sections/about/about_item.dart';
 import 'package:portfolio_hesu/views/sections/contact/history.dart';
 import 'package:portfolio_hesu/views/sections/hello/social_profiles.dart';
 import 'package:portfolio_hesu/views/widgets/animation/section_moving_animation.dart';
 import 'package:portfolio_hesu/views/widgets/animation/section_opacity_animation.dart';
-import 'package:portfolio_hesu/views/widgets/hover_icon.dart';
 import 'package:url_launcher/url_launcher.dart';
 
 /* ---------------- Widgets ---------------- */
@@ -33,7 +31,7 @@ class Aboutme extends StatelessWidget {
                 AnimatedTextKit(
                   animatedTexts: [
                     TypewriterAnimatedText(
-                      "Hi! I'm Min He-su",
+                      "Hi! I'm Min He-su.",
                       textStyle: Theme.of(context).textTheme.headlineMedium
                           ?.copyWith(
                             fontSize: 40,
@@ -78,23 +76,21 @@ class Aboutme extends StatelessWidget {
                       // ),
                       // const SizedBox(height: 16),
                       const Text(
-                        "Flutter Developer and Google Developer for Dart\n"
-                        "자바 & 플러터(다트) 개발자이자, 앱개발자를 지향하고 있습니다.\n"
-                        "플러터 개발자로써, 2년 이상 앱 개발자로써 활동해왔습니다.\n",
+                        "About Me",
+                        style: TextStyle(
+                          color: Colors.white,
+                          fontSize: 22,
+                          fontWeight: FontWeight.bold,
+                        ),
+                      ),
+                      const Text(
+                        // "Flutter Developer and Google Developer for Dart\n"
+                        "2~3년차 개발자 입니다.\n"
+                        "IT 기업에서 몇 가지 디지털 프로젝트를 경험했습니다\n"
+                        "현재에도 모바일 앱 개발자를 지향하고 있습니다.\n",
                         style: TextStyle(color: Colors.white70, fontSize: 15),
                       ),
                       const SizedBox(height: 20),
-                      // Wrap(
-                      //   spacing: 12,
-                      //   runSpacing: 12,
-                      //   children: const [
-                      //     HoverIcon(icon: FontAwesomeIcons.flutter),
-                      //     HoverIcon(icon: FontAwesomeIcons.java),
-                      //     HoverIcon(icon: FontAwesomeIcons.react),
-                      //     HoverIcon(icon: FontAwesomeIcons.android),
-                      //     HoverIcon(icon: FontAwesomeIcons.swift),
-                      //   ],
-                      // ),
                       SectionAnimation(
                         direction: MovingFadeInDirection.bottomToTop,
                         child: OpacityFade(
@@ -141,7 +137,7 @@ class Aboutme extends StatelessWidget {
                             borderRadius: BorderRadius.circular(12),
                           ),
                         ),
-                        child: const Text("Skill Inventory > "),
+                        child: const Text("Skill Inventory"),
                       ),
                     ],
                   ),
@@ -165,7 +161,7 @@ class Aboutme extends StatelessWidget {
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
                       const Text(
-                        "My Journey",
+                        "Experience Overview",
                         style: TextStyle(
                           color: Colors.white,
                           fontSize: 22,
@@ -207,6 +203,7 @@ class Aboutme extends StatelessWidget {
               '20.04~20.10',
               'https://github.com/parkyj0720/Final-Team-Project',
             ),
+            History('게임엔터테인먼트(게임기획비즈니스)과 졸업', '여주 대학교', '09.03~11.02', ''),
           ],
         ),
       ],

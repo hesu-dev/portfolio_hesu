@@ -19,11 +19,20 @@ class ProjectsGrid extends StatelessWidget {
           children: [
             OpacityFade(
               direction: OpacityFadeInDirection.fadein,
-              child: Text(
-                'Projects',
-                style: Theme.of(context).textTheme.headlineMedium?.copyWith(
-                  fontWeight: FontWeight.bold,
-                ),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    'Projects',
+                    style: Theme.of(context).textTheme.headlineMedium?.copyWith(
+                      fontWeight: FontWeight.bold,
+                    ),
+                  ),
+                  Text(
+                    "담당했던 프로젝트를 최신 순으로 구성했습니다.",
+                    style: TextStyle(color: Colors.white70, fontSize: 15),
+                  ),
+                ],
               ),
             ),
           ],
@@ -34,6 +43,7 @@ class ProjectsGrid extends StatelessWidget {
           direction: MovingFadeInDirection.bottomToTop,
           child: LayoutBuilder(
             builder: (context, c) {
+              // final cardWidth = c.maxWidth;
               return GridView.builder(
                 itemCount: items.length,
                 shrinkWrap: true,
@@ -42,6 +52,8 @@ class ProjectsGrid extends StatelessWidget {
                   crossAxisCount: (c.maxWidth ~/ 240).clamp(1, 4),
                   mainAxisSpacing: 10,
                   crossAxisSpacing: 10,
+                  childAspectRatio: 1.2,
+                  mainAxisExtent: 250,
                 ),
                 itemBuilder: (context, i) {
                   final p = items[i];
@@ -64,6 +76,8 @@ class ProjectsGrid extends StatelessWidget {
                           overflow: TextOverflow.ellipsis,
                         ),
                         const SizedBox(height: 8),
+                        // if (cardWidth >= 1100 ||
+                        //     (cardWidth >= 10 && cardWidth < 480))
                         Wrap(
                           spacing: 3,
                           runSpacing: 3,
@@ -77,35 +91,20 @@ class ProjectsGrid extends StatelessWidget {
                           children: [
                             if (p.google.isNotEmpty)
                               IconButton(
-                                onPressed: () {
-                                  launchUrl(
-                                    Uri.parse(p.google),
-                                    mode: LaunchMode.externalApplication,
-                                  );
-                                },
-                                icon: Icon(FontAwesomeIcons.googlePlay),
+                                icon: const Icon(FontAwesomeIcons.googlePlay),
+                                onPressed: () => _open(p.google),
                               ),
 
                             if (p.app.isNotEmpty)
                               IconButton(
-                                onPressed: () {
-                                  launchUrl(
-                                    Uri.parse(p.app),
-                                    mode: LaunchMode.externalApplication,
-                                  );
-                                },
-                                icon: Icon(FontAwesomeIcons.appStore),
+                                icon: const Icon(FontAwesomeIcons.appStore),
+                                onPressed: () => _open(p.app),
                               ),
 
                             if (p.link.isNotEmpty)
                               IconButton(
-                                onPressed: () {
-                                  launchUrl(
-                                    Uri.parse(p.link),
-                                    mode: LaunchMode.externalApplication,
-                                  );
-                                },
-                                icon: Icon(FontAwesomeIcons.link),
+                                icon: const Icon(FontAwesomeIcons.link),
+                                onPressed: () => _open(p.link),
                               ),
                           ],
                         ),
@@ -119,5 +118,9 @@ class ProjectsGrid extends StatelessWidget {
         ),
       ],
     );
+  }
+
+  void _open(String url) {
+    launchUrl(Uri.parse(url), mode: LaunchMode.externalApplication);
   }
 }

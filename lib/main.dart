@@ -144,15 +144,6 @@ class _PortfolioCloneState extends State<PortfolioClone> {
                   scrollDirection: Axis.vertical,
                   onPageChanged: _savePage,
                   children: [
-                    // Section(
-                    //   key: _homeKey,
-                    //   callback: () => _goToPage(1),
-                    //   up: false,
-                    //   child: Padding(
-                    //     padding: EdgeInsetsGeometry.symmetric(vertical: 100),
-                    //     child: const Hello(),
-                    //   ),
-                    // ),
                     Section(
                       key: _aboutKey,
                       callback: () => _goToPage(1),

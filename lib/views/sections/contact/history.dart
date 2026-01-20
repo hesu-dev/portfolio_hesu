@@ -27,7 +27,7 @@ class HistoryList extends StatelessWidget {
         OpacityFade(
           direction: OpacityFadeInDirection.fadein,
           child: Text(
-            'History',
+            'Education',
             style: Theme.of(
               context,
             ).textTheme.headlineMedium?.copyWith(fontWeight: FontWeight.bold),
@@ -65,15 +65,17 @@ class HistoryList extends StatelessWidget {
                           const Spacer(),
                           Row(
                             children: [
-                              IconButton(
-                                onPressed: () {
-                                  launchUrl(
-                                    Uri.parse(t.git),
-                                    mode: LaunchMode.externalApplication,
-                                  );
-                                },
-                                icon: Icon(FontAwesomeIcons.github),
-                              ),
+                              t.git == ''
+                                  ? Container()
+                                  : IconButton(
+                                      onPressed: () {
+                                        launchUrl(
+                                          Uri.parse(t.git),
+                                          mode: LaunchMode.externalApplication,
+                                        );
+                                      },
+                                      icon: Icon(FontAwesomeIcons.github),
+                                    ),
                               const SizedBox(width: 16),
                             ],
                           ),

@@ -9,9 +9,10 @@ class CustomFooter extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final textColor = Colors.grey[300];
+    final isCompact = MediaQuery.of(context).size.width < 1000;
 
     return Container(
-      color: Colors.grey[900],
+      color: const Color.fromARGB(24, 33, 33, 33),
       padding: const EdgeInsets.symmetric(vertical: 40, horizontal: 20),
       child: Column(
         mainAxisSize: MainAxisSize.min,
@@ -30,22 +31,15 @@ class CustomFooter extends StatelessWidget {
           Row(
             mainAxisAlignment: MainAxisAlignment.spaceAround,
             children: [
-              // SectionAnimation(
-              //   direction: MovingFadeInDirection.leftToRight,
-              //   child: infoBox(
-              //     icon: Icons.location_on_rounded,
-              //     title: "Name",
-              //     value: "Min, He-su",
-              //   ),
-              // ),
-              SectionAnimation(
-                direction: MovingFadeInDirection.leftToRight,
-                child: infoBox(
-                  icon: Icons.location_on_rounded,
-                  title: "Location",
-                  value: "Seoul",
+              if (!isCompact)
+                SectionAnimation(
+                  direction: MovingFadeInDirection.leftToRight,
+                  child: infoBox(
+                    icon: Icons.location_on_rounded,
+                    title: "Location",
+                    value: "Seoul, South Korea",
+                  ),
                 ),
-              ),
 
               SectionAnimation(
                 direction: MovingFadeInDirection.rightToLeft,
@@ -55,6 +49,15 @@ class CustomFooter extends StatelessWidget {
                   value: "hs0647@naver.com",
                 ),
               ),
+              if (!isCompact)
+                SectionAnimation(
+                  direction: MovingFadeInDirection.leftToRight,
+                  child: infoBox(
+                    icon: Icons.location_on_rounded,
+                    title: "Number",
+                    value: "-",
+                  ),
+                ),
             ],
           ),
 

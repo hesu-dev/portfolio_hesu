@@ -23,6 +23,8 @@ class Project {
 }
 
 class ProjectTxt extends StatelessWidget {
+  const ProjectTxt({super.key});
+
   @override
   Widget build(BuildContext context) {
     return Column(
@@ -32,7 +34,7 @@ class ProjectTxt extends StatelessWidget {
             Project(
               'App : HiddenTag maintenance',
               'HiddenTag - 히든태그 : 어플리케이션 페이지 유지보수',
-              ['JAVA', 'Apache'], //Android
+              ['JAVA', 'Objective-C', 'Apache'], //Android
               //구글스토어
               'https://play.google.com/store/apps/details?id=ScanTag.ndk.det&pcampaignid=web_share',
               //앱스토어
@@ -43,7 +45,7 @@ class ProjectTxt extends StatelessWidget {
             Project(
               'APP : AI-Bver maintenance',
               'AI-beaver - 에이아이비버 : 어플리케이션 개발 및 유지보수',
-              ['PHP', 'Flutter', 'Dart', 'MySQL'],
+              ['PHP', 'Flutter', 'Dart'],
               'https://play.google.com/store/apps/details?id=com.aibver.lsmk&pcampaignid=web_share',
               '',
               '',
@@ -51,7 +53,7 @@ class ProjectTxt extends StatelessWidget {
             Project(
               '범부처통합연구지원시스템(IRIS) Rnd 참여',
               '3D증강현실 기반의 교량 점검 시스템 개발',
-              ['React', 'Unity'],
+              ['React', 'Unity', 'MySQL'],
               '',
               '',
               'https://www.dbpia.co.kr/journal/articleDetail?nodeId=NODE11488090',
@@ -59,7 +61,7 @@ class ProjectTxt extends StatelessWidget {
             Project(
               'APP : Blue Mentor Develop',
               '블루멘토 기계점검 안전설비 보고서 작성 어플 기획 및 개발',
-              ['Flutter', 'node.js'],
+              ['Flutter', 'Dart', 'node.js'],
               'https://play.google.com/store/apps/details?id=com.lsmk.BlueMentor&pcampaignid=web_share',
               'https://apps.apple.com/us/app/%EB%B8%94%EB%A3%A8%EB%A9%98%ED%86%A0/id6475704951',
               '',

@@ -51,16 +51,47 @@ class PackagesList extends StatelessWidget {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        OpacityFade(
-          direction: OpacityFadeInDirection.fadein,
-          child: Text(
-            'Little project List',
-            style: Theme.of(
-              context,
-            ).textTheme.headlineMedium?.copyWith(fontWeight: FontWeight.bold),
-          ),
+        Row(
+          children: [
+            OpacityFade(
+              direction: OpacityFadeInDirection.fadein,
+              child: Text(
+                'Little project List',
+                style: Theme.of(context).textTheme.headlineMedium?.copyWith(
+                  fontWeight: FontWeight.bold,
+                ),
+              ),
+            ),
+            const Spacer(),
+            OpacityFade(
+              direction: OpacityFadeInDirection.fadein,
+              child: InkWell(
+                onTap: () {
+                  launchUrl(
+                    Uri.parse('https://your-url-here'),
+                    mode: LaunchMode.externalApplication,
+                  );
+                },
+                borderRadius: BorderRadius.circular(6),
+                child: Padding(
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: 6,
+                    vertical: 4,
+                  ),
+                  child: Text(
+                    'view more',
+                    style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+                      color: Theme.of(context).colorScheme.primary,
+                      fontWeight: FontWeight.w600,
+                    ),
+                  ),
+                ),
+              ),
+            ),
+          ],
         ),
         const SizedBox(height: 28),
+
         SectionAnimation(
           direction: MovingFadeInDirection.bottomToTop,
           child: LayoutBuilder(
