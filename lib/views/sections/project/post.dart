@@ -28,15 +28,15 @@ class Packages extends StatelessWidget {
           'https://www.postype.com/@reha-dev/post/18656933',
         ),
 
-        // PackageItem(
-        //   '김장 게임 - Kimchi Run by nell',
-        //   '유니티를 이용한 2D 모바일 러닝 게임',
-        //   'https://github.com/sukenell/cclog_custom',
-        //   'https://www.postype.com/@reha-dev/post/18656933',
-        // ),
+        PackageItem(
+          '김장 게임 - Kimchi Run by nell',
+          '유니티를 이용한 2D 모바일 러닝 게임',
+          'https://github.com/sukenell/cclog_custom',
+          'https://www.postype.com/@reha-dev/post/18656933',
+        ),
 
-        // PackageItem('연애문답 : 커플 아카이브', 'flutter를 이용한 하이브리드 웹앱.', '', ''),
-        // PackageItem('', 'flutter를 이용한 하이브리드 웹앱.', '', ''),
+        PackageItem('연애문답 : 커플 아카이브', 'flutter를 이용한 하이브리드 웹앱.', '', ''),
+        PackageItem('', 'flutter를 이용한 하이브리드 웹앱.', '', ''),
       ],
     );
   }
@@ -68,7 +68,7 @@ class PackagesList extends StatelessWidget {
               child: InkWell(
                 onTap: () {
                   launchUrl(
-                    Uri.parse('https://your-url-here'),
+                    Uri.parse('https://hesu-dev.github.io/portfolio_site/'),
                     mode: LaunchMode.externalApplication,
                   );
                 },

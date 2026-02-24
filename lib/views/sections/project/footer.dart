@@ -67,7 +67,7 @@ class CustomFooter extends StatelessWidget {
           Text(
             "This website is built with Flutter. | © 2025 hesu. All Rights Reserved.",
             textAlign: TextAlign.center,
-            style: TextStyle(color: textColor, fontSize: 12),
+            style: TextStyle(fontSize: 12),
             maxLines: 1,
             overflow: TextOverflow.ellipsis,
           ),
