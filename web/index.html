@@ -31,6 +31,18 @@
 
   <title>portfolio_hesu</title>
   <link rel="manifest" href="manifest.json">
+  <style>
+    @media print {
+      html,
+      body,
+      flt-glass-pane,
+      flt-scene-host,
+      flt-scene {
+        height: auto !important;
+        overflow: visible !important;
+      }
+    }
+  </style>
 </head>
 <body>
   <script src="flutter_bootstrap.js" async></script>

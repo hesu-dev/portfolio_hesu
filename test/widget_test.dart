@@ -1,30 +1,71 @@
-// // This is a basic Flutter widget test.
-// //
-// // To perform an interaction with a widget in your test, use the WidgetTester
-// // utility in the flutter_test package. For example, you can send tap and scroll
-// // gestures. You can also use WidgetTester to find child widgets in the widget
-// // tree, read text, and verify that the values of widget properties are correct.
+import 'dart:async';
 
-// import 'package:flutter/material.dart';
-// import 'package:flutter_test/flutter_test.dart';
+import 'package:flutter/material.dart';
+import 'package:flutter_test/flutter_test.dart';
+import 'package:portfolio_hesu/main.dart';
+import 'package:portfolio_hesu/platform/browser_environment.dart';
+import 'package:portfolio_hesu/views/widgets/animation/bounce_arrow_btn.dart';
 
-// import 'package:portfolio_hesu/main.dart';
+class FakeBrowserEnvironment implements BrowserEnvironment {
+  FakeBrowserEnvironment({
+    this.pageIndex = 0,
+    bool isPrintMode = false,
+  }) : _isPrintMode = isPrintMode;
 
-// void main() {
-//   testWidgets('Counter increments smoke test', (WidgetTester tester) async {
-//     // Build our app and trigger a frame.
-//     await tester.pumpWidget(const MyApp());
+  int pageIndex;
 
-//     // Verify that our counter starts at 0.
-//     expect(find.text('0'), findsOneWidget);
-//     expect(find.text('1'), findsNothing);
+  bool _isPrintMode;
+  final StreamController<bool> _printModeController =
+      StreamController<bool>.broadcast();
 
-//     // Tap the '+' icon and trigger a frame.
-//     await tester.tap(find.byIcon(Icons.add));
-//     await tester.pump();
+  @override
+  bool get isPrintMode => _isPrintMode;
 
-//     // Verify that our counter has incremented.
-//     expect(find.text('0'), findsNothing);
-//     expect(find.text('1'), findsOneWidget);
-//   });
-// }
+  @override
+  Stream<bool> get onPrintModeChanged => _printModeController.stream;
+
+  void setPrintMode(bool value) {
+    if (_isPrintMode == value) return;
+    _isPrintMode = value;
+    _printModeController.add(value);
+  }
+
+  @override
+  int loadPageIndex() => pageIndex;
+
+  @override
+  void savePageIndex(int index) {
+    pageIndex = index;
+  }
+}
+
+void main() {
+  testWidgets('keeps paged home layout during normal browsing', (tester) async {
+    final browserEnvironment = FakeBrowserEnvironment();
+
+    await tester.pumpWidget(
+      PortfolioClone(browserEnvironment: browserEnvironment),
+    );
+
+    expect(find.byType(PageView), findsOneWidget);
+    expect(find.byType(BounceArrowButton), findsWidgets);
+  });
+
+  testWidgets('switches to a continuous print layout for printing', (
+    tester,
+  ) async {
+    final browserEnvironment = FakeBrowserEnvironment();
+
+    await tester.pumpWidget(
+      PortfolioClone(browserEnvironment: browserEnvironment),
+    );
+
+    browserEnvironment.setPrintMode(true);
+    await tester.pump();
+
+    expect(find.byType(PageView), findsNothing);
+    expect(find.byType(BounceArrowButton), findsNothing);
+    expect(find.text('Projects'), findsOneWidget);
+    expect(find.text('Skills'), findsOneWidget);
+  });
+}
