@@ -47,7 +47,7 @@ class ContactSection extends StatelessWidget {
                   ),
                   SkillData(
                     'JAVA',
-                    2,
+                    3,
                     const FaIcon(
                       FontAwesomeIcons.java,
                       color: Color(0xFFED8B00),
@@ -71,7 +71,7 @@ class ContactSection extends StatelessWidget {
                   ),
                   SkillData(
                     'Slack',
-                    4,
+                    2,
                     const FaIcon(
                       FontAwesomeIcons.slack,
                       color: Color(0xFF4A154B),
@@ -79,7 +79,7 @@ class ContactSection extends StatelessWidget {
                   ),
                   SkillData(
                     'Trello',
-                    3,
+                    2,
                     const FaIcon(
                       FontAwesomeIcons.trello,
                       color: Color(0xFF0079BF),
@@ -95,7 +95,7 @@ class ContactSection extends StatelessWidget {
                 skills: [
                   SkillData(
                     'Figma',
-                    3,
+                    4,
                     const FaIcon(
                       FontAwesomeIcons.figma,
                       color: Color(0xFFF24E1E),
@@ -103,7 +103,7 @@ class ContactSection extends StatelessWidget {
                   ),
                   SkillData(
                     'Adobe Photoshop',
-                    4,
+                    5,
                     const FaIcon(
                       FontAwesomeIcons.photoFilm,
                       color: Color(0xFF31A8FF),

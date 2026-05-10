@@ -46,7 +46,7 @@ class CustomFooter extends StatelessWidget {
                 child: infoBox(
                   icon: Icons.mail_rounded,
                   title: "Email",
-                  value: "hs0647@naver.com",
+                  value: "-", //hs0647@naver.com
                 ),
               ),
               if (!isCompact)

@@ -171,9 +171,9 @@ class Aboutme extends StatelessWidget {
                       const SizedBox(height: 24),
 
                       buildTimelineItem(
-                        title: "-",
-                        subtitle: "Freelance | 2024 - Present",
-                        description: "",
+                        title: "Junior Flutter Developer",
+                        subtitle: "Freelance | 2026 - Present",
+                        description: "flutter를 이용한 어플리케이션 기획 및 개발",
                       ),
 
                       buildTimelineItem(
@@ -185,8 +185,7 @@ class Aboutme extends StatelessWidget {
                       buildTimelineItem(
                         title: "Junior Java Developer",
                         subtitle: "Company : CKnB | 2020 - 2021",
-                        description:
-                            "안드로이드 스튜디오를 통한 java(jsp) 어플리케이션 개발(카메라 페이지 담당)",
+                        description: "안드로이드 스튜디오를 통한 java(jsp) 어플리케이션 개발",
                       ),
                     ],
                   ),

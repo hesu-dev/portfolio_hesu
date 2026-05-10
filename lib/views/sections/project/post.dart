@@ -37,6 +37,12 @@ class Packages extends StatelessWidget {
 
         PackageItem('연애문답 : 커플 아카이브', 'flutter를 이용한 하이브리드 웹앱.', '', ''),
         PackageItem('', 'flutter를 이용한 하이브리드 웹앱.', '', ''),
+        PackageItem(
+          'APP : ReadingLog Develop',
+          '채팅로그 리더기 어플 기획 및 개발.',
+          'https://play.google.com/store/apps/details?id=com.reha.readinglog',
+          'https://apps.apple.com/kr/app/%EB%A6%AC%EB%94%A9%EB%A1%9C%EA%B7%B8/id6759693995',
+        ),
       ],
     );
   }

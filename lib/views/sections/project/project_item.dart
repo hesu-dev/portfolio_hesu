@@ -29,7 +29,7 @@ class ProjectsGrid extends StatelessWidget {
                     ),
                   ),
                   Text(
-                    "담당했던 프로젝트를 최신 순으로 구성했습니다.",
+                    "담당 프로젝트 리스트",
                     style: TextStyle(color: Colors.white70, fontSize: 15),
                   ),
                 ],
@@ -52,8 +52,7 @@ class ProjectsGrid extends StatelessWidget {
                   crossAxisCount: (c.maxWidth ~/ 240).clamp(1, 4),
                   mainAxisSpacing: 10,
                   crossAxisSpacing: 10,
-                  childAspectRatio: 1.2,
-                  mainAxisExtent: 250,
+                  mainAxisExtent: 330,
                 ),
                 itemBuilder: (context, i) {
                   final p = items[i];
@@ -71,6 +70,13 @@ class ProjectsGrid extends StatelessWidget {
                         const SizedBox(height: 4),
                         Text(
                           p.desc,
+                          style: Theme.of(context).textTheme.bodySmall,
+                          maxLines: 2,
+                          overflow: TextOverflow.ellipsis,
+                        ),
+                        const SizedBox(height: 8),
+                        Text(
+                          p.date,
                           style: Theme.of(context).textTheme.bodySmall,
                           maxLines: 2,
                           overflow: TextOverflow.ellipsis,
