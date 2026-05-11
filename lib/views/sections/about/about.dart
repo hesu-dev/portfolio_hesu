@@ -99,46 +99,46 @@ class Aboutme extends StatelessWidget {
                         ),
                       ),
                       const SizedBox(height: 30),
-                      ElevatedButton(
-                        onPressed: () {
-                          launchUrl(
-                            Uri.parse(
-                              'https://docs.google.com/document/d/1UiJ1jcZ_tpOmKapLEo-1kmjFjZRQ-trZa793GETV3JI/edit?usp=sharing',
-                            ),
-                            mode: LaunchMode.externalApplication,
-                          );
-                          // showDialog(
-                          //   context: context,
-                          //   barrierDismissible: false,
-                          //   builder: (BuildContext context) {
-                          //     return AlertDialog(
-                          //       title: const Text('알림'),
-                          //       content: const Text('현재 준비중입니다.'),
-                          //       actions: [
-                          //         TextButton(
-                          //           onPressed: () {
-                          //             Navigator.of(context).pop();
-                          //           },
-                          //           child: const Text('닫기'),
-                          //         ),
-                          //       ],
-                          //     );
-                          //   },
-                          // );
-                        },
-                        style: ElevatedButton.styleFrom(
-                          backgroundColor: Theme.of(context).primaryColor,
-                          foregroundColor: Colors.black,
-                          padding: const EdgeInsets.symmetric(
-                            horizontal: 24,
-                            vertical: 14,
-                          ),
-                          shape: RoundedRectangleBorder(
-                            borderRadius: BorderRadius.circular(12),
-                          ),
-                        ),
-                        child: const Text("Skill Inventory"),
-                      ),
+                      // ElevatedButton(
+                      //   onPressed: () {
+                      //     launchUrl(
+                      //       Uri.parse(
+                      //         'https://docs.google.com/document/d/1UiJ1jcZ_tpOmKapLEo-1kmjFjZRQ-trZa793GETV3JI/edit?usp=sharing',
+                      //       ),
+                      //       mode: LaunchMode.externalApplication,
+                      //     );
+                      //     // showDialog(
+                      //     //   context: context,
+                      //     //   barrierDismissible: false,
+                      //     //   builder: (BuildContext context) {
+                      //     //     return AlertDialog(
+                      //     //       title: const Text('알림'),
+                      //     //       content: const Text('현재 준비중입니다.'),
+                      //     //       actions: [
+                      //     //         TextButton(
+                      //     //           onPressed: () {
+                      //     //             Navigator.of(context).pop();
+                      //     //           },
+                      //     //           child: const Text('닫기'),
+                      //     //         ),
+                      //     //       ],
+                      //     //     );
+                      //     //   },
+                      //     // );
+                      //   },
+                      //   style: ElevatedButton.styleFrom(
+                      //     backgroundColor: Theme.of(context).primaryColor,
+                      //     foregroundColor: Colors.black,
+                      //     padding: const EdgeInsets.symmetric(
+                      //       horizontal: 24,
+                      //       vertical: 14,
+                      //     ),
+                      //     shape: RoundedRectangleBorder(
+                      //       borderRadius: BorderRadius.circular(12),
+                      //     ),
+                      //   ),
+                      //   child: const Text("Skill Inventory"),
+                      // ),
                     ],
                   ),
                 ),
