@@ -43,81 +43,85 @@ class ProjectsGrid extends StatelessWidget {
           direction: MovingFadeInDirection.bottomToTop,
           child: LayoutBuilder(
             builder: (context, c) {
-              // final cardWidth = c.maxWidth;
-              return GridView.builder(
-                itemCount: items.length,
-                shrinkWrap: true,
-                physics: const NeverScrollableScrollPhysics(),
-                gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
-                  crossAxisCount: (c.maxWidth ~/ 240).clamp(1, 4),
-                  mainAxisSpacing: 10,
-                  crossAxisSpacing: 10,
-                  mainAxisExtent: 330,
-                ),
-                itemBuilder: (context, i) {
-                  final p = items[i];
-                  return CustomCard(
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        Text(
-                          p.title,
-                          style: Theme.of(context).textTheme.titleMedium
-                              ?.copyWith(fontWeight: FontWeight.w600),
-                          maxLines: 2,
-                          overflow: TextOverflow.ellipsis,
-                        ),
-                        const SizedBox(height: 4),
-                        Text(
-                          p.desc,
-                          style: Theme.of(context).textTheme.bodySmall,
-                          maxLines: 2,
-                          overflow: TextOverflow.ellipsis,
-                        ),
-                        const SizedBox(height: 8),
-                        Text(
-                          p.date,
-                          style: Theme.of(context).textTheme.bodySmall,
-                          maxLines: 2,
-                          overflow: TextOverflow.ellipsis,
-                        ),
-                        const SizedBox(height: 8),
-                        // if (cardWidth >= 1100 ||
-                        //     (cardWidth >= 10 && cardWidth < 480))
-                        Wrap(
-                          spacing: 3,
-                          runSpacing: 3,
-                          children: p.tags
-                              .map((t) => Chip(label: Text(t)))
-                              .toList(),
-                        ),
-                        const SizedBox(height: 8),
-                        Wrap(
-                          spacing: 3,
+              const spacing = 10.0;
+              final columnCount = (c.maxWidth ~/ 240).clamp(1, 4);
+              final cardWidth =
+                  (c.maxWidth - spacing * (columnCount - 1)) / columnCount;
+
+              return Wrap(
+                spacing: spacing,
+                runSpacing: spacing,
+                children: [
+                  for (final p in items)
+                    SizedBox(
+                      width: cardWidth,
+                      child: CustomCard(
+                        padding: const EdgeInsets.fromLTRB(15, 15, 15, 6),
+                        child: Column(
+                          mainAxisSize: MainAxisSize.min,
+                          crossAxisAlignment: CrossAxisAlignment.start,
                           children: [
-                            if (p.google.isNotEmpty)
-                              IconButton(
-                                icon: const Icon(FontAwesomeIcons.googlePlay),
-                                onPressed: () => _open(p.google),
-                              ),
+                            Text(
+                              p.title,
+                              style: Theme.of(context).textTheme.titleMedium
+                                  ?.copyWith(fontWeight: FontWeight.w600),
+                              maxLines: 2,
+                              overflow: TextOverflow.ellipsis,
+                            ),
+                            const SizedBox(height: 4),
+                            Text(
+                              p.desc,
+                              style: Theme.of(context).textTheme.bodySmall,
+                              maxLines: 2,
+                              overflow: TextOverflow.ellipsis,
+                            ),
+                            const SizedBox(height: 8),
+                            Text(
+                              p.date,
+                              style: Theme.of(context).textTheme.bodySmall,
+                              maxLines: 2,
+                              overflow: TextOverflow.ellipsis,
+                            ),
+                            const SizedBox(height: 8),
+                            // if (cardWidth >= 1100 ||
+                            //     (cardWidth >= 10 && cardWidth < 480))
+                            Wrap(
+                              spacing: 3,
+                              runSpacing: 3,
+                              children: p.tags
+                                  .map((t) => Chip(label: Text(t)))
+                                  .toList(),
+                            ),
+                            const SizedBox(height: 8),
+                            Wrap(
+                              spacing: 3,
+                              children: [
+                                if (p.google.isNotEmpty)
+                                  IconButton(
+                                    icon: const Icon(
+                                      FontAwesomeIcons.googlePlay,
+                                    ),
+                                    onPressed: () => _open(p.google),
+                                  ),
 
-                            if (p.app.isNotEmpty)
-                              IconButton(
-                                icon: const Icon(FontAwesomeIcons.appStore),
-                                onPressed: () => _open(p.app),
-                              ),
+                                if (p.app.isNotEmpty)
+                                  IconButton(
+                                    icon: const Icon(FontAwesomeIcons.appStore),
+                                    onPressed: () => _open(p.app),
+                                  ),
 
-                            if (p.link.isNotEmpty)
-                              IconButton(
-                                icon: const Icon(FontAwesomeIcons.link),
-                                onPressed: () => _open(p.link),
-                              ),
+                                if (p.link.isNotEmpty)
+                                  IconButton(
+                                    icon: const Icon(FontAwesomeIcons.link),
+                                    onPressed: () => _open(p.link),
+                                  ),
+                              ],
+                            ),
                           ],
                         ),
-                      ],
+                      ),
                     ),
-                  );
-                },
+                ],
               );
             },
           ),

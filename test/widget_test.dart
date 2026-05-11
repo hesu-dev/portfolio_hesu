@@ -2,11 +2,13 @@ import 'dart:async';
 
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
+import 'package:font_awesome_flutter/font_awesome_flutter.dart';
 import 'package:portfolio_hesu/main.dart';
 import 'package:portfolio_hesu/platform/browser_environment.dart';
 import 'package:portfolio_hesu/views/sections/project/project.dart';
 import 'package:portfolio_hesu/views/sections/project/project_item.dart';
 import 'package:portfolio_hesu/views/widgets/animation/bounce_arrow_btn.dart';
+import 'package:portfolio_hesu/views/widgets/custom_card.dart';
 
 class FakeBrowserEnvironment implements BrowserEnvironment {
   FakeBrowserEnvironment({this.pageIndex = 0, bool isPrintMode = false})
@@ -118,5 +120,45 @@ void main() {
           .toList(),
       isEmpty,
     );
+  });
+
+  testWidgets('keeps project card actions close to the bottom edge', (
+    tester,
+  ) async {
+    await tester.pumpWidget(
+      MaterialApp(
+        home: Scaffold(
+          body: SingleChildScrollView(
+            child: Align(
+              alignment: Alignment.topCenter,
+              child: SizedBox(
+                width: 260,
+                child: ProjectsGrid(
+                  items: const [
+                    Project(
+                      'APP : ReadingLog Develop',
+                      '채팅로그 리더기 어플 기획 및 개발 및 크롬 웹스토어 확장프로그램 개발.',
+                      ['Flutter', 'Dart', 'node.js'],
+                      'https://play.google.com/store/apps/details?id=com.reha.readinglog',
+                      'https://apps.apple.com/kr/app/%EB%A6%AC%EB%94%A9%EB%A1%9C%EA%B7%B8/id6759693995',
+                      '2026-02 ~ 2026-5',
+                      'https://chromewebstore.google.com/detail/r20-jsonexporter/galgbmfkkpehcijjfcaffifmfjbmlfbo',
+                    ),
+                  ],
+                ),
+              ),
+            ),
+          ),
+        ),
+      ),
+    );
+    await tester.pumpAndSettle();
+
+    final cardRect = tester.getRect(find.byType(CustomCard));
+    final actionRect = tester.getRect(
+      find.widgetWithIcon(IconButton, FontAwesomeIcons.link),
+    );
+
+    expect(cardRect.bottom - actionRect.bottom, lessThanOrEqualTo(24));
   });
 }

@@ -87,7 +87,7 @@ class Aboutme extends StatelessWidget {
                         // "Flutter Developer and Google Developer for Dart\n"
                         "2~3년차 개발자 입니다.\n"
                         "IT 기업에서 몇 가지 디지털 프로젝트를 경험했습니다\n"
-                        "현재에도 모바일 앱 개발자를 지향하고 있습니다.\n",
+                        "모바일 앱 개발자를 지향하고 있습니다.\n",
                         style: TextStyle(color: Colors.white70, fontSize: 15),
                       ),
                       const SizedBox(height: 20),

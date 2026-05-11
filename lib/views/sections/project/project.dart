@@ -34,35 +34,13 @@ class ProjectTxt extends StatelessWidget {
         ProjectsGrid(
           items: const [
             Project(
-              'App : HiddenTag maintenance',
-              'HiddenTag - 히든태그 : 어플리케이션 페이지 유지보수',
-              ['JAVA', 'Objective-C', 'Apache'], //Android
-              //구글스토어
-              'https://play.google.com/store/apps/details?id=ScanTag.ndk.det&pcampaignid=web_share',
-              //앱스토어
-              'https://apps.apple.com/kr/app/hiddentag-%ED%9E%88%EB%93%A0%ED%83%9C%EA%B7%B8/id413494082',
-              //날짜
-              '2020-12 ~ 2021-7',
-              //링크
-              '',
-            ),
-            Project(
-              'APP : AI-Bver maintenance',
-              'AI-beaver - 에이아이비버 : 어플리케이션 개발 및 유지보수',
-              ['PHP', 'Flutter', 'Dart'],
-              'https://play.google.com/store/apps/details?id=com.aibver.lsmk&pcampaignid=web_share',
-              '',
-              '2021-12 ~ 2021-4',
-              '',
-            ),
-            Project(
-              '범부처통합연구지원시스템(IRIS) Rnd 참여',
-              '3D증강현실 기반의 교량 점검 시스템 개발',
-              ['React', 'Unity', 'MySQL'],
-              '',
-              'https://www.dbpia.co.kr/journal/articleDetail?nodeId=NODE11488090',
-              '2022-12 ~ 2023-12',
-              '',
+              'APP : ReadingLog Develop',
+              '채팅로그 리더기 어플 기획 및 개발 / 파싱용 크롬 웹스토어 확장프로그램 개발.',
+              ['Flutter', 'Dart', 'javaScript'],
+              'https://play.google.com/store/apps/details?id=com.reha.readinglog',
+              'https://apps.apple.com/kr/app/%EB%A6%AC%EB%94%A9%EB%A1%9C%EA%B7%B8/id6759693995',
+              '2026-02 ~ 2026-5',
+              'https://chromewebstore.google.com/detail/r20-jsonexporter/galgbmfkkpehcijjfcaffifmfjbmlfbo?authuser=1&hl=ko',
             ),
             Project(
               'APP : Blue Mentor Develop',
@@ -75,13 +53,35 @@ class ProjectTxt extends StatelessWidget {
               '',
             ),
             Project(
-              'APP : ReadingLog Develop',
-              '채팅로그 리더기 어플 기획 및 개발 및 크롬 웹스토어 확장프로그램 개발.',
-              ['Flutter', 'Dart', 'node.js'],
-              'https://play.google.com/store/apps/details?id=com.reha.readinglog',
-              'https://apps.apple.com/kr/app/%EB%A6%AC%EB%94%A9%EB%A1%9C%EA%B7%B8/id6759693995',
-              '2026-02 ~ 2026-5',
-              'https://chromewebstore.google.com/detail/r20-jsonexporter/galgbmfkkpehcijjfcaffifmfjbmlfbo?authuser=1&hl=ko',
+              '범부처통합연구지원시스템(IRIS) Rnd 참여',
+              '3D증강현실 기반의 교량 점검 시스템 개발',
+              ['React', 'Unity', 'MySQL'],
+              '',
+              'https://www.dbpia.co.kr/journal/articleDetail?nodeId=NODE11488090',
+              '2022-12 ~ 2023-12',
+              '',
+            ),
+            Project(
+              'APP : AI-Bver maintenance',
+              'AI-beaver - 에이아이비버 : 어플리케이션 개발 및 유지보수',
+              ['PHP', 'Flutter', 'Dart'],
+              'https://play.google.com/store/apps/details?id=com.aibver.lsmk&pcampaignid=web_share',
+              '',
+              '2021-12 ~ 2021-4',
+              '',
+            ),
+            Project(
+              'App : HiddenTag maintenance',
+              'HiddenTag - 히든태그 : 어플리케이션 페이지 유지보수',
+              ['JAVA', 'Apache'], //Android
+              //구글스토어
+              'https://play.google.com/store/apps/details?id=ScanTag.ndk.det&pcampaignid=web_share',
+              //앱스토어
+              'https://apps.apple.com/kr/app/hiddentag-%ED%9E%88%EB%93%A0%ED%83%9C%EA%B7%B8/id413494082',
+              //날짜
+              '2020-12 ~ 2021-7',
+              //링크
+              '',
             ),
           ],
         ),
