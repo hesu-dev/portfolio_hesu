@@ -1,6 +1,6 @@
 #!/bin/bash
 
-flutter build web --release --base-href /portfolio_hesu/
+flutter build web --release --base-href /portfolio_hesu/ --pwa-strategy=none
 
 git checkout gh-pages
 git rm -r .
@@ -9,4 +9,3 @@ git commit -m "update"
 git push origin gh-pages --force
 
 git checkout main
-

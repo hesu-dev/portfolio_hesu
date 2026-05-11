@@ -24,7 +24,7 @@ jobs:
 
       # 4. 웹 빌드 (앱 개발과 완전히 분리)
       - name: Build Flutter Web
-        run: flutter build web --release --base-href /portfolio_hesu/
+        run: flutter build web --release --base-href /portfolio_hesu/ --pwa-strategy=none
 
       # 5. gh-pages 브랜치에만 배포
       - name: Deploy to GitHub Pages

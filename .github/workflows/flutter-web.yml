@@ -22,7 +22,7 @@ jobs:
         run: flutter pub get
 
       - name: Build Flutter Web
-        run: flutter build web --release
+        run: flutter build web --release --base-href /portfolio_hesu/ --pwa-strategy=none
 
       - name: Deploy to gh-pages
         uses: peaceiris/actions-gh-pages@v4
