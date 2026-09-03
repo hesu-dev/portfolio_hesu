@@ -101,8 +101,6 @@ class _MobileNotesProfileButton extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final dark = AppleTheme.isDark(context);
-    final date =
-        '${_weekdays[now.weekday - 1]}, ${_months[now.month - 1]} ${now.day}';
     final widgetKey = tablet
         ? const Key('ipad-profile-widget')
         : const Key('iphone-notes-profile');
@@ -129,7 +127,8 @@ class _MobileNotesProfileButton extends StatelessWidget {
       darkPaper: dark,
       showSeparator: !shortTablet,
       showBody: !shortTablet,
-      semanticLabel: '메모, ${data.name} 프로필 열기',
+      headerTitle: null,
+      semanticLabel: '${data.name} 소개 열기',
       excludeSemantics: true,
       onTap: onPressed,
       headerTrailing: shortTablet
@@ -143,40 +142,14 @@ class _MobileNotesProfileButton extends StatelessWidget {
                 fontWeight: FontWeight.w700,
               ),
             )
-          : tablet && !largeText && !dark
-          ? _IPadProfileDate(date: date)
           : null,
       bodyPadding: EdgeInsets.all(largeText ? 10 : (tablet ? 18 : 14)),
       body: Row(
         children: <Widget>[
-          if (!largeText) ...<Widget>[
-            Container(
-              width: tablet ? 58 : 44,
-              height: tablet ? 58 : 44,
-              alignment: Alignment.center,
-              decoration: BoxDecoration(
-                color: const Color(0xFF584117),
-                borderRadius: BorderRadius.circular(tablet ? 18 : 13),
-              ),
-              child: Text(
-                data.monogram,
-                style: TextStyle(
-                  color: Colors.white,
-                  fontSize: tablet ? 20 : 16,
-                  fontWeight: FontWeight.w800,
-                ),
-              ),
-            ),
-            SizedBox(width: tablet ? 16 : 12),
-          ],
           Expanded(
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: <Widget>[
-                if (tablet && (dark || largeText)) ...<Widget>[
-                  _IPadProfileDate(date: date, onDarkBody: dark),
-                  const SizedBox(height: 3),
-                ],
                 Text(
                   data.name,
                   maxLines: 1,
@@ -207,49 +180,3 @@ class _MobileNotesProfileButton extends StatelessWidget {
     );
   }
 }
-
-class _IPadProfileDate extends StatelessWidget {
-  const _IPadProfileDate({required this.date, this.onDarkBody = false});
-
-  final String date;
-  final bool onDarkBody;
-
-  @override
-  Widget build(BuildContext context) {
-    return Text(
-      date,
-      key: const Key('ipad-profile-date'),
-      maxLines: 1,
-      overflow: TextOverflow.ellipsis,
-      style: AppleTheme.caption(context).copyWith(
-        color: onDarkBody ? const Color(0xFFF8F8FA) : const Color(0xFF513700),
-        fontWeight: FontWeight.w700,
-      ),
-    );
-  }
-}
-
-const List<String> _weekdays = <String>[
-  'Monday',
-  'Tuesday',
-  'Wednesday',
-  'Thursday',
-  'Friday',
-  'Saturday',
-  'Sunday',
-];
-
-const List<String> _months = <String>[
-  'January',
-  'February',
-  'March',
-  'April',
-  'May',
-  'June',
-  'July',
-  'August',
-  'September',
-  'October',
-  'November',
-  'December',
-];
