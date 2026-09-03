@@ -51,8 +51,8 @@ class AppleAppArtwork extends StatelessWidget {
       Color(0xFF6D7480),
     ],
     PortfolioAppId.thisMac => const <Color>[
-      Color(0xFF8C8C91),
-      Color(0xFF3B3C42),
+      Color(0xFF69D5FF),
+      Color(0xFF1675F8),
     ],
     PortfolioAppId.trash => const <Color>[
       Color(0xFFE01E5A),
@@ -69,7 +69,7 @@ class AppleAppArtwork extends StatelessWidget {
   };
 
   static IconData utilityIconFor(PortfolioAppId appId) => switch (appId) {
-    PortfolioAppId.thisMac => Icons.laptop_mac_rounded,
+    PortfolioAppId.thisMac => Icons.folder_copy_rounded,
     PortfolioAppId.github => Icons.code_rounded,
     _ => throw ArgumentError.value(
       appId,
