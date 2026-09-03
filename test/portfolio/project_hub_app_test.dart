@@ -146,7 +146,7 @@ void main() {
     }
     expect(find.text('상세 화면은 추후 기획 예정'), findsOneWidget);
 
-    await tester.tap(find.byKey(const Key('finder-back')));
+    await tester.tap(find.byKey(const Key('project-hub-finder-back')));
     await tester.pumpAndSettle();
 
     expect(find.byKey(const Key('project-hub-folder-list')), findsOneWidget);
@@ -190,7 +190,7 @@ void main() {
           find.byKey(const Key('project-hub-detail-scroll')),
           findsOneWidget,
         );
-        final backButton = find.byKey(const Key('finder-back'));
+        final backButton = find.byKey(const Key('project-hub-finder-back'));
         expect(backButton, findsOneWidget);
         expect(
           tester.getSemantics(backButton).tooltip,

@@ -11,11 +11,11 @@ void main() {
       await _pumpProjects(tester, size: const Size(900, 650));
 
       expect(find.byKey(const Key('projects-finder-toolbar')), findsOneWidget);
-      expect(find.byKey(const Key('finder-back')), findsOneWidget);
-      expect(find.byKey(const Key('finder-forward')), findsOneWidget);
+      expect(find.byKey(const Key('projects-finder-back')), findsOneWidget);
+      expect(find.byKey(const Key('projects-finder-forward')), findsOneWidget);
       expect(
         find.descendant(
-          of: find.byKey(const Key('finder-current-location')),
+          of: find.byKey(const Key('projects-finder-current-location')),
           matching: find.text('iCloud Drive'),
         ),
         findsOneWidget,
@@ -60,20 +60,16 @@ void main() {
 
       await tester.tap(find.byKey(const Key('project-selector-1')));
       await tester.pumpAndSettle();
-      await tester.tap(find.byKey(const Key('finder-back')));
+      await tester.tap(find.byKey(const Key('projects-finder-back')));
       await tester.pumpAndSettle();
       expect(
-        tester
-            .widget<Text>(find.byKey(const Key('project-detail-title')))
-            .data,
+        tester.widget<Text>(find.byKey(const Key('project-detail-title'))).data,
         portfolioData.projects.first.title,
       );
-      await tester.tap(find.byKey(const Key('finder-forward')));
+      await tester.tap(find.byKey(const Key('projects-finder-forward')));
       await tester.pumpAndSettle();
       expect(
-        tester
-            .widget<Text>(find.byKey(const Key('project-detail-title')))
-            .data,
+        tester.widget<Text>(find.byKey(const Key('project-detail-title'))).data,
         portfolioData.projects[1].title,
       );
     });
