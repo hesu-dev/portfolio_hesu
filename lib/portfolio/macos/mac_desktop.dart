@@ -32,17 +32,7 @@ class MacDesktop extends StatefulWidget {
 }
 
 class _MacDesktopState extends State<MacDesktop> {
-  static const List<PortfolioAppId> _desktopApps = <PortfolioAppId>[
-    PortfolioAppId.about,
-    PortfolioAppId.skills,
-    PortfolioAppId.projects,
-    PortfolioAppId.terminal,
-    PortfolioAppId.settings,
-    PortfolioAppId.thisMac,
-    PortfolioAppId.github,
-    PortfolioAppId.mail,
-    PortfolioAppId.trash,
-  ];
+  static const List<PortfolioAppId> _desktopApps = portfolioLauncherAppIds;
 
   final Map<PortfolioAppId, MacWindowState> _windows =
       <PortfolioAppId, MacWindowState>{};
