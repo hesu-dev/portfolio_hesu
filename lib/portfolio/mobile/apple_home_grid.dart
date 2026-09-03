@@ -4,6 +4,7 @@ import '../data/portfolio_data.dart';
 import '../models/portfolio_app_id.dart';
 import '../theme/apple_theme.dart';
 import '../widgets/apple_app_icon.dart';
+import '../widgets/apple_notes_surface.dart';
 
 class AppleHomeGrid extends StatelessWidget {
   const AppleHomeGrid({
@@ -41,9 +42,12 @@ class AppleHomeGrid extends StatelessWidget {
               tablet ? 24 : 16,
             ),
             sliver: SliverToBoxAdapter(
-              child: tablet
-                  ? _IPadProfileWidget(data: data, now: now)
-                  : _IPhoneIdentityHeader(data: data),
+              child: _MobileNotesProfileButton(
+                data: data,
+                tablet: tablet,
+                now: now,
+                onPressed: () => onOpen(PortfolioAppId.about),
+              ),
             ),
           ),
           SliverPadding(
@@ -81,146 +85,145 @@ class AppleHomeGrid extends StatelessWidget {
   }
 }
 
-class _IPhoneIdentityHeader extends StatelessWidget {
-  const _IPhoneIdentityHeader({required this.data});
+class _MobileNotesProfileButton extends StatelessWidget {
+  const _MobileNotesProfileButton({
+    required this.data,
+    required this.tablet,
+    required this.now,
+    required this.onPressed,
+  });
 
   final PortfolioData data;
+  final bool tablet;
+  final DateTime now;
+  final VoidCallback onPressed;
 
   @override
   Widget build(BuildContext context) {
-    return Padding(
-      padding: const EdgeInsets.symmetric(horizontal: 5),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
+    final dark = AppleTheme.isDark(context);
+    final date =
+        '${_weekdays[now.weekday - 1]}, ${_months[now.month - 1]} ${now.day}';
+    final widgetKey = tablet
+        ? const Key('ipad-profile-widget')
+        : const Key('iphone-notes-profile');
+    final cardKey = tablet
+        ? const Key('ipad-profile-card')
+        : const Key('iphone-profile-card');
+    final bodyForeground = dark
+        ? const Color(0xFFF8F8FA)
+        : const Color(0xFF242426);
+    final secondaryForeground = dark
+        ? const Color(0xFFC8C8CE)
+        : const Color(0xFF515158);
+    final largeText = MediaQuery.textScalerOf(context).scale(1) > 1.4;
+    final shortTablet = tablet && MediaQuery.sizeOf(context).height < 500;
+
+    return AppleNotesSurface(
+      key: widgetKey,
+      cardKey: cardKey,
+      headerKey: const Key('mobile-notes-profile-header'),
+      bodyKey: const Key('mobile-notes-profile-body'),
+      size: tablet
+          ? AppleNotesSurfaceSize.regular
+          : AppleNotesSurfaceSize.compact,
+      darkPaper: dark,
+      showSeparator: !shortTablet,
+      showBody: !shortTablet,
+      semanticLabel: '메모, ${data.name} 프로필 열기',
+      excludeSemantics: true,
+      onTap: onPressed,
+      headerTrailing: shortTablet
+          ? Text(
+              data.name,
+              maxLines: 1,
+              overflow: TextOverflow.ellipsis,
+              textAlign: TextAlign.end,
+              style: Theme.of(context).textTheme.titleMedium?.copyWith(
+                color: const Color(0xFF3A2700),
+                fontWeight: FontWeight.w700,
+              ),
+            )
+          : tablet && !largeText && !dark
+          ? _IPadProfileDate(date: date)
+          : null,
+      bodyPadding: EdgeInsets.all(largeText ? 10 : (tablet ? 18 : 14)),
+      body: Row(
         children: <Widget>[
-          Text(
-            data.name,
-            maxLines: 1,
-            overflow: TextOverflow.ellipsis,
-            style: Theme.of(context).textTheme.headlineSmall?.copyWith(
-              fontSize: 28,
-              letterSpacing: -0.7,
+          if (!largeText) ...<Widget>[
+            Container(
+              width: tablet ? 58 : 44,
+              height: tablet ? 58 : 44,
+              alignment: Alignment.center,
+              decoration: BoxDecoration(
+                color: const Color(0xFF584117),
+                borderRadius: BorderRadius.circular(tablet ? 18 : 13),
+              ),
+              child: Text(
+                data.monogram,
+                style: TextStyle(
+                  color: Colors.white,
+                  fontSize: tablet ? 20 : 16,
+                  fontWeight: FontWeight.w800,
+                ),
+              ),
+            ),
+            SizedBox(width: tablet ? 16 : 12),
+          ],
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: <Widget>[
+                if (tablet && (dark || largeText)) ...<Widget>[
+                  _IPadProfileDate(date: date, onDarkBody: dark),
+                  const SizedBox(height: 3),
+                ],
+                Text(
+                  data.name,
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
+                  style: Theme.of(context).textTheme.titleLarge?.copyWith(
+                    color: bodyForeground,
+                    fontSize: tablet ? 23 : 20,
+                  ),
+                ),
+                const SizedBox(height: 3),
+                Text(
+                  data.identity.headline,
+                  maxLines: 2,
+                  overflow: TextOverflow.ellipsis,
+                  style: AppleTheme.caption(
+                    context,
+                  ).copyWith(color: secondaryForeground, height: 1.3),
+                ),
+              ],
             ),
           ),
-          const SizedBox(height: 3),
-          Text(
-            data.identity.headline,
-            maxLines: 2,
-            overflow: TextOverflow.ellipsis,
-            style: AppleTheme.caption(context).copyWith(
-              color: AppleTheme.primaryLabel(context).withValues(alpha: 0.72),
-            ),
-          ),
+          if (!largeText) ...<Widget>[
+            const SizedBox(width: 6),
+            Icon(Icons.chevron_right_rounded, color: secondaryForeground),
+          ],
         ],
       ),
     );
   }
 }
 
-class _IPadProfileWidget extends StatelessWidget {
-  const _IPadProfileWidget({required this.data, required this.now});
+class _IPadProfileDate extends StatelessWidget {
+  const _IPadProfileDate({required this.date, this.onDarkBody = false});
 
-  final PortfolioData data;
-  final DateTime now;
+  final String date;
+  final bool onDarkBody;
 
   @override
   Widget build(BuildContext context) {
-    final dark = AppleTheme.isDark(context);
-    final date =
-        '${_weekdays[now.weekday - 1]}, ${_months[now.month - 1]} '
-        '${now.day}';
-
-    return Semantics(
-      key: const Key('ipad-profile-widget'),
-      container: true,
-      label: '${data.name} portfolio profile',
-      child: Container(
-        key: const Key('ipad-profile-card'),
-        padding: const EdgeInsets.all(22),
-        decoration: BoxDecoration(
-          gradient: LinearGradient(
-            begin: Alignment.topLeft,
-            end: Alignment.bottomRight,
-            colors: dark
-                ? const <Color>[Color(0xF2292C36), Color(0xF21B2433)]
-                : <Color>[
-                    Colors.white.withValues(alpha: 0.72),
-                    const Color(0xFFE9F2FF).withValues(alpha: 0.64),
-                  ],
-          ),
-          borderRadius: BorderRadius.circular(28),
-          border: Border.all(
-            color: Colors.white.withValues(alpha: dark ? 0.18 : 0.72),
-            width: 0.9,
-          ),
-          boxShadow: <BoxShadow>[
-            BoxShadow(
-              color: dark
-                  ? Colors.black.withValues(alpha: 0.34)
-                  : const Color(0xFF385A90).withValues(alpha: 0.12),
-              blurRadius: 28,
-              offset: const Offset(0, 12),
-            ),
-          ],
-        ),
-        child: Row(
-          children: <Widget>[
-            Container(
-              width: 74,
-              height: 74,
-              decoration: BoxDecoration(
-                gradient: const LinearGradient(
-                  begin: Alignment.topLeft,
-                  end: Alignment.bottomRight,
-                  colors: <Color>[Color(0xFF75D6FF), Color(0xFF416AF4)],
-                ),
-                borderRadius: BorderRadius.circular(23),
-              ),
-              alignment: Alignment.center,
-              child: Text(
-                data.monogram,
-                style: const TextStyle(
-                  color: Colors.white,
-                  fontSize: 24,
-                  fontWeight: FontWeight.w800,
-                  letterSpacing: -0.5,
-                ),
-              ),
-            ),
-            const SizedBox(width: 18),
-            Expanded(
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: <Widget>[
-                  Text(
-                    date,
-                    key: const Key('ipad-profile-date'),
-                    maxLines: 1,
-                    overflow: TextOverflow.ellipsis,
-                    style: AppleTheme.caption(context).copyWith(
-                      color: dark ? const Color(0xFF73B5FF) : AppleTheme.blue,
-                      fontWeight: FontWeight.w700,
-                    ),
-                  ),
-                  const SizedBox(height: 4),
-                  Text(
-                    data.name,
-                    maxLines: 1,
-                    overflow: TextOverflow.ellipsis,
-                    style: Theme.of(context).textTheme.headlineSmall,
-                  ),
-                  const SizedBox(height: 3),
-                  Text(
-                    data.identity.headline,
-                    maxLines: 2,
-                    overflow: TextOverflow.ellipsis,
-                    style: AppleTheme.caption(context),
-                  ),
-                ],
-              ),
-            ),
-          ],
-        ),
+    return Text(
+      date,
+      key: const Key('ipad-profile-date'),
+      maxLines: 1,
+      overflow: TextOverflow.ellipsis,
+      style: AppleTheme.caption(context).copyWith(
+        color: onDarkBody ? const Color(0xFFF8F8FA) : const Color(0xFF513700),
+        fontWeight: FontWeight.w700,
       ),
     );
   }
