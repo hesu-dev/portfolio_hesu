@@ -86,6 +86,23 @@ String? _elementText(String html, String tagName) {
   return pattern.firstMatch(html)?.group(1)?.trim();
 }
 
+String? _topLevelYamlValue(String source, String key) {
+  for (final line in const LineSplitter().convert(source)) {
+    if (!line.startsWith('$key:')) {
+      continue;
+    }
+
+    final value = line.substring(key.length + 1).trim();
+    if (value.length >= 2 &&
+        ((value.startsWith('"') && value.endsWith('"')) ||
+            (value.startsWith("'") && value.endsWith("'")))) {
+      return value.substring(1, value.length - 1);
+    }
+    return value;
+  }
+  return null;
+}
+
 final class _DecodedPng {
   const _DecodedPng({
     required this.width,
@@ -347,6 +364,13 @@ void main() {
         }
       },
     );
+
+    test('pubspec describes the Min He-su portfolio', () {
+      final pubspec = _projectFile('pubspec.yaml').readAsStringSync();
+
+      expect(_topLevelYamlValue(pubspec, 'description'), _portfolioDescription);
+      expect(pubspec.toLowerCase(), isNot(contains('a new flutter project')));
+    });
   });
 
   test('README documents adaptive UI and both web build targets', () {
