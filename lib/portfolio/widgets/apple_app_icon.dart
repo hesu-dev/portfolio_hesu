@@ -67,7 +67,6 @@ class _AppleAppIconState extends State<AppleAppIcon> {
     final label = labelFor(appId);
     final tileSize = widget.size ?? (compact ? 48.0 : 58.0);
     final cornerRadius = compact ? 13.0 : 16.0;
-    final transparentFrame = AppleAppArtwork.usesTransparentFrame(appId);
     return Semantics(
       key: Key('apple-app-icon-${appId.name}'),
       label: 'Open $label',
@@ -121,29 +120,9 @@ class _AppleAppIconState extends State<AppleAppIcon> {
                         clipBehavior: Clip.none,
                         children: <Widget>[
                           Positioned.fill(
-                            child: AnimatedContainer(
-                              duration: const Duration(milliseconds: 160),
-                              curve: Curves.easeOutCubic,
-                              decoration: BoxDecoration(
-                                borderRadius: BorderRadius.circular(
-                                  cornerRadius,
-                                ),
-                                boxShadow: transparentFrame
-                                    ? const <BoxShadow>[]
-                                    : <BoxShadow>[
-                                        BoxShadow(
-                                          color: colorsFor(
-                                            appId,
-                                          ).last.withValues(alpha: 0.24),
-                                          blurRadius: selected ? 18 : 12,
-                                          offset: const Offset(0, 6),
-                                        ),
-                                      ],
-                              ),
-                              child: AppleAppArtwork(
-                                appId: appId,
-                                size: tileSize,
-                              ),
+                            child: AppleAppArtworkFrame(
+                              appId: appId,
+                              size: tileSize,
                             ),
                           ),
                           if (selected)
@@ -251,6 +230,4 @@ class _AppleAppIconState extends State<AppleAppIcon> {
   }
 
   String labelFor(PortfolioAppId appId) => AppleAppIcon.labelFor(appId);
-
-  List<Color> colorsFor(PortfolioAppId appId) => AppleAppIcon.colorsFor(appId);
 }

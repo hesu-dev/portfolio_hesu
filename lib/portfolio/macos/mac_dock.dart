@@ -142,7 +142,6 @@ class _MacDockItemState extends State<_MacDockItem> {
     final label = AppleAppIcon.labelFor(appId);
     final lifted = _hovering || _showFocus;
     final colorScheme = Theme.of(context).colorScheme;
-    final transparentArtwork = AppleAppArtwork.usesTransparentFrame(appId);
 
     return Semantics(
       key: Key('dock-app-${appId.name}'),
@@ -198,28 +197,36 @@ class _MacDockItemState extends State<_MacDockItem> {
                           duration: const Duration(milliseconds: 150),
                           curve: Curves.easeOutCubic,
                           scale: lifted ? 1.13 : 1,
-                          child: Container(
-                            key: Key('dock-app-artwork-frame-${appId.name}'),
-                            width: 49,
-                            height: 49,
-                            decoration: BoxDecoration(
-                              borderRadius: BorderRadius.circular(14),
-                              boxShadow: <BoxShadow>[
-                                if (_showFocus)
-                                  const BoxShadow(
-                                    color: Color(0xFF0A84FF),
-                                    blurRadius: 0,
-                                    spreadRadius: 2.5,
+                          child: SizedBox.square(
+                            dimension: 49,
+                            child: Stack(
+                              clipBehavior: Clip.none,
+                              children: <Widget>[
+                                AppleAppArtworkFrame(
+                                  appId: appId,
+                                  size: 49,
+                                  frameKey: Key(
+                                    'dock-app-artwork-frame-${appId.name}',
                                   ),
-                                if (!transparentArtwork)
-                                  BoxShadow(
-                                    color: Colors.black.withValues(alpha: 0.2),
-                                    blurRadius: 11,
-                                    offset: const Offset(0, 6),
+                                ),
+                                if (_showFocus)
+                                  Positioned.fill(
+                                    child: IgnorePointer(
+                                      child: DecoratedBox(
+                                        decoration: BoxDecoration(
+                                          borderRadius: BorderRadius.circular(
+                                            14,
+                                          ),
+                                          border: Border.all(
+                                            color: const Color(0xFF0A84FF),
+                                            width: 2.5,
+                                          ),
+                                        ),
+                                      ),
+                                    ),
                                   ),
                               ],
                             ),
-                            child: AppleAppArtwork(appId: appId, size: 49),
                           ),
                         ),
                       ),
