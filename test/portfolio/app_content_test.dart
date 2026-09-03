@@ -534,6 +534,72 @@ void main() {
       },
     );
 
+    testWidgets(
+      'selected selectors render a contrast-safe keyboard focus outline',
+      (tester) async {
+        for (final brightness in Brightness.values) {
+          for (final scenario in <(PortfolioAppId, String)>[
+            (PortfolioAppId.skills, 'skills-category-Development'),
+            (PortfolioAppId.projects, 'project-selector-0'),
+          ]) {
+            await tester.pumpWidget(const SizedBox.shrink());
+            await _pumpApp(
+              tester,
+              appId: scenario.$1,
+              launcher: _FakeExternalLauncher(),
+              size: const Size(900, 650),
+              brightness: brightness,
+            );
+
+            final selector = find.byKey(Key(scenario.$2));
+            final initialSize = tester.getSize(selector);
+            final selectedDecoration =
+                tester
+                        .widget<AnimatedContainer>(
+                          find.descendant(
+                            of: selector,
+                            matching: find.byType(AnimatedContainer),
+                          ),
+                        )
+                        .decoration
+                    as BoxDecoration;
+            final resolvedBackground = Color.alphaBlend(
+              selectedDecoration.color!,
+              AppleTheme.panel(tester.element(selector)),
+            );
+            final focusOutline = find.descendant(
+              of: selector,
+              matching: find.byKey(const Key('apple-selection-focus')),
+            );
+
+            expect(focusOutline, findsNothing);
+
+            await tester.sendKeyEvent(LogicalKeyboardKey.tab);
+            await tester.pump();
+
+            expect(focusOutline, findsOneWidget, reason: '$scenario');
+            final focusDecoration =
+                tester.widget<DecoratedBox>(focusOutline).decoration
+                    as BoxDecoration;
+            final focusBorder = focusDecoration.border! as Border;
+            expect(focusBorder.top.width, greaterThanOrEqualTo(2));
+            expect(
+              _contrastRatio(focusBorder.top.color, resolvedBackground),
+              greaterThanOrEqualTo(4.5),
+              reason: '$brightness ${scenario.$1.name}',
+            );
+            expect(tester.getSize(selector), initialSize);
+
+            await tester.sendKeyEvent(LogicalKeyboardKey.tab);
+            await tester.pump();
+
+            expect(focusOutline, findsNothing, reason: '$scenario');
+            expect(tester.getSize(selector), initialSize);
+          }
+        }
+      },
+    );
+
     testWidgets('selected project labels meet AA in light and dark themes', (
       tester,
     ) async {
