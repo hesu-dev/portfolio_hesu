@@ -4,10 +4,11 @@ import 'package:portfolio_hesu/portfolio/apps/projects_app.dart';
 import 'package:portfolio_hesu/portfolio/data/portfolio_data.dart';
 import 'package:portfolio_hesu/portfolio/services/external_launcher.dart';
 import 'package:portfolio_hesu/portfolio/theme/apple_theme.dart';
+import 'package:portfolio_hesu/portfolio/widgets/apple_finder_scaffold.dart';
 
 void main() {
   group('Finder형 Projects 화면', () {
-    testWidgets('Finder 순서의 사이드바와 탐색 툴바 및 파일 그리드를 구성한다', (tester) async {
+    testWidgets('기본 뎁스는 전체 파일 목록만 표시하고 폴더 탭으로 상세를 탐색한다', (tester) async {
       await _pumpProjects(tester, size: const Size(900, 650));
 
       expect(find.byKey(const Key('projects-finder-toolbar')), findsOneWidget);
@@ -16,7 +17,7 @@ void main() {
       expect(
         find.descendant(
           of: find.byKey(const Key('projects-finder-current-location')),
-          matching: find.text('iCloud Drive'),
+          matching: find.text('Projects'),
         ),
         findsOneWidget,
       );
@@ -41,6 +42,16 @@ void main() {
 
       final grid = find.byKey(const Key('projects-finder-grid'));
       expect(grid, findsOneWidget);
+      final collectionScroll = find.byKey(
+        const Key('projects-collection-scroll'),
+      );
+      expect(collectionScroll, findsOneWidget);
+      expect(find.byKey(const Key('projects-detail-scroll')), findsNothing);
+      expect(find.byKey(const Key('project-detail-title')), findsNothing);
+      expect(
+        tester.getSize(collectionScroll).height,
+        closeTo(tester.getSize(sidebar).height, 1),
+      );
       for (var index = 0; index < portfolioData.projects.length; index++) {
         expect(
           find.descendant(
@@ -60,18 +71,82 @@ void main() {
 
       await tester.tap(find.byKey(const Key('project-selector-1')));
       await tester.pumpAndSettle();
-      await tester.tap(find.byKey(const Key('projects-finder-back')));
-      await tester.pumpAndSettle();
+      expect(find.byKey(const Key('projects-finder-grid')), findsNothing);
+      expect(find.byKey(const Key('projects-collection-scroll')), findsNothing);
+      expect(find.byKey(const Key('projects-detail-scroll')), findsOneWidget);
       expect(
         tester.widget<Text>(find.byKey(const Key('project-detail-title'))).data,
-        portfolioData.projects.first.title,
+        portfolioData.projects[1].title,
       );
+      expect(
+        find.descendant(
+          of: find.byKey(const Key('projects-finder-current-location')),
+          matching: find.text(portfolioData.projects[1].title),
+        ),
+        findsOneWidget,
+      );
+
+      await tester.tap(find.byKey(const Key('projects-finder-back')));
+      await tester.pumpAndSettle();
+      expect(find.byKey(const Key('projects-finder-grid')), findsOneWidget);
+      expect(
+        find.byKey(const Key('projects-collection-scroll')),
+        findsOneWidget,
+      );
+      expect(find.byKey(const Key('projects-detail-scroll')), findsNothing);
+      expect(find.byKey(const Key('project-detail-title')), findsNothing);
+      expect(
+        tester
+            .widget<AppleFinderFolderTile>(
+              find.byKey(const Key('project-selector-1')),
+            )
+            .selected,
+        isTrue,
+      );
+      expect(
+        find.descendant(
+          of: find.byKey(const Key('projects-finder-current-location')),
+          matching: find.text('Projects'),
+        ),
+        findsOneWidget,
+      );
+
       await tester.tap(find.byKey(const Key('projects-finder-forward')));
       await tester.pumpAndSettle();
       expect(
         tester.widget<Text>(find.byKey(const Key('project-detail-title'))).data,
         portfolioData.projects[1].title,
       );
+    });
+
+    testWidgets('iPad는 좁은 사이드바 옆에 데스크톱형 전체 파일 목록을 표시한다', (tester) async {
+      await _pumpProjects(tester, size: const Size(834, 700), tablet: true);
+
+      final sidebar = find.byKey(const Key('projects-finder-sidebar'));
+      expect(sidebar, findsOneWidget);
+      expect(tester.getSize(sidebar).width, 176);
+      expect(find.byKey(const Key('projects-finder-locations')), findsNothing);
+      expect(find.byKey(const Key('projects-detail-scroll')), findsNothing);
+
+      final grid = find.byKey(const Key('projects-finder-grid'));
+      expect(grid, findsOneWidget);
+      for (var index = 0; index < portfolioData.projects.length; index++) {
+        expect(
+          find.descendant(
+            of: grid,
+            matching: find.byKey(Key('project-selector-$index')),
+          ),
+          findsOneWidget,
+        );
+      }
+      expect(
+        find.descendant(
+          of: grid,
+          matching: find.byKey(const Key('finder-file-portfolio-readme')),
+        ),
+        findsOneWidget,
+      );
+      expect(tester.takeException(), isNull);
     });
 
     testWidgets('Projects 내부에는 가짜 traffic light 원을 다시 그리지 않는다', (tester) async {
@@ -95,7 +170,7 @@ void main() {
       expect(inlineTrafficLights, findsNothing);
     });
 
-    testWidgets('320x480 200% 화면에서 Finder 구조와 프로젝트 상세를 스크롤한다', (tester) async {
+    testWidgets('iPhone은 2열 고정 폭 파일 목록과 별도 상세 뎁스를 스크롤한다', (tester) async {
       await _pumpProjects(
         tester,
         size: const Size(320, 480),
@@ -109,12 +184,47 @@ void main() {
         findsOneWidget,
       );
       expect(find.byKey(const Key('projects-finder-sidebar')), findsNothing);
-      expect(find.byKey(const Key('projects-detail-scroll')), findsOneWidget);
-      expect(find.byKey(const Key('project-selector-0')), findsOneWidget);
+      expect(
+        find.byKey(const Key('projects-collection-scroll')),
+        findsOneWidget,
+      );
+      expect(find.byKey(const Key('projects-detail-scroll')), findsNothing);
+      expect(find.byKey(const Key('project-detail-title')), findsNothing);
+
+      final folders = <Finder>[
+        for (var index = 0; index < portfolioData.projects.length; index++)
+          find.byKey(Key('project-selector-$index')),
+      ];
+      for (final folder in folders) {
+        expect(tester.getSize(folder).width, 132);
+        expect(tester.getRect(folder).left, greaterThanOrEqualTo(0));
+        expect(tester.getRect(folder).right, lessThanOrEqualTo(320));
+        final label = find.descendant(
+          of: folder,
+          matching: find.byKey(const Key('apple-finder-folder-label')),
+        );
+        expect(tester.widget<Text>(label).maxLines, 2);
+        expect(tester.widget<Text>(label).overflow, TextOverflow.ellipsis);
+      }
+      expect(
+        tester.getTopLeft(folders[0]).dy,
+        closeTo(tester.getTopLeft(folders[1]).dy, 0.01),
+      );
+      expect(
+        tester.getTopLeft(folders[2]).dy,
+        greaterThan(tester.getTopLeft(folders[0]).dy),
+      );
+      expect(
+        find.byKey(const Key('finder-file-portfolio-readme')),
+        findsOneWidget,
+      );
       expect(tester.takeException(), isNull);
 
       await tester.tap(find.byKey(const Key('project-selector-1')));
       await tester.pumpAndSettle();
+      expect(find.byKey(const Key('projects-finder-grid')), findsNothing);
+      expect(find.byKey(const Key('projects-collection-scroll')), findsNothing);
+      expect(find.byKey(const Key('projects-detail-scroll')), findsOneWidget);
       expect(
         tester.widget<Text>(find.byKey(const Key('project-detail-title'))).data,
         portfolioData.projects[1].title,
@@ -133,6 +243,13 @@ void main() {
       tester,
     ) async {
       await _pumpProjects(tester, size: const Size(766, 600));
+
+      expect(
+        find.byKey(const Key('projects-collection-scroll')),
+        findsOneWidget,
+      );
+      expect(find.byKey(const Key('projects-detail-scroll')), findsNothing);
+      expect(find.byKey(const Key('project-detail-title')), findsNothing);
 
       final folders = <Finder>[
         for (var index = 0; index < portfolioData.projects.length; index++)
@@ -186,6 +303,7 @@ Future<void> _pumpProjects(
   WidgetTester tester, {
   required Size size,
   bool compact = false,
+  bool tablet = false,
   TextScaler textScaler = TextScaler.noScaling,
 }) async {
   tester.view.devicePixelRatio = 1;
@@ -203,6 +321,7 @@ Future<void> _pumpProjects(
             data: portfolioData,
             launcher: _FakeExternalLauncher(),
             compact: compact,
+            tablet: tablet,
           ),
         ),
       ),
