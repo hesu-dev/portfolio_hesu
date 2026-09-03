@@ -195,7 +195,7 @@ class _IPadProfileWidget extends StatelessWidget {
                     maxLines: 1,
                     overflow: TextOverflow.ellipsis,
                     style: AppleTheme.caption(context).copyWith(
-                      color: AppleTheme.blue,
+                      color: dark ? const Color(0xFF73B5FF) : AppleTheme.blue,
                       fontWeight: FontWeight.w700,
                     ),
                   ),
