@@ -139,19 +139,26 @@ class TrashApp extends StatelessWidget {
             leading: const Icon(Icons.delete_rounded),
           ),
           Expanded(
-            child: CustomScrollView(
-              key: const Key('trash-scroll'),
-              slivers: <Widget>[
-                SliverFillRemaining(
-                  hasScrollBody: false,
-                  child: AppleEmptyState(
-                    icon: Icons.delete_outline_rounded,
-                    title: 'Trash is Empty',
-                    message:
-                        'There are no deleted portfolio items for ${data.identity.englishName}.',
+            child: LayoutBuilder(
+              builder: (context, constraints) {
+                return SingleChildScrollView(
+                  key: const Key('trash-scroll'),
+                  physics: const BouncingScrollPhysics(
+                    parent: AlwaysScrollableScrollPhysics(),
                   ),
-                ),
-              ],
+                  child: ConstrainedBox(
+                    constraints: BoxConstraints(
+                      minHeight: constraints.maxHeight,
+                    ),
+                    child: AppleEmptyState(
+                      icon: Icons.delete_outline_rounded,
+                      title: 'Trash is Empty',
+                      message:
+                          'There are no deleted portfolio items for ${data.identity.englishName}.',
+                    ),
+                  ),
+                );
+              },
             ),
           ),
         ],
