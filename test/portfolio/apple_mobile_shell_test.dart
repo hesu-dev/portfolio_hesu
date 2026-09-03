@@ -191,7 +191,7 @@ void main() {
     ) async {
       for (final scenario in <(PortfolioAppId, String)>[
         (PortfolioAppId.skills, 'skills-category-Development'),
-        (PortfolioAppId.projects, 'project-selector-0'),
+        (PortfolioAppId.projects, 'project-selector-2'),
       ]) {
         await tester.pumpWidget(const SizedBox.shrink());
         await _pumpShell(
@@ -344,7 +344,7 @@ void main() {
     });
 
     testWidgets(
-      'opens a rounded tablet Projects list before its detail depth',
+      'opens the rounded tablet career list before its detail depth',
       (tester) async {
         await _pumpShell(tester, size: const Size(834, 1194));
 
@@ -359,11 +359,11 @@ void main() {
         );
         expect(find.byKey(const Key('projects-detail-scroll')), findsNothing);
         expect(find.byKey(const Key('project-detail-title')), findsNothing);
-        for (var index = 0; index < portfolioData.projects.length; index++) {
+        for (final index in const <int>[2, 3, 4, 5]) {
           expect(find.byKey(Key('project-selector-$index')), findsOneWidget);
         }
 
-        await tester.tap(find.byKey(const Key('project-selector-1')));
+        await tester.tap(find.byKey(const Key('project-selector-3')));
         await tester.pumpAndSettle();
         expect(
           find.byKey(const Key('projects-collection-scroll')),
@@ -374,7 +374,7 @@ void main() {
           tester
               .widget<Text>(find.byKey(const Key('project-detail-title')))
               .data,
-          'ReadingLog',
+          'IRIS',
         );
         expect(tester.takeException(), isNull);
       },
@@ -460,7 +460,7 @@ void main() {
         );
 
         final trashIcon = find.byKey(const Key('home-app-trash'));
-        await tester.ensureVisible(trashIcon);
+        await _scrollHomeIconAboveDock(tester, trashIcon, reason: '$size');
         await tester.tap(trashIcon);
         await tester.pumpAndSettle();
 
@@ -473,7 +473,55 @@ void main() {
         expect(tester.takeException(), isNull, reason: '$size');
       }
     });
+
+    testWidgets('짧은 iPad에서도 모든 홈 앱을 Dock 위로 스크롤할 수 있다', (tester) async {
+      await _pumpShell(
+        tester,
+        size: const Size(600, 400),
+        textScaler: const TextScaler.linear(2),
+      );
+
+      final homeScroll = find.byKey(const Key('mobile-home-scroll'));
+      final dock = find.byKey(const Key('mobile-dock'));
+      expect(
+        tester.getRect(homeScroll).bottom,
+        lessThanOrEqualTo(tester.getRect(dock).top),
+      );
+
+      for (final appId in _allApps) {
+        await _scrollHomeIconAboveDock(
+          tester,
+          find.byKey(Key('home-app-${appId.name}')),
+          reason: appId.name,
+        );
+      }
+    });
   });
+}
+
+Future<void> _scrollHomeIconAboveDock(
+  WidgetTester tester,
+  Finder icon, {
+  required String reason,
+}) async {
+  final homeScroll = find.byKey(const Key('mobile-home-scroll'));
+  final dock = find.byKey(const Key('mobile-dock'));
+
+  for (var attempt = 0; attempt < 8; attempt += 1) {
+    if (icon.evaluate().isNotEmpty &&
+        tester.getRect(icon).bottom <= tester.getRect(dock).top) {
+      break;
+    }
+    await tester.drag(homeScroll, const Offset(0, -64));
+    await tester.pumpAndSettle();
+  }
+
+  expect(icon, findsOneWidget, reason: reason);
+  expect(
+    tester.getRect(icon).bottom,
+    lessThanOrEqualTo(tester.getRect(dock).top),
+    reason: reason,
+  );
 }
 
 const List<PortfolioAppId> _allApps = portfolioLauncherAppIds;

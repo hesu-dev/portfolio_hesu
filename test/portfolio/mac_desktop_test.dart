@@ -467,7 +467,7 @@ void main() {
         );
         await tester.pumpAndSettle();
         await _openDesktopApp(tester, PortfolioAppId.projects);
-        await tester.tap(find.byKey(const Key('project-selector-1')));
+        await tester.tap(find.byKey(const Key('project-selector-3')));
         await tester.pumpAndSettle();
 
         expect(find.text('hs0647@portfolio ~ % skills'), findsOneWidget);
@@ -475,7 +475,7 @@ void main() {
           tester
               .widget<Text>(find.byKey(const Key('project-detail-title')))
               .data,
-          'ReadingLog',
+          'IRIS',
         );
 
         final terminal = find.byKey(const Key('mac-window-terminal'));
@@ -500,7 +500,7 @@ void main() {
           tester
               .widget<Text>(find.byKey(const Key('project-detail-title')))
               .data,
-          'ReadingLog',
+          'IRIS',
         );
       },
     );
