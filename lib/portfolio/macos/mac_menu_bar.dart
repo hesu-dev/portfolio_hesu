@@ -542,8 +542,8 @@ class MacSystemMenuPanel extends StatelessWidget {
           const Divider(height: 11),
           _SystemMenuItem(
             actionKey: const Key('system-menu-this-mac'),
-            label: 'Open This Mac',
-            icon: Icons.laptop_mac_rounded,
+            label: '프로젝트 열기',
+            icon: Icons.folder_copy_rounded,
             onPressed: onOpenThisMac,
           ),
           const SizedBox(height: 5),
