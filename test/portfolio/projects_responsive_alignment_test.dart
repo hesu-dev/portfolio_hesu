@@ -25,10 +25,10 @@ void main() {
       expect(tester.getTopLeft(folders[1]).dy, closeTo(firstRowY, 0.01));
       expect(tester.getTopLeft(folders[2]).dy, closeTo(firstRowY, 0.01));
       expect(tester.getTopLeft(folders[3]).dy, greaterThan(firstRowY));
-      expect(tester.getSize(folders.first).width, lessThanOrEqualTo(116));
+      expect(tester.getSize(folders.first).width, closeTo(112, 0.01));
       expect(
         tester.getTopLeft(folders[1]).dx - tester.getRect(folders[0]).right,
-        lessThanOrEqualTo(12),
+        closeTo(8, 0.01),
       );
     });
 
@@ -51,14 +51,16 @@ void main() {
       ];
       final firstRowY = tester.getTopLeft(folders.first).dy;
 
+      expect(tester.getSize(folders.first).width, closeTo(112, 0.01));
       for (final folder in folders.skip(1)) {
         expect(tester.getTopLeft(folder).dy, closeTo(firstRowY, 0.01));
+        expect(tester.getSize(folder).width, closeTo(112, 0.01));
       }
       for (var index = 1; index < folders.length; index++) {
         expect(
           tester.getTopLeft(folders[index]).dx -
               tester.getRect(folders[index - 1]).right,
-          lessThanOrEqualTo(12),
+          closeTo(8, 0.01),
         );
       }
     });
@@ -82,10 +84,18 @@ void main() {
         final dockRect = tester.getRect(dock);
         const dockPadding = 5.0;
         final slotWidth = (dockRect.width - dockPadding * 2) / 3;
-        final destinations = <({String id, IconData icon})>[
-          (id: 'recent', icon: Icons.access_time_filled_rounded),
-          (id: 'career', icon: Icons.business_center_rounded),
-          (id: 'personal-projects', icon: Icons.folder_special_rounded),
+        final destinations = <({String id, String label, IconData icon})>[
+          (
+            id: 'recent',
+            label: '최근 항목',
+            icon: Icons.access_time_filled_rounded,
+          ),
+          (id: 'career', label: '경력', icon: Icons.business_center_rounded),
+          (
+            id: 'personal-projects',
+            label: '개인',
+            icon: Icons.folder_special_rounded,
+          ),
         ];
 
         for (final indexed in destinations.indexed) {
@@ -96,13 +106,22 @@ void main() {
             of: control,
             matching: find.byIcon(indexed.$2.icon),
           );
+          final label = find.descendant(
+            of: control,
+            matching: find.text(indexed.$2.label),
+          );
           final expectedCenterX =
               dockRect.left + dockPadding + slotWidth * (indexed.$1 + 0.5);
 
           expect(
             tester.getCenter(icon).dx,
-            closeTo(expectedCenterX, 0.5),
+            closeTo(expectedCenterX, 1),
             reason: '${scenario.size} ${indexed.$2.id}',
+          );
+          expect(
+            tester.getCenter(label).dx,
+            closeTo(expectedCenterX, 1),
+            reason: '${scenario.size} ${indexed.$2.id} label',
           );
         }
       }

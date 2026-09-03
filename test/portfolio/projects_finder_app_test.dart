@@ -171,7 +171,9 @@ void main() {
       expect(inlineTrafficLights, findsNothing);
     });
 
-    testWidgets('iPhone은 2열 고정 폭 파일 목록과 별도 상세 뎁스를 스크롤한다', (tester) async {
+    testWidgets('좁은 iPhone은 112px 2열 파일 목록과 별도 상세 뎁스를 스크롤한다', (
+      tester,
+    ) async {
       await _pumpProjects(
         tester,
         size: const Size(320, 480),
@@ -198,7 +200,7 @@ void main() {
           find.byKey(Key('projects-career-folder-$index')),
       ];
       for (final folder in folders) {
-        expect(tester.getSize(folder).width, 132);
+        expect(tester.getSize(folder).width, 112);
         expect(tester.getRect(folder).left, greaterThanOrEqualTo(0));
         expect(tester.getRect(folder).right, lessThanOrEqualTo(320));
         final label = find.descendant(
@@ -230,33 +232,51 @@ void main() {
       expect(tester.takeException(), isNull);
     });
 
-    testWidgets('넓은 iPhone에서도 프로젝트 폴더를 132px 2열로 유지한다', (tester) async {
-      for (final width in const <double>[448, 590]) {
+    testWidgets('넓은 iPhone은 112px 폴더를 가용 폭에 맞춰 조밀하게 배치한다', (
+      tester,
+    ) async {
+      for (final scenario in const <({double width, int columns})>[
+        (width: 448, columns: 3),
+        (width: 590, columns: 4),
+      ]) {
         await tester.pumpWidget(const SizedBox.shrink());
-        await _pumpProjects(tester, size: Size(width, 700), compact: true);
+        await _pumpProjects(
+          tester,
+          size: Size(scenario.width, 700),
+          compact: true,
+        );
 
         final folders = <Finder>[
           for (var index = 0; index < 4; index++)
             find.byKey(Key('projects-career-folder-$index')),
         ];
         for (final folder in folders) {
-          expect(tester.getSize(folder).width, 132, reason: '$width');
+          expect(
+            tester.getSize(folder).width,
+            112,
+            reason: '${scenario.width}',
+          );
         }
-        expect(
-          tester.getTopLeft(folders[0]).dy,
-          closeTo(tester.getTopLeft(folders[1]).dy, 0.01),
-          reason: '$width',
-        );
-        expect(
-          tester.getTopLeft(folders[2]).dy,
-          greaterThan(tester.getTopLeft(folders[0]).dy),
-          reason: '$width',
-        );
-        expect(tester.takeException(), isNull, reason: '$width');
+        final firstRowY = tester.getTopLeft(folders.first).dy;
+        for (final folder in folders.take(scenario.columns)) {
+          expect(
+            tester.getTopLeft(folder).dy,
+            closeTo(firstRowY, 0.01),
+            reason: '${scenario.width}',
+          );
+        }
+        if (scenario.columns < folders.length) {
+          expect(
+            tester.getTopLeft(folders[scenario.columns]).dy,
+            greaterThan(firstRowY),
+            reason: '${scenario.width}',
+          );
+        }
+        expect(tester.takeException(), isNull, reason: '${scenario.width}');
       }
     });
 
-    testWidgets('desktop 창의 좁은 regular 본문에서도 폴더 폭을 유지하고 여러 행으로 배치한다', (
+    testWidgets('desktop 창의 좁은 regular 본문도 같은 고정 폭과 간격으로 배치한다', (
       tester,
     ) async {
       await _pumpProjects(tester, size: const Size(766, 600));
@@ -276,8 +296,8 @@ void main() {
       for (final folder in folders) {
         expect(
           tester.getSize(folder).width,
-          greaterThanOrEqualTo(132),
-          reason: 'regular Finder folders must remain readable',
+          112,
+          reason: 'all Finder layouts share one dense folder width',
         );
       }
 
