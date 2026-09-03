@@ -379,7 +379,7 @@ void main() {
     });
   });
 
-  test('README documents adaptive UI and both web build targets', () {
+  test('README documents adaptive UI and the Vercel web build target', () {
     final readme = _projectFile('README.md').readAsStringSync();
 
     expect(readme, contains('macOS'));
@@ -391,19 +391,14 @@ void main() {
     expect(readme, contains('flutter analyze'));
     expect(
       readme,
-      contains(
-        'flutter build web --release --base-href /portfolio_hesu/ '
-        '--pwa-strategy=none',
-      ),
-    );
-    expect(
-      readme,
       contains('flutter build web --release --base-href / --pwa-strategy=none'),
     );
     expect(readme, contains('build/web'));
     expect(readme, contains('GitHub Pages'));
     expect(readme, contains('Vercel'));
-    expect(readme, contains('현재 배포는 GitHub Pages를 유지'));
+    expect(readme, contains('기존 GitHub Pages 배포는 중단'));
+    expect(readme, isNot(contains('hesu-dev.github.io/portfolio_hesu')));
+    expect(readme, isNot(contains('--base-href /portfolio_hesu/')));
   });
 
   test('README gives reproducible Vercel Flutter build settings', () {
@@ -436,29 +431,14 @@ void main() {
     expect(readme, contains('Apple과 제휴하거나 보증받지 않았습니다'));
     expect(readme, contains('Slack과 제휴하거나 보증받지 않았습니다'));
     expect(readme, contains('원본 자산을 포함하지 않습니다'));
-    expect(readme, contains('저장소 설정과 토큰 권한'));
-    expect(readme, contains('contents: write'));
-    expect(readme, contains('Vercel로 이전할 때는'));
-    expect(readme, contains('비활성화하거나 삭제'));
+    expect(readme, contains('GitHub Pages 자동 배포 워크플로는 제거했습니다'));
+    expect(readme, isNot(contains('contents: write')));
   });
 
-  test('uses one reproducible and serialized GitHub Pages workflow', () {
-    final workflow = _projectFile(
-      '.github/workflows/flutter-web.yml',
-    ).readAsStringSync();
-
-    expect(workflow, contains('push:'));
-    expect(workflow, contains('- main'));
-    expect(workflow, contains('workflow_dispatch:'));
-    expect(workflow, isNot(contains('contents: write')));
-    expect(workflow, contains('concurrency:'));
-    expect(workflow, contains('group: portfolio-hesu-pages'));
-    expect(workflow, isNot(contains(r'group: pages-${{ github.ref }}')));
-    expect(workflow, contains('cancel-in-progress: true'));
-    expect(workflow, contains('flutter-version: 3.38.9'));
+  test('removes GitHub Pages workflows before the Vercel migration', () {
     expect(
-      workflow,
-      contains('--base-href /portfolio_hesu/ --pwa-strategy=none'),
+      _projectFile('.github/workflows/flutter-web.yml').existsSync(),
+      isFalse,
     );
     expect(_projectFile('.github/workflows/deploy.yml').existsSync(), isFalse);
   });
@@ -549,7 +529,7 @@ void main() {
       expect(_projectFile('web/index.html').existsSync(), isTrue);
       expect(
         _projectFile('.github/workflows/flutter-web.yml').existsSync(),
-        isTrue,
+        isFalse,
       );
     });
 
