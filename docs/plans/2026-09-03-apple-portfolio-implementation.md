@@ -8,6 +8,8 @@
 
 **Tech Stack:** Flutter 3 / Dart 3.8, Material and Cupertino widgets, `url_launcher`, Flutter widget/unit tests, GitHub Pages release build.
 
+> **2026-09-04 변경:** 아래의 GitHub Pages 유지·배포 절차는 후속 요구사항으로 폐기됐다. 최종 배포 기준은 Vercel 루트(`/`) 빌드이며, 기존 Pages 설정과 `gh-pages` 브랜치는 제거한다.
+
 ---
 
 ### Task 1: Shared portfolio data and app identifiers
@@ -374,4 +376,4 @@ Dispatch a reviewer with the design document and this plan. Fix every critical o
 
 **Step 7: Integrate safely**
 
-Merge or cherry-pick the implementation branch into `main` without touching unrelated uncommitted artifacts. Leave GitHub Pages active; Vercel migration is documented but not performed.
+Fast-forward the implementation branch into `main`, verify the merged tree, disable and remove GitHub Pages, then create `dev` from the finalized `main`. Vercel deployment itself remains a later operation.

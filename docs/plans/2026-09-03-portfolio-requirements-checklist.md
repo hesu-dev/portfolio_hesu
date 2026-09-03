@@ -34,7 +34,7 @@
 | 앱은 실행/최소화 중에만 Dock에 나타나고 종료 시 사라짐 | 충족 | 모든 실행 가능 앱의 open/minimize/restore/close 수명주기 테스트가 통과한다. |
 | 창 신호등은 공용 컴포넌트 한 개로 통일 | 충족 | 모든 macOS 창은 `MacTrafficControls`를 사용하고 앱 내부의 중복 원을 제거했다. |
 | Finder 창처럼 신호등·뒤로/앞으로·타이틀·보기 도구 정렬 | 충족 | 데스크톱 `Projects`는 공용 Finder chrome에서 신호등·뒤로/앞으로·중앙 타이틀·보기 도구를 한 줄에 배치한다. iPad/iPhone은 기기 규칙에 맞춘 별도 compact chrome을 공유한다. |
-| 신호등 빨강 X·노랑 −·초록 무표식, 눌림 효과 제거 | 충족 | 공용 `MacTrafficControls`가 세 창 버튼을 한 번만 그리고 빨강/노랑에만 지정 글리프를 표시한다. hover·pressed 색상 변화는 없으며, 시각 간격은 유지한 채 포인터 영역을 desktop 28×32px·iPad 28×44px로 확보했다. |
+| 신호등 빨강 X·노랑 −·초록 무표식, 눌림 효과 제거 | 충족 | 데스크톱 공용 `MacTrafficControls`가 세 창 버튼을 한 번만 그리고 빨강/노랑에만 지정 글리프를 표시한다. hover·pressed 색상 변화는 없고 포인터 영역은 28×32px로 확보했다. iPad/iPhone은 신호등 없이 공용 뒤로가기를 사용한다. |
 
 ## 앱 아이콘
 
