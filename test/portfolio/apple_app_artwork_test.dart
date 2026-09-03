@@ -318,7 +318,7 @@ void main() {
       semantics.dispose();
     });
 
-    testWidgets('reuses primary artwork across desktop, Dock, and title bar', (
+    testWidgets('reuses primary artwork on desktop and Dock, not title bar', (
       tester,
     ) async {
       final themeController = PortfolioThemeController();
@@ -348,7 +348,7 @@ void main() {
       expect(find.byKey(const Key('mac-window-about')), findsOneWidget);
       expect(
         find.byKey(const Key('apple-app-artwork-about')),
-        findsNWidgets(3),
+        findsNWidgets(2),
       );
     });
 
