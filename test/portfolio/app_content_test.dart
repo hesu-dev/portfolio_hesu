@@ -417,6 +417,14 @@ void main() {
         expect(developmentData.hasAction(SemanticsAction.tap), isTrue);
 
         await tester.sendKeyEvent(LogicalKeyboardKey.tab);
+        await tester.pump();
+        final focusedDevelopmentData = tester
+            .getSemantics(development)
+            .getSemanticsData();
+        expect(
+          focusedDevelopmentData.flagsCollection.isFocused,
+          ui.Tristate.isTrue,
+        );
         await tester.sendKeyEvent(LogicalKeyboardKey.tab);
         await tester.sendKeyEvent(LogicalKeyboardKey.enter);
         await tester.pumpAndSettle();
@@ -483,7 +491,21 @@ void main() {
         expect(firstData.flagsCollection.isSelected, ui.Tristate.isTrue);
         expect(firstData.hasAction(SemanticsAction.tap), isTrue);
 
+        final secondSelector = find.byKey(const Key('project-selector-1'));
+        final initialSecondData = tester
+            .getSemantics(secondSelector)
+            .getSemanticsData();
+        expect(
+          initialSecondData.flagsCollection.isSelected,
+          ui.Tristate.isFalse,
+        );
+
         await tester.sendKeyEvent(LogicalKeyboardKey.tab);
+        await tester.pump();
+        final focusedFirstData = tester
+            .getSemantics(firstSelector)
+            .getSemanticsData();
+        expect(focusedFirstData.flagsCollection.isFocused, ui.Tristate.isTrue);
         await tester.sendKeyEvent(LogicalKeyboardKey.tab);
         await tester.sendKeyEvent(LogicalKeyboardKey.space);
         await tester.pumpAndSettle();
@@ -493,13 +515,21 @@ void main() {
           portfolioData.projects[1].title,
         );
         final secondData = tester
-            .getSemantics(find.byKey(const Key('project-selector-1')))
+            .getSemantics(secondSelector)
             .getSemanticsData();
         expect(
           secondData.label,
           'Select project ${portfolioData.projects[1].title}',
         );
         expect(secondData.flagsCollection.isSelected, ui.Tristate.isTrue);
+
+        await tester.sendKeyEvent(LogicalKeyboardKey.tab);
+        await tester.sendKeyEvent(LogicalKeyboardKey.enter);
+        await tester.pumpAndSettle();
+        expect(
+          _textAtKey(tester, const Key('project-detail-title')),
+          portfolioData.projects[2].title,
+        );
         semantics.dispose();
       },
     );
