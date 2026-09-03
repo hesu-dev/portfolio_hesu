@@ -136,8 +136,8 @@ void main() {
                   )
                   .dx,
           ];
-          expect(centers[1] - centers[0], closeTo(20, 0.01));
-          expect(centers[2] - centers[1], closeTo(20, 0.01));
+          expect(centers[1] - centers[0], closeTo(24, 0.01));
+          expect(centers[2] - centers[1], closeTo(24, 0.01));
           expect(tester.takeException(), isNull, reason: '$size');
         }
       },
@@ -159,7 +159,7 @@ void main() {
       );
 
       expect(closeButton, findsOneWidget);
-      expect(tester.getSize(closeButton), const Size(20, 32));
+      expect(tester.getSize(closeButton), const Size(24, 32));
       await tester.tap(closeButton);
       await tester.pumpAndSettle();
 
@@ -179,7 +179,7 @@ void main() {
 
       final closeButton = find.byKey(const Key('window-close-about'));
       expect(find.bySemanticsLabel('Close About window'), findsOneWidget);
-      expect(tester.getSize(closeButton), const Size(20, 32));
+      expect(tester.getSize(closeButton), const Size(24, 32));
       final semanticsData = tester.getSemantics(closeButton).getSemanticsData();
       expect(semanticsData.flagsCollection.isButton, isTrue);
       expect(semanticsData.hasAction(ui.SemanticsAction.tap), isTrue);
@@ -204,7 +204,7 @@ void main() {
         for (final control in const <String>['minimize', 'maximize']) {
           final target = find.byKey(Key('window-$control-about'));
           expect(target, findsOneWidget);
-          expect(tester.getSize(target), const Size(20, 32));
+          expect(tester.getSize(target), const Size(24, 32));
 
           final semanticsData = tester.getSemantics(target).getSemanticsData();
           expect(semanticsData.flagsCollection.isButton, isFalse);

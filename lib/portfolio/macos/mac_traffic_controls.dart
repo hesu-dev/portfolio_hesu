@@ -23,7 +23,7 @@ class MacTrafficControls extends StatelessWidget {
   static const Color minimizeColor = Color(0xFFFEBC2E);
   static const Color maximizeColor = Color(0xFF28C840);
   static const double visualDiameter = 14;
-  static const double visualCenterSpacing = 20;
+  static const double visualCenterSpacing = 24;
   static const double defaultTargetSize = 32;
 
   final PortfolioAppId appId;

@@ -325,8 +325,8 @@ void main() {
         final circle = tester.widget<Container>(visual);
         final decoration = circle.decoration! as BoxDecoration;
 
-        expect(targetSize, const Size(20, 32));
-        expect(semanticsSize, const Size(20, 32));
+        expect(targetSize, const Size(24, 32));
+        expect(semanticsSize, const Size(24, 32));
         expect(tester.getSize(visual).width, inInclusiveRange(13, 14));
         expect(tester.getSize(visual).height, inInclusiveRange(13, 14));
         expect(decoration.color, colors[control]);
@@ -347,8 +347,8 @@ void main() {
         );
       }
 
-      expect(visualCenters[1].dx - visualCenters[0].dx, closeTo(20, 0.01));
-      expect(visualCenters[2].dx - visualCenters[1].dx, closeTo(20, 0.01));
+      expect(visualCenters[1].dx - visualCenters[0].dx, closeTo(24, 0.01));
+      expect(visualCenters[2].dx - visualCenters[1].dx, closeTo(24, 0.01));
 
       final minimizeTarget = tester.getRect(
         find.byKey(const Key('window-minimize-about')),

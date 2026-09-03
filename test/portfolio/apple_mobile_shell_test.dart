@@ -235,7 +235,7 @@ void main() {
         final closeSize = tester.getSize(
           find.byKey(const Key('window-close-terminal')),
         );
-        expect(closeSize, const Size(20, 32));
+        expect(closeSize, const Size(24, 32));
         final submitSize = tester.getSize(
           find.byKey(const Key('terminal-submit')),
         );
