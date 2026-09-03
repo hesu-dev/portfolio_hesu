@@ -227,17 +227,21 @@ class _CategoryButton extends StatelessWidget {
         : AppleTheme.primaryLabel(context);
 
     return Semantics(
+      key: Key('skills-category-${group.title}'),
+      container: true,
+      label: 'Select skill category ${group.title}',
       selected: selected,
       button: true,
+      onTap: onTap,
+      excludeSemantics: true,
       child: Material(
         color: Colors.transparent,
         child: InkWell(
-          key: Key('skills-category-${group.title}'),
           onTap: onTap,
           borderRadius: BorderRadius.circular(compact ? 999 : 11),
           child: AnimatedContainer(
             duration: const Duration(milliseconds: 160),
-            constraints: compact ? const BoxConstraints(minHeight: 44) : null,
+            constraints: const BoxConstraints(minHeight: 44),
             padding: EdgeInsets.symmetric(
               horizontal: compact ? 13 : 10,
               vertical: compact ? 8 : 11,

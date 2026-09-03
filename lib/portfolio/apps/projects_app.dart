@@ -332,62 +332,74 @@ class _ProjectSelector extends StatelessWidget {
   Widget build(BuildContext context) {
     return Padding(
       padding: EdgeInsets.only(bottom: compact ? 0 : 5),
-      child: Material(
-        color: Colors.transparent,
-        child: InkWell(
-          key: Key('project-selector-$index'),
-          onTap: onTap,
-          borderRadius: BorderRadius.circular(compact ? 999 : 12),
-          child: AnimatedContainer(
-            duration: const Duration(milliseconds: 160),
-            constraints: BoxConstraints(
-              minHeight: compact ? 44 : 0,
-              maxWidth: compact ? 220 : double.infinity,
-            ),
-            padding: EdgeInsets.symmetric(
-              horizontal: compact ? 14 : 11,
-              vertical: compact ? 9 : 11,
-            ),
-            decoration: BoxDecoration(
-              color: selected
-                  ? AppleTheme.blue.withValues(
-                      alpha: AppleTheme.isDark(context) ? 0.28 : 0.13,
-                    )
-                  : Colors.transparent,
-              borderRadius: BorderRadius.circular(compact ? 999 : 12),
-              border: compact
-                  ? Border.all(
-                      color: selected
-                          ? AppleTheme.blue.withValues(alpha: 0.3)
-                          : AppleTheme.separator(context),
-                    )
-                  : null,
-            ),
-            child: Row(
-              mainAxisSize: compact ? MainAxisSize.min : MainAxisSize.max,
-              children: <Widget>[
-                Icon(
-                  selected ? Icons.article_rounded : Icons.description_outlined,
-                  size: 18,
-                  color: selected
-                      ? AppleTheme.blue
-                      : AppleTheme.secondaryLabel(context),
-                ),
-                const SizedBox(width: 8),
-                Flexible(
-                  child: Text(
-                    project.title,
-                    maxLines: 1,
-                    overflow: TextOverflow.ellipsis,
-                    style: Theme.of(context).textTheme.labelMedium?.copyWith(
-                      color: selected
-                          ? AppleTheme.blue
-                          : AppleTheme.primaryLabel(context),
-                      fontWeight: selected ? FontWeight.w700 : FontWeight.w500,
+      child: Semantics(
+        key: Key('project-selector-$index'),
+        container: true,
+        label: 'Select project ${project.title}',
+        selected: selected,
+        button: true,
+        onTap: onTap,
+        excludeSemantics: true,
+        child: Material(
+          color: Colors.transparent,
+          child: InkWell(
+            onTap: onTap,
+            borderRadius: BorderRadius.circular(compact ? 999 : 12),
+            child: AnimatedContainer(
+              duration: const Duration(milliseconds: 160),
+              constraints: BoxConstraints(
+                minHeight: 44,
+                maxWidth: compact ? 220 : double.infinity,
+              ),
+              padding: EdgeInsets.symmetric(
+                horizontal: compact ? 14 : 11,
+                vertical: compact ? 9 : 11,
+              ),
+              decoration: BoxDecoration(
+                color: selected
+                    ? AppleTheme.blue.withValues(
+                        alpha: AppleTheme.isDark(context) ? 0.28 : 0.13,
+                      )
+                    : Colors.transparent,
+                borderRadius: BorderRadius.circular(compact ? 999 : 12),
+                border: compact
+                    ? Border.all(
+                        color: selected
+                            ? AppleTheme.blue.withValues(alpha: 0.3)
+                            : AppleTheme.separator(context),
+                      )
+                    : null,
+              ),
+              child: Row(
+                mainAxisSize: compact ? MainAxisSize.min : MainAxisSize.max,
+                children: <Widget>[
+                  Icon(
+                    selected
+                        ? Icons.article_rounded
+                        : Icons.description_outlined,
+                    size: 18,
+                    color: selected
+                        ? AppleTheme.blue
+                        : AppleTheme.secondaryLabel(context),
+                  ),
+                  const SizedBox(width: 8),
+                  Flexible(
+                    child: Text(
+                      project.title,
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
+                      style: Theme.of(context).textTheme.labelMedium?.copyWith(
+                        color: selected
+                            ? AppleTheme.blue
+                            : AppleTheme.primaryLabel(context),
+                        fontWeight: selected
+                            ? FontWeight.w700
+                            : FontWeight.w500,
+                      ),
                     ),
                   ),
-                ),
-              ],
+                ],
+              ),
             ),
           ),
         ),
