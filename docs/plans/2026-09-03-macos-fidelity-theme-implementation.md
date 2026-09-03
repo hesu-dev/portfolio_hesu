@@ -2,7 +2,7 @@
 
 > **For Claude:** REQUIRED SUB-SKILL: Use superpowers:executing-plans to implement this plan task-by-task.
 
-**Goal:** Make the adaptive portfolio default to Light mode and add a settings-driven Dark mode while refining the desktop into a faithful modern Mac experience with real Sonoma wallpaper frames, a display notch, recognizable app artwork, dynamic Dock behavior, Notes-style About content, and Slack-inspired Skills content.
+**Goal:** Make the adaptive portfolio default to Light mode and add a settings-driven Dark mode while refining the desktop into a faithful modern Mac experience with an original code-native wallpaper, a display notch, recognizable app artwork, dynamic Dock behavior, Notes-style About content, and Slack-inspired Skills content.
 
 **Architecture:** `PortfolioApp` owns a two-value theme controller and passes it through the adaptive shell to a shared Settings app. Existing portfolio data remains the content source. macOS presentation uses shared vector artwork and traffic controls, while the Dock derives its pinned and dynamic sections from window-manager state. iPad and iPhone reuse the artwork, settings, About, and Skills components without gaining desktop floating windows.
 
@@ -102,41 +102,31 @@ git commit -m "feat(settings): 라이트와 다크 설정 앱 추가"
 git commit -m "feat(responsive): 모든 기기에 설정 앱 연결"
 ```
 
-### Task 3: Actual Sonoma wallpaper and display notch
+### Task 3: Original Mac-inspired wallpaper and display notch
 
 **Files:**
-- Create: `assets/wallpapers/sonoma-light.webp`
-- Create: `assets/wallpapers/sonoma-dark.webp`
-- Modify: `pubspec.yaml`
 - Modify: `lib/portfolio/macos/mac_wallpaper.dart`
 - Modify: `lib/portfolio/macos/mac_menu_bar.dart`
 - Test: `test/portfolio/mac_visual_fidelity_test.dart`
 
-**Step 1: Extract deterministic still frames**
+**Step 1: Define the two deterministic compositions**
 
-Use the first usable frame from:
-
-```text
-/System/Library/Desktop Pictures/.wallpapers/Sonoma/Sonoma Graphic Light Landscape.mov
-/System/Library/Desktop Pictures/.wallpapers/Sonoma/Sonoma Graphic Dark Landscape.mov
-```
-
-Encode 2560×1440 WebP at approximately quality 82. Do not copy the MOV or any application ICNS resource.
+Define original Light and Dark palettes, gradient stops, and bezier-like flowing layers in Flutter. Do not copy or derive pixels from Apple wallpaper, application, or ICNS resources.
 
 **Step 2: Write RED tests**
 
-Require both assets in `pubspec.yaml`, Light/Dark theme-dependent asset selection, `BoxFit.cover`, a centered `mac-display-notch`, and menu regions that do not intersect the notch at 1024×700 and 200% text.
+Require Light/Dark theme-dependent painter variants, no wallpaper binary assets, a centered `mac-display-notch`, and menu regions that do not intersect the notch at 1024×700 and 200% text.
 
 **Step 3: Implement the wallpaper and notch**
 
-Render the selected asset with `Image.asset`; retain the existing painter only in `errorBuilder`. Add a black 170–180px notch with rounded lower corners. Split menu content around a reserved center region and reduce secondary labels at constrained widths.
+Render the selected original composition with a custom painter. Add a black 170–180px notch with rounded lower corners. Split menu content around a reserved center region and reduce secondary labels at constrained widths.
 
 **Step 4: Verify and commit**
 
 ```bash
 flutter test test/portfolio/mac_visual_fidelity_test.dart
-git commit -m "test(mac): 실제 배경과 디스플레이 노치 검증"
-git commit -m "feat(mac): Sonoma 배경과 상단 노치 적용"
+git commit -m "test(mac): 배경과 디스플레이 노치 검증"
+git commit -m "feat(mac): 오리지널 배경과 상단 노치 적용"
 ```
 
 ### Task 4: Shared application artwork
@@ -244,11 +234,11 @@ git commit -m "feat(skills): 기술 목록을 Slack형 화면으로 재구성"
 
 **Step 1: Add integration assertions**
 
-Test all exact responsive boundaries, theme changes on each shell, state preservation while switching theme, no forbidden identity, wallpaper asset presence, and absence of automatic/system theme choices.
+Test all exact responsive boundaries, theme changes on each shell, state preservation while switching theme, no forbidden identity, code-native wallpaper variants, and absence of automatic/system theme choices.
 
 **Step 2: Document attribution and non-affiliation**
 
-Document that the interface is an independent portfolio inspired by familiar desktop/mobile patterns, uses compressed frames from locally installed macOS Sonoma wallpaper resources at the user's request, and is not affiliated with Apple or Slack.
+Document that the interface is an independent portfolio inspired by familiar desktop/mobile patterns, uses independently drawn wallpaper and application artwork, and is not affiliated with Apple or Slack.
 
 **Step 3: Run full verification**
 

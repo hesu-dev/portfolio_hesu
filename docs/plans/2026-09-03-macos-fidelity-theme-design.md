@@ -2,11 +2,11 @@
 
 ## Goal
 
-Refine the portfolio into a more recognizable modern Mac experience while keeping the adaptive iPadOS and iPhone shells. The desktop uses an actual locally installed macOS Sonoma wallpaper, a display notch, system-like app artwork, shared traffic controls, a dynamic Dock, a Notes-style About card, and a Slack-inspired Skills view. A new Settings app switches the entire portfolio between Light and Dark, with Light as the default and no automatic/system option.
+Refine the portfolio into a more recognizable modern Mac experience while keeping the adaptive iPadOS and iPhone shells. The desktop uses an original code-native wallpaper inspired by the flowing color fields of modern macOS, a display notch, system-like app artwork, shared traffic controls, a dynamic Dock, a Notes-style About card, and a Slack-inspired Skills view. A new Settings app switches the entire portfolio between Light and Dark, with Light as the default and no automatic/system option.
 
 ## Visual direction
 
-The desktop background uses still frames extracted from the locally installed 3840×2160 Sonoma Graphic Light and Dark landscape movies. The frames are encoded as compact WebP assets and selected from the active theme. The existing custom-painted aurora remains only as an image-error fallback. This satisfies the request for a real macOS background without adding the full 79 MB movie files.
+The desktop background is drawn entirely in Flutter from original layered gradients and smooth abstract curves. Light and Dark compositions are selected from the active theme and evoke the familiar depth and color rhythm of a modern Mac desktop without bundling or redistributing Apple-owned wallpaper files. The result must remain crisp at every viewport and add no network or binary-asset dependency.
 
 The top menu bar is divided into left, center, and right safe regions. A black, centered `mac-display-notch` occupies the center and uses rounded lower corners like a MacBook display notch. At 1024 pixels and at large text scales, secondary menu labels collapse before they can overlap the notch.
 
@@ -46,6 +46,6 @@ Skills keeps `PortfolioData.skillGroups` as the only content source but presents
 
 ## Testing and constraints
 
-Tests cover default Light mode, Light/Dark switching on all form factors, absence of a system option, state preservation, actual wallpaper asset selection, notch/menu non-overlap, borderless Dock styling, dynamic running apps, glyph-free traffic controls, Notes card responsiveness, Slack-style wide/compact layouts, app artwork mappings, keyboard activation, semantics, minimum targets, and no overflow at 1440×900, 1024×700, 834×1194, 600×400, 390×844, and 320×480 with large text.
+Tests cover default Light mode, Light/Dark switching on all form factors, absence of a system option, state preservation, theme-dependent code-native wallpaper rendering, notch/menu non-overlap, borderless Dock styling, dynamic running apps, glyph-free traffic controls, Notes card responsiveness, Slack-style wide/compact layouts, app artwork mappings, keyboard activation, semantics, minimum targets, and no overflow at 1440×900, 1024×700, 834×1194, 600×400, 390×844, and 320×480 with large text.
 
-The extracted wallpaper frames are Apple-owned visual assets. The repository should include a concise non-affiliation notice and only the compressed still frames required by the requested presentation; Apple application binaries and ICNS files are not copied.
+The repository includes a concise non-affiliation notice. Apple wallpaper files, application binaries, ICNS resources, and Slack brand assets are not copied; all wallpaper and application artwork is independently drawn in Flutter.
