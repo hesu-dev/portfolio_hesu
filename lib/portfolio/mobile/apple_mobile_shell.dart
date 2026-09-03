@@ -175,7 +175,6 @@ class _AppleMobileShellState extends State<AppleMobileShell> {
             child: AppleHomeGrid(
               data: widget.data,
               tablet: widget.tablet,
-              now: _now,
               onOpen: _openApp,
             ),
           ),

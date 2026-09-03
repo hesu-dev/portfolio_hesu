@@ -10,7 +10,6 @@ class AppleHomeGrid extends StatelessWidget {
   const AppleHomeGrid({
     required this.data,
     required this.tablet,
-    required this.now,
     required this.onOpen,
     super.key,
   });
@@ -19,7 +18,6 @@ class AppleHomeGrid extends StatelessWidget {
 
   final PortfolioData data;
   final bool tablet;
-  final DateTime now;
   final ValueChanged<PortfolioAppId> onOpen;
 
   @override
@@ -45,7 +43,6 @@ class AppleHomeGrid extends StatelessWidget {
               child: _MobileNotesProfileButton(
                 data: data,
                 tablet: tablet,
-                now: now,
                 onPressed: () => onOpen(PortfolioAppId.about),
               ),
             ),
@@ -89,13 +86,11 @@ class _MobileNotesProfileButton extends StatelessWidget {
   const _MobileNotesProfileButton({
     required this.data,
     required this.tablet,
-    required this.now,
     required this.onPressed,
   });
 
   final PortfolioData data;
   final bool tablet;
-  final DateTime now;
   final VoidCallback onPressed;
 
   @override
