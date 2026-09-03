@@ -57,6 +57,7 @@ class AppleFinderScaffold extends StatelessWidget {
     required this.onForward,
     required this.bodyBuilder,
     this.locations,
+    this.selectedLocationId,
     this.onLocationSelected,
     this.toolbarTitle,
     this.backTooltip = '뒤로',
@@ -64,7 +65,7 @@ class AppleFinderScaffold extends StatelessWidget {
     this.windowChrome,
     this.onViewPressed,
     super.key,
-  });
+  }) : assert(locations == null || selectedLocationId != null);
 
   final Key surfaceKey;
   final String keyPrefix;
@@ -78,6 +79,7 @@ class AppleFinderScaffold extends StatelessWidget {
   final VoidCallback onForward;
   final AppleFinderBodyBuilder bodyBuilder;
   final List<AppleFinderLocation>? locations;
+  final String? selectedLocationId;
   final ValueChanged<String>? onLocationSelected;
   final String? toolbarTitle;
   final String backTooltip;
@@ -123,6 +125,7 @@ class AppleFinderScaffold extends StatelessWidget {
                           ownerName: ownerName,
                           selectedLocation: currentLocation,
                           locations: locations,
+                          selectedLocationId: selectedLocationId,
                           onLocationSelected: onLocationSelected,
                           controlKeyPrefix: '$keyPrefix-finder',
                         ),
@@ -139,6 +142,7 @@ class AppleFinderScaffold extends StatelessWidget {
                       ownerName: ownerName,
                       selectedLocation: currentLocation,
                       locations: locations,
+                      selectedLocationId: selectedLocationId,
                       onLocationSelected: onLocationSelected,
                       controlKeyPrefix: '$keyPrefix-finder',
                     ),
@@ -271,14 +275,16 @@ class AppleFinderSidebar extends StatelessWidget {
     required this.ownerName,
     required this.selectedLocation,
     this.locations,
+    this.selectedLocationId,
     this.onLocationSelected,
     this.controlKeyPrefix = 'finder',
     super.key,
-  });
+  }) : assert(locations == null || selectedLocationId != null);
 
   final String ownerName;
   final String selectedLocation;
   final List<AppleFinderLocation>? locations;
+  final String? selectedLocationId;
   final ValueChanged<String>? onLocationSelected;
   final String controlKeyPrefix;
 
@@ -336,7 +342,7 @@ class AppleFinderSidebar extends StatelessWidget {
                     ),
                     label: location.label,
                     icon: location.icon,
-                    selected: location.label == selectedLocation,
+                    selected: location.id == selectedLocationId,
                     onPressed: onLocationSelected == null
                         ? null
                         : () => onLocationSelected!(location.id),
@@ -347,25 +353,80 @@ class AppleFinderSidebar extends StatelessWidget {
   }
 }
 
-class AppleFinderLocationStrip extends StatelessWidget {
+class AppleFinderLocationStrip extends StatefulWidget {
   const AppleFinderLocationStrip({
     required this.ownerName,
     required this.selectedLocation,
     this.locations,
+    this.selectedLocationId,
     this.onLocationSelected,
     this.controlKeyPrefix = 'finder',
     super.key,
-  });
+  }) : assert(locations == null || selectedLocationId != null);
 
   final String ownerName;
   final String selectedLocation;
   final List<AppleFinderLocation>? locations;
+  final String? selectedLocationId;
   final ValueChanged<String>? onLocationSelected;
   final String controlKeyPrefix;
 
   @override
+  State<AppleFinderLocationStrip> createState() =>
+      _AppleFinderLocationStripState();
+}
+
+class _AppleFinderLocationStripState extends State<AppleFinderLocationStrip> {
+  final Map<String, GlobalKey> _locationAnchors = <String, GlobalKey>{};
+
+  @override
+  void initState() {
+    super.initState();
+    _scheduleSelectedLocationReveal();
+  }
+
+  @override
+  void didUpdateWidget(covariant AppleFinderLocationStrip oldWidget) {
+    super.didUpdateWidget(oldWidget);
+    if (oldWidget.selectedLocation != widget.selectedLocation ||
+        oldWidget.selectedLocationId != widget.selectedLocationId ||
+        !identical(oldWidget.locations, widget.locations)) {
+      _scheduleSelectedLocationReveal();
+    }
+  }
+
+  GlobalKey _anchorFor(String locationId) {
+    return _locationAnchors.putIfAbsent(locationId, GlobalKey.new);
+  }
+
+  void _scheduleSelectedLocationReveal() {
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (!mounted) {
+        return;
+      }
+      final locations = widget.locations;
+      if (locations == null) {
+        return;
+      }
+      final selectedId = widget.selectedLocationId;
+      final anchorContext = selectedId == null
+          ? null
+          : _locationAnchors[selectedId]?.currentContext;
+      if (anchorContext == null) {
+        return;
+      }
+      Scrollable.ensureVisible(
+        anchorContext,
+        alignment: 0.5,
+        duration: const Duration(milliseconds: 180),
+        curve: Curves.easeOutCubic,
+      );
+    });
+  }
+
+  @override
   Widget build(BuildContext context) {
-    final configuredLocations = locations;
+    final configuredLocations = widget.locations;
     return DecoratedBox(
       decoration: BoxDecoration(
         color: AppleTheme.panel(context),
@@ -382,24 +443,25 @@ class AppleFinderLocationStrip extends StatelessWidget {
                   const _AppleFinderLocationChip(label: '최근 항목'),
                   const _AppleFinderLocationChip(label: '공유'),
                   _AppleFinderLocationChip(
-                    label: selectedLocation,
+                    label: widget.selectedLocation,
                     selected: true,
                   ),
-                  _AppleFinderLocationChip(label: ownerName),
+                  _AppleFinderLocationChip(label: widget.ownerName),
                 ]
               : <Widget>[
                   const _AppleFinderLocationChip(label: '최근 항목'),
                   const _AppleFinderLocationChip(label: '공유'),
                   for (final location in configuredLocations)
                     _AppleFinderLocationChip(
+                      visibilityKey: _anchorFor(location.id),
                       controlKey: Key(
-                        '$controlKeyPrefix-location-${location.id}',
+                        '${widget.controlKeyPrefix}-location-${location.id}',
                       ),
                       label: location.label,
-                      selected: location.label == selectedLocation,
-                      onPressed: onLocationSelected == null
+                      selected: location.id == widget.selectedLocationId,
+                      onPressed: widget.onLocationSelected == null
                           ? null
-                          : () => onLocationSelected!(location.id),
+                          : () => widget.onLocationSelected!(location.id),
                     ),
                 ],
         ),
@@ -592,18 +654,21 @@ class _AppleFinderLocationChip extends StatelessWidget {
   const _AppleFinderLocationChip({
     required this.label,
     this.controlKey,
+    this.visibilityKey,
     this.selected = false,
     this.onPressed,
   });
 
   final String label;
   final Key? controlKey;
+  final Key? visibilityKey;
   final bool selected;
   final VoidCallback? onPressed;
 
   @override
   Widget build(BuildContext context) {
     final content = Container(
+      key: visibilityKey,
       constraints: const BoxConstraints(minHeight: 44),
       margin: const EdgeInsets.only(right: 8),
       padding: const EdgeInsets.symmetric(horizontal: 13, vertical: 8),
