@@ -247,6 +247,26 @@ void main() {
         expect(tester.takeException(), isNull, reason: scenario.name);
       }
     });
+
+    testWidgets('describes appearance as a manual Light or Dark choice', (
+      tester,
+    ) async {
+      await _pumpPanel(
+        tester,
+        brightness: Brightness.light,
+        panel: _PanelKind.controlCenter,
+      );
+
+      final displayTile = find.byKey(const Key('mac-control-center-display'));
+      expect(
+        find.descendant(
+          of: displayTile,
+          matching: find.text('Choose Light or Dark in Settings'),
+        ),
+        findsOneWidget,
+      );
+      expect(find.text('Appearance follows your system'), findsNothing);
+    });
   });
 }
 

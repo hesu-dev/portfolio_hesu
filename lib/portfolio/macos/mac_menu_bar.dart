@@ -534,7 +534,7 @@ class MacControlCenterPanel extends StatelessWidget {
             tileKey: Key('mac-control-center-display'),
             icon: Icons.dark_mode_rounded,
             title: 'Display',
-            subtitle: 'Appearance follows your system',
+            subtitle: 'Choose Light or Dark in Settings',
             color: Color(0xFF5E5CE6),
           ),
         ],
