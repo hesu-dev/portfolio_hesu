@@ -250,6 +250,7 @@ void main() {
       PortfolioAppId.trash,
       PortfolioAppId.github,
       PortfolioAppId.mail,
+      PortfolioAppId.settings,
     ]);
   });
 }

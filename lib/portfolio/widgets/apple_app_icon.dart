@@ -36,6 +36,7 @@ class AppleAppIcon extends StatefulWidget {
     PortfolioAppId.skills => 'Skills',
     PortfolioAppId.projects => 'Projects',
     PortfolioAppId.terminal => 'Terminal',
+    PortfolioAppId.settings => 'Settings',
     PortfolioAppId.thisMac => 'This Mac',
     PortfolioAppId.trash => 'Trash',
     PortfolioAppId.github => 'GitHub',
@@ -47,6 +48,7 @@ class AppleAppIcon extends StatefulWidget {
     PortfolioAppId.skills => Icons.auto_awesome_rounded,
     PortfolioAppId.projects => Icons.folder_rounded,
     PortfolioAppId.terminal => Icons.terminal_rounded,
+    PortfolioAppId.settings => Icons.settings_rounded,
     PortfolioAppId.thisMac => Icons.laptop_mac_rounded,
     PortfolioAppId.trash => Icons.delete_rounded,
     PortfolioAppId.github => Icons.code_rounded,
@@ -66,6 +68,10 @@ class AppleAppIcon extends StatefulWidget {
     PortfolioAppId.terminal => const <Color>[
       Color(0xFF4A4B51),
       Color(0xFF17181B),
+    ],
+    PortfolioAppId.settings => const <Color>[
+      Color(0xFFAEB4BD),
+      Color(0xFF656B75),
     ],
     PortfolioAppId.thisMac => const <Color>[
       Color(0xFF8C8C91),

@@ -6,6 +6,7 @@ import '../apps/portfolio_app_content.dart';
 import '../data/portfolio_data.dart';
 import '../models/portfolio_app_id.dart';
 import '../services/external_launcher.dart';
+import '../theme/portfolio_theme_controller.dart';
 import '../widgets/apple_app_icon.dart';
 
 class MacWindow extends StatelessWidget {
@@ -13,6 +14,7 @@ class MacWindow extends StatelessWidget {
     required this.appId,
     required this.data,
     required this.launcher,
+    required this.themeController,
     required this.active,
     required this.maximized,
     required this.onFocus,
@@ -26,6 +28,7 @@ class MacWindow extends StatelessWidget {
   final PortfolioAppId appId;
   final PortfolioData data;
   final ExternalLauncher launcher;
+  final PortfolioThemeController themeController;
   final bool active;
   final bool maximized;
   final VoidCallback onFocus;
@@ -93,6 +96,7 @@ class MacWindow extends StatelessWidget {
                                 appId: appId,
                                 data: data,
                                 launcher: launcher,
+                                themeController: themeController,
                                 compact: constraints.maxWidth < 650,
                               );
                             },

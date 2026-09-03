@@ -20,6 +20,7 @@ class MacDock extends StatelessWidget {
     PortfolioAppId.skills,
     PortfolioAppId.projects,
     PortfolioAppId.terminal,
+    PortfolioAppId.settings,
     PortfolioAppId.github,
     PortfolioAppId.mail,
     PortfolioAppId.trash,

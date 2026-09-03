@@ -7,4 +7,5 @@ enum PortfolioAppId {
   trash,
   github,
   mail,
+  settings,
 }

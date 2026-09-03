@@ -6,6 +6,7 @@ import 'package:flutter/services.dart';
 import '../data/portfolio_data.dart';
 import '../models/portfolio_app_id.dart';
 import '../services/external_launcher.dart';
+import '../theme/portfolio_theme_controller.dart';
 import '../widgets/apple_app_icon.dart';
 import 'mac_dock.dart';
 import 'mac_menu_bar.dart';
@@ -17,11 +18,13 @@ class MacDesktop extends StatefulWidget {
   const MacDesktop({
     required this.data,
     required this.externalLauncher,
+    required this.themeController,
     Key? key,
   }) : super(key: key ?? const Key('mac-shell'));
 
   final PortfolioData data;
   final ExternalLauncher externalLauncher;
+  final PortfolioThemeController themeController;
 
   @override
   State<MacDesktop> createState() => _MacDesktopState();
@@ -33,6 +36,7 @@ class _MacDesktopState extends State<MacDesktop> {
     PortfolioAppId.skills,
     PortfolioAppId.projects,
     PortfolioAppId.terminal,
+    PortfolioAppId.settings,
     PortfolioAppId.thisMac,
     PortfolioAppId.github,
     PortfolioAppId.mail,
@@ -355,6 +359,7 @@ class _MacDesktopState extends State<MacDesktop> {
           appId: appId,
           data: widget.data,
           launcher: widget.externalLauncher,
+          themeController: widget.themeController,
           active: active,
           maximized: window.maximized,
           onFocus: () => _focusApp(appId),

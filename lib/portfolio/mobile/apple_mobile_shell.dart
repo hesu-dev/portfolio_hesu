@@ -5,6 +5,7 @@ import 'package:flutter/material.dart';
 import '../data/portfolio_data.dart';
 import '../models/portfolio_app_id.dart';
 import '../services/external_launcher.dart';
+import '../theme/portfolio_theme_controller.dart';
 import 'apple_home_grid.dart';
 import 'apple_mobile_dock.dart';
 import 'apple_status_bar.dart';
@@ -18,6 +19,7 @@ class AppleMobileShell extends StatefulWidget {
   const AppleMobileShell({
     required this.data,
     required this.externalLauncher,
+    required this.themeController,
     required this.tablet,
     this.now = _systemNow,
     this.clockTickInterval = const Duration(seconds: 30),
@@ -26,6 +28,7 @@ class AppleMobileShell extends StatefulWidget {
 
   final PortfolioData data;
   final ExternalLauncher externalLauncher;
+  final PortfolioThemeController themeController;
   final bool tablet;
   final AppleNow now;
   final Duration clockTickInterval;
@@ -146,6 +149,7 @@ class _AppleMobileShellState extends State<AppleMobileShell> {
                                 appId: activeApp,
                                 data: widget.data,
                                 launcher: widget.externalLauncher,
+                                themeController: widget.themeController,
                                 tablet: widget.tablet,
                                 onClose: _closeApp,
                               ),

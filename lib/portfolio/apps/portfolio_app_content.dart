@@ -3,8 +3,10 @@ import 'package:flutter/widgets.dart';
 import '../data/portfolio_data.dart';
 import '../models/portfolio_app_id.dart';
 import '../services/external_launcher.dart';
+import '../theme/portfolio_theme_controller.dart';
 import 'about_app.dart';
 import 'projects_app.dart';
+import 'settings_app.dart';
 import 'skills_app.dart';
 import 'system_apps.dart';
 import 'terminal_app.dart';
@@ -15,6 +17,7 @@ class PortfolioAppContent extends StatelessWidget {
     required this.appId,
     required this.data,
     required this.launcher,
+    required this.themeController,
     this.compact = false,
     this.tablet = false,
     super.key,
@@ -23,6 +26,7 @@ class PortfolioAppContent extends StatelessWidget {
   final PortfolioAppId appId;
   final PortfolioData data;
   final ExternalLauncher launcher;
+  final PortfolioThemeController themeController;
   final bool compact;
   final bool tablet;
 
@@ -48,6 +52,11 @@ class PortfolioAppContent extends StatelessWidget {
       ),
       PortfolioAppId.terminal => TerminalApp(
         data: data,
+        compact: compact,
+        tablet: tablet,
+      ),
+      PortfolioAppId.settings => SettingsApp(
+        themeController: themeController,
         compact: compact,
         tablet: tablet,
       ),

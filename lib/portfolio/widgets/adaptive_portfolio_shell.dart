@@ -27,13 +27,18 @@ class AdaptivePortfolioShell extends StatelessWidget {
         final width = constraints.maxWidth;
 
         if (width >= macBreakpoint) {
-          return MacDesktop(data: data, externalLauncher: externalLauncher);
+          return MacDesktop(
+            data: data,
+            externalLauncher: externalLauncher,
+            themeController: themeController,
+          );
         }
         if (width >= iPadBreakpoint) {
           return AppleMobileShell(
             key: const Key('ipad-shell'),
             data: data,
             externalLauncher: externalLauncher,
+            themeController: themeController,
             tablet: true,
           );
         }
@@ -41,6 +46,7 @@ class AdaptivePortfolioShell extends StatelessWidget {
           key: const Key('iphone-shell'),
           data: data,
           externalLauncher: externalLauncher,
+          themeController: themeController,
           tablet: false,
         );
       },

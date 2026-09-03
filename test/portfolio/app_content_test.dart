@@ -10,6 +10,7 @@ import 'package:portfolio_hesu/portfolio/data/portfolio_data.dart';
 import 'package:portfolio_hesu/portfolio/models/portfolio_app_id.dart';
 import 'package:portfolio_hesu/portfolio/services/external_launcher.dart';
 import 'package:portfolio_hesu/portfolio/theme/apple_theme.dart';
+import 'package:portfolio_hesu/portfolio/theme/portfolio_theme_controller.dart';
 import 'package:portfolio_hesu/portfolio/widgets/apple_app_icon.dart';
 
 void main() {
@@ -38,6 +39,7 @@ void main() {
         PortfolioAppId.skills: 'Skills',
         PortfolioAppId.projects: 'Projects',
         PortfolioAppId.terminal: 'Terminal',
+        PortfolioAppId.settings: 'Settings',
         PortfolioAppId.thisMac: 'This Mac',
         PortfolioAppId.trash: 'Trash',
         PortfolioAppId.github: 'GitHub',
@@ -243,6 +245,7 @@ void main() {
         PortfolioAppId.skills: 'skills-app',
         PortfolioAppId.projects: 'projects-app',
         PortfolioAppId.terminal: 'terminal-app',
+        PortfolioAppId.settings: 'settings-app',
         PortfolioAppId.thisMac: 'this-mac-app',
         PortfolioAppId.trash: 'trash-app',
         PortfolioAppId.github: 'github-app',
@@ -972,6 +975,12 @@ Future<void> _pumpApp(
   bool tablet = false,
   Brightness brightness = Brightness.light,
 }) async {
+  final themeController = PortfolioThemeController(
+    initial: brightness == Brightness.dark
+        ? PortfolioThemePreference.dark
+        : PortfolioThemePreference.light,
+  );
+  addTearDown(themeController.dispose);
   tester.view.devicePixelRatio = 1;
   tester.view.physicalSize = size;
   addTearDown(tester.view.resetDevicePixelRatio);
@@ -990,6 +999,7 @@ Future<void> _pumpApp(
           appId: appId,
           data: data,
           launcher: launcher,
+          themeController: themeController,
           compact: compact,
           tablet: tablet,
         ),

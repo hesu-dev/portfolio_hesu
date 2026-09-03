@@ -253,6 +253,8 @@ void main() {
       tester.view.physicalSize = size;
       addTearDown(tester.view.resetDevicePixelRatio);
       addTearDown(tester.view.resetPhysicalSize);
+      final themeController = PortfolioThemeController();
+      addTearDown(themeController.dispose);
 
       await tester.pumpWidget(
         MaterialApp(
@@ -262,6 +264,7 @@ void main() {
             child: AppleMobileShell(
               data: portfolioData,
               externalLauncher: _RecordingLauncher(),
+              themeController: themeController,
               tablet: true,
               now: clock.call,
               clockTickInterval: const Duration(seconds: 1),

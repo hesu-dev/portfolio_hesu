@@ -5,6 +5,7 @@ import '../data/portfolio_data.dart';
 import '../models/portfolio_app_id.dart';
 import '../services/external_launcher.dart';
 import '../theme/apple_theme.dart';
+import '../theme/portfolio_theme_controller.dart';
 import '../widgets/apple_app_icon.dart';
 
 class MobileAppSurface extends StatelessWidget {
@@ -12,6 +13,7 @@ class MobileAppSurface extends StatelessWidget {
     required this.appId,
     required this.data,
     required this.launcher,
+    required this.themeController,
     required this.tablet,
     required this.onClose,
     super.key,
@@ -20,6 +22,7 @@ class MobileAppSurface extends StatelessWidget {
   final PortfolioAppId appId;
   final PortfolioData data;
   final ExternalLauncher launcher;
+  final PortfolioThemeController themeController;
   final bool tablet;
   final VoidCallback onClose;
 
@@ -70,6 +73,7 @@ class MobileAppSurface extends StatelessWidget {
                     appId: appId,
                     data: data,
                     launcher: launcher,
+                    themeController: themeController,
                     compact: !tablet,
                     tablet: tablet,
                   ),
