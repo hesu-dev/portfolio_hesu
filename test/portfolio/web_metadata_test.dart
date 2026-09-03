@@ -214,6 +214,34 @@ void main() {
     expect(readme, contains('현재 배포는 GitHub Pages를 유지'));
   });
 
+  test('README gives reproducible Vercel Flutter build settings', () {
+    final readme = _projectFile('README.md').readAsStringSync();
+
+    expect(readme, contains('Vercel 기본 빌드 이미지에는 Flutter SDK가'));
+    expect(readme, contains('Framework Preset'));
+    expect(readme, contains('Install Command'));
+    expect(
+      readme,
+      contains(
+        'git clone --depth 1 --branch stable '
+        'https://github.com/flutter/flutter.git .flutter',
+      ),
+    );
+    expect(readme, contains('./.flutter/bin/flutter config --enable-web'));
+    expect(readme, contains('./.flutter/bin/flutter pub get'));
+    expect(readme, contains('Build Command'));
+    expect(
+      readme,
+      contains(
+        './.flutter/bin/flutter build web --release --base-href / '
+        '--pwa-strategy=none',
+      ),
+    );
+    expect(readme, contains('Output Directory'));
+    expect(readme, contains('사전 빌드'));
+    expect(readme, contains('정적 배포'));
+  });
+
   group('repository output hygiene', () {
     test('keeps generated Flutter web bundles out of the repository root', () {
       const staleRootPaths = <String>[
