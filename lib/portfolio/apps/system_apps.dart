@@ -3,8 +3,9 @@ import 'package:flutter/material.dart';
 import '../data/portfolio_data.dart';
 import '../services/external_launcher.dart';
 import '../theme/apple_theme.dart';
+import '../widgets/apple_finder_scaffold.dart';
 
-class ThisMacApp extends StatelessWidget {
+class ThisMacApp extends StatefulWidget {
   const ThisMacApp({
     required this.data,
     this.compact = false,
@@ -17,99 +18,248 @@ class ThisMacApp extends StatelessWidget {
   final bool tablet;
 
   @override
-  Widget build(BuildContext context) {
-    final padding = compact ? 16.0 : (tablet ? 24.0 : 30.0);
+  State<ThisMacApp> createState() => _ThisMacAppState();
+}
 
-    return AppleAppSurface(
-      key: const Key('this-mac-app'),
-      child: Column(
-        children: <Widget>[
-          AppleToolbar(
-            title: 'About This Mac',
-            subtitle: 'Portfolio system profile',
-            compact: compact,
-            leading: const Icon(
-              Icons.laptop_mac_rounded,
-              color: AppleTheme.indigo,
+class _ThisMacAppState extends State<ThisMacApp> {
+  int? _selectedProjectIndex;
+
+  @override
+  void didUpdateWidget(covariant ThisMacApp oldWidget) {
+    super.didUpdateWidget(oldWidget);
+    final selectedIndex = _selectedProjectIndex;
+    if (selectedIndex != null && selectedIndex >= widget.data.projects.length) {
+      _selectedProjectIndex = null;
+    }
+  }
+
+  void _openProject(int index) {
+    setState(() => _selectedProjectIndex = index);
+  }
+
+  void _showProjectFolders() {
+    if (_selectedProjectIndex != null) {
+      setState(() => _selectedProjectIndex = null);
+    }
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final selectedIndex = _selectedProjectIndex;
+    final selectedProject = selectedIndex == null
+        ? null
+        : widget.data.projects[selectedIndex];
+
+    return AppleFinderScaffold(
+      surfaceKey: const Key('this-mac-app'),
+      keyPrefix: 'project-hub',
+      currentLocation: selectedProject?.title ?? '프로젝트',
+      ownerName: widget.data.identity.name,
+      compact: widget.compact,
+      tablet: widget.tablet,
+      canGoBack: selectedProject != null,
+      canGoForward: false,
+      onBack: _showProjectFolders,
+      onForward: () {},
+      backTooltip: '프로젝트 폴더 목록으로 돌아가기',
+      bodyBuilder: (context, compactLayout) {
+        if (widget.data.projects.isEmpty) {
+          return const AppleEmptyState(
+            icon: Icons.folder_off_rounded,
+            title: '프로젝트가 없습니다',
+            message: '프로젝트가 추가되면 이 폴더에 표시됩니다.',
+          );
+        }
+        if (selectedProject != null) {
+          return _ProjectHubDetail(
+            project: selectedProject,
+            compact: compactLayout,
+          );
+        }
+        return _ProjectHubFolderList(
+          projects: widget.data.projects,
+          compact: compactLayout,
+          onOpenProject: _openProject,
+        );
+      },
+    );
+  }
+}
+
+class _ProjectHubFolderList extends StatelessWidget {
+  const _ProjectHubFolderList({
+    required this.projects,
+    required this.compact,
+    required this.onOpenProject,
+  });
+
+  final List<PortfolioProject> projects;
+  final bool compact;
+  final ValueChanged<int> onOpenProject;
+
+  @override
+  Widget build(BuildContext context) {
+    return ListView(
+      key: const Key('project-hub-folder-list'),
+      padding: EdgeInsets.all(compact ? 14 : 28),
+      children: <Widget>[
+        Center(
+          child: ConstrainedBox(
+            constraints: const BoxConstraints(maxWidth: 760),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.stretch,
+              children: <Widget>[
+                Row(
+                  children: <Widget>[
+                    Expanded(
+                      child: Text('프로젝트', style: AppleTheme.title(context)),
+                    ),
+                    Text(
+                      '${projects.length}개 폴더',
+                      style: AppleTheme.caption(context),
+                    ),
+                  ],
+                ),
+                const SizedBox(height: 14),
+                LayoutBuilder(
+                  builder: (context, constraints) {
+                    final availableColumns = compact
+                        ? (constraints.maxWidth / 132).floor().clamp(1, 2)
+                        : (constraints.maxWidth / 156).floor().clamp(1, 4);
+                    final columnCount = projects.length < availableColumns
+                        ? projects.length
+                        : availableColumns;
+                    const spacing = 10.0;
+                    final tileWidth =
+                        (constraints.maxWidth - spacing * (columnCount - 1)) /
+                        columnCount;
+                    return Wrap(
+                      spacing: spacing,
+                      runSpacing: 12,
+                      children: <Widget>[
+                        for (final entry in projects.indexed)
+                          SizedBox(
+                            width: tileWidth,
+                            child: AppleFinderFolderTile(
+                              key: Key('project-hub-folder-${entry.$1}'),
+                              label: entry.$2.title,
+                              semanticsLabel: '${entry.$2.title} 열기',
+                              compact: compact,
+                              onPressed: () => onOpenProject(entry.$1),
+                            ),
+                          ),
+                      ],
+                    );
+                  },
+                ),
+              ],
             ),
           ),
-          Expanded(
-            child: ListView(
-              key: const Key('this-mac-scroll'),
-              padding: EdgeInsets.all(padding),
+        ),
+      ],
+    );
+  }
+}
+
+class _ProjectHubDetail extends StatelessWidget {
+  const _ProjectHubDetail({required this.project, required this.compact});
+
+  final PortfolioProject project;
+  final bool compact;
+
+  @override
+  Widget build(BuildContext context) {
+    return ListView(
+      key: const Key('project-hub-detail-scroll'),
+      padding: EdgeInsets.all(compact ? 16 : 30),
+      children: <Widget>[
+        Center(
+          child: ConstrainedBox(
+            key: const Key('project-hub-detail'),
+            constraints: const BoxConstraints(maxWidth: 720),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.stretch,
               children: <Widget>[
-                Center(
-                  child: ConstrainedBox(
-                    constraints: const BoxConstraints(maxWidth: 720),
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.stretch,
-                      children: <Widget>[
-                        _MacProfileCard(data: data, compact: compact),
-                        SizedBox(height: compact ? 16 : 22),
-                        Wrap(
-                          spacing: 12,
-                          runSpacing: 12,
-                          children: <Widget>[
-                            _StatCard(
-                              label: 'Projects',
-                              value: '${data.projects.length}',
-                              icon: Icons.folder_rounded,
-                              color: AppleTheme.blue,
-                              compact: compact,
-                            ),
-                            _StatCard(
-                              label: 'Skill groups',
-                              value: '${data.skillGroups.length}',
-                              icon: Icons.auto_awesome_rounded,
-                              color: AppleTheme.indigo,
-                              compact: compact,
-                            ),
-                            _StatCard(
-                              label: 'Experience',
-                              value: '${data.experiences.length}',
-                              icon: Icons.work_rounded,
-                              color: AppleTheme.green,
-                              compact: compact,
-                            ),
-                          ],
-                        ),
-                        SizedBox(height: compact ? 16 : 22),
-                        AppleSurfaceCard(
-                          radius: 17,
-                          child: Column(
-                            crossAxisAlignment: CrossAxisAlignment.start,
-                            children: <Widget>[
-                              Text(
-                                'Overview',
-                                style: AppleTheme.title(context),
-                              ),
-                              const SizedBox(height: 10),
-                              Text(
-                                data.identity.biography,
-                                style: Theme.of(context).textTheme.bodyLarge,
-                              ),
-                              const SizedBox(height: 15),
-                              _InfoRow(
-                                label: 'Primary focus',
-                                value: data.identity.headline,
-                              ),
-                              const SizedBox(height: 10),
-                              _InfoRow(
-                                label: 'Contact',
-                                value: data.identity.email,
-                              ),
-                            ],
-                          ),
-                        ),
-                      ],
+                Row(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: <Widget>[
+                    Icon(
+                      Icons.folder_open_rounded,
+                      size: compact ? 48 : 58,
+                      color: const Color(0xFF55B8F5),
                     ),
+                    const SizedBox(width: 14),
+                    Expanded(
+                      child: Text(
+                        project.title,
+                        key: const Key('project-hub-detail-title'),
+                        style: compact
+                            ? Theme.of(context).textTheme.titleLarge
+                            : Theme.of(context).textTheme.headlineSmall,
+                      ),
+                    ),
+                  ],
+                ),
+                const SizedBox(height: 14),
+                Align(
+                  alignment: Alignment.centerLeft,
+                  child: ApplePill(
+                    label: project.period,
+                    icon: Icons.calendar_month_rounded,
+                    color: AppleTheme.indigo,
+                  ),
+                ),
+                SizedBox(height: compact ? 18 : 24),
+                AppleSurfaceCard(
+                  radius: 17,
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: <Widget>[
+                      Text('프로젝트 설명', style: AppleTheme.title(context)),
+                      const SizedBox(height: 10),
+                      Text(
+                        project.description,
+                        style: Theme.of(context).textTheme.bodyLarge,
+                      ),
+                    ],
+                  ),
+                ),
+                SizedBox(height: compact ? 14 : 18),
+                AppleSurfaceCard(
+                  radius: 17,
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: <Widget>[
+                      Text('기술 스택', style: AppleTheme.title(context)),
+                      const SizedBox(height: 12),
+                      Wrap(
+                        spacing: 8,
+                        runSpacing: 8,
+                        children: <Widget>[
+                          for (final technology in project.technologies)
+                            ApplePill(label: technology),
+                        ],
+                      ),
+                    ],
+                  ),
+                ),
+                SizedBox(height: compact ? 14 : 18),
+                const AppleSurfaceCard(
+                  radius: 17,
+                  child: Row(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: <Widget>[
+                      Icon(Icons.info_outline_rounded, color: AppleTheme.blue),
+                      SizedBox(width: 10),
+                      Expanded(child: Text('상세 화면은 추후 기획 예정')),
+                    ],
                   ),
                 ),
               ],
             ),
           ),
-        ],
-      ),
+        ),
+      ],
     );
   }
 }
@@ -443,128 +593,6 @@ class _ExternalProfilePageState extends State<_ExternalProfilePage> {
             ),
           ),
         ],
-      ),
-    );
-  }
-}
-
-class _MacProfileCard extends StatelessWidget {
-  const _MacProfileCard({required this.data, required this.compact});
-
-  final PortfolioData data;
-  final bool compact;
-
-  @override
-  Widget build(BuildContext context) {
-    final badge = Container(
-      width: compact ? 82 : 104,
-      height: compact ? 82 : 104,
-      decoration: BoxDecoration(
-        gradient: const LinearGradient(
-          begin: Alignment.topLeft,
-          end: Alignment.bottomRight,
-          colors: <Color>[Color(0xFF7678F6), Color(0xFF4B55C7)],
-        ),
-        borderRadius: BorderRadius.circular(compact ? 24 : 30),
-      ),
-      child: Icon(
-        Icons.laptop_mac_rounded,
-        color: Colors.white,
-        size: compact ? 40 : 48,
-      ),
-    );
-    final text = Column(
-      crossAxisAlignment: compact
-          ? CrossAxisAlignment.center
-          : CrossAxisAlignment.start,
-      children: <Widget>[
-        Text(
-          data.identity.englishName,
-          textAlign: compact ? TextAlign.center : TextAlign.start,
-          style: Theme.of(context).textTheme.headlineSmall,
-        ),
-        const SizedBox(height: 5),
-        Text(
-          data.identity.headline,
-          textAlign: compact ? TextAlign.center : TextAlign.start,
-          style: AppleTheme.body(
-            context,
-          ).copyWith(color: AppleTheme.secondaryLabel(context)),
-        ),
-        const SizedBox(height: 11),
-        const ApplePill(
-          label: 'Flutter · Dart',
-          icon: Icons.flutter_dash_rounded,
-          color: AppleTheme.indigo,
-        ),
-      ],
-    );
-
-    return AppleSurfaceCard(
-      padding: EdgeInsets.all(compact ? 21 : 28),
-      child: compact
-          ? Column(children: <Widget>[badge, const SizedBox(height: 17), text])
-          : Row(
-              children: <Widget>[
-                badge,
-                const SizedBox(width: 24),
-                Expanded(child: text),
-              ],
-            ),
-    );
-  }
-}
-
-class _StatCard extends StatelessWidget {
-  const _StatCard({
-    required this.label,
-    required this.value,
-    required this.icon,
-    required this.color,
-    required this.compact,
-  });
-
-  final String label;
-  final String value;
-  final IconData icon;
-  final Color color;
-  final bool compact;
-
-  @override
-  Widget build(BuildContext context) {
-    return SizedBox(
-      width: compact ? 152 : 210,
-      child: AppleSurfaceCard(
-        radius: 16,
-        padding: const EdgeInsets.all(17),
-        child: Row(
-          children: <Widget>[
-            Container(
-              width: 38,
-              height: 38,
-              decoration: BoxDecoration(
-                color: color.withValues(alpha: 0.12),
-                borderRadius: BorderRadius.circular(11),
-              ),
-              child: Icon(icon, color: color, size: 20),
-            ),
-            const SizedBox(width: 11),
-            Expanded(
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: <Widget>[
-                  Text(value, style: Theme.of(context).textTheme.titleLarge),
-                  Text(
-                    label,
-                    maxLines: 1,
-                    overflow: TextOverflow.ellipsis,
-                    style: AppleTheme.caption(context),
-                  ),
-                ],
-              ),
-            ),
-          ],
-        ),
       ),
     );
   }
