@@ -14,10 +14,10 @@ void main() {
     PortfolioAppId.skills,
     PortfolioAppId.projects,
     PortfolioAppId.terminal,
+    PortfolioAppId.trash,
     PortfolioAppId.github,
     PortfolioAppId.mail,
     PortfolioAppId.settings,
-    PortfolioAppId.trash,
   ];
 
   test(

@@ -18,7 +18,7 @@ void main() {
       ) async {
         await _pumpSurface(tester, surface);
 
-        for (final appId in PortfolioAppId.values) {
+        for (final appId in portfolioLauncherAppIds) {
           final launcher = find.byKey(_launcherKey(surface, appId));
           expect(launcher, findsOneWidget, reason: appId.name);
 
@@ -206,7 +206,7 @@ Future<void> _pumpSurface(
     ),
     _IconSurface.dock => Center(
       child: MacDock(
-        runningApps: PortfolioAppId.values.toSet(),
+        runningApps: portfolioLauncherAppIds.toSet(),
         activeApp: PortfolioAppId.about,
         onAppPressed: (_) {},
       ),

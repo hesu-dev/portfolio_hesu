@@ -472,7 +472,7 @@ void main() {
   });
 }
 
-const List<PortfolioAppId> _allApps = PortfolioAppId.values;
+const List<PortfolioAppId> _allApps = portfolioLauncherAppIds;
 
 const List<PortfolioAppId> _phoneDockApps = <PortfolioAppId>[
   PortfolioAppId.about,
