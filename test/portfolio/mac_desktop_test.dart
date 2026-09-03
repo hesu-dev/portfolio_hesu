@@ -790,7 +790,7 @@ const Map<PortfolioAppId, String> _labels = <PortfolioAppId, String>{
   PortfolioAppId.projects: 'Projects',
   PortfolioAppId.terminal: 'Terminal',
   PortfolioAppId.settings: '설정',
-  PortfolioAppId.thisMac: 'This Mac',
+  PortfolioAppId.thisMac: '프로젝트',
   PortfolioAppId.github: 'GitHub',
   PortfolioAppId.mail: 'Mail',
   PortfolioAppId.trash: 'Trash',
