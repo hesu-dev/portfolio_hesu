@@ -227,6 +227,40 @@ void main() {
       expect(tester.takeException(), isNull);
     });
 
+    testWidgets('derives the profile monogram from injected identity data', (
+      tester,
+    ) async {
+      final data = _profileData(name: '테스트 사용자', englishName: 'Apple Tester');
+      await _pumpShell(tester, size: const Size(834, 1194), data: data);
+
+      expect(find.text('AT'), findsOneWidget);
+      expect(find.text('MH'), findsNothing);
+    });
+
+    testWidgets('uses a dark profile surface with readable dark-mode text', (
+      tester,
+    ) async {
+      final data = _profileData(name: '어두운 사용자');
+      await _pumpShell(
+        tester,
+        size: const Size(834, 1194),
+        data: data,
+        brightness: Brightness.dark,
+      );
+
+      expect(find.byKey(const Key('ipad-profile-card')), findsOneWidget);
+      final card = tester.widget<Container>(
+        find.byKey(const Key('ipad-profile-card')),
+      );
+      final decoration = card.decoration! as BoxDecoration;
+      final gradient = decoration.gradient! as LinearGradient;
+      expect(gradient.colors.first.computeLuminance(), lessThan(0.2));
+
+      final name = tester.widget<Text>(find.text('어두운 사용자'));
+      expect(name.style?.color?.computeLuminance(), greaterThan(0.7));
+      expect(tester.takeException(), isNull);
+    });
+
     testWidgets(
       'opens a rounded tablet app surface with project master-detail',
       (tester) async {
@@ -347,6 +381,7 @@ Future<void> _pumpShell(
   PortfolioData data = portfolioData,
   ExternalLauncher? launcher,
   TextScaler textScaler = TextScaler.noScaling,
+  Brightness brightness = Brightness.light,
 }) async {
   tester.view.devicePixelRatio = 1;
   tester.view.physicalSize = size;
@@ -355,7 +390,9 @@ Future<void> _pumpShell(
 
   await tester.pumpWidget(
     MaterialApp(
-      theme: AppleTheme.light(),
+      theme: brightness == Brightness.dark
+          ? AppleTheme.dark()
+          : AppleTheme.light(),
       home: MediaQuery(
         data: MediaQueryData(size: size, textScaler: textScaler),
         child: AdaptivePortfolioShell(
@@ -368,11 +405,14 @@ Future<void> _pumpShell(
   await tester.pumpAndSettle();
 }
 
-PortfolioData _profileData({required String name}) {
+PortfolioData _profileData({
+  required String name,
+  String englishName = 'Injected Person',
+}) {
   return PortfolioData(
     identity: PortfolioIdentity(
       name: name,
-      englishName: 'Injected Person',
+      englishName: englishName,
       email: 'injected@example.com',
       githubUrl: 'https://example.com/injected',
       headline: 'Injected headline',
