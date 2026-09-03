@@ -157,7 +157,9 @@ void main() {
 
       expect(favicon?['href'], 'icons/min-hesu-monogram.svg');
       expect(favicon?['type'], 'image/svg+xml');
-      expect(touchIcon?['href'], 'icons/min-hesu-monogram.svg');
+      expect(touchIcon?['href'], 'icons/min-hesu-touch-icon.png');
+      expect(touchIcon?['type'], 'image/png');
+      expect(touchIcon?['sizes'], '180x180');
       expect(icons, hasLength(1));
       expect(icons.single['src'], 'icons/min-hesu-monogram.svg');
       expect(icons.single['sizes'], 'any');
@@ -169,6 +171,21 @@ void main() {
         final monogram = monogramFile.readAsStringSync();
         expect(_elementText(monogram, 'title'), '민희수 모노그램');
         expect(monogram.toLowerCase(), isNot(contains('flutter')));
+      }
+
+      final touchIconFile = _projectFile('web/icons/min-hesu-touch-icon.png');
+      expect(touchIconFile.existsSync(), isTrue);
+      if (touchIconFile.existsSync()) {
+        expect(touchIconFile.readAsBytesSync().take(8), <int>[
+          137,
+          80,
+          78,
+          71,
+          13,
+          10,
+          26,
+          10,
+        ]);
       }
 
       for (final stalePath in <String>[
