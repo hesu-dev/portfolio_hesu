@@ -160,6 +160,67 @@ void main() {
       }
     });
 
+    testWidgets(
+      'Projects Finder circular control navigates detail then closes at root',
+      (tester) async {
+        final semantics = tester.ensureSemantics();
+
+        for (final size in const <Size>[Size(390, 844), Size(834, 1194)]) {
+          await tester.pumpWidget(const SizedBox.shrink());
+          await _pumpSurface(
+            tester,
+            size: size,
+            appId: PortfolioAppId.projects,
+          );
+
+          final circularControl = find.byKey(
+            const Key('mobile-back-close-projects'),
+          );
+          expect(
+            tester.getSemantics(circularControl).getSemanticsData().label,
+            startsWith('Close Projects window'),
+            reason: '$size root semantics',
+          );
+          expect(find.byTooltip('Close Projects window'), findsOneWidget);
+
+          await tester.tap(find.byKey(const Key('projects-career-folder-0')));
+          await tester.pumpAndSettle();
+
+          expect(find.byKey(const Key('project-detail-title')), findsOneWidget);
+          expect(
+            tester.getSemantics(circularControl).getSemanticsData().label,
+            startsWith('Back in Projects'),
+            reason: '$size detail semantics',
+          );
+          expect(find.byTooltip('Back in Projects'), findsOneWidget);
+
+          await tester.tap(circularControl);
+          await tester.pumpAndSettle();
+
+          expect(find.byKey(const Key('project-detail-title')), findsNothing);
+          expect(
+            find.byKey(const Key('projects-connection-directory')),
+            findsOneWidget,
+          );
+          expect(find.byKey(const Key('mobile-app-surface')), findsOneWidget);
+          expect(
+            tester.getSemantics(circularControl).getSemanticsData().label,
+            startsWith('Close Projects window'),
+            reason: '$size returned root semantics',
+          );
+          expect(find.byTooltip('Close Projects window'), findsOneWidget);
+
+          await tester.tap(circularControl);
+          await tester.pumpAndSettle();
+
+          expect(find.byKey(const Key('mobile-home')), findsOneWidget);
+          expect(find.byKey(const Key('mobile-app-surface')), findsNothing);
+        }
+
+        semantics.dispose();
+      },
+    );
+
     testWidgets('iPhone back button closes the surface and returns home', (
       tester,
     ) async {
@@ -284,10 +345,7 @@ void main() {
             size.width < 600 ? TextAlign.center : TextAlign.left,
           );
           if (size.width < 600) {
-            expect(
-              tester.getCenter(title).dx,
-              closeTo(size.width / 2, 0.01),
-            );
+            expect(tester.getCenter(title).dx, closeTo(size.width / 2, 0.01));
           }
           if (size.width < 600) {
             expect(find.byType(MacTrafficControls), findsNothing);

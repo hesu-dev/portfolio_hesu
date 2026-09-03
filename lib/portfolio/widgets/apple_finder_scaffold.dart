@@ -5,6 +5,8 @@ import 'apple_selection_control.dart';
 
 typedef AppleFinderBodyBuilder =
     Widget Function(BuildContext context, bool compactLayout);
+typedef AppleFinderMobileLeadingControlsBuilder =
+    Widget Function(bool canGoBack, VoidCallback onBack);
 
 @immutable
 class AppleFinderLocation {
@@ -43,12 +45,14 @@ class AppleFinderWindowChrome {
     required this.onDragUpdate,
     this.onDragStart,
     this.cursor = SystemMouseCursors.move,
+    this.mobileLeadingControlsBuilder,
   });
 
   final Widget leadingControls;
   final GestureDragStartCallback? onDragStart;
   final GestureDragUpdateCallback onDragUpdate;
   final MouseCursor cursor;
+  final AppleFinderMobileLeadingControlsBuilder? mobileLeadingControlsBuilder;
 }
 
 /// Shared Finder chrome for portfolio apps that browse folder-like content.
@@ -107,6 +111,10 @@ class AppleFinderScaffold extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final mobileLayout = mobileBottomNavigation != null;
+    final leadingControls = mobileLayout
+        ? windowChrome?.mobileLeadingControlsBuilder?.call(canGoBack, onBack) ??
+              windowChrome?.leadingControls
+        : windowChrome?.leadingControls;
     return AppleAppSurface(
       key: surfaceKey,
       child: Column(
@@ -122,7 +130,7 @@ class AppleFinderScaffold extends StatelessWidget {
             backTooltip: backTooltip,
             forwardTooltip: forwardTooltip,
             controlKeyPrefix: '$keyPrefix-finder',
-            leadingControls: windowChrome?.leadingControls,
+            leadingControls: leadingControls,
             onDragStart: windowChrome?.onDragStart,
             onDragUpdate: windowChrome?.onDragUpdate,
             dragCursor: windowChrome?.cursor,

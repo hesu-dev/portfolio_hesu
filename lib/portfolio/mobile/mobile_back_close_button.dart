@@ -4,6 +4,8 @@ import 'package:flutter/services.dart';
 import '../models/portfolio_app_id.dart';
 import '../theme/apple_theme.dart';
 
+enum MobileBackCloseAction { back, close }
+
 /// Shared iPhone/iPad back-shaped control used to dismiss a mobile surface.
 ///
 /// The visual intentionally has no hover or pressed transition. Keyboard focus
@@ -13,12 +15,14 @@ class MobileBackCloseButton extends StatefulWidget {
     required this.appId,
     required this.windowLabel,
     required this.onPressed,
+    this.action = MobileBackCloseAction.close,
     super.key,
   });
 
   final PortfolioAppId appId;
   final String windowLabel;
   final VoidCallback onPressed;
+  final MobileBackCloseAction action;
 
   @override
   State<MobileBackCloseButton> createState() => _MobileBackCloseButtonState();
@@ -28,11 +32,16 @@ class _MobileBackCloseButtonState extends State<MobileBackCloseButton> {
   late final FocusNode _focusNode;
   bool _showFocus = false;
 
+  String get _actionLabel => switch (widget.action) {
+    MobileBackCloseAction.back => 'Back in ${widget.windowLabel}',
+    MobileBackCloseAction.close => 'Close ${widget.windowLabel} window',
+  };
+
   @override
   void initState() {
     super.initState();
     _focusNode = FocusNode(
-      debugLabel: 'Close ${widget.windowLabel} mobile window',
+      debugLabel: '${widget.windowLabel} mobile navigation',
     );
   }
 
@@ -52,7 +61,7 @@ class _MobileBackCloseButtonState extends State<MobileBackCloseButton> {
     final key = Key('mobile-back-close-${widget.appId.name}');
     return Semantics(
       key: key,
-      label: 'Close ${widget.windowLabel} window',
+      label: _actionLabel,
       button: true,
       onTap: widget.onPressed,
       excludeSemantics: true,
@@ -78,7 +87,7 @@ class _MobileBackCloseButtonState extends State<MobileBackCloseButton> {
         },
         child: ExcludeSemantics(
           child: Tooltip(
-            message: 'Close ${widget.windowLabel} window',
+            message: _actionLabel,
             child: GestureDetector(
               behavior: HitTestBehavior.opaque,
               onTap: _activate,

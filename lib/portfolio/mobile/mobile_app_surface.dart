@@ -44,6 +44,15 @@ class MobileAppSurface extends StatelessWidget {
               windowLabel: label,
               onPressed: onClose,
             ),
+            mobileLeadingControlsBuilder: (canGoBack, onBack) =>
+                MobileBackCloseButton(
+                  appId: appId,
+                  windowLabel: label,
+                  action: canGoBack
+                      ? MobileBackCloseAction.back
+                      : MobileBackCloseAction.close,
+                  onPressed: canGoBack ? onBack : onClose,
+                ),
             onDragUpdate: (_) {},
             cursor: MouseCursor.defer,
           )
