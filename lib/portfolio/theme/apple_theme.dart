@@ -431,31 +431,36 @@ class AppleFeedbackBanner extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final color = success ? AppleTheme.green : AppleTheme.red;
-    return Container(
-      width: double.infinity,
-      padding: const EdgeInsets.symmetric(horizontal: 13, vertical: 11),
-      decoration: BoxDecoration(
-        color: color.withValues(alpha: 0.1),
-        borderRadius: BorderRadius.circular(12),
-        border: Border.all(color: color.withValues(alpha: 0.22)),
-      ),
-      child: Row(
-        children: <Widget>[
-          Icon(
-            success ? Icons.check_circle_rounded : Icons.error_rounded,
-            color: color,
-            size: 18,
-          ),
-          const SizedBox(width: 9),
-          Expanded(
-            child: Text(
-              message,
-              style: AppleTheme.body(
-                context,
-              ).copyWith(color: AppleTheme.primaryLabel(context), fontSize: 13),
+    return Semantics(
+      liveRegion: true,
+      container: true,
+      child: Container(
+        width: double.infinity,
+        padding: const EdgeInsets.symmetric(horizontal: 13, vertical: 11),
+        decoration: BoxDecoration(
+          color: color.withValues(alpha: 0.1),
+          borderRadius: BorderRadius.circular(12),
+          border: Border.all(color: color.withValues(alpha: 0.22)),
+        ),
+        child: Row(
+          children: <Widget>[
+            Icon(
+              success ? Icons.check_circle_rounded : Icons.error_rounded,
+              color: color,
+              size: 18,
             ),
-          ),
-        ],
+            const SizedBox(width: 9),
+            Expanded(
+              child: Text(
+                message,
+                style: AppleTheme.body(context).copyWith(
+                  color: AppleTheme.primaryLabel(context),
+                  fontSize: 13,
+                ),
+              ),
+            ),
+          ],
+        ),
       ),
     );
   }
