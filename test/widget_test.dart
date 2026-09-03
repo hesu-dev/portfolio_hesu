@@ -3,6 +3,7 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:portfolio_hesu/portfolio/data/portfolio_data.dart';
 import 'package:portfolio_hesu/portfolio/portfolio_app.dart';
 import 'package:portfolio_hesu/portfolio/services/external_launcher.dart';
+import 'package:portfolio_hesu/portfolio/theme/portfolio_theme_controller.dart';
 import 'package:portfolio_hesu/portfolio/widgets/adaptive_portfolio_shell.dart';
 
 void main() {
@@ -63,6 +64,95 @@ void main() {
       );
       expect(shell.data, same(data));
       expect(shell.externalLauncher, same(launcher));
+    });
+
+    testWidgets('defaults to light even when the platform is dark', (
+      tester,
+    ) async {
+      tester.binding.platformDispatcher.platformBrightnessTestValue =
+          Brightness.dark;
+      addTearDown(
+        tester.binding.platformDispatcher.clearPlatformBrightnessTestValue,
+      );
+
+      await tester.pumpWidget(
+        PortfolioApp(
+          externalLauncher: CallbackExternalLauncher((_) async => true),
+        ),
+      );
+
+      final app = tester.widget<MaterialApp>(find.byType(MaterialApp));
+      final shellContext = tester.element(find.byType(AdaptivePortfolioShell));
+      expect(app.themeMode, ThemeMode.light);
+      expect(Theme.of(shellContext).brightness, Brightness.light);
+      expect(app.title, portfolioData.appTitle);
+      expect(app.color, const Color(0xFF121316));
+    });
+
+    testWidgets('reacts immediately to an injected theme controller', (
+      tester,
+    ) async {
+      final controller = PortfolioThemeController();
+      addTearDown(controller.dispose);
+
+      await tester.pumpWidget(
+        PortfolioApp(
+          themeController: controller,
+          externalLauncher: CallbackExternalLauncher((_) async => true),
+        ),
+      );
+      final originalShellElement = tester.element(
+        find.byType(AdaptivePortfolioShell),
+      );
+      var shell = tester.widget<AdaptivePortfolioShell>(
+        find.byType(AdaptivePortfolioShell),
+      );
+      expect(shell.themeController, same(controller));
+
+      controller.select(PortfolioThemePreference.dark);
+      await tester.pump();
+
+      var app = tester.widget<MaterialApp>(find.byType(MaterialApp));
+      var shellContext = tester.element(find.byType(AdaptivePortfolioShell));
+      expect(app.themeMode, ThemeMode.dark);
+      expect(Theme.of(shellContext).brightness, Brightness.dark);
+      expect(
+        tester.element(find.byType(AdaptivePortfolioShell)),
+        same(originalShellElement),
+      );
+
+      controller.select(PortfolioThemePreference.light);
+      await tester.pump();
+
+      app = tester.widget<MaterialApp>(find.byType(MaterialApp));
+      shellContext = tester.element(find.byType(AdaptivePortfolioShell));
+      shell = tester.widget<AdaptivePortfolioShell>(
+        find.byType(AdaptivePortfolioShell),
+      );
+      expect(app.themeMode, ThemeMode.light);
+      expect(Theme.of(shellContext).brightness, Brightness.light);
+      expect(shell.themeController, same(controller));
+    });
+
+    testWidgets('does not dispose an injected theme controller on unmount', (
+      tester,
+    ) async {
+      final controller = PortfolioThemeController();
+
+      await tester.pumpWidget(
+        PortfolioApp(
+          themeController: controller,
+          externalLauncher: CallbackExternalLauncher((_) async => true),
+        ),
+      );
+      await tester.pumpWidget(const SizedBox.shrink());
+
+      expect(
+        () => controller.select(PortfolioThemePreference.dark),
+        returnsNormally,
+      );
+      expect(controller.preference, PortfolioThemePreference.dark);
+      controller.dispose();
     });
   });
 
