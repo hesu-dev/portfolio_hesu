@@ -9,6 +9,7 @@ class AppleHomeGrid extends StatelessWidget {
   const AppleHomeGrid({
     required this.data,
     required this.tablet,
+    required this.now,
     required this.onOpen,
     super.key,
   });
@@ -17,6 +18,7 @@ class AppleHomeGrid extends StatelessWidget {
 
   final PortfolioData data;
   final bool tablet;
+  final DateTime now;
   final ValueChanged<PortfolioAppId> onOpen;
 
   @override
@@ -40,7 +42,7 @@ class AppleHomeGrid extends StatelessWidget {
             ),
             sliver: SliverToBoxAdapter(
               child: tablet
-                  ? _IPadProfileWidget(data: data)
+                  ? _IPadProfileWidget(data: data, now: now)
                   : _IPhoneIdentityHeader(data: data),
             ),
           ),
@@ -116,13 +118,13 @@ class _IPhoneIdentityHeader extends StatelessWidget {
 }
 
 class _IPadProfileWidget extends StatelessWidget {
-  const _IPadProfileWidget({required this.data});
+  const _IPadProfileWidget({required this.data, required this.now});
 
   final PortfolioData data;
+  final DateTime now;
 
   @override
   Widget build(BuildContext context) {
-    final now = DateTime.now();
     final dark = AppleTheme.isDark(context);
     final date =
         '${_weekdays[now.weekday - 1]}, ${_months[now.month - 1]} '
@@ -192,6 +194,7 @@ class _IPadProfileWidget extends StatelessWidget {
                 children: <Widget>[
                   Text(
                     date,
+                    key: const Key('ipad-profile-date'),
                     maxLines: 1,
                     overflow: TextOverflow.ellipsis,
                     style: AppleTheme.caption(context).copyWith(

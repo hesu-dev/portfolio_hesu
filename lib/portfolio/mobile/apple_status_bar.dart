@@ -4,13 +4,13 @@ import '../theme/apple_theme.dart';
 
 /// Compact, platform-neutral rendering of the familiar iOS/iPadOS status area.
 class AppleStatusBar extends StatelessWidget {
-  const AppleStatusBar({required this.tablet, super.key});
+  const AppleStatusBar({required this.tablet, required this.now, super.key});
 
   final bool tablet;
+  final DateTime now;
 
   @override
   Widget build(BuildContext context) {
-    final now = DateTime.now();
     final minutes = now.minute.toString().padLeft(2, '0');
     final labelColor = AppleTheme.primaryLabel(context);
 
@@ -32,6 +32,7 @@ class AppleStatusBar extends StatelessWidget {
               Expanded(
                 child: Text(
                   '${now.hour}:$minutes',
+                  key: const Key('apple-status-time'),
                   maxLines: 1,
                   overflow: TextOverflow.fade,
                   style: Theme.of(context).textTheme.labelMedium?.copyWith(

@@ -1,3 +1,5 @@
+import 'dart:async';
+
 import 'package:flutter/material.dart';
 
 import '../data/portfolio_data.dart';
@@ -8,17 +10,25 @@ import 'apple_mobile_dock.dart';
 import 'apple_status_bar.dart';
 import 'mobile_app_surface.dart';
 
+typedef AppleNow = DateTime Function();
+
+DateTime _systemNow() => DateTime.now();
+
 class AppleMobileShell extends StatefulWidget {
   const AppleMobileShell({
     required this.data,
     required this.externalLauncher,
     required this.tablet,
+    this.now = _systemNow,
+    this.clockTickInterval = const Duration(seconds: 30),
     super.key,
   });
 
   final PortfolioData data;
   final ExternalLauncher externalLauncher;
   final bool tablet;
+  final AppleNow now;
+  final Duration clockTickInterval;
 
   @override
   State<AppleMobileShell> createState() => _AppleMobileShellState();
@@ -26,6 +36,52 @@ class AppleMobileShell extends StatefulWidget {
 
 class _AppleMobileShellState extends State<AppleMobileShell> {
   PortfolioAppId? _activeApp;
+  Timer? _clockTimer;
+  late DateTime _now;
+
+  @override
+  void initState() {
+    super.initState();
+    _restartClock();
+  }
+
+  @override
+  void didUpdateWidget(covariant AppleMobileShell oldWidget) {
+    super.didUpdateWidget(oldWidget);
+    if (oldWidget.now != widget.now ||
+        oldWidget.clockTickInterval != widget.clockTickInterval) {
+      _restartClock();
+    }
+  }
+
+  void _restartClock() {
+    _clockTimer?.cancel();
+    _now = widget.now();
+    _clockTimer = Timer.periodic(widget.clockTickInterval, (_) {
+      if (!mounted) {
+        return;
+      }
+      final next = widget.now();
+      if (_showsSameTimeAndDate(_now, next)) {
+        return;
+      }
+      setState(() => _now = next);
+    });
+  }
+
+  bool _showsSameTimeAndDate(DateTime first, DateTime second) {
+    return first.year == second.year &&
+        first.month == second.month &&
+        first.day == second.day &&
+        first.hour == second.hour &&
+        first.minute == second.minute;
+  }
+
+  @override
+  void dispose() {
+    _clockTimer?.cancel();
+    super.dispose();
+  }
 
   void _openApp(PortfolioAppId appId) {
     if (_activeApp == appId) {
@@ -59,7 +115,7 @@ class _AppleMobileShellState extends State<AppleMobileShell> {
             SafeArea(
               child: Column(
                 children: <Widget>[
-                  AppleStatusBar(tablet: widget.tablet),
+                  AppleStatusBar(tablet: widget.tablet, now: _now),
                   Expanded(
                     child: AnimatedSwitcher(
                       duration: const Duration(milliseconds: 240),
@@ -115,6 +171,7 @@ class _AppleMobileShellState extends State<AppleMobileShell> {
             child: AppleHomeGrid(
               data: widget.data,
               tablet: widget.tablet,
+              now: _now,
               onOpen: _openApp,
             ),
           ),
