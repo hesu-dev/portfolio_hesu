@@ -4,6 +4,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:portfolio_hesu/portfolio/apps/settings_app.dart';
+import 'package:portfolio_hesu/portfolio/data/portfolio_data.dart';
 import 'package:portfolio_hesu/portfolio/models/portfolio_app_id.dart';
 import 'package:portfolio_hesu/portfolio/portfolio_app.dart';
 import 'package:portfolio_hesu/portfolio/services/external_launcher.dart';
@@ -312,7 +313,11 @@ Future<void> _pumpSettings(
         themeMode: controller.themeMode,
         home: MediaQuery(
           data: MediaQueryData(size: size, textScaler: textScaler),
-          child: SettingsApp(themeController: controller, compact: compact),
+          child: SettingsApp(
+            data: portfolioData,
+            themeController: controller,
+            compact: compact,
+          ),
         ),
       ),
     ),

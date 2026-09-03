@@ -1,18 +1,22 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
+import 'package:flutter_svg/flutter_svg.dart';
 
+import '../data/portfolio_data.dart';
 import '../theme/apple_theme.dart';
 import '../theme/portfolio_theme_controller.dart';
 
-/// The single-purpose appearance settings surface shared by every shell.
+/// Profile and appearance settings shared by every portfolio shell.
 class SettingsApp extends StatelessWidget {
   const SettingsApp({
+    required this.data,
     required this.themeController,
     this.compact = false,
     this.tablet = false,
     super.key,
   });
 
+  final PortfolioData data;
   final PortfolioThemeController themeController;
   final bool compact;
   final bool tablet;
@@ -21,47 +25,39 @@ class SettingsApp extends StatelessWidget {
   Widget build(BuildContext context) {
     return AppleAppSurface(
       key: const Key('settings-app'),
-      child: Column(
-        children: <Widget>[
-          AppleToolbar(
-            title: '설정',
-            subtitle: '포트폴리오 화면의 표시 방식을 선택합니다',
-            compact: compact,
-            leading: const Icon(Icons.settings_rounded, color: AppleTheme.blue),
-          ),
-          Expanded(
-            child: LayoutBuilder(
-              builder: (context, constraints) {
-                final wide = !compact && constraints.maxWidth >= 600;
-                if (!wide) {
-                  return _DisplayModePane(
-                    controller: themeController,
-                    compact: true,
-                  );
-                }
-                return Row(
-                  crossAxisAlignment: CrossAxisAlignment.stretch,
-                  children: <Widget>[
-                    const _SettingsSidebar(),
-                    Expanded(
-                      child: _DisplayModePane(
-                        controller: themeController,
-                        compact: false,
-                      ),
-                    ),
-                  ],
-                );
-              },
-            ),
-          ),
-        ],
+      child: LayoutBuilder(
+        builder: (context, constraints) {
+          final wide = !compact && constraints.maxWidth >= 600;
+          if (!wide) {
+            return _DisplayModePane(
+              data: data,
+              controller: themeController,
+              compact: true,
+            );
+          }
+          return Row(
+            crossAxisAlignment: CrossAxisAlignment.stretch,
+            children: <Widget>[
+              _SettingsSidebar(data: data),
+              Expanded(
+                child: _DisplayModePane(
+                  data: data,
+                  controller: themeController,
+                  compact: false,
+                ),
+              ),
+            ],
+          );
+        },
       ),
     );
   }
 }
 
 class _SettingsSidebar extends StatelessWidget {
-  const _SettingsSidebar();
+  const _SettingsSidebar({required this.data});
+
+  final PortfolioData data;
 
   @override
   Widget build(BuildContext context) {
@@ -75,52 +71,150 @@ class _SettingsSidebar extends StatelessWidget {
           right: BorderSide(color: AppleTheme.separator(context), width: 0.7),
         ),
       ),
-      child: Align(
-        alignment: Alignment.topCenter,
-        child: Container(
-          constraints: const BoxConstraints(minHeight: 48),
-          padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 9),
-          decoration: BoxDecoration(
-            color: AppleTheme.selectionBackground(context, AppleTheme.blue),
-            borderRadius: BorderRadius.circular(11),
-          ),
-          child: Row(
-            children: <Widget>[
-              Container(
-                width: 30,
-                height: 30,
-                decoration: BoxDecoration(
-                  color: AppleTheme.blue,
-                  borderRadius: BorderRadius.circular(8),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.stretch,
+        children: <Widget>[
+          _SettingsProfile(data: data),
+          const SizedBox(height: 14),
+          const _DisplayModeMenuItem(),
+        ],
+      ),
+    );
+  }
+}
+
+class _SettingsProfile extends StatelessWidget {
+  const _SettingsProfile({required this.data, this.compact = false});
+
+  final PortfolioData data;
+  final bool compact;
+
+  @override
+  Widget build(BuildContext context) {
+    final accountName = _deriveAccountName(data);
+    return Semantics(
+      container: true,
+      label: '${data.name}, $accountName, Apple 계정',
+      excludeSemantics: true,
+      child: Container(
+        key: const Key('settings-profile'),
+        constraints: const BoxConstraints(minHeight: 64),
+        padding: EdgeInsets.symmetric(
+          horizontal: compact ? 12 : 8,
+          vertical: 8,
+        ),
+        decoration: BoxDecoration(
+          color: compact
+              ? AppleTheme.panel(context).withValues(alpha: 0.72)
+              : Colors.transparent,
+          borderRadius: BorderRadius.circular(14),
+          border: compact
+              ? Border.all(color: AppleTheme.separator(context), width: 0.7)
+              : null,
+        ),
+        child: Row(
+          children: <Widget>[
+            Container(
+              key: const Key('settings-profile-avatar'),
+              width: 44,
+              height: 44,
+              decoration: BoxDecoration(
+                shape: BoxShape.circle,
+                gradient: const LinearGradient(
+                  begin: Alignment.topCenter,
+                  end: Alignment.bottomCenter,
+                  colors: <Color>[Color(0xFFB8BEC8), Color(0xFF7E8795)],
                 ),
-                child: const Icon(
-                  Icons.light_mode_rounded,
-                  color: Colors.white,
-                  size: 18,
+                border: Border.all(
+                  color: Colors.white.withValues(alpha: 0.82),
+                  width: 1.4,
                 ),
               ),
-              const SizedBox(width: 10),
-              Expanded(
-                child: Text(
-                  '화면 모드',
-                  maxLines: 2,
-                  overflow: TextOverflow.ellipsis,
-                  style: Theme.of(context).textTheme.labelLarge?.copyWith(
-                    color: AppleTheme.selectionForeground(context),
+              child: const Icon(
+                Icons.person_rounded,
+                color: Colors.white,
+                size: 31,
+              ),
+            ),
+            const SizedBox(width: 10),
+            Expanded(
+              child: Column(
+                mainAxisSize: MainAxisSize.min,
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: <Widget>[
+                  Text(
+                    accountName,
+                    maxLines: 1,
+                    overflow: TextOverflow.ellipsis,
+                    style: Theme.of(context).textTheme.labelLarge,
                   ),
-                ),
+                  const SizedBox(height: 1),
+                  Text(
+                    'Apple 계정',
+                    maxLines: 1,
+                    overflow: TextOverflow.ellipsis,
+                    style: AppleTheme.caption(
+                      context,
+                    ).copyWith(color: AppleTheme.secondaryLabel(context)),
+                  ),
+                ],
               ),
-            ],
-          ),
+            ),
+          ],
         ),
       ),
     );
   }
 }
 
-class _DisplayModePane extends StatelessWidget {
-  const _DisplayModePane({required this.controller, required this.compact});
+class _DisplayModeMenuItem extends StatelessWidget {
+  const _DisplayModeMenuItem();
 
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      key: const Key('settings-display-mode-menu-item'),
+      constraints: const BoxConstraints(minHeight: 52),
+      padding: const EdgeInsets.symmetric(horizontal: 9, vertical: 7),
+      decoration: BoxDecoration(
+        color: AppleTheme.selectionBackground(context, AppleTheme.blue),
+        borderRadius: BorderRadius.circular(11),
+      ),
+      child: Row(
+        children: <Widget>[
+          ExcludeSemantics(
+            child: SvgPicture.asset(
+              'assets/icons/settings-display-mode.svg',
+              key: const Key('settings-display-mode-svg'),
+              width: 36,
+              height: 36,
+            ),
+          ),
+          const SizedBox(width: 10),
+          Expanded(
+            child: Text(
+              '화면 모드',
+              maxLines: 2,
+              overflow: TextOverflow.ellipsis,
+              style: Theme.of(context).textTheme.labelLarge?.copyWith(
+                color: AppleTheme.selectionForeground(context),
+              ),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+class _DisplayModePane extends StatelessWidget {
+  const _DisplayModePane({
+    required this.data,
+    required this.controller,
+    required this.compact,
+  });
+
+  final PortfolioData data;
   final PortfolioThemeController controller;
   final bool compact;
 
@@ -141,62 +235,97 @@ class _DisplayModePane extends StatelessWidget {
         child: ConstrainedBox(
           constraints: const BoxConstraints(maxWidth: 720),
           child: Column(
-            key: const Key('settings-display-mode'),
             crossAxisAlignment: CrossAxisAlignment.stretch,
             children: <Widget>[
-              Text('화면 모드', style: AppleTheme.title(context)),
-              const SizedBox(height: 5),
-              Text(
-                '읽기 편한 화면을 선택하세요. 변경 사항은 바로 적용됩니다.',
-                style: AppleTheme.body(
-                  context,
-                ).copyWith(color: AppleTheme.secondaryLabel(context)),
-              ),
-              SizedBox(height: compact ? 18 : 26),
-              LayoutBuilder(
-                builder: (context, constraints) {
-                  final stackChoices = compact || constraints.maxWidth < 430;
-                  final light = _ThemeChoice(
-                    preference: PortfolioThemePreference.light,
-                    label: '라이트',
-                    description: '밝고 선명한 화면',
-                    selected:
-                        controller.preference == PortfolioThemePreference.light,
-                    onSelected: controller.select,
-                  );
-                  final dark = _ThemeChoice(
-                    preference: PortfolioThemePreference.dark,
-                    label: '다크',
-                    description: '눈이 편안한 어두운 화면',
-                    selected:
-                        controller.preference == PortfolioThemePreference.dark,
-                    onSelected: controller.select,
-                  );
-                  return stackChoices
-                      ? Column(
-                          crossAxisAlignment: CrossAxisAlignment.stretch,
-                          children: <Widget>[
-                            light,
-                            const SizedBox(height: 14),
-                            dark,
-                          ],
-                        )
-                      : Row(
-                          crossAxisAlignment: CrossAxisAlignment.start,
-                          children: <Widget>[
-                            Expanded(child: light),
-                            const SizedBox(width: 18),
-                            Expanded(child: dark),
-                          ],
-                        );
-                },
-              ),
+              if (compact) ...<Widget>[
+                _SettingsProfile(data: data, compact: true),
+                const SizedBox(height: 22),
+              ],
+              _DisplayModeContent(controller: controller, compact: compact),
             ],
           ),
         ),
       ),
     );
   }
+}
+
+class _DisplayModeContent extends StatelessWidget {
+  const _DisplayModeContent({required this.controller, required this.compact});
+
+  final PortfolioThemeController controller;
+  final bool compact;
+
+  @override
+  Widget build(BuildContext context) {
+    return Column(
+      key: const Key('settings-display-mode'),
+      crossAxisAlignment: CrossAxisAlignment.stretch,
+      children: <Widget>[
+        Text('화면 모드', style: AppleTheme.title(context)),
+        const SizedBox(height: 5),
+        Text(
+          '읽기 편한 화면을 선택하세요. 변경 사항은 바로 적용됩니다.',
+          style: AppleTheme.body(
+            context,
+          ).copyWith(color: AppleTheme.secondaryLabel(context)),
+        ),
+        SizedBox(height: compact ? 18 : 26),
+        LayoutBuilder(
+          builder: (context, constraints) {
+            final stackChoices = compact || constraints.maxWidth < 430;
+            final light = _ThemeChoice(
+              preference: PortfolioThemePreference.light,
+              label: '라이트',
+              description: '밝고 선명한 화면',
+              selected: controller.preference == PortfolioThemePreference.light,
+              onSelected: controller.select,
+            );
+            final dark = _ThemeChoice(
+              preference: PortfolioThemePreference.dark,
+              label: '다크',
+              description: '눈이 편안한 어두운 화면',
+              selected: controller.preference == PortfolioThemePreference.dark,
+              onSelected: controller.select,
+            );
+            return stackChoices
+                ? Column(
+                    crossAxisAlignment: CrossAxisAlignment.stretch,
+                    children: <Widget>[light, const SizedBox(height: 14), dark],
+                  )
+                : Row(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: <Widget>[
+                      Expanded(child: light),
+                      const SizedBox(width: 18),
+                      Expanded(child: dark),
+                    ],
+                  );
+          },
+        ),
+      ],
+    );
+  }
+}
+
+String _deriveAccountName(PortfolioData data) {
+  final englishName = data.identity.englishName.trim();
+  final tokens = englishName
+      .split(RegExp(r'\s+'))
+      .where((token) => token.isNotEmpty)
+      .toList(growable: false);
+  if (tokens.isNotEmpty) {
+    return tokens.reversed.map((token) => token.toLowerCase()).join(' ');
+  }
+
+  final localName = data.name.trim();
+  if (localName.isNotEmpty) {
+    return localName.toLowerCase();
+  }
+
+  final email = data.email.trim();
+  final separator = email.indexOf('@');
+  return (separator > 0 ? email.substring(0, separator) : email).toLowerCase();
 }
 
 class _ThemeChoice extends StatefulWidget {

@@ -56,6 +56,7 @@ class PortfolioAppContent extends StatelessWidget {
         tablet: tablet,
       ),
       PortfolioAppId.settings => SettingsApp(
+        data: data,
         themeController: themeController,
         compact: compact,
         tablet: tablet,
