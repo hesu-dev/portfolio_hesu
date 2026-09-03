@@ -218,6 +218,23 @@ void main() {
       expect(find.text('hs0647@portfolio ~ % help'), findsOneWidget);
       expect(controller.preference, PortfolioThemePreference.dark);
     });
+
+    testWidgets('Mac 설정 창은 화면 모드 카드에 맞는 초기 크기로 열린다', (tester) async {
+      final controller = PortfolioThemeController();
+      addTearDown(controller.dispose);
+      await _pumpPortfolio(
+        tester,
+        size: const Size(1440, 900),
+        controller: controller,
+      );
+
+      await _openDesktopApp(tester, PortfolioAppId.settings);
+
+      final size = tester.getSize(find.byKey(const Key('mac-window-settings')));
+      expect(size.width, inInclusiveRange(680, 820));
+      expect(size.height, inInclusiveRange(480, 600));
+      expect(tester.takeException(), isNull);
+    });
   });
 }
 
