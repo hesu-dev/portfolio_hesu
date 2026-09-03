@@ -79,64 +79,60 @@ class _TerminalAppState extends State<TerminalApp> {
 
   @override
   Widget build(BuildContext context) {
-    return Theme(
-      data: AppleTheme.dark(),
-      child: Builder(
-        builder: (context) {
-          return AppleAppSurface(
-            key: const Key('terminal-app'),
-            color: const Color(0xFF121315),
-            child: Column(
-              children: <Widget>[
-                _TerminalInput(
-                  key: const Key('terminal-input-area'),
-                  controller: _controller,
-                  focusNode: _focusNode,
-                  compact: widget.compact,
-                  prompt: _prompt,
-                  onSubmitted: _submit,
+    final dark = AppleTheme.isDark(context);
+    final background = dark ? const Color(0xFF121315) : const Color(0xFFF5F5F7);
+    final primary = dark ? const Color(0xFFE7E7EA) : const Color(0xFF242428);
+    final accent = dark ? const Color(0xFF71D98A) : const Color(0xFF176B2D);
+
+    return AppleAppSurface(
+      key: const Key('terminal-app'),
+      color: background,
+      child: Column(
+        children: <Widget>[
+          _TerminalInput(
+            key: const Key('terminal-input-area'),
+            controller: _controller,
+            focusNode: _focusNode,
+            compact: widget.compact,
+            prompt: _prompt,
+            onSubmitted: _submit,
+          ),
+          Expanded(
+            child: Scrollbar(
+              controller: _scrollController,
+              thumbVisibility: !widget.compact,
+              child: ListView(
+                key: const Key('terminal-transcript'),
+                controller: _scrollController,
+                padding: EdgeInsets.fromLTRB(
+                  widget.compact ? 14 : 22,
+                  18,
+                  widget.compact ? 14 : 22,
+                  24,
                 ),
-                Expanded(
-                  child: Scrollbar(
-                    controller: _scrollController,
-                    thumbVisibility: !widget.compact,
-                    child: ListView(
-                      key: const Key('terminal-transcript'),
-                      controller: _scrollController,
-                      padding: EdgeInsets.fromLTRB(
-                        widget.compact ? 14 : 22,
-                        18,
-                        widget.compact ? 14 : 22,
-                        24,
+                children: <Widget>[
+                  for (final line in _transcript)
+                    Padding(
+                      padding: const EdgeInsets.only(bottom: 5),
+                      child: Text(
+                        line.text,
+                        style: TextStyle(
+                          color: line.isCommand ? accent : primary,
+                          fontFamily: 'monospace',
+                          fontFamilyFallback: const <String>[
+                            'Menlo',
+                            'Consolas',
+                          ],
+                          fontSize: widget.compact ? 12.5 : 13.5,
+                          height: 1.45,
+                        ),
                       ),
-                      children: <Widget>[
-                        for (final line in _transcript)
-                          Padding(
-                            padding: const EdgeInsets.only(bottom: 5),
-                            child: Text(
-                              line.text,
-                              style: TextStyle(
-                                color: line.isCommand
-                                    ? const Color(0xFF71D98A)
-                                    : const Color(0xFFE7E7EA),
-                                fontFamily: 'monospace',
-                                fontFamilyFallback: const <String>[
-                                  'Menlo',
-                                  'Consolas',
-                                ],
-                                fontSize: widget.compact ? 12.5 : 13.5,
-                                height: 1.45,
-                              ),
-                            ),
-                          ),
-                      ],
                     ),
-                  ),
-                ),
-              ],
+                ],
+              ),
             ),
-          );
-        },
+          ),
+        ],
       ),
     );
   }
@@ -160,10 +156,22 @@ class _TerminalInput extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final dark = AppleTheme.isDark(context);
+    final accent = dark ? const Color(0xFF71D98A) : const Color(0xFF176B2D);
+    final inputForeground = dark
+        ? const Color(0xFFF3F3F5)
+        : const Color(0xFF242428);
+    final inputBackground = dark
+        ? const Color(0xFF18191C)
+        : const Color(0xFFFFFFFF);
+    final inputBorder = dark
+        ? const Color(0xFF34353A)
+        : const Color(0xFFD8D8DC);
+    final hint = dark ? const Color(0xFF74757B) : const Color(0xFF6E6E73);
     final promptLabel = Text(
       prompt,
       style: TextStyle(
-        color: const Color(0xFF71D98A),
+        color: accent,
         fontFamily: 'monospace',
         fontSize: compact ? 12.5 : 13,
         fontWeight: FontWeight.w600,
@@ -178,15 +186,15 @@ class _TerminalInput extends StatelessWidget {
       enableSuggestions: false,
       textInputAction: TextInputAction.send,
       style: TextStyle(
-        color: const Color(0xFFF3F3F5),
+        color: inputForeground,
         fontFamily: 'monospace',
         fontSize: compact ? 13 : 13.5,
       ),
-      cursorColor: const Color(0xFF71D98A),
-      decoration: const InputDecoration(
+      cursorColor: accent,
+      decoration: InputDecoration(
         isDense: true,
         hintText: 'Enter a command',
-        hintStyle: TextStyle(color: Color(0xFF74757B)),
+        hintStyle: TextStyle(color: hint),
         filled: false,
         border: InputBorder.none,
         enabledBorder: InputBorder.none,
@@ -201,26 +209,21 @@ class _TerminalInput extends StatelessWidget {
         onPressed: () => onSubmitted(controller.text),
         tooltip: 'Run command',
         visualDensity: VisualDensity.compact,
-        icon: const Icon(
-          Icons.arrow_upward_rounded,
-          color: Color(0xFF71D98A),
-          size: 20,
-        ),
+        icon: Icon(Icons.arrow_upward_rounded, color: accent, size: 20),
       ),
     );
 
     return Container(
+      key: const Key('terminal-input-surface'),
       padding: EdgeInsets.fromLTRB(
         compact ? 12 : 18,
         10,
         compact ? 10 : 14,
         12,
       ),
-      decoration: const BoxDecoration(
-        color: Color(0xFF18191C),
-        border: Border(
-          bottom: BorderSide(color: Color(0xFF34353A), width: 0.7),
-        ),
+      decoration: BoxDecoration(
+        color: inputBackground,
+        border: Border(bottom: BorderSide(color: inputBorder, width: 0.7)),
       ),
       child: LayoutBuilder(
         builder: (context, constraints) {
