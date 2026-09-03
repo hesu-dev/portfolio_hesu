@@ -6,6 +6,19 @@ import 'apple_selection_control.dart';
 typedef AppleFinderBodyBuilder =
     Widget Function(BuildContext context, bool compactLayout);
 
+@immutable
+class AppleFinderLocation {
+  const AppleFinderLocation({
+    required this.id,
+    required this.label,
+    required this.icon,
+  });
+
+  final String id;
+  final String label;
+  final IconData icon;
+}
+
 /// Optional desktop-window chrome embedded into a Finder toolbar.
 ///
 /// Projects supplies this value on every form factor so one Finder toolbar owns
@@ -43,6 +56,8 @@ class AppleFinderScaffold extends StatelessWidget {
     required this.onBack,
     required this.onForward,
     required this.bodyBuilder,
+    this.locations,
+    this.onLocationSelected,
     this.toolbarTitle,
     this.backTooltip = '뒤로',
     this.forwardTooltip = '앞으로',
@@ -62,6 +77,8 @@ class AppleFinderScaffold extends StatelessWidget {
   final VoidCallback onBack;
   final VoidCallback onForward;
   final AppleFinderBodyBuilder bodyBuilder;
+  final List<AppleFinderLocation>? locations;
+  final ValueChanged<String>? onLocationSelected;
   final String? toolbarTitle;
   final String backTooltip;
   final String forwardTooltip;
@@ -105,6 +122,9 @@ class AppleFinderScaffold extends StatelessWidget {
                           key: Key('$keyPrefix-finder-sidebar'),
                           ownerName: ownerName,
                           selectedLocation: currentLocation,
+                          locations: locations,
+                          onLocationSelected: onLocationSelected,
+                          controlKeyPrefix: '$keyPrefix-finder',
                         ),
                       ),
                       Expanded(child: bodyBuilder(context, false)),
@@ -118,6 +138,9 @@ class AppleFinderScaffold extends StatelessWidget {
                       key: Key('$keyPrefix-finder-locations'),
                       ownerName: ownerName,
                       selectedLocation: currentLocation,
+                      locations: locations,
+                      onLocationSelected: onLocationSelected,
+                      controlKeyPrefix: '$keyPrefix-finder',
                     ),
                     Expanded(child: bodyBuilder(context, true)),
                   ],
@@ -247,14 +270,21 @@ class AppleFinderSidebar extends StatelessWidget {
   const AppleFinderSidebar({
     required this.ownerName,
     required this.selectedLocation,
+    this.locations,
+    this.onLocationSelected,
+    this.controlKeyPrefix = 'finder',
     super.key,
   });
 
   final String ownerName;
   final String selectedLocation;
+  final List<AppleFinderLocation>? locations;
+  final ValueChanged<String>? onLocationSelected;
+  final String controlKeyPrefix;
 
   @override
   Widget build(BuildContext context) {
+    final configuredLocations = locations;
     return DecoratedBox(
       decoration: BoxDecoration(
         color: AppleTheme.panel(context),
@@ -264,26 +294,54 @@ class AppleFinderSidebar extends StatelessWidget {
       ),
       child: ListView(
         padding: const EdgeInsets.fromLTRB(10, 12, 10, 18),
-        children: <Widget>[
-          const _AppleFinderSidebarItem(
-            label: '최근 항목',
-            icon: Icons.access_time_filled_rounded,
-          ),
-          const _AppleFinderSidebarItem(
-            label: '공유',
-            icon: Icons.people_alt_rounded,
-          ),
-          const SizedBox(height: 12),
-          const _AppleFinderSidebarHeading(label: '위치'),
-          _AppleFinderSidebarItem(
-            label: selectedLocation,
-            icon: selectedLocation == 'iCloud Drive'
-                ? Icons.cloud_rounded
-                : Icons.folder_copy_rounded,
-            selected: true,
-          ),
-          _AppleFinderSidebarItem(label: ownerName, icon: Icons.home_rounded),
-        ],
+        children: configuredLocations == null
+            ? <Widget>[
+                const _AppleFinderSidebarItem(
+                  label: '최근 항목',
+                  icon: Icons.access_time_filled_rounded,
+                ),
+                const _AppleFinderSidebarItem(
+                  label: '공유',
+                  icon: Icons.people_alt_rounded,
+                ),
+                const SizedBox(height: 12),
+                const _AppleFinderSidebarHeading(label: '위치'),
+                _AppleFinderSidebarItem(
+                  label: selectedLocation,
+                  icon: selectedLocation == 'iCloud Drive'
+                      ? Icons.cloud_rounded
+                      : Icons.folder_copy_rounded,
+                  selected: true,
+                ),
+                _AppleFinderSidebarItem(
+                  label: ownerName,
+                  icon: Icons.home_rounded,
+                ),
+              ]
+            : <Widget>[
+                const _AppleFinderSidebarItem(
+                  label: '최근 항목',
+                  icon: Icons.access_time_filled_rounded,
+                ),
+                const _AppleFinderSidebarItem(
+                  label: '공유',
+                  icon: Icons.people_alt_rounded,
+                ),
+                const SizedBox(height: 12),
+                const _AppleFinderSidebarHeading(label: '위치'),
+                for (final location in configuredLocations)
+                  _AppleFinderSidebarItem(
+                    controlKey: Key(
+                      '$controlKeyPrefix-location-${location.id}',
+                    ),
+                    label: location.label,
+                    icon: location.icon,
+                    selected: location.label == selectedLocation,
+                    onPressed: onLocationSelected == null
+                        ? null
+                        : () => onLocationSelected!(location.id),
+                  ),
+              ],
       ),
     );
   }
@@ -293,14 +351,21 @@ class AppleFinderLocationStrip extends StatelessWidget {
   const AppleFinderLocationStrip({
     required this.ownerName,
     required this.selectedLocation,
+    this.locations,
+    this.onLocationSelected,
+    this.controlKeyPrefix = 'finder',
     super.key,
   });
 
   final String ownerName;
   final String selectedLocation;
+  final List<AppleFinderLocation>? locations;
+  final ValueChanged<String>? onLocationSelected;
+  final String controlKeyPrefix;
 
   @override
   Widget build(BuildContext context) {
+    final configuredLocations = locations;
     return DecoratedBox(
       decoration: BoxDecoration(
         color: AppleTheme.panel(context),
@@ -312,12 +377,31 @@ class AppleFinderLocationStrip extends StatelessWidget {
         scrollDirection: Axis.horizontal,
         padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 7),
         child: Row(
-          children: <Widget>[
-            const _AppleFinderLocationChip(label: '최근 항목'),
-            const _AppleFinderLocationChip(label: '공유'),
-            _AppleFinderLocationChip(label: selectedLocation, selected: true),
-            _AppleFinderLocationChip(label: ownerName),
-          ],
+          children: configuredLocations == null
+              ? <Widget>[
+                  const _AppleFinderLocationChip(label: '최근 항목'),
+                  const _AppleFinderLocationChip(label: '공유'),
+                  _AppleFinderLocationChip(
+                    label: selectedLocation,
+                    selected: true,
+                  ),
+                  _AppleFinderLocationChip(label: ownerName),
+                ]
+              : <Widget>[
+                  const _AppleFinderLocationChip(label: '최근 항목'),
+                  const _AppleFinderLocationChip(label: '공유'),
+                  for (final location in configuredLocations)
+                    _AppleFinderLocationChip(
+                      controlKey: Key(
+                        '$controlKeyPrefix-location-${location.id}',
+                      ),
+                      label: location.label,
+                      selected: location.label == selectedLocation,
+                      onPressed: onLocationSelected == null
+                          ? null
+                          : () => onLocationSelected!(location.id),
+                    ),
+                ],
         ),
       ),
     );
@@ -446,16 +530,20 @@ class _AppleFinderSidebarItem extends StatelessWidget {
   const _AppleFinderSidebarItem({
     required this.label,
     required this.icon,
+    this.controlKey,
     this.selected = false,
+    this.onPressed,
   });
 
   final String label;
   final IconData icon;
+  final Key? controlKey;
   final bool selected;
+  final VoidCallback? onPressed;
 
   @override
   Widget build(BuildContext context) {
-    return Container(
+    final content = Container(
       constraints: const BoxConstraints(minHeight: 44),
       padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 8),
       decoration: BoxDecoration(
@@ -484,18 +572,38 @@ class _AppleFinderSidebarItem extends StatelessWidget {
         ],
       ),
     );
+
+    final action = onPressed;
+    if (action == null) {
+      return content;
+    }
+    return AppleSelectionControl(
+      key: controlKey,
+      semanticsLabel: '$label 위치 열기',
+      selected: selected,
+      onPressed: action,
+      borderRadius: BorderRadius.circular(9),
+      child: content,
+    );
   }
 }
 
 class _AppleFinderLocationChip extends StatelessWidget {
-  const _AppleFinderLocationChip({required this.label, this.selected = false});
+  const _AppleFinderLocationChip({
+    required this.label,
+    this.controlKey,
+    this.selected = false,
+    this.onPressed,
+  });
 
   final String label;
+  final Key? controlKey;
   final bool selected;
+  final VoidCallback? onPressed;
 
   @override
   Widget build(BuildContext context) {
-    return Container(
+    final content = Container(
       constraints: const BoxConstraints(minHeight: 44),
       margin: const EdgeInsets.only(right: 8),
       padding: const EdgeInsets.symmetric(horizontal: 13, vertical: 8),
@@ -514,6 +622,19 @@ class _AppleFinderLocationChip extends StatelessWidget {
               : AppleTheme.primaryLabel(context),
         ),
       ),
+    );
+
+    final action = onPressed;
+    if (action == null) {
+      return content;
+    }
+    return AppleSelectionControl(
+      key: controlKey,
+      semanticsLabel: '$label 위치 열기',
+      selected: selected,
+      onPressed: action,
+      borderRadius: BorderRadius.circular(999),
+      child: content,
     );
   }
 }
