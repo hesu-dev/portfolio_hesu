@@ -333,6 +333,16 @@ void main() {
             expect(corner[3], 255, reason: entry.key);
           } else {
             expect(image.hasTransparentPixel, isTrue, reason: entry.key);
+            expect(
+              image.pixelAt(image.width ~/ 2, image.height ~/ 2)[3],
+              255,
+              reason: '${entry.key} must keep the monogram centered',
+            );
+            expect(
+              image.pixelAt(image.width - 1, image.height - 1)[3],
+              0,
+              reason: '${entry.key} must keep the rounded transparent corner',
+            );
           }
         }
       },
