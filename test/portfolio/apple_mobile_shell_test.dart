@@ -69,9 +69,9 @@ void main() {
       expect(find.byKey(const Key('mobile-home')), findsNothing);
       expect(find.byKey(const Key('mobile-app-surface')), findsOneWidget);
       expect(find.byKey(const Key('about-app')), findsOneWidget);
-      expect(find.bySemanticsLabel('Close About'), findsOneWidget);
+      expect(find.bySemanticsLabel('홈으로 돌아가기'), findsOneWidget);
 
-      await tester.tap(find.byKey(const Key('mobile-close')));
+      await tester.tap(find.byKey(const Key('mobile-home-back')));
       await tester.pumpAndSettle();
 
       expect(find.byKey(const Key('mobile-home')), findsOneWidget);
@@ -231,8 +231,11 @@ void main() {
         await tester.pumpAndSettle();
 
         expect(find.byKey(const Key('terminal-app')), findsOneWidget);
-        expect(find.bySemanticsLabel('Close Terminal'), findsOneWidget);
-        for (final key in const <String>['mobile-close', 'terminal-submit']) {
+        expect(find.bySemanticsLabel('홈으로 돌아가기'), findsOneWidget);
+        for (final key in const <String>[
+          'mobile-home-back',
+          'terminal-submit',
+        ]) {
           final targetSize = tester.getSize(find.byKey(Key(key)));
           expect(targetSize.width, greaterThanOrEqualTo(44), reason: key);
           expect(targetSize.height, greaterThanOrEqualTo(44), reason: key);
