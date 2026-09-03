@@ -141,36 +141,58 @@ class _MobileAppNavigationBar extends StatelessWidget {
             horizontal: tablet ? 12 : 8,
             vertical: 4,
           ),
-          child: Row(
-            children: <Widget>[
-              if (tablet)
-                MacTrafficControls(
-                  appId: appId,
-                  windowLabel: label,
-                  maximized: false,
-                  onClose: onClose,
-                  targetSize: 32,
-                  secondaryControlsInteractive: false,
+          child: tablet
+              ? Row(
+                  children: <Widget>[
+                    MacTrafficControls(
+                      appId: appId,
+                      windowLabel: label,
+                      maximized: false,
+                      onClose: onClose,
+                      targetSize: 32,
+                      secondaryControlsInteractive: false,
+                    ),
+                    const SizedBox(width: 10),
+                    Expanded(
+                      child: Text(
+                        title,
+                        key: const Key('mobile-app-title'),
+                        maxLines: 1,
+                        overflow: TextOverflow.ellipsis,
+                        textAlign: TextAlign.left,
+                        style: Theme.of(context).textTheme.titleMedium,
+                      ),
+                    ),
+                  ],
                 )
-              else
-                MobileBackCloseButton(
-                  appId: appId,
-                  windowLabel: label,
-                  onPressed: onClose,
+              : SizedBox(
+                  height: 44,
+                  child: Stack(
+                    alignment: Alignment.center,
+                    children: <Widget>[
+                      PositionedDirectional(
+                        start: 0,
+                        child: MobileBackCloseButton(
+                          appId: appId,
+                          windowLabel: label,
+                          onPressed: onClose,
+                        ),
+                      ),
+                      Positioned.fill(
+                        left: 50,
+                        right: 50,
+                        child: Text(
+                          title,
+                          key: const Key('mobile-app-title'),
+                          maxLines: 1,
+                          overflow: TextOverflow.ellipsis,
+                          textAlign: TextAlign.center,
+                          style: Theme.of(context).textTheme.titleMedium,
+                        ),
+                      ),
+                    ],
+                  ),
                 ),
-              SizedBox(width: tablet ? 10 : 6),
-              Expanded(
-                child: Text(
-                  title,
-                  key: const Key('mobile-app-title'),
-                  maxLines: 1,
-                  overflow: TextOverflow.ellipsis,
-                  textAlign: TextAlign.left,
-                  style: Theme.of(context).textTheme.titleMedium,
-                ),
-              ),
-            ],
-          ),
         ),
       ),
     );

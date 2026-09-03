@@ -46,7 +46,12 @@ void main() {
             ),
             findsNothing,
           );
-          expect(tester.widget<Text>(title).textAlign, TextAlign.left);
+          expect(tester.widget<Text>(title).textAlign, TextAlign.center);
+          expect(
+            tester.getCenter(title).dx,
+            closeTo(390 / 2, 0.01),
+            reason: '${appId.name} title must use the full bar center',
+          );
           expect(
             tester.getRect(title).left,
             greaterThanOrEqualTo(tester.getRect(close).right),
@@ -274,7 +279,16 @@ void main() {
           final titleWidget = tester.widget<Text>(title);
           expect(titleWidget.maxLines, 1);
           expect(titleWidget.overflow, TextOverflow.ellipsis);
-          expect(titleWidget.textAlign, TextAlign.left);
+          expect(
+            titleWidget.textAlign,
+            size.width < 600 ? TextAlign.center : TextAlign.left,
+          );
+          if (size.width < 600) {
+            expect(
+              tester.getCenter(title).dx,
+              closeTo(size.width / 2, 0.01),
+            );
+          }
           if (size.width < 600) {
             expect(find.byType(MacTrafficControls), findsNothing);
             expect(
