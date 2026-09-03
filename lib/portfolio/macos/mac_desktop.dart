@@ -275,7 +275,9 @@ class _MacDesktopState extends State<MacDesktop> {
   }
 
   Widget _buildDesktopIcons() {
-    final availableHeight = (_viewport.height - 174).clamp(360.0, 478.0);
+    // Nine launchers render as five rows. Keep enough room for the final
+    // Trash label while still clearing the Dock on the minimum desktop size.
+    final availableHeight = (_viewport.height - 158).clamp(360.0, 560.0);
     return Positioned(
       top: 48,
       right: 17,
