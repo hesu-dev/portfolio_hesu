@@ -14,7 +14,7 @@ import 'package:portfolio_hesu/portfolio/widgets/apple_app_artwork.dart';
 void main() {
   group('mobile app navigation bar', () {
     testWidgets(
-      'every iPhone and iPad app uses one iOS-style Home back button',
+      'every iPhone and iPad app uses shared traffic lights and a left title',
       (tester) async {
         for (final size in const <Size>[Size(390, 844), Size(834, 1194)]) {
           for (final appId in PortfolioAppId.values) {
@@ -24,23 +24,19 @@ void main() {
             final navigationBar = find.byKey(
               const Key('mobile-app-navigation-bar'),
             );
-            final homeButton = find.byKey(const Key('mobile-home-back'));
             final title = find.byKey(const Key('mobile-app-title'));
+            final trafficControls = find.descendant(
+              of: navigationBar,
+              matching: find.byType(MacTrafficControls),
+            );
 
             expect(navigationBar, findsOneWidget);
-            expect(homeButton, findsOneWidget);
+            expect(find.byKey(const Key('mobile-home-back')), findsNothing);
+            expect(trafficControls, findsOneWidget);
             expect(
-              find.descendant(of: navigationBar, matching: find.text('홈')),
-              findsOneWidget,
+              tester.widget<MacTrafficControls>(trafficControls).appId,
+              appId,
             );
-            expect(
-              find.descendant(
-                of: navigationBar,
-                matching: find.byIcon(Icons.chevron_left_rounded),
-              ),
-              findsOneWidget,
-            );
-            expect(find.byType(MacTrafficControls), findsNothing);
             expect(find.byKey(const Key('mobile-close')), findsNothing);
             expect(
               find.descendant(
@@ -57,10 +53,11 @@ void main() {
               findsNothing,
               reason: 'The trailing app artwork was removed from mobile bars.',
             );
+            final titleWidget = tester.widget<Text>(title);
+            expect(titleWidget.textAlign, TextAlign.left);
             expect(
-              tester.getCenter(title).dx,
-              closeTo(tester.getCenter(navigationBar).dx, 0.5),
-              reason: '$size ${appId.name}',
+              tester.getRect(title).left,
+              greaterThanOrEqualTo(tester.getRect(trafficControls).right),
             );
             expect(
               tester.takeException(),
@@ -72,7 +69,7 @@ void main() {
       },
     );
 
-    testWidgets('Home back button exposes a 44px target and returns home', (
+    testWidgets('red traffic light closes the surface and returns home', (
       tester,
     ) async {
       final semantics = tester.ensureSemantics();
@@ -82,52 +79,45 @@ void main() {
         appId: PortfolioAppId.about,
       );
 
-      final homeButton = find.byKey(const Key('mobile-home-back'));
-      expect(find.bySemanticsLabel('홈으로 돌아가기'), findsOneWidget);
-      expect(tester.getSize(homeButton).width, greaterThanOrEqualTo(44));
-      expect(tester.getSize(homeButton).height, greaterThanOrEqualTo(44));
-      final semanticsData = tester.getSemantics(homeButton).getSemanticsData();
+      final closeButton = find.byKey(const Key('window-close-about'));
+      expect(find.bySemanticsLabel('Close About window'), findsOneWidget);
+      expect(tester.getSize(closeButton).width, MacTrafficControls.targetSize);
+      expect(tester.getSize(closeButton).height, MacTrafficControls.targetSize);
+      final semanticsData = tester.getSemantics(closeButton).getSemanticsData();
       expect(semanticsData.flagsCollection.isButton, isTrue);
       expect(semanticsData.hasAction(ui.SemanticsAction.tap), isTrue);
 
-      await tester.tap(homeButton);
+      await tester.tap(closeButton);
       await tester.pumpAndSettle();
       expect(find.byKey(const Key('mobile-home')), findsOneWidget);
       expect(find.byKey(const Key('mobile-app-surface')), findsNothing);
       semantics.dispose();
     });
 
-    testWidgets(
-      'keeps centered titles overflow-free at 200% on phone and iPad',
-      (tester) async {
-        for (final size in const <Size>[Size(320, 480), Size(600, 400)]) {
-          await tester.pumpWidget(const SizedBox.shrink());
-          await _pumpSurface(
-            tester,
-            size: size,
-            appId: PortfolioAppId.terminal,
-            textScaler: const TextScaler.linear(2),
-          );
+    testWidgets('keeps left titles and traffic lights overflow-free at 200%', (
+      tester,
+    ) async {
+      for (final size in const <Size>[Size(320, 480), Size(600, 400)]) {
+        await tester.pumpWidget(const SizedBox.shrink());
+        await _pumpSurface(
+          tester,
+          size: size,
+          appId: PortfolioAppId.terminal,
+          textScaler: const TextScaler.linear(2),
+        );
 
-          final navigationBar = find.byKey(
-            const Key('mobile-app-navigation-bar'),
-          );
-          final title = find.byKey(const Key('mobile-app-title'));
-          final titleWidget = tester.widget<Text>(title);
-          expect(titleWidget.maxLines, 1);
-          expect(titleWidget.overflow, TextOverflow.ellipsis);
-          expect(
-            tester.getCenter(title).dx,
-            closeTo(tester.getCenter(navigationBar).dx, 0.5),
-          );
-          expect(
-            tester.getSize(find.byKey(const Key('mobile-home-back'))).height,
-            greaterThanOrEqualTo(44),
-          );
-          expect(tester.takeException(), isNull, reason: '$size');
-        }
-      },
-    );
+        final navigationBar = find.byKey(
+          const Key('mobile-app-navigation-bar'),
+        );
+        final title = find.byKey(const Key('mobile-app-title'));
+        final titleWidget = tester.widget<Text>(title);
+        expect(titleWidget.maxLines, 1);
+        expect(titleWidget.overflow, TextOverflow.ellipsis);
+        expect(titleWidget.textAlign, TextAlign.left);
+        expect(find.byType(MacTrafficControls), findsOneWidget);
+        expect(tester.takeException(), isNull, reason: '$size');
+      }
+    });
   });
 }
 

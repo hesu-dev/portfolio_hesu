@@ -382,7 +382,11 @@ void main() {
         await tester.pumpAndSettle();
 
         expect(find.byKey(const Key('mobile-app-surface')), findsOneWidget);
-        expect(find.byKey(const Key('mobile-home-back')), findsOneWidget);
+        expect(
+          find.byKey(const Key('mac-traffic-controls-about')),
+          findsOneWidget,
+        );
+        expect(find.byKey(const Key('mobile-home-back')), findsNothing);
         expect(find.byKey(const Key('apple-app-artwork-about')), findsNothing);
       },
     );

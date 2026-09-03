@@ -27,6 +27,10 @@ void main() {
         expect(profile, findsOneWidget);
         expect(tester.widget(profile), isA<AppleNotesSurface>());
         expect(
+          find.descendant(of: profile, matching: find.byType(AppleNotesPaper)),
+          findsOneWidget,
+        );
+        expect(
           find.descendant(of: profile, matching: find.text('메모')),
           findsNothing,
         );
@@ -103,12 +107,12 @@ void main() {
     testWidgets('소개부터 연락처까지 하나의 paper body 안에 이어진다', (tester) async {
       await _pumpAbout(tester, size: const Size(900, 700));
 
-      final card = find.byKey(const Key('about-notes-card'));
       final body = find.byKey(const Key('about-notes-body'));
-      expect(card, findsOneWidget);
-      expect(find.byType(AppleNotesSurface), findsOneWidget);
+      expect(find.byKey(const Key('about-notes-card')), findsNothing);
+      expect(find.byKey(const Key('about-notes-header')), findsNothing);
+      expect(find.byType(AppleNotesSurface), findsNothing);
+      expect(find.byType(AppleNotesPaper), findsOneWidget);
       expect(body, findsOneWidget);
-      expect(find.descendant(of: card, matching: body), findsOneWidget);
       expect(
         find.descendant(of: body, matching: find.byType(AppleSurfaceCard)),
         findsNothing,

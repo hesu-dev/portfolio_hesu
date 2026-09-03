@@ -4,10 +4,11 @@ import 'package:portfolio_hesu/portfolio/apps/about_app.dart';
 import 'package:portfolio_hesu/portfolio/data/portfolio_data.dart';
 import 'package:portfolio_hesu/portfolio/services/external_launcher.dart';
 import 'package:portfolio_hesu/portfolio/theme/apple_theme.dart';
+import 'package:portfolio_hesu/portfolio/widgets/apple_notes_surface.dart';
 
 void main() {
   group('About Notes 카드', () {
-    testWidgets('identity와 소개를 하나의 메모 카드 안에서 데이터로 렌더한다', (tester) async {
+    testWidgets('identity와 소개를 중첩 카드 없는 한 장의 메모 본문에 렌더한다', (tester) async {
       final data = _dataWithIdentity(
         name: '테스트 민희수',
         englishName: 'Test He-su',
@@ -17,31 +18,13 @@ void main() {
 
       await _pumpAbout(tester, data: data, size: const Size(900, 700));
 
-      final card = find.byKey(const Key('about-notes-card'));
-      final header = find.byKey(const Key('about-notes-header'));
       final body = find.byKey(const Key('about-notes-body'));
-      expect(card, findsOneWidget);
-      expect(header, findsOneWidget);
+      expect(find.byType(AppleToolbar), findsNothing);
+      expect(find.byType(AppleNotesSurface), findsNothing);
+      expect(find.byType(AppleNotesPaper), findsOneWidget);
+      expect(find.byKey(const Key('about-notes-card')), findsNothing);
+      expect(find.byKey(const Key('about-notes-header')), findsNothing);
       expect(body, findsOneWidget);
-      expect(find.descendant(of: card, matching: header), findsOneWidget);
-      expect(find.descendant(of: card, matching: body), findsOneWidget);
-
-      expect(
-        find.descendant(of: header, matching: find.text('메모')),
-        findsOneWidget,
-      );
-      final folder = tester.widget<Icon>(
-        find.descendant(of: header, matching: find.byType(Icon)),
-      );
-      expect(folder.icon, Icons.folder_outlined);
-      expect(folder.color, Colors.white);
-      expect(
-        find.descendant(
-          of: header,
-          matching: find.byKey(const Key('about-notes-separator')),
-        ),
-        findsOneWidget,
-      );
 
       for (final text in <String>[
         data.identity.name,
@@ -57,20 +40,20 @@ void main() {
         );
       }
       expect(
-        find.descendant(of: card, matching: find.byType(Image)),
+        find.descendant(of: body, matching: find.byType(Image)),
         findsNothing,
       );
       expect(find.text('Career'), findsOneWidget);
       expect(find.text('Education'), findsOneWidget);
       expect(find.text('Contact'), findsOneWidget);
       expect(
-        tester.getTopLeft(card).dy,
+        tester.getTopLeft(body).dy,
         lessThan(tester.getTopLeft(find.text('Career')).dy),
       );
       expect(tester.takeException(), isNull);
     });
 
-    testWidgets('따뜻한 헤더와 밝은 본문 텍스트는 두 테마에서 AA 대비를 충족한다', (tester) async {
+    testWidgets('밝은 메모 본문 텍스트는 두 테마에서 AA 대비를 충족한다', (tester) async {
       for (final brightness in Brightness.values) {
         await _pumpAbout(
           tester,
@@ -78,28 +61,6 @@ void main() {
           size: const Size(900, 700),
           brightness: brightness,
         );
-
-        final headerDecoration = _decorationAt(
-          tester,
-          const Key('about-notes-header'),
-        );
-        final gradient = headerDecoration.gradient! as LinearGradient;
-        final headerLabel = tester
-            .widget<Text>(
-              find.descendant(
-                of: find.byKey(const Key('about-notes-header')),
-                matching: find.text('메모'),
-              ),
-            )
-            .style!
-            .color!;
-        for (final color in gradient.colors) {
-          expect(
-            _contrastRatio(headerLabel, color),
-            greaterThanOrEqualTo(4.5),
-            reason: '$brightness 메모 헤더 라벨',
-          );
-        }
 
         final bodyBackground = _decorationAt(
           tester,
@@ -131,8 +92,8 @@ void main() {
         textScaler: const TextScaler.linear(2),
       );
 
-      expect(find.byKey(const Key('about-notes-card')), findsOneWidget);
-      expect(find.byKey(const Key('about-notes-header')), findsOneWidget);
+      expect(find.byKey(const Key('about-notes-card')), findsNothing);
+      expect(find.byKey(const Key('about-notes-header')), findsNothing);
       expect(find.byKey(const Key('about-notes-body')), findsOneWidget);
       expect(tester.takeException(), isNull);
 

@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
+import 'package:portfolio_hesu/portfolio/macos/mac_traffic_controls.dart';
 import 'package:portfolio_hesu/portfolio/models/portfolio_app_id.dart';
 import 'package:portfolio_hesu/portfolio/portfolio_app.dart';
 import 'package:portfolio_hesu/portfolio/services/external_launcher.dart';
@@ -116,8 +117,20 @@ void main() {
         findsOneWidget,
         reason: '$size',
       );
+      final navigationBar = find.byKey(const Key('mobile-app-navigation-bar'));
       expect(
-        find.byKey(const Key('mac-traffic-controls-projects')),
+        find.descendant(
+          of: navigationBar,
+          matching: find.byKey(const Key('mac-traffic-controls-projects')),
+        ),
+        findsOneWidget,
+        reason: '$size',
+      );
+      expect(
+        find.descendant(
+          of: find.byKey(const Key('projects-finder-toolbar')),
+          matching: find.byType(MacTrafficControls),
+        ),
         findsNothing,
         reason: '$size',
       );
