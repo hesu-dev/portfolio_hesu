@@ -521,6 +521,60 @@ void main() {
       expect(darkColor, isNot(lightColor));
     });
 
+    testWidgets(
+      'keeps active and inactive running indicators at 3:1 contrast',
+      (tester) async {
+        for (final brightness in Brightness.values) {
+          await _pumpDock(
+            tester,
+            brightness: brightness,
+            runningApps: const <PortfolioAppId>{
+              PortfolioAppId.about,
+              PortfolioAppId.skills,
+            },
+            activeApp: PortfolioAppId.about,
+          );
+
+          final dock = find.byKey(const Key('mac-dock'));
+          final dockDecoration =
+              tester.widget<Container>(dock).decoration! as BoxDecoration;
+          final theme = Theme.of(tester.element(dock));
+          final renderedSurface = Color.alphaBlend(
+            dockDecoration.color!,
+            theme.canvasColor,
+          );
+          final ratios = <String, double>{};
+
+          for (final entry in const <String, PortfolioAppId>{
+            'active': PortfolioAppId.about,
+            'inactive': PortfolioAppId.skills,
+          }.entries) {
+            final indicator = find.descendant(
+              of: find.byKey(Key('dock-running-${entry.value.name}')),
+              matching: find.byType(Container),
+            );
+            final indicatorDecoration =
+                tester.widget<Container>(indicator).decoration!
+                    as BoxDecoration;
+            final renderedIndicator = Color.alphaBlend(
+              indicatorDecoration.color!,
+              renderedSurface,
+            );
+            ratios[entry.key] = _contrastRatio(
+              renderedIndicator,
+              renderedSurface,
+            );
+          }
+
+          expect(
+            ratios.values,
+            everyElement(greaterThanOrEqualTo(3)),
+            reason: '${brightness.name} rendered ratios: $ratios',
+          );
+        }
+      },
+    );
+
     testWidgets('adds and removes unpinned running apps dynamically', (
       tester,
     ) async {
@@ -731,6 +785,8 @@ Future<void> _pumpPortfolio(
 Future<void> _pumpDock(
   WidgetTester tester, {
   required Brightness brightness,
+  Set<PortfolioAppId> runningApps = const <PortfolioAppId>{},
+  PortfolioAppId? activeApp,
 }) async {
   await tester.pumpWidget(
     MaterialApp(
@@ -740,8 +796,8 @@ Future<void> _pumpDock(
       home: Material(
         child: Center(
           child: MacDock(
-            runningApps: const <PortfolioAppId>{},
-            activeApp: null,
+            runningApps: runningApps,
+            activeApp: activeApp,
             onAppPressed: (_) {},
           ),
         ),
@@ -749,6 +805,18 @@ Future<void> _pumpDock(
     ),
   );
   await tester.pumpAndSettle();
+}
+
+double _contrastRatio(Color first, Color second) {
+  final firstLuminance = first.computeLuminance();
+  final secondLuminance = second.computeLuminance();
+  final lighter = firstLuminance > secondLuminance
+      ? firstLuminance
+      : secondLuminance;
+  final darker = firstLuminance > secondLuminance
+      ? secondLuminance
+      : firstLuminance;
+  return (lighter + 0.05) / (darker + 0.05);
 }
 
 Future<void> _pumpAdaptivePortfolio(
