@@ -4,6 +4,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 
 import '../models/portfolio_app_id.dart';
+import '../widgets/apple_app_artwork.dart';
 import '../widgets/apple_app_icon.dart';
 
 class MacDock extends StatelessWidget {
@@ -121,9 +122,6 @@ class _MacDockItemState extends State<_MacDockItem> {
   Widget build(BuildContext context) {
     final appId = widget.appId;
     final label = AppleAppIcon.labelFor(appId);
-    final foreground = appId == PortfolioAppId.trash
-        ? const Color(0xFF4D5058)
-        : Colors.white;
     final lifted = _hovering || _showFocus;
 
     return Semantics(
@@ -204,11 +202,7 @@ class _MacDockItemState extends State<_MacDockItem> {
                                 ),
                               ],
                             ),
-                            child: Icon(
-                              AppleAppIcon.iconFor(appId),
-                              color: foreground,
-                              size: 25,
-                            ),
+                            child: AppleAppArtwork(appId: appId, size: 49),
                           ),
                         ),
                       ),

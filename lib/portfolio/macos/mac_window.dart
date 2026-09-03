@@ -7,6 +7,7 @@ import '../data/portfolio_data.dart';
 import '../models/portfolio_app_id.dart';
 import '../services/external_launcher.dart';
 import '../theme/portfolio_theme_controller.dart';
+import '../widgets/apple_app_artwork.dart';
 import '../widgets/apple_app_icon.dart';
 
 class MacWindow extends StatelessWidget {
@@ -206,11 +207,7 @@ class _MacWindowTitleBar extends StatelessWidget {
                 onPressed: onMaximize,
               ),
               const SizedBox(width: 13),
-              Icon(
-                AppleAppIcon.iconFor(appId),
-                size: 16,
-                color: const Color(0xFF65656B),
-              ),
+              AppleAppArtwork(appId: appId, size: 16),
               const SizedBox(width: 7),
               Expanded(
                 child: Text(

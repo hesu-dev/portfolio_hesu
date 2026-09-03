@@ -7,6 +7,7 @@ import '../data/portfolio_data.dart';
 import '../models/portfolio_app_id.dart';
 import '../services/external_launcher.dart';
 import '../theme/portfolio_theme_controller.dart';
+import '../widgets/apple_app_artwork.dart';
 import '../widgets/apple_app_icon.dart';
 import 'mac_dock.dart';
 import 'mac_menu_bar.dart';
@@ -404,9 +405,6 @@ class _MacDesktopIconState extends State<_MacDesktopIcon> {
   Widget build(BuildContext context) {
     final appId = widget.appId;
     final label = AppleAppIcon.labelFor(appId);
-    final foreground = appId == PortfolioAppId.trash
-        ? const Color(0xFF4D5058)
-        : Colors.white;
 
     return Semantics(
       key: Key('desktop-app-${appId.name}'),
@@ -485,11 +483,7 @@ class _MacDesktopIconState extends State<_MacDesktopIcon> {
                           ),
                         ],
                       ),
-                      child: Icon(
-                        AppleAppIcon.iconFor(appId),
-                        color: foreground,
-                        size: 26,
-                      ),
+                      child: AppleAppArtwork(appId: appId, size: 50),
                     ),
                     const SizedBox(height: 6),
                     Text(

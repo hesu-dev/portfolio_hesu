@@ -3,6 +3,7 @@ import 'package:flutter/services.dart';
 
 import '../models/portfolio_app_id.dart';
 import '../theme/apple_theme.dart';
+import 'apple_app_artwork.dart';
 
 class AppleAppIcon extends StatefulWidget {
   const AppleAppIcon({
@@ -43,47 +44,13 @@ class AppleAppIcon extends StatefulWidget {
     PortfolioAppId.mail => 'Mail',
   };
 
-  static IconData iconFor(PortfolioAppId appId) => switch (appId) {
-    PortfolioAppId.about => Icons.person_rounded,
-    PortfolioAppId.skills => Icons.auto_awesome_rounded,
-    PortfolioAppId.projects => Icons.folder_rounded,
-    PortfolioAppId.terminal => Icons.terminal_rounded,
-    PortfolioAppId.settings => Icons.settings_rounded,
-    PortfolioAppId.thisMac => Icons.laptop_mac_rounded,
-    PortfolioAppId.trash => Icons.delete_rounded,
-    PortfolioAppId.github => Icons.code_rounded,
-    PortfolioAppId.mail => Icons.mail_rounded,
-  };
+  /// Legacy glyph access retained for utility apps that do not have bespoke
+  /// artwork. Primary apps intentionally reject generic Material glyphs.
+  static IconData iconFor(PortfolioAppId appId) =>
+      AppleAppArtwork.utilityIconFor(appId);
 
-  static List<Color> colorsFor(PortfolioAppId appId) => switch (appId) {
-    PortfolioAppId.about => const <Color>[Color(0xFF6DD5FA), Color(0xFF367CF5)],
-    PortfolioAppId.skills => const <Color>[
-      Color(0xFFB66DFF),
-      Color(0xFF6B4EFF),
-    ],
-    PortfolioAppId.projects => const <Color>[
-      Color(0xFF67D8FF),
-      Color(0xFF0A84FF),
-    ],
-    PortfolioAppId.terminal => const <Color>[
-      Color(0xFF4A4B51),
-      Color(0xFF17181B),
-    ],
-    PortfolioAppId.settings => const <Color>[
-      Color(0xFFAEB4BD),
-      Color(0xFF656B75),
-    ],
-    PortfolioAppId.thisMac => const <Color>[
-      Color(0xFF8C8C91),
-      Color(0xFF3B3C42),
-    ],
-    PortfolioAppId.trash => const <Color>[Color(0xFFF4F5F7), Color(0xFFA9ADB5)],
-    PortfolioAppId.github => const <Color>[
-      Color(0xFF42454D),
-      Color(0xFF111216),
-    ],
-    PortfolioAppId.mail => const <Color>[Color(0xFF57C7FF), Color(0xFF126BFF)],
-  };
+  static List<Color> colorsFor(PortfolioAppId appId) =>
+      AppleAppArtwork.colorsFor(appId);
 }
 
 class _AppleAppIconState extends State<AppleAppIcon> {
@@ -100,10 +67,6 @@ class _AppleAppIconState extends State<AppleAppIcon> {
     final label = labelFor(appId);
     final tileSize = widget.size ?? (compact ? 48.0 : 58.0);
     final cornerRadius = compact ? 13.0 : 16.0;
-    final foreground = appId == PortfolioAppId.trash
-        ? const Color(0xFF555860)
-        : Colors.white;
-
     return Semantics(
       key: Key('apple-app-icon-${appId.name}'),
       label: 'Open $label',
@@ -161,19 +124,8 @@ class _AppleAppIconState extends State<AppleAppIcon> {
                               duration: const Duration(milliseconds: 160),
                               curve: Curves.easeOutCubic,
                               decoration: BoxDecoration(
-                                gradient: LinearGradient(
-                                  begin: Alignment.topLeft,
-                                  end: Alignment.bottomRight,
-                                  colors: colorsFor(appId),
-                                ),
                                 borderRadius: BorderRadius.circular(
                                   cornerRadius,
-                                ),
-                                border: Border.all(
-                                  color: Colors.white.withValues(
-                                    alpha: selected ? 0.9 : 0.34,
-                                  ),
-                                  width: selected ? 1.8 : 0.7,
                                 ),
                                 boxShadow: <BoxShadow>[
                                   BoxShadow(
@@ -185,10 +137,9 @@ class _AppleAppIconState extends State<AppleAppIcon> {
                                   ),
                                 ],
                               ),
-                              child: Icon(
-                                iconFor(appId),
-                                color: foreground,
-                                size: tileSize * 0.5,
+                              child: AppleAppArtwork(
+                                appId: appId,
+                                size: tileSize,
                               ),
                             ),
                           ),
@@ -297,8 +248,6 @@ class _AppleAppIconState extends State<AppleAppIcon> {
   }
 
   String labelFor(PortfolioAppId appId) => AppleAppIcon.labelFor(appId);
-
-  IconData iconFor(PortfolioAppId appId) => AppleAppIcon.iconFor(appId);
 
   List<Color> colorsFor(PortfolioAppId appId) => AppleAppIcon.colorsFor(appId);
 }

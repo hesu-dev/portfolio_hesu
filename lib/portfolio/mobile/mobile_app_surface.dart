@@ -6,6 +6,7 @@ import '../models/portfolio_app_id.dart';
 import '../services/external_launcher.dart';
 import '../theme/apple_theme.dart';
 import '../theme/portfolio_theme_controller.dart';
+import '../widgets/apple_app_artwork.dart';
 import '../widgets/apple_app_icon.dart';
 
 class MobileAppSurface extends StatelessWidget {
@@ -148,13 +149,7 @@ class _MobileAppNavigationBar extends StatelessWidget {
               const SizedBox(width: 4),
               SizedBox.square(
                 dimension: 44,
-                child: Center(
-                  child: Icon(
-                    AppleAppIcon.iconFor(appId),
-                    size: 21,
-                    color: AppleTheme.secondaryLabel(context),
-                  ),
-                ),
+                child: Center(child: AppleAppArtwork(appId: appId, size: 24)),
               ),
             ],
           ),
