@@ -1,0 +1,30 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="64" height="64" viewBox="0 0 64 64" fill="none">
+  <defs>
+    <linearGradient id="panel" x1="8" y1="4" x2="56" y2="60" gradientUnits="userSpaceOnUse">
+      <stop stop-color="#71C8FF"/>
+      <stop offset="1" stop-color="#1769E8"/>
+    </linearGradient>
+    <linearGradient id="day" x1="12" y1="17" x2="37" y2="43" gradientUnits="userSpaceOnUse">
+      <stop stop-color="#FFFFFF"/>
+      <stop offset="1" stop-color="#E8EEF7"/>
+    </linearGradient>
+    <linearGradient id="night" x1="29" y1="20" x2="54" y2="49" gradientUnits="userSpaceOnUse">
+      <stop stop-color="#263D90"/>
+      <stop offset="1" stop-color="#101534"/>
+    </linearGradient>
+  </defs>
+  <rect x="2" y="2" width="60" height="60" rx="14" fill="url(#panel)"/>
+  <rect x="2.75" y="2.75" width="58.5" height="58.5" rx="13.25" stroke="#FFFFFF" stroke-opacity=".52" stroke-width="1.5"/>
+  <rect x="9" y="14" width="31" height="31" rx="6" fill="url(#day)"/>
+  <path d="M9 21h31" stroke="#CBD4E0" stroke-width="1.5"/>
+  <circle cx="14" cy="17.5" r="1.45" fill="#FF5F57"/>
+  <circle cx="18.5" cy="17.5" r="1.45" fill="#FEBC2E"/>
+  <circle cx="23" cy="17.5" r="1.45" fill="#28C840"/>
+  <rect x="25" y="19" width="31" height="31" rx="6" fill="url(#night)"/>
+  <path d="M25 26h31" stroke="#5C70C8" stroke-width="1.5"/>
+  <circle cx="30" cy="22.5" r="1.45" fill="#FF5F57"/>
+  <circle cx="34.5" cy="22.5" r="1.45" fill="#FEBC2E"/>
+  <circle cx="39" cy="22.5" r="1.45" fill="#28C840"/>
+  <path d="M13 37c4-8 9-8 13-3 3-5 7-4 11 3v5H13v-5Z" fill="#B7DCF4"/>
+  <path d="M29 42c4-8 9-9 13-3 3-5 7-4 10 2v6H29v-5Z" fill="#1F2A62"/>
+</svg>
