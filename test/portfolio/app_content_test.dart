@@ -473,7 +473,7 @@ void main() {
     );
 
     testWidgets(
-      'project selector updates detail and exposes all six projects',
+      'project list exposes all six folders and README before opening detail',
       (tester) async {
         await _pumpApp(
           tester,
@@ -486,14 +486,21 @@ void main() {
           expect(find.byKey(Key('project-selector-$index')), findsOneWidget);
         }
         expect(
-          _textAtKey(tester, const Key('project-detail-title')),
-          portfolioData.projects.first.title,
+          find.byKey(const Key('finder-file-portfolio-readme')),
+          findsOneWidget,
         );
+        expect(find.byKey(const Key('projects-detail-scroll')), findsNothing);
+        expect(find.byKey(const Key('project-detail-title')), findsNothing);
 
         await tester.tap(find.byKey(const Key('project-selector-1')));
         await tester.pumpAndSettle();
 
         final readingLog = portfolioData.projects[1];
+        expect(find.byKey(const Key('projects-finder-grid')), findsNothing);
+        expect(
+          find.byKey(const Key('finder-file-portfolio-readme')),
+          findsNothing,
+        );
         expect(
           _textAtKey(tester, const Key('project-detail-title')),
           readingLog.title,
@@ -508,7 +515,7 @@ void main() {
     );
 
     testWidgets(
-      'project master-detail selectors expose selection and keyboard access',
+      'project folders support keyboard detail navigation and selected return state',
       (tester) async {
         final semantics = tester.ensureSemantics();
         await _pumpApp(
@@ -525,17 +532,8 @@ void main() {
         final firstData = firstSemantics.getSemanticsData();
         expect(firstData.label, 'Select project ${firstProject.title}');
         expect(firstData.flagsCollection.isButton, isTrue);
-        expect(firstData.flagsCollection.isSelected, ui.Tristate.isTrue);
+        expect(firstData.flagsCollection.isSelected, ui.Tristate.isFalse);
         expect(firstData.hasAction(SemanticsAction.tap), isTrue);
-
-        final secondSelector = find.byKey(const Key('project-selector-1'));
-        final initialSecondData = tester
-            .getSemantics(secondSelector)
-            .getSemanticsData();
-        expect(
-          initialSecondData.flagsCollection.isSelected,
-          ui.Tristate.isFalse,
-        );
 
         await tester.sendKeyEvent(LogicalKeyboardKey.tab);
         await tester.pump();
@@ -543,30 +541,30 @@ void main() {
             .getSemantics(firstSelector)
             .getSemanticsData();
         expect(focusedFirstData.flagsCollection.isFocused, ui.Tristate.isTrue);
-        await tester.sendKeyEvent(LogicalKeyboardKey.tab);
-        await tester.sendKeyEvent(LogicalKeyboardKey.space);
-        await tester.pumpAndSettle();
-
-        expect(
-          _textAtKey(tester, const Key('project-detail-title')),
-          portfolioData.projects[1].title,
-        );
-        final secondData = tester
-            .getSemantics(secondSelector)
-            .getSemanticsData();
-        expect(
-          secondData.label,
-          'Select project ${portfolioData.projects[1].title}',
-        );
-        expect(secondData.flagsCollection.isSelected, ui.Tristate.isTrue);
-
-        await tester.sendKeyEvent(LogicalKeyboardKey.tab);
         await tester.sendKeyEvent(LogicalKeyboardKey.enter);
         await tester.pumpAndSettle();
+
         expect(
           _textAtKey(tester, const Key('project-detail-title')),
-          portfolioData.projects[2].title,
+          firstProject.title,
         );
+        expect(firstSelector, findsNothing);
+
+        await tester.tap(find.byKey(const Key('projects-finder-back')));
+        await tester.pumpAndSettle();
+
+        final returnedFirstSelector = find.byKey(
+          const Key('project-selector-0'),
+        );
+        final returnedFirstData = tester
+            .getSemantics(returnedFirstSelector)
+            .getSemanticsData();
+        expect(returnedFirstData.label, 'Select project ${firstProject.title}');
+        expect(
+          returnedFirstData.flagsCollection.isSelected,
+          ui.Tristate.isTrue,
+        );
+        expect(find.byKey(const Key('project-detail-title')), findsNothing);
         semantics.dispose();
       },
     );
@@ -590,15 +588,19 @@ void main() {
 
             final selector = find.byKey(Key(scenario.$2));
             final initialSize = tester.getSize(selector);
+            final background = scenario.$1 == PortfolioAppId.projects
+                ? find.descendant(
+                    of: selector,
+                    matching: find.byKey(
+                      const Key('apple-finder-folder-artwork-background'),
+                    ),
+                  )
+                : find.descendant(
+                    of: selector,
+                    matching: find.byType(AnimatedContainer),
+                  );
             final selectedDecoration =
-                tester
-                        .widget<AnimatedContainer>(
-                          find.descendant(
-                            of: selector,
-                            matching: find.byType(AnimatedContainer),
-                          ),
-                        )
-                        .decoration
+                tester.widget<AnimatedContainer>(background).decoration
                     as BoxDecoration;
             final resolvedBackground = Color.alphaBlend(
               selectedDecoration.color!,
@@ -637,48 +639,127 @@ void main() {
       },
     );
 
-    testWidgets('selected project labels meet AA in light and dark themes', (
-      tester,
-    ) async {
-      for (final brightness in Brightness.values) {
-        await _pumpApp(
-          tester,
-          appId: PortfolioAppId.projects,
-          launcher: _FakeExternalLauncher(),
-          size: const Size(900, 650),
-          brightness: brightness,
-        );
+    testWidgets(
+      'selected project highlights only artwork and leaves label unchanged',
+      (tester) async {
+        for (final brightness in Brightness.values) {
+          await tester.pumpWidget(const SizedBox.shrink());
+          await _pumpApp(
+            tester,
+            appId: PortfolioAppId.projects,
+            launcher: _FakeExternalLauncher(),
+            size: const Size(900, 650),
+            brightness: brightness,
+          );
 
-        final selector = find.byKey(const Key('project-selector-0'));
-        final decoration =
-            tester
-                    .widget<AnimatedContainer>(
-                      find.descendant(
-                        of: selector,
-                        matching: find.byType(AnimatedContainer),
-                      ),
-                    )
-                    .decoration
-                as BoxDecoration;
-        final background = decoration.color!;
-        final foreground = tester
-            .widget<Text>(
-              find.descendant(
-                of: selector,
-                matching: find.text(portfolioData.projects.first.title),
-              ),
-            )
-            .style!
-            .color!;
+          final selector = find.byKey(const Key('project-selector-0'));
+          final tile = find.descendant(
+            of: selector,
+            matching: find.byKey(const Key('apple-finder-folder-container')),
+          );
+          final artworkBackground = find.descendant(
+            of: selector,
+            matching: find.byKey(
+              const Key('apple-finder-folder-artwork-background'),
+            ),
+          );
+          final labelBackground = find.descendant(
+            of: selector,
+            matching: find.byKey(
+              const Key('apple-finder-folder-label-background'),
+            ),
+          );
+          final label = find.descendant(
+            of: selector,
+            matching: find.text(portfolioData.projects.first.title),
+          );
+          final initialTileDecoration =
+              tester.widget<AnimatedContainer>(tile).decoration
+                  as BoxDecoration;
+          final initialArtworkDecoration =
+              tester.widget<AnimatedContainer>(artworkBackground).decoration
+                  as BoxDecoration;
+          final initialLabelDecoration =
+              tester.widget<DecoratedBox>(labelBackground).decoration
+                  as BoxDecoration;
+          final initialLabelStyle = tester.widget<Text>(label).style;
 
-        expect(background.a, 1);
-        expect(
-          _contrastRatio(foreground, background),
-          greaterThanOrEqualTo(4.5),
-          reason: '$brightness',
-        );
-      }
-    });
+          expect(initialTileDecoration.color, Colors.transparent);
+          expect(initialArtworkDecoration.color, Colors.transparent);
+          expect(initialLabelDecoration.color, Colors.transparent);
+
+          await tester.tap(selector);
+          await tester.pumpAndSettle();
+          await tester.tap(find.byKey(const Key('projects-finder-back')));
+          await tester.pumpAndSettle();
+
+          final returnedSelector = find.byKey(const Key('project-selector-0'));
+          final returnedTileDecoration =
+              tester
+                      .widget<AnimatedContainer>(
+                        find.descendant(
+                          of: returnedSelector,
+                          matching: find.byKey(
+                            const Key('apple-finder-folder-container'),
+                          ),
+                        ),
+                      )
+                      .decoration
+                  as BoxDecoration;
+          final selectedArtworkDecoration =
+              tester
+                      .widget<AnimatedContainer>(
+                        find.descendant(
+                          of: returnedSelector,
+                          matching: find.byKey(
+                            const Key('apple-finder-folder-artwork-background'),
+                          ),
+                        ),
+                      )
+                      .decoration
+                  as BoxDecoration;
+          final returnedLabelBackground =
+              tester
+                      .widget<DecoratedBox>(
+                        find.descendant(
+                          of: returnedSelector,
+                          matching: find.byKey(
+                            const Key('apple-finder-folder-label-background'),
+                          ),
+                        ),
+                      )
+                      .decoration
+                  as BoxDecoration;
+          final returnedLabelStyle = tester
+              .widget<Text>(
+                find.descendant(
+                  of: returnedSelector,
+                  matching: find.text(portfolioData.projects.first.title),
+                ),
+              )
+              .style;
+
+          expect(returnedTileDecoration, initialTileDecoration);
+          expect(selectedArtworkDecoration.color, isNot(Colors.transparent));
+          expect(selectedArtworkDecoration.color!.a, 1);
+          expect(
+            (selectedArtworkDecoration.color!.r -
+                    selectedArtworkDecoration.color!.g)
+                .abs(),
+            lessThanOrEqualTo(0.001),
+          );
+          expect(
+            (selectedArtworkDecoration.color!.g -
+                    selectedArtworkDecoration.color!.b)
+                .abs(),
+            lessThanOrEqualTo(0.001),
+          );
+          expect(returnedLabelBackground, initialLabelDecoration);
+          expect(returnedLabelBackground.color, Colors.transparent);
+          expect(returnedLabelStyle, initialLabelStyle);
+        }
+      },
+    );
 
     testWidgets('failed project launch shows local feedback without throwing', (
       tester,
@@ -756,6 +837,8 @@ void main() {
       await tester.pump();
       expect(launcher.requests, hasLength(1));
 
+      await tester.tap(find.byKey(const Key('projects-finder-back')));
+      await tester.pumpAndSettle();
       await tester.tap(find.byKey(const Key('project-selector-2')));
       await tester.pumpAndSettle();
       launcher.complete(0, false);
