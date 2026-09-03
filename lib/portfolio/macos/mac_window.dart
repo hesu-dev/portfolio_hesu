@@ -175,22 +175,23 @@ class _MacWindowTitleBar extends StatelessWidget {
             children: <Widget>[
               _TrafficButton(
                 controlKey: Key('window-close-${appId.name}'),
+                visualKey: Key('window-close-${appId.name}-visual'),
                 label: 'Close $label window',
                 color: const Color(0xFFFF5F57),
                 icon: Icons.close_rounded,
                 onPressed: onClose,
               ),
-              const SizedBox(width: 8),
               _TrafficButton(
                 controlKey: Key('window-minimize-${appId.name}'),
+                visualKey: Key('window-minimize-${appId.name}-visual'),
                 label: 'Minimize $label window',
                 color: const Color(0xFFFFBD2E),
                 icon: Icons.remove_rounded,
                 onPressed: onMinimize,
               ),
-              const SizedBox(width: 8),
               _TrafficButton(
                 controlKey: Key('window-maximize-${appId.name}'),
+                visualKey: Key('window-maximize-${appId.name}-visual'),
                 label: maximized
                     ? 'Restore $label window'
                     : 'Maximize $label window',
@@ -233,6 +234,7 @@ class _MacWindowTitleBar extends StatelessWidget {
 class _TrafficButton extends StatelessWidget {
   const _TrafficButton({
     required this.controlKey,
+    required this.visualKey,
     required this.label,
     required this.color,
     required this.icon,
@@ -240,6 +242,7 @@ class _TrafficButton extends StatelessWidget {
   });
 
   final Key controlKey;
+  final Key visualKey;
   final String label;
   final Color color;
   final IconData icon;
@@ -257,21 +260,30 @@ class _TrafficButton extends StatelessWidget {
         message: label,
         child: InkResponse(
           onTap: onPressed,
-          radius: 15,
+          radius: 14,
           containedInkWell: true,
           highlightShape: BoxShape.circle,
-          child: Container(
-            width: 14,
-            height: 14,
-            decoration: BoxDecoration(
-              color: color,
-              shape: BoxShape.circle,
-              border: Border.all(color: Colors.black.withValues(alpha: 0.12)),
-            ),
-            child: Icon(
-              icon,
-              size: 8,
-              color: const Color(0xFF353539).withValues(alpha: 0.68),
+          excludeFromSemantics: true,
+          child: SizedBox.square(
+            dimension: 28,
+            child: Center(
+              child: Container(
+                key: visualKey,
+                width: 14,
+                height: 14,
+                decoration: BoxDecoration(
+                  color: color,
+                  shape: BoxShape.circle,
+                  border: Border.all(
+                    color: Colors.black.withValues(alpha: 0.12),
+                  ),
+                ),
+                child: Icon(
+                  icon,
+                  size: 8,
+                  color: const Color(0xFF353539).withValues(alpha: 0.68),
+                ),
+              ),
             ),
           ),
         ),
