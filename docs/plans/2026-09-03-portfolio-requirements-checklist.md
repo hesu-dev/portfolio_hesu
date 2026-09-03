@@ -10,6 +10,7 @@
 |---|---|---|
 | 기존 포트폴리오를 민희수용으로 전면 교체 | 충족 | 이름 `민희수`, 영문명, 이메일 `hs0647@naver.com`, GitHub `hesu-dev`를 공용 데이터에서 주입한다. |
 | 참조 페이지를 그대로 복제하지 않고 개인 콘텐츠 사용 | 충족 | 참조 인물/URL이 런타임과 웹 메타데이터에 없음을 테스트한다. |
+| 현재 Flutter 경력 소속과 업무 문구 갱신 | 충족 | `Junior Flutter Developer`의 소속은 `(주)상상력 집단`, 설명은 `Node 웹사이트 서비스 기획 및 개발, 출시 후 유지보수`로 표시한다. |
 | GitHub Pages에서 Vercel로 이전 가능하게 구성 | 충족 | Pages용 `/portfolio_hesu/`와 Vercel용 `/` release 빌드가 모두 성공했다. |
 | GitHub Pages 중단 및 Vercel 외부 배포 | 보류 | 외부 서비스 변경은 사용자의 최종 배포 요청 전에는 실행하지 않는다. |
 | 공개 저장소의 과거 자산 재배포 위험 관리 | 진행 중 | 레거시 자산은 현재 트리에서 제거했다. Git 과거 이력과 기존 `gh-pages`는 별도 정리가 필요하다. |
@@ -68,7 +69,7 @@
 | Projects 기본 선택은 `경력` | 충족 | Mac·iPad·iPhone에서 처음 열면 `경력`이 선택되고 상단 타이틀과 선택 의미 정보도 일치한다. |
 | iCloud Drive는 빈 디렉토리 | 충족 | 별도 빈 상태만 표시하고 프로젝트나 앱 아이콘을 렌더링하지 않는다. |
 | 데스크탑 위치는 홈과 같은 앱 아이콘 목록 | 충족 | `portfolioLauncherAppIds`와 `AppleAppIcon`을 그대로 재사용하며 iPhone/iPad는 앱 전환, macOS는 새 창 열기로 연결한다. |
-| 기존 프로젝트를 경력 4개·개인 2개로 분류 | 충족 | Blue Mentor·IRIS·AI-Bver·HiddenTag는 경력, PersonaChat·ReadingLog는 개인 프로젝트로 표시하며 미분류 신규 데이터는 경력으로 안전하게 기본 처리한다. |
+| 기존 프로젝트를 경력 4개·개인 2개로 분류 | 충족 | Blue Mentor·IRIS·AI-Bver·HiddenTag는 경력, ReadingLog·PersonaChat은 개인 프로젝트로 표시하며 미분류 신규 데이터는 경력으로 안전하게 기본 처리한다. 개인 목록은 ReadingLog를 첫 번째로 둔다. |
 | 경력과 개인 프로젝트의 디자인 구성 통일 | 충족 | 데이터만 다르고 같은 프로젝트 폴더 그리드·선택·상세 연결 컴포넌트를 공유한다. |
 | 프로젝트 선택·설명·링크 기능 보존 | 충족 | 공용 데이터의 모든 프로젝트 선택 및 최신 링크 결과 테스트가 통과한다. |
 | `This Mac`/한글 프로젝트 중복 경로를 영문 `Projects`로 단일화 | 충족 | 시스템 메뉴와 launcher가 같은 `Projects` 창을 열며 `thisMac` 창·Dock 항목은 공개되지 않는다. |
@@ -76,7 +77,7 @@
 | 프로젝트 폴더를 한 번 누르면 별도 상세 뎁스로 이동 | 충족 | title/period/description/skills/링크를 별도 화면에 표시하고 Finder 뒤로/앞으로로 목록과 상세를 오간다. |
 | Projects의 화면 요소는 공용 Finder 레이아웃 | 충족 | toolbar/sidebar/folder tile을 복제하지 않고 공용 컴포넌트로 사용한다. |
 | 선택 폴더는 아이콘 주변만 회색 표시 | 충족 | light/dark 모두 청색 폴더 artwork·라벨·전체 타일은 불변이고 아이콘 바로 주변에만 중립 회색 배경을 둔다. |
-| 긴 폴더 이름은 정해진 폭 안에서 개행하고 정렬 유지 | 충족 | iPhone 전 구간은 132px 2열, 모든 타일은 이름을 최대 두 줄 ellipsis로 제한해 320~590px·글자 200%에서도 정렬을 유지한다. |
+| 긴 폴더 이름은 정해진 폭 안에서 개행하고 정렬 유지 | 충족 | 항목 수와 무관하게 사용 가능한 열 수로 Finder 타일 폭을 고정하고 이름을 최대 두 줄 ellipsis로 제한한다. iPad 개인 프로젝트에서도 PersonaChat이 두 줄로 개행된다. |
 | iPad는 좁은 사이드바와 데스크톱형 전체 파일 영역 | 충족 | 600~1023px iPad Finder는 사이드바를 176px로 고정하고 남은 폭 전체에서 폴더를 다중 행으로 배치한다. |
 
 ## iPad와 iPhone 앱 화면
@@ -90,6 +91,7 @@
 | 상단바 제목을 한 번만 표시 | 충족 | 일반 앱은 신호등 다음에 왼쪽 정렬하고 Projects는 공용 Finder 상단바 중앙에 표시한다. |
 | 신호등 아래의 `앱 아이콘 + 왼쪽 타이틀` 중복 행 제거 | 충족 | Skills, Trash, GitHub, Mail의 공용 본문 toolbar를 제거하고 Mac/iPad/iPhone 상단 chrome만 제목을 소유한다. |
 | About의 중복 아이콘·제목 영역과 중첩 메모 제거 | 충족 | 앱 내부 toolbar와 두 번째 메모 카드를 없애고 navigation bar 아래 한 장의 종이 본문만 렌더링한다. |
+| Finder 데스크탑의 앱은 기존 창을 교체하지 않고 새 창으로 열기 | 충족 | iPhone·iPad 모두 Projects를 창 스택에 보존한 채 선택 앱을 위에 열고, 상단 창을 닫으면 `데스크탑` 위치와 기존 Finder 상태로 돌아간다. 배경 창의 포인터·접근성·키보드 동작은 비활성화한다. |
 
 ## 터미널
 
@@ -123,17 +125,17 @@
 | 공통 레이아웃으로 향후 일괄 수정 | 충족 | Mac window, Finder, Notes, mobile navigation, app artwork를 각각 공용 컴포넌트로 유지한다. |
 | 한국어 Conventional/Angular 커밋 제목 | 충족 | 이번 작업의 새 커밋 제목은 한국어 Conventional Commit 형식을 준수한다. |
 | 작업을 가능한 작은 커밋으로 분리 | 충족 | 테스트·자산·공용 컴포넌트·기능·수정을 독립 커밋으로 분리했다. |
-| 전체 정적 분석·테스트·Pages/Vercel 빌드 | 충족 | 정적 분석 0건, 전체 247개 테스트 통과, Pages·Vercel release web build 성공을 최종 소스에서 확인했다. |
+| 전체 정적 분석·테스트·Pages/Vercel 빌드 | 충족 | 정적 분석 0건, 전체 251개 테스트 통과, Pages·Vercel release web build 성공을 최종 소스에서 확인했다. |
 | 데스크톱·iPad·iPhone 실화면 검수 | 충족 | 데스크톱·iPad·iPhone 크기별 자동 검증에 더해 최신 로컬 데스크톱과 iPhone 홈/About/Projects를 인앱 브라우저에서 다시 확인했다. |
 
 ## 2026-09-03 최종 검증 기록
 
 - `flutter analyze`: 문제 없음
-- `flutter test --reporter compact`: 전체 247개 통과
+- `flutter test --reporter compact`: 전체 251개 통과
 - GitHub Pages 경로 `/portfolio_hesu/` release web build: 성공
 - Vercel 루트 경로 `/` release web build: 성공
 - `git diff --check`: 통과
-- 실제 렌더링: macOS 1440×900·1280×720·1024×700, iPad 834px, iPhone 390×844·320×480 확인. 최신 로컬 화면에서 Finder 경력/개인 프로젝트/데스크탑 위치, 앱 실행, Terminal 상단 입력과 ASCII `flutter run` 이스터 에그를 재검수
-- 독립 코드 검토: Settings, 공용 아이콘, Trash 비클리핑, Projects 위치·목록·상세·앱 전환, 단일 상단바, 아이콘 전용 선택, 긴 이름 정렬, 모든 앱의 touch/mouse 스크롤에서 중요도 높은 미해결 항목 없음
+- 실제 렌더링: macOS 1440×900·1280×720·1024×700, iPad 834px, iPhone 390×844·320×480 확인. 최신 iPad 화면에서 ReadingLog 우선 순서, PersonaChat 두 줄 개행, Finder 위 Mail 새 창, 닫은 뒤 `데스크탑` Finder 상태 복원을 재검수
+- 독립 코드 검토: Finder 새 창의 배경 키보드 포커스 문제를 재현 후 `ExcludeFocus`로 보완했다. Settings, 공용 아이콘, Trash 비클리핑, Projects 위치·목록·상세·앱 전환, 단일 상단바, 긴 이름 정렬, 모든 앱의 touch/mouse 스크롤에서 중요도 높은 미해결 항목 없음
 - 외부 상태 변경: GitHub Pages 중단과 Vercel 배포는 아직 실행하지 않음
 - 공개 저장소 과거 이력/기존 `gh-pages` 정리는 별도 배포 단계에서 수행
