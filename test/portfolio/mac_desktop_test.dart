@@ -1,0 +1,366 @@
+import 'package:flutter/material.dart';
+import 'package:flutter/gestures.dart';
+import 'package:flutter/services.dart';
+import 'package:flutter_test/flutter_test.dart';
+import 'package:portfolio_hesu/portfolio/apps/portfolio_app_content.dart';
+import 'package:portfolio_hesu/portfolio/models/portfolio_app_id.dart';
+import 'package:portfolio_hesu/portfolio/portfolio_app.dart';
+import 'package:portfolio_hesu/portfolio/services/external_launcher.dart';
+import 'package:portfolio_hesu/portfolio/theme/apple_theme.dart';
+
+void main() {
+  group('macOS adaptive shell', () {
+    testWidgets('fills representative 1024 and 1440 desktop viewports', (
+      tester,
+    ) async {
+      for (final size in const <Size>[Size(1024, 700), Size(1440, 900)]) {
+        await _pumpPortfolio(tester, size: size);
+
+        expect(find.byKey(const Key('mac-shell')), findsOneWidget);
+        expect(
+          tester.getSize(find.byKey(const Key('mac-shell'))),
+          size,
+          reason: '$size',
+        );
+        expect(find.byKey(const Key('ipad-shell')), findsNothing);
+        expect(find.byKey(const Key('iphone-shell')), findsNothing);
+        expect(tester.takeException(), isNull, reason: '$size');
+      }
+    });
+
+    testWidgets('keeps the iPad and iPhone placeholders below 1024', (
+      tester,
+    ) async {
+      await _pumpPortfolio(tester, size: const Size(834, 700));
+      expect(find.byKey(const Key('ipad-shell')), findsOneWidget);
+      expect(find.byKey(const Key('mac-shell')), findsNothing);
+
+      await _pumpPortfolio(tester, size: const Size(390, 700));
+      expect(find.byKey(const Key('iphone-shell')), findsOneWidget);
+      expect(find.byKey(const Key('mac-shell')), findsNothing);
+    });
+
+    testWidgets('uses the shared Apple light and dark themes', (tester) async {
+      await tester.pumpWidget(PortfolioApp(externalLauncher: _FakeLauncher()));
+
+      final app = tester.widget<MaterialApp>(find.byType(MaterialApp));
+      expect(
+        app.theme?.scaffoldBackgroundColor,
+        AppleTheme.light().scaffoldBackgroundColor,
+      );
+      expect(
+        app.darkTheme?.scaffoldBackgroundColor,
+        AppleTheme.dark().scaffoldBackgroundColor,
+      );
+    });
+  });
+
+  group('macOS desktop icons', () {
+    testWidgets('shows the complete desktop catalog and discoverability hint', (
+      tester,
+    ) async {
+      await _pumpPortfolio(tester);
+
+      for (final entry in _labels.entries) {
+        expect(
+          find.byKey(Key('desktop-app-${entry.key.name}')),
+          findsOneWidget,
+        );
+        expect(find.text(entry.value), findsAtLeastNWidgets(1));
+      }
+      expect(
+        find.byKey(const Key('desktop-discoverability-hint')),
+        findsOneWidget,
+      );
+      expect(find.textContaining('Double-click'), findsOneWidget);
+    });
+
+    testWidgets('single click selects and double click opens an app', (
+      tester,
+    ) async {
+      await _pumpPortfolio(tester);
+      final about = find.byKey(const Key('desktop-app-about'));
+
+      await tester.tap(about);
+      await tester.pump(kDoubleTapTimeout + const Duration(milliseconds: 20));
+
+      expect(
+        find.byKey(const Key('desktop-app-selection-about')),
+        findsOneWidget,
+      );
+      expect(find.byKey(const Key('mac-window-about')), findsNothing);
+
+      await _doubleClick(tester, about);
+
+      expect(find.byKey(const Key('mac-window-about')), findsOneWidget);
+      expect(find.byKey(const Key('mac-window-active-about')), findsOneWidget);
+    });
+
+    testWidgets('Enter and Space open the focused desktop icon', (
+      tester,
+    ) async {
+      await _pumpPortfolio(tester);
+      final skills = find.byKey(const Key('desktop-app-skills'));
+
+      await tester.tap(skills);
+      await tester.pump(kDoubleTapTimeout + const Duration(milliseconds: 20));
+      await tester.sendKeyEvent(LogicalKeyboardKey.enter);
+      await tester.pumpAndSettle();
+      expect(find.byKey(const Key('mac-window-skills')), findsOneWidget);
+
+      await tester.tap(find.byKey(const Key('desktop-app-terminal')));
+      await tester.pump(kDoubleTapTimeout + const Duration(milliseconds: 20));
+      await tester.sendKeyEvent(LogicalKeyboardKey.space);
+      await tester.pumpAndSettle();
+      expect(find.byKey(const Key('mac-window-terminal')), findsOneWidget);
+    });
+
+    testWidgets('injects portfolio data and launcher into opened content', (
+      tester,
+    ) async {
+      final launcher = _FakeLauncher();
+      await _pumpPortfolio(tester, launcher: launcher);
+
+      await _doubleClick(tester, find.byKey(const Key('desktop-app-github')));
+
+      final content = tester.widget<PortfolioAppContent>(
+        find.byType(PortfolioAppContent),
+      );
+      expect(content.appId, PortfolioAppId.github);
+      expect(content.launcher, same(launcher));
+    });
+  });
+
+  group('macOS window manager', () {
+    testWidgets('keeps one instance and focuses an already-open app', (
+      tester,
+    ) async {
+      await _pumpPortfolio(tester);
+      await _openDesktopApp(tester, PortfolioAppId.about);
+      await _openDesktopApp(tester, PortfolioAppId.projects);
+
+      expect(find.byKey(const Key('mac-window-about')), findsOneWidget);
+      expect(find.byKey(const Key('mac-window-projects')), findsOneWidget);
+      expect(
+        find.byKey(const Key('mac-window-active-projects')),
+        findsOneWidget,
+      );
+
+      await tester.tap(find.byKey(const Key('dock-app-about')));
+      await tester.pumpAndSettle();
+
+      expect(find.byKey(const Key('mac-window-about')), findsOneWidget);
+      expect(find.byKey(const Key('mac-window-active-about')), findsOneWidget);
+      expect(find.byKey(const Key('mac-window-active-projects')), findsNothing);
+    });
+
+    testWidgets('traffic lights close, minimize, restore, and maximize', (
+      tester,
+    ) async {
+      await _pumpPortfolio(tester, size: const Size(1024, 700));
+      await _openDesktopApp(tester, PortfolioAppId.about);
+      final window = find.byKey(const Key('mac-window-about'));
+      final originalRect = tester.getRect(window);
+
+      expect(find.bySemanticsLabel('Close About window'), findsOneWidget);
+      expect(find.bySemanticsLabel('Minimize About window'), findsOneWidget);
+      expect(find.bySemanticsLabel('Maximize About window'), findsOneWidget);
+
+      await tester.tap(find.byKey(const Key('window-minimize-about')));
+      await tester.pumpAndSettle();
+      expect(window, findsNothing);
+      expect(find.byKey(const Key('dock-running-about')), findsOneWidget);
+
+      await tester.tap(find.byKey(const Key('dock-app-about')));
+      await tester.pumpAndSettle();
+      expect(window, findsOneWidget);
+
+      await tester.tap(find.byKey(const Key('window-maximize-about')));
+      await tester.pumpAndSettle();
+      final maximizedRect = tester.getRect(window);
+      expect(maximizedRect.width, greaterThan(originalRect.width));
+      expect(maximizedRect.top, greaterThanOrEqualTo(30));
+
+      await tester.tap(find.byKey(const Key('window-maximize-about')));
+      await tester.pumpAndSettle();
+      final restoredRect = tester.getRect(window);
+      expect(restoredRect.size, originalRect.size);
+
+      await tester.tap(find.byKey(const Key('window-close-about')));
+      await tester.pumpAndSettle();
+      expect(window, findsNothing);
+      expect(find.byKey(const Key('dock-running-about')), findsNothing);
+    });
+
+    testWidgets('title-bar drag clamps windows into the visible work area', (
+      tester,
+    ) async {
+      await _pumpPortfolio(tester, size: const Size(1024, 700));
+      await _openDesktopApp(tester, PortfolioAppId.terminal);
+
+      await tester.drag(
+        find.byKey(const Key('mac-window-titlebar-terminal')),
+        const Offset(-4000, -4000),
+      );
+      await tester.pumpAndSettle();
+      var rect = tester.getRect(find.byKey(const Key('mac-window-terminal')));
+      expect(rect.left, greaterThanOrEqualTo(8));
+      expect(rect.top, greaterThanOrEqualTo(38));
+
+      await tester.drag(
+        find.byKey(const Key('mac-window-titlebar-terminal')),
+        const Offset(5000, 5000),
+      );
+      await tester.pumpAndSettle();
+      rect = tester.getRect(find.byKey(const Key('mac-window-terminal')));
+      expect(rect.right, lessThanOrEqualTo(1016));
+      expect(rect.bottom, lessThanOrEqualTo(594));
+    });
+  });
+
+  group('macOS menu bar and Dock', () {
+    testWidgets('shows desktop menu labels, status controls, and Dock apps', (
+      tester,
+    ) async {
+      await _pumpPortfolio(tester);
+
+      for (final label in const <String>[
+        'Finder',
+        'File',
+        'Edit',
+        'View',
+        'Window',
+        'Help',
+      ]) {
+        expect(find.text(label), findsOneWidget);
+      }
+      expect(find.byKey(const Key('mac-wifi-status')), findsOneWidget);
+      expect(find.byKey(const Key('mac-battery-status')), findsOneWidget);
+      expect(
+        find.byKey(const Key('mac-control-center-button')),
+        findsOneWidget,
+      );
+      expect(find.byKey(const Key('mac-clock-button')), findsOneWidget);
+
+      for (final appId in PortfolioAppId.values) {
+        expect(find.byKey(Key('dock-app-${appId.name}')), findsOneWidget);
+      }
+    });
+
+    testWidgets('toggles exclusive system panels and dismisses them', (
+      tester,
+    ) async {
+      await _pumpPortfolio(tester);
+
+      await tester.tap(find.byKey(const Key('mac-control-center-button')));
+      await tester.pumpAndSettle();
+      expect(find.byKey(const Key('mac-control-center-panel')), findsOneWidget);
+
+      await tester.tap(find.byKey(const Key('mac-clock-button')));
+      await tester.pumpAndSettle();
+      expect(find.byKey(const Key('mac-control-center-panel')), findsNothing);
+      expect(find.byKey(const Key('mac-notifications-panel')), findsOneWidget);
+
+      await tester.sendKeyEvent(LogicalKeyboardKey.escape);
+      await tester.pumpAndSettle();
+      expect(find.byKey(const Key('mac-notifications-panel')), findsNothing);
+
+      await tester.tap(find.byKey(const Key('mac-control-center-button')));
+      await tester.pumpAndSettle();
+      await tester.tapAt(const Offset(200, 300));
+      await tester.pumpAndSettle();
+      expect(find.byKey(const Key('mac-control-center-panel')), findsNothing);
+    });
+
+    testWidgets(
+      'Dock restores minimized apps and remains keyboard accessible',
+      (tester) async {
+        final semantics = tester.ensureSemantics();
+        await _pumpPortfolio(tester);
+        await _openDesktopApp(tester, PortfolioAppId.skills);
+        await tester.tap(find.byKey(const Key('window-minimize-skills')));
+        await tester.pumpAndSettle();
+
+        expect(find.bySemanticsLabel('Open or restore Skills'), findsOneWidget);
+        await tester.tap(find.byKey(const Key('dock-app-skills')));
+        await tester.pumpAndSettle();
+
+        expect(find.byKey(const Key('mac-window-skills')), findsOneWidget);
+        expect(
+          find.byKey(const Key('mac-window-active-skills')),
+          findsOneWidget,
+        );
+        semantics.dispose();
+      },
+    );
+  });
+
+  testWidgets(
+    'avoids overflow and forbidden reference identity at desktop sizes',
+    (tester) async {
+      for (final size in const <Size>[Size(1024, 700), Size(1440, 900)]) {
+        await _pumpPortfolio(tester, size: size);
+        await _openDesktopApp(tester, PortfolioAppId.projects);
+
+        final visibleText = tester
+            .widgetList<Text>(find.byType(Text))
+            .map((widget) => widget.data ?? '')
+            .join('\n')
+            .toLowerCase();
+        expect(visibleText, isNot(contains('천주아')));
+        expect(visibleText, isNot(contains('juah')));
+        expect(visibleText, isNot(contains('portfolio-juah')));
+        expect(tester.takeException(), isNull, reason: '$size');
+      }
+    },
+  );
+}
+
+const Map<PortfolioAppId, String> _labels = <PortfolioAppId, String>{
+  PortfolioAppId.about: 'About',
+  PortfolioAppId.skills: 'Skills',
+  PortfolioAppId.projects: 'Projects',
+  PortfolioAppId.terminal: 'Terminal',
+  PortfolioAppId.thisMac: 'This Mac',
+  PortfolioAppId.github: 'GitHub',
+  PortfolioAppId.mail: 'Mail',
+  PortfolioAppId.trash: 'Trash',
+};
+
+Future<void> _pumpPortfolio(
+  WidgetTester tester, {
+  Size size = const Size(1440, 900),
+  ExternalLauncher? launcher,
+}) async {
+  tester.view.devicePixelRatio = 1;
+  tester.view.physicalSize = size;
+  addTearDown(tester.view.resetDevicePixelRatio);
+  addTearDown(tester.view.resetPhysicalSize);
+
+  await tester.pumpWidget(
+    PortfolioApp(externalLauncher: launcher ?? _FakeLauncher()),
+  );
+  await tester.pump();
+}
+
+Future<void> _doubleClick(WidgetTester tester, Finder finder) async {
+  await tester.tap(finder);
+  await tester.pump(const Duration(milliseconds: 50));
+  await tester.tap(finder);
+  await tester.pumpAndSettle();
+}
+
+Future<void> _openDesktopApp(WidgetTester tester, PortfolioAppId appId) async {
+  await _doubleClick(tester, find.byKey(Key('desktop-app-${appId.name}')));
+  expect(find.byKey(Key('mac-window-${appId.name}')), findsOneWidget);
+}
+
+class _FakeLauncher implements ExternalLauncher {
+  final List<Uri> launched = <Uri>[];
+
+  @override
+  Future<bool> launch(Uri uri) async {
+    launched.add(uri);
+    return true;
+  }
+}
