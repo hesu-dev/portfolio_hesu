@@ -185,6 +185,52 @@ void main() {
       expect(tester.takeException(), isNull);
       expect(tester.getSize(find.byType(AppleToolbar)).height, greaterThan(62));
     });
+
+    testWidgets('blue pills resolve AA colors in light and dark themes', (
+      tester,
+    ) async {
+      for (final brightness in Brightness.values) {
+        final theme = brightness == Brightness.dark
+            ? AppleTheme.dark()
+            : AppleTheme.light();
+        await tester.pumpWidget(
+          MaterialApp(
+            theme: theme,
+            home: const Material(
+              child: Center(
+                child: ApplePill(key: Key('contrast-pill'), label: 'Flutter'),
+              ),
+            ),
+          ),
+        );
+
+        final pill = find.byKey(const Key('contrast-pill'));
+        final decoration =
+            tester
+                    .widget<DecoratedBox>(
+                      find.descendant(
+                        of: pill,
+                        matching: find.byType(DecoratedBox),
+                      ),
+                    )
+                    .decoration
+                as BoxDecoration;
+        final background = decoration.color!;
+        final foreground = tester
+            .widget<Text>(
+              find.descendant(of: pill, matching: find.text('Flutter')),
+            )
+            .style!
+            .color!;
+
+        expect(background.a, 1);
+        expect(
+          _contrastRatio(foreground, background),
+          greaterThanOrEqualTo(4.5),
+          reason: '$brightness',
+        );
+      }
+    });
   });
 
   group('PortfolioAppContent', () {
@@ -459,6 +505,49 @@ void main() {
         semantics.dispose();
       },
     );
+
+    testWidgets('selected project labels meet AA in light and dark themes', (
+      tester,
+    ) async {
+      for (final brightness in Brightness.values) {
+        await _pumpApp(
+          tester,
+          appId: PortfolioAppId.projects,
+          launcher: _FakeExternalLauncher(),
+          size: const Size(900, 650),
+          brightness: brightness,
+        );
+
+        final selector = find.byKey(const Key('project-selector-0'));
+        final decoration =
+            tester
+                    .widget<AnimatedContainer>(
+                      find.descendant(
+                        of: selector,
+                        matching: find.byType(AnimatedContainer),
+                      ),
+                    )
+                    .decoration
+                as BoxDecoration;
+        final background = decoration.color!;
+        final foreground = tester
+            .widget<Text>(
+              find.descendant(
+                of: selector,
+                matching: find.text(portfolioData.projects.first.title),
+              ),
+            )
+            .style!
+            .color!;
+
+        expect(background.a, 1);
+        expect(
+          _contrastRatio(foreground, background),
+          greaterThanOrEqualTo(4.5),
+          reason: '$brightness',
+        );
+      }
+    });
 
     testWidgets('failed project launch shows local feedback without throwing', (
       tester,
@@ -787,6 +876,7 @@ Future<void> _pumpApp(
   PortfolioData data = portfolioData,
   bool compact = false,
   bool tablet = false,
+  Brightness brightness = Brightness.light,
 }) async {
   tester.view.devicePixelRatio = 1;
   tester.view.physicalSize = size;
@@ -797,6 +887,9 @@ Future<void> _pumpApp(
     MaterialApp(
       theme: AppleTheme.light(),
       darkTheme: AppleTheme.dark(),
+      themeMode: brightness == Brightness.dark
+          ? ThemeMode.dark
+          : ThemeMode.light,
       home: SizedBox.expand(
         child: PortfolioAppContent(
           key: ValueKey<PortfolioAppId>(appId),
