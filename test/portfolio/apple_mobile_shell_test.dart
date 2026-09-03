@@ -3,6 +3,7 @@ import 'package:flutter/services.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:portfolio_hesu/portfolio/apps/portfolio_app_content.dart';
 import 'package:portfolio_hesu/portfolio/data/portfolio_data.dart';
+import 'package:portfolio_hesu/portfolio/mobile/apple_mobile_shell.dart';
 import 'package:portfolio_hesu/portfolio/models/portfolio_app_id.dart';
 import 'package:portfolio_hesu/portfolio/services/external_launcher.dart';
 import 'package:portfolio_hesu/portfolio/theme/apple_theme.dart';
@@ -242,6 +243,50 @@ void main() {
   });
 
   group('iPad home and app surface', () {
+    testWidgets('refreshes status time and profile date as time advances', (
+      tester,
+    ) async {
+      final clock = _MutableClock(DateTime(2026, 9, 3, 23, 59));
+      const size = Size(834, 1194);
+      tester.view.devicePixelRatio = 1;
+      tester.view.physicalSize = size;
+      addTearDown(tester.view.resetDevicePixelRatio);
+      addTearDown(tester.view.resetPhysicalSize);
+
+      await tester.pumpWidget(
+        MaterialApp(
+          theme: AppleTheme.light(),
+          home: MediaQuery(
+            data: const MediaQueryData(size: size),
+            child: AppleMobileShell(
+              data: portfolioData,
+              externalLauncher: _RecordingLauncher(),
+              tablet: true,
+              now: clock.call,
+              clockTickInterval: const Duration(seconds: 1),
+            ),
+          ),
+        ),
+      );
+
+      expect(find.byKey(const Key('apple-status-time')), findsOneWidget);
+      expect(find.text('23:59'), findsOneWidget);
+      expect(find.text('Thursday, September 3'), findsOneWidget);
+
+      clock.current = DateTime(2026, 9, 4);
+      await tester.pump(const Duration(seconds: 1));
+
+      expect(find.text('0:00'), findsOneWidget);
+      expect(find.text('Friday, September 4'), findsOneWidget);
+      expect(find.text('23:59'), findsNothing);
+      expect(find.text('Thursday, September 3'), findsNothing);
+
+      await tester.pumpWidget(const SizedBox.shrink());
+      clock.current = DateTime(2026, 9, 5);
+      await tester.pump(const Duration(seconds: 2));
+      expect(tester.takeException(), isNull);
+    });
+
     testWidgets('uses six columns and renders the injected profile widget', (
       tester,
     ) async {
@@ -530,6 +575,14 @@ final class _RecordingLauncher implements ExternalLauncher {
     uris.add(uri);
     return true;
   }
+}
+
+final class _MutableClock {
+  _MutableClock(this.current);
+
+  DateTime current;
+
+  DateTime call() => current;
 }
 
 double _contrastRatio(Color foreground, Color background) {
