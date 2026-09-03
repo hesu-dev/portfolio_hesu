@@ -4,6 +4,7 @@ import '../data/portfolio_data.dart';
 import '../models/portfolio_app_id.dart';
 import '../services/external_launcher.dart';
 import '../theme/portfolio_theme_controller.dart';
+import '../widgets/apple_finder_scaffold.dart';
 import 'about_app.dart';
 import 'projects_app.dart';
 import 'settings_app.dart';
@@ -20,6 +21,7 @@ class PortfolioAppContent extends StatelessWidget {
     required this.themeController,
     this.compact = false,
     this.tablet = false,
+    this.finderWindowChrome,
     super.key,
   });
 
@@ -29,6 +31,7 @@ class PortfolioAppContent extends StatelessWidget {
   final PortfolioThemeController themeController;
   final bool compact;
   final bool tablet;
+  final AppleFinderWindowChrome? finderWindowChrome;
 
   @override
   Widget build(BuildContext context) {
@@ -49,6 +52,7 @@ class PortfolioAppContent extends StatelessWidget {
         launcher: launcher,
         compact: compact,
         tablet: tablet,
+        finderWindowChrome: finderWindowChrome,
       ),
       PortfolioAppId.terminal => TerminalApp(
         data: data,
@@ -65,6 +69,7 @@ class PortfolioAppContent extends StatelessWidget {
         data: data,
         compact: compact,
         tablet: tablet,
+        finderWindowChrome: finderWindowChrome,
       ),
       PortfolioAppId.trash => TrashApp(
         data: data,

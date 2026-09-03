@@ -10,12 +10,14 @@ class ThisMacApp extends StatefulWidget {
     required this.data,
     this.compact = false,
     this.tablet = false,
+    this.finderWindowChrome,
     super.key,
   });
 
   final PortfolioData data;
   final bool compact;
   final bool tablet;
+  final AppleFinderWindowChrome? finderWindowChrome;
 
   @override
   State<ThisMacApp> createState() => _ThisMacAppState();
@@ -62,6 +64,7 @@ class _ThisMacAppState extends State<ThisMacApp> {
       onBack: _showProjectFolders,
       onForward: () {},
       backTooltip: '프로젝트 폴더 목록으로 돌아가기',
+      windowChrome: widget.finderWindowChrome,
       bodyBuilder: (context, compactLayout) {
         if (widget.data.projects.isEmpty) {
           return const AppleEmptyState(

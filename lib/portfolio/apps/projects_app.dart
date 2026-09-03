@@ -11,6 +11,7 @@ class ProjectsApp extends StatefulWidget {
     required this.launcher,
     this.compact = false,
     this.tablet = false,
+    this.finderWindowChrome,
     super.key,
   });
 
@@ -18,6 +19,7 @@ class ProjectsApp extends StatefulWidget {
   final ExternalLauncher launcher;
   final bool compact;
   final bool tablet;
+  final AppleFinderWindowChrome? finderWindowChrome;
 
   @override
   State<ProjectsApp> createState() => _ProjectsAppState();
@@ -110,6 +112,7 @@ class _ProjectsAppState extends State<ProjectsApp> {
       canGoForward: _historyCursor < _history.length - 1,
       onBack: () => _moveThroughHistory(-1),
       onForward: () => _moveThroughHistory(1),
+      windowChrome: widget.finderWindowChrome,
       bodyBuilder: (context, compactLayout) {
         if (widget.data.projects.isEmpty) {
           return const AppleEmptyState(

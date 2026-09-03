@@ -9,6 +9,7 @@ import '../services/external_launcher.dart';
 import '../theme/portfolio_theme_controller.dart';
 import '../widgets/apple_app_artwork.dart';
 import '../widgets/apple_app_icon.dart';
+import '../widgets/apple_finder_scaffold.dart';
 import 'mac_traffic_controls.dart';
 
 class MacWindow extends StatelessWidget {
@@ -43,6 +44,24 @@ class MacWindow extends StatelessWidget {
   Widget build(BuildContext context) {
     final label = AppleAppIcon.labelFor(appId);
     final radius = maximized ? 14.0 : 19.0;
+    final integratesFinderToolbar = _integratesFinderToolbar(appId);
+    final finderWindowChrome = integratesFinderToolbar
+        ? AppleFinderWindowChrome(
+            leadingControls: MacTrafficControls(
+              appId: appId,
+              windowLabel: label,
+              maximized: maximized,
+              onClose: onClose,
+              onMinimize: onMinimize,
+              onMaximize: onMaximize,
+            ),
+            onDragStart: (_) => onFocus(),
+            onDragUpdate: (details) => onDrag(details.delta),
+            cursor: maximized
+                ? SystemMouseCursors.basic
+                : SystemMouseCursors.move,
+          )
+        : null;
 
     return GestureDetector(
       onTapDown: (_) => onFocus(),
@@ -79,17 +98,18 @@ class MacWindow extends StatelessWidget {
                   ),
                   child: Column(
                     children: <Widget>[
-                      _MacWindowTitleBar(
-                        appId: appId,
-                        label: label,
-                        active: active,
-                        maximized: maximized,
-                        onFocus: onFocus,
-                        onClose: onClose,
-                        onMinimize: onMinimize,
-                        onMaximize: onMaximize,
-                        onDrag: onDrag,
-                      ),
+                      if (!integratesFinderToolbar)
+                        _MacWindowTitleBar(
+                          appId: appId,
+                          label: label,
+                          active: active,
+                          maximized: maximized,
+                          onFocus: onFocus,
+                          onClose: onClose,
+                          onMinimize: onMinimize,
+                          onMaximize: onMaximize,
+                          onDrag: onDrag,
+                        ),
                       Expanded(
                         child: ClipRect(
                           child: LayoutBuilder(
@@ -100,6 +120,7 @@ class MacWindow extends StatelessWidget {
                                 launcher: launcher,
                                 themeController: themeController,
                                 compact: constraints.maxWidth < 650,
+                                finderWindowChrome: finderWindowChrome,
                               );
                             },
                           ),
@@ -133,6 +154,11 @@ class MacWindow extends StatelessWidget {
     );
   }
 }
+
+bool _integratesFinderToolbar(PortfolioAppId appId) => switch (appId) {
+  PortfolioAppId.projects || PortfolioAppId.thisMac => true,
+  _ => false,
+};
 
 class _MacWindowTitleBar extends StatelessWidget {
   const _MacWindowTitleBar({
