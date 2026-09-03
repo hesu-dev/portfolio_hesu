@@ -25,48 +25,36 @@ class AboutApp extends StatelessWidget {
 
     return AppleAppSurface(
       key: const Key('about-app'),
-      child: Column(
-        children: <Widget>[
-          AppleToolbar(
-            title: 'About Me',
-            subtitle: 'Portfolio profile',
-            compact: compact,
-            leading: const Icon(
-              Icons.description_rounded,
-              color: AppleTheme.orange,
-            ),
+      child: AppleNotesPaper(
+        paperKey: const Key('about-notes-body'),
+        child: ListView(
+          key: const Key('about-scroll'),
+          padding: EdgeInsets.fromLTRB(
+            horizontalPadding,
+            compact ? 18 : 28,
+            horizontalPadding,
+            compact ? 24 : 36,
           ),
-          Expanded(
-            child: ListView(
-              key: const Key('about-scroll'),
-              padding: EdgeInsets.fromLTRB(
-                horizontalPadding,
-                compact ? 18 : 28,
-                horizontalPadding,
-                compact ? 24 : 36,
-              ),
-              children: <Widget>[
-                Center(
-                  child: ConstrainedBox(
-                    constraints: const BoxConstraints(maxWidth: 820),
-                    child: _AboutNotesCard(
-                      data: data,
-                      launcher: launcher,
-                      compact: compact,
-                    ),
-                  ),
+          children: <Widget>[
+            Center(
+              child: ConstrainedBox(
+                constraints: const BoxConstraints(maxWidth: 820),
+                child: _AboutNotesBody(
+                  data: data,
+                  launcher: launcher,
+                  compact: compact,
                 ),
-              ],
+              ),
             ),
-          ),
-        ],
+          ],
+        ),
       ),
     );
   }
 }
 
-class _AboutNotesCard extends StatelessWidget {
-  const _AboutNotesCard({
+class _AboutNotesBody extends StatelessWidget {
+  const _AboutNotesBody({
     required this.data,
     required this.launcher,
     required this.compact,
@@ -82,108 +70,76 @@ class _AboutNotesCard extends StatelessWidget {
     const noteSecondary = Color(0xFF515158);
     const noteAccent = Color(0xFF315879);
 
-    return AppleNotesSurface(
-      cardKey: const Key('about-notes-card'),
-      headerKey: const Key('about-notes-header'),
-      bodyKey: const Key('about-notes-body'),
-      separatorKey: const Key('about-notes-separator'),
-      size: compact
-          ? AppleNotesSurfaceSize.compact
-          : AppleNotesSurfaceSize.regular,
-      body: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: <Widget>[
-          Container(
-            width: compact ? 42 : 48,
-            height: compact ? 42 : 48,
-            padding: const EdgeInsets.all(8),
-            decoration: BoxDecoration(
-              color: const Color(0xFF584117),
-              borderRadius: BorderRadius.circular(compact ? 12 : 14),
-            ),
-            child: FittedBox(
-              fit: BoxFit.scaleDown,
-              child: Text(
-                data.monogram,
-                style: const TextStyle(
-                  color: Colors.white,
-                  fontSize: 18,
-                  fontWeight: FontWeight.w800,
-                  letterSpacing: -0.4,
-                ),
-              ),
-            ),
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: <Widget>[
+        Text(
+          data.identity.name,
+          style: Theme.of(context).textTheme.displaySmall?.copyWith(
+            color: notePrimary,
+            fontSize: compact ? 28 : 34,
+            height: 1.12,
           ),
-          SizedBox(height: compact ? 12 : 15),
-          Text(
-            data.identity.name,
-            style: Theme.of(context).textTheme.displaySmall?.copyWith(
-              color: notePrimary,
-              fontSize: compact ? 28 : 34,
-              height: 1.12,
-            ),
+        ),
+        const SizedBox(height: 5),
+        Text(
+          data.identity.englishName,
+          style: Theme.of(context).textTheme.titleMedium?.copyWith(
+            color: noteSecondary,
+            fontWeight: FontWeight.w600,
           ),
-          const SizedBox(height: 5),
-          Text(
-            data.identity.englishName,
-            style: Theme.of(context).textTheme.titleMedium?.copyWith(
-              color: noteSecondary,
-              fontWeight: FontWeight.w600,
-            ),
+        ),
+        SizedBox(height: compact ? 15 : 18),
+        Text(
+          data.identity.headline,
+          style: Theme.of(context).textTheme.titleMedium?.copyWith(
+            color: noteAccent,
+            fontWeight: FontWeight.w700,
+            height: 1.35,
           ),
-          SizedBox(height: compact ? 15 : 18),
-          Text(
-            data.identity.headline,
-            style: Theme.of(context).textTheme.titleMedium?.copyWith(
-              color: noteAccent,
-              fontWeight: FontWeight.w700,
-              height: 1.35,
-            ),
-          ),
-          SizedBox(height: compact ? 13 : 16),
-          Container(height: 1, color: const Color(0xFFE3DED2)),
-          SizedBox(height: compact ? 13 : 16),
-          Text(
-            data.identity.biography,
-            style: Theme.of(
-              context,
-            ).textTheme.bodyLarge?.copyWith(color: notePrimary, height: 1.58),
-          ),
-          _NoteSectionDivider(compact: compact),
-          const _NoteSectionTitle(
-            title: 'Career',
-            subtitle: 'Professional experience',
-          ),
-          SizedBox(height: compact ? 12 : 16),
-          for (final experience in data.experiences.indexed) ...<Widget>[
-            _ExperienceCard(experience: experience.$2),
-            if (experience.$1 != data.experiences.length - 1)
-              const _NoteEntryDivider(),
-          ],
-          _NoteSectionDivider(compact: compact),
-          const _NoteSectionTitle(
-            title: 'Education',
-            subtitle: 'Learning and foundations',
-          ),
-          SizedBox(height: compact ? 12 : 16),
-          for (final entry in data.education.indexed) ...<Widget>[
-            _EducationCard(
-              education: entry.$2,
-              index: entry.$1,
-              launcher: launcher,
-            ),
-            if (entry.$1 != data.education.length - 1)
-              const _NoteEntryDivider(),
-          ],
-          _NoteSectionDivider(compact: compact),
-          const _NoteSectionTitle(
-            title: 'Contact',
-            subtitle: 'Let’s build something thoughtful',
-          ),
-          SizedBox(height: compact ? 12 : 16),
-          _ContactCard(data: data),
+        ),
+        SizedBox(height: compact ? 13 : 16),
+        Container(height: 1, color: const Color(0xFFE3DED2)),
+        SizedBox(height: compact ? 13 : 16),
+        Text(
+          data.identity.biography,
+          style: Theme.of(
+            context,
+          ).textTheme.bodyLarge?.copyWith(color: notePrimary, height: 1.58),
+        ),
+        _NoteSectionDivider(compact: compact),
+        const _NoteSectionTitle(
+          title: 'Career',
+          subtitle: 'Professional experience',
+        ),
+        SizedBox(height: compact ? 12 : 16),
+        for (final experience in data.experiences.indexed) ...<Widget>[
+          _ExperienceCard(experience: experience.$2),
+          if (experience.$1 != data.experiences.length - 1)
+            const _NoteEntryDivider(),
         ],
-      ),
+        _NoteSectionDivider(compact: compact),
+        const _NoteSectionTitle(
+          title: 'Education',
+          subtitle: 'Learning and foundations',
+        ),
+        SizedBox(height: compact ? 12 : 16),
+        for (final entry in data.education.indexed) ...<Widget>[
+          _EducationCard(
+            education: entry.$2,
+            index: entry.$1,
+            launcher: launcher,
+          ),
+          if (entry.$1 != data.education.length - 1) const _NoteEntryDivider(),
+        ],
+        _NoteSectionDivider(compact: compact),
+        const _NoteSectionTitle(
+          title: 'Contact',
+          subtitle: 'Let’s build something thoughtful',
+        ),
+        SizedBox(height: compact ? 12 : 16),
+        _ContactCard(data: data),
+      ],
     );
   }
 }
