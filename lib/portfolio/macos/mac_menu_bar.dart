@@ -57,7 +57,8 @@ class _MacMenuBarState extends State<MacMenuBar> {
     final activeName = widget.activeApp == null
         ? 'Finder'
         : AppleAppIcon.labelFor(widget.activeApp!);
-    const foreground = Color(0xFF17171B);
+    final textScale = MediaQuery.textScalerOf(context).scale(1);
+    const notchWidth = 176.0;
 
     return ClipRect(
       child: BackdropFilter(
@@ -74,84 +75,153 @@ class _MacMenuBarState extends State<MacMenuBar> {
           ),
           child: SizedBox(
             height: MacDesktopMetrics.menuBarHeight,
-            child: Row(
-              children: <Widget>[
-                const SizedBox(width: 9),
-                _SystemMenuButton(
-                  selected: widget.openPanel == MacSystemPanel.systemMenu,
-                  onPressed: widget.onSystemMenuPressed,
-                ),
-                const SizedBox(width: 6),
-                ConstrainedBox(
-                  constraints: const BoxConstraints(maxWidth: 110),
-                  child: Text(
-                    activeName,
-                    maxLines: 1,
-                    overflow: TextOverflow.ellipsis,
-                    style: const TextStyle(
-                      color: foreground,
-                      fontSize: 13,
-                      fontWeight: FontWeight.w700,
-                      letterSpacing: -0.15,
+            child: LayoutBuilder(
+              builder: (context, constraints) {
+                final sideWidth = (constraints.maxWidth - notchWidth) / 2;
+                final visibleMenuLabels = textScale > 1.25
+                    ? 0
+                    : constraints.maxWidth < 1100
+                    ? 3
+                    : 5;
+                final compactClock =
+                    textScale > 1.25 || constraints.maxWidth < 1100;
+
+                return Stack(
+                  children: <Widget>[
+                    Row(
+                      children: <Widget>[
+                        SizedBox(
+                          key: const Key('mac-menu-left-region'),
+                          width: sideWidth,
+                          child: _buildLeftRegion(
+                            activeName,
+                            visibleMenuLabels: visibleMenuLabels,
+                            largeText: textScale > 1.25,
+                          ),
+                        ),
+                        const SizedBox(width: notchWidth),
+                        SizedBox(
+                          key: const Key('mac-menu-right-region'),
+                          width: sideWidth,
+                          child: _buildRightRegion(compactClock: compactClock),
+                        ),
+                      ],
                     ),
-                  ),
-                ),
-                const SizedBox(width: 5),
-                for (final label in const <String>[
-                  'File',
-                  'Edit',
-                  'View',
-                  'Window',
-                  'Help',
-                ])
-                  _MenuLabel(label: label),
-                const Spacer(),
-                Tooltip(
-                  message: 'Wi-Fi status',
-                  child: Semantics(
-                    label: 'Wi-Fi status',
-                    child: const Padding(
-                      key: Key('mac-wifi-status'),
-                      padding: EdgeInsets.symmetric(horizontal: 7),
-                      child: Icon(
-                        Icons.wifi_rounded,
-                        size: 16,
-                        color: foreground,
-                      ),
+                    const Align(
+                      alignment: Alignment.topCenter,
+                      child: ExcludeSemantics(child: _MacDisplayNotch()),
                     ),
-                  ),
-                ),
-                Tooltip(
-                  message: 'Battery status',
-                  child: Semantics(
-                    label: 'Battery status',
-                    child: const Padding(
-                      key: Key('mac-battery-status'),
-                      padding: EdgeInsets.symmetric(horizontal: 7),
-                      child: Icon(
-                        Icons.battery_5_bar_rounded,
-                        size: 18,
-                        color: foreground,
-                      ),
-                    ),
-                  ),
-                ),
-                _MenuIconButton(
-                  buttonKey: const Key('mac-control-center-button'),
-                  tooltip: 'Control Center',
-                  selected: widget.openPanel == MacSystemPanel.controlCenter,
-                  icon: Icons.tune_rounded,
-                  onPressed: widget.onControlCenterPressed,
-                ),
-                _ClockButton(
-                  now: _now,
-                  selected: widget.openPanel == MacSystemPanel.notifications,
-                  onPressed: widget.onClockPressed,
-                ),
-                const SizedBox(width: 7),
-              ],
+                  ],
+                );
+              },
             ),
           ),
+        ),
+      ),
+    );
+  }
+
+  Widget _buildLeftRegion(
+    String activeName, {
+    required int visibleMenuLabels,
+    required bool largeText,
+  }) {
+    const labels = <String>['File', 'Edit', 'View', 'Window', 'Help'];
+    return Row(
+      children: <Widget>[
+        const SizedBox(width: 9),
+        _SystemMenuButton(
+          selected: widget.openPanel == MacSystemPanel.systemMenu,
+          onPressed: widget.onSystemMenuPressed,
+        ),
+        const SizedBox(width: 6),
+        Flexible(
+          child: ConstrainedBox(
+            constraints: BoxConstraints(maxWidth: largeText ? 190 : 110),
+            child: Text(
+              activeName,
+              maxLines: 1,
+              overflow: TextOverflow.ellipsis,
+              style: const TextStyle(
+                color: Color(0xFF17171B),
+                fontSize: 13,
+                fontWeight: FontWeight.w700,
+                letterSpacing: -0.15,
+              ),
+            ),
+          ),
+        ),
+        const SizedBox(width: 5),
+        for (final label in labels.take(visibleMenuLabels))
+          _MenuLabel(label: label),
+      ],
+    );
+  }
+
+  Widget _buildRightRegion({required bool compactClock}) {
+    const foreground = Color(0xFF17171B);
+    return Row(
+      mainAxisAlignment: MainAxisAlignment.end,
+      children: <Widget>[
+        Tooltip(
+          message: 'Wi-Fi status',
+          child: Semantics(
+            label: 'Wi-Fi status',
+            child: const Padding(
+              key: Key('mac-wifi-status'),
+              padding: EdgeInsets.symmetric(horizontal: 7),
+              child: Icon(Icons.wifi_rounded, size: 16, color: foreground),
+            ),
+          ),
+        ),
+        Tooltip(
+          message: 'Battery status',
+          child: Semantics(
+            label: 'Battery status',
+            child: const Padding(
+              key: Key('mac-battery-status'),
+              padding: EdgeInsets.symmetric(horizontal: 7),
+              child: Icon(
+                Icons.battery_5_bar_rounded,
+                size: 18,
+                color: foreground,
+              ),
+            ),
+          ),
+        ),
+        _MenuIconButton(
+          buttonKey: const Key('mac-control-center-button'),
+          tooltip: 'Control Center',
+          selected: widget.openPanel == MacSystemPanel.controlCenter,
+          icon: Icons.tune_rounded,
+          onPressed: widget.onControlCenterPressed,
+        ),
+        _ClockButton(
+          now: _now,
+          selected: widget.openPanel == MacSystemPanel.notifications,
+          compact: compactClock,
+          onPressed: widget.onClockPressed,
+        ),
+        const SizedBox(width: 7),
+      ],
+    );
+  }
+}
+
+class _MacDisplayNotch extends StatelessWidget {
+  const _MacDisplayNotch();
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      key: const Key('mac-display-notch'),
+      width: 176,
+      height: 30,
+      decoration: const BoxDecoration(
+        color: Colors.black,
+        borderRadius: BorderRadius.only(
+          bottomLeft: Radius.circular(11),
+          bottomRight: Radius.circular(11),
         ),
       ),
     );
@@ -355,11 +425,13 @@ class _ClockButton extends StatelessWidget {
   const _ClockButton({
     required this.now,
     required this.selected,
+    required this.compact,
     required this.onPressed,
   });
 
   final DateTime now;
   final bool selected;
+  final bool compact;
   final VoidCallback onPressed;
 
   @override
@@ -372,13 +444,17 @@ class _ClockButton extends StatelessWidget {
         backgroundColor: selected
             ? Colors.black.withValues(alpha: 0.09)
             : Colors.transparent,
-        minimumSize: const Size(118, 28),
-        maximumSize: const Size(132, 28),
+        minimumSize: Size(compact ? 74 : 118, 28),
+        maximumSize: Size(compact ? 88 : 132, 28),
         padding: const EdgeInsets.symmetric(horizontal: 7),
         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(7)),
         textStyle: const TextStyle(fontSize: 12.5, fontWeight: FontWeight.w500),
       ),
-      child: Text(_menuTime(now), maxLines: 1),
+      child: Text(
+        compact ? _largeTime(now) : _menuTime(now),
+        maxLines: 1,
+        overflow: TextOverflow.clip,
+      ),
     );
   }
 }

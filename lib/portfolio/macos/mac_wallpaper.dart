@@ -1,123 +1,209 @@
 import 'package:flutter/material.dart';
 
+/// An original, code-native desktop composition inspired by modern macOS.
+///
+/// No bitmap or platform artwork is loaded by this widget. Both variants are
+/// painted from deterministic Flutter gradients and paths so they stay crisp
+/// at every desktop size.
 class MacWallpaper extends StatelessWidget {
   const MacWallpaper({super.key});
 
   @override
   Widget build(BuildContext context) {
+    final brightness = Theme.of(context).brightness;
+    final variantKey = brightness == Brightness.dark
+        ? const Key('mac-wallpaper-dark')
+        : const Key('mac-wallpaper-light');
+
     return RepaintBoundary(
       key: const Key('mac-wallpaper'),
-      child: DecoratedBox(
-        decoration: const BoxDecoration(
-          gradient: LinearGradient(
-            begin: Alignment.topLeft,
-            end: Alignment.bottomRight,
-            colors: <Color>[
-              Color(0xFF102050),
-              Color(0xFF2A1B67),
-              Color(0xFF0D5780),
-            ],
-            stops: <double>[0, 0.48, 1],
-          ),
-        ),
-        child: const CustomPaint(
-          painter: _AuroraWallpaperPainter(),
-          child: SizedBox.expand(),
-        ),
+      child: CustomPaint(
+        key: variantKey,
+        painter: _MacWallpaperPainter(brightness),
+        child: const SizedBox.expand(),
       ),
     );
   }
 }
 
-class _AuroraWallpaperPainter extends CustomPainter {
-  const _AuroraWallpaperPainter();
+class _MacWallpaperPainter extends CustomPainter {
+  const _MacWallpaperPainter(this.brightness);
+
+  final Brightness brightness;
+
+  bool get _dark => brightness == Brightness.dark;
 
   @override
   void paint(Canvas canvas, Size size) {
-    final wash = Paint()
-      ..shader =
-          RadialGradient(
-            colors: <Color>[
-              const Color(0xFF65E5D4).withValues(alpha: 0.48),
-              const Color(0xFF65E5D4).withValues(alpha: 0),
-            ],
-          ).createShader(
-            Rect.fromCircle(
-              center: Offset(size.width * 0.75, size.height * 0.16),
-              radius: size.longestSide * 0.58,
-            ),
-          );
-    canvas.drawRect(Offset.zero & size, wash);
+    final bounds = Offset.zero & size;
+    final base = Paint()
+      ..shader = LinearGradient(
+        begin: Alignment.topLeft,
+        end: Alignment.bottomRight,
+        colors: _dark
+            ? const <Color>[
+                Color(0xFF090C20),
+                Color(0xFF221441),
+                Color(0xFF102D51),
+              ]
+            : const <Color>[
+                Color(0xFFBCEAFF),
+                Color(0xFFE9D8FF),
+                Color(0xFFFFD5A6),
+              ],
+        stops: const <double>[0, 0.48, 1],
+      ).createShader(bounds);
+    canvas.drawRect(bounds, base);
 
-    _drawRibbon(
+    _drawGlow(
       canvas,
       size,
-      start: Offset(-size.width * 0.12, size.height * 0.8),
-      control1: Offset(size.width * 0.16, size.height * 0.14),
-      control2: Offset(size.width * 0.5, size.height * 1.1),
-      end: Offset(size.width * 1.1, size.height * 0.24),
-      colors: <Color>[
-        const Color(0xFF7B5CFA).withValues(alpha: 0.72),
-        const Color(0xFF2DD4BF).withValues(alpha: 0.38),
-      ],
-      strokeWidth: size.shortestSide * 0.27,
+      center: Offset(size.width * 0.77, size.height * 0.13),
+      radius: size.longestSide * 0.52,
+      color: _dark ? const Color(0xFF26E3D2) : const Color(0xFF5BC5FF),
+      opacity: _dark ? 0.28 : 0.48,
     );
-    _drawRibbon(
+    _drawGlow(
       canvas,
       size,
-      start: Offset(-size.width * 0.08, size.height * 0.24),
-      control1: Offset(size.width * 0.26, size.height * 0.58),
-      control2: Offset(size.width * 0.7, -size.height * 0.08),
-      end: Offset(size.width * 1.08, size.height * 0.62),
-      colors: <Color>[
-        const Color(0xFF64D8FF).withValues(alpha: 0.3),
-        const Color(0xFFFF73B9).withValues(alpha: 0.32),
-      ],
-      strokeWidth: size.shortestSide * 0.2,
+      center: Offset(size.width * 0.14, size.height * 0.8),
+      radius: size.longestSide * 0.58,
+      color: _dark ? const Color(0xFFFF3D9E) : const Color(0xFFFF647B),
+      opacity: _dark ? 0.22 : 0.36,
     );
 
-    final vignette = Paint()
-      ..shader = RadialGradient(
-        radius: 0.95,
+    _drawFlowingLayer(
+      canvas,
+      size,
+      top: 0.18,
+      depth: 0.34,
+      colors: _dark
+          ? const <Color>[Color(0xFF315FF4), Color(0xFF7644E7)]
+          : const <Color>[Color(0xFF178FE8), Color(0xFF677AF4)],
+      opacity: _dark ? 0.72 : 0.68,
+      rise: true,
+    );
+    _drawFlowingLayer(
+      canvas,
+      size,
+      top: 0.43,
+      depth: 0.39,
+      colors: _dark
+          ? const <Color>[Color(0xFFA63FD2), Color(0xFFDF3C79)]
+          : const <Color>[Color(0xFFF05978), Color(0xFFFF8B5B)],
+      opacity: _dark ? 0.68 : 0.86,
+      rise: false,
+    );
+    _drawFlowingLayer(
+      canvas,
+      size,
+      top: 0.68,
+      depth: 0.42,
+      colors: _dark
+          ? const <Color>[Color(0xFF3B1F74), Color(0xFF101D45)]
+          : const <Color>[Color(0xFF6841AD), Color(0xFF243E72)],
+      opacity: _dark ? 0.86 : 0.74,
+      rise: true,
+    );
+
+    final sheen = Paint()
+      ..shader = LinearGradient(
+        begin: Alignment.topCenter,
+        end: Alignment.bottomCenter,
         colors: <Color>[
+          Colors.white.withValues(alpha: _dark ? 0.08 : 0.22),
           Colors.transparent,
-          const Color(0xFF070A22).withValues(alpha: 0.38),
+          Colors.black.withValues(alpha: _dark ? 0.28 : 0.1),
         ],
-        stops: const <double>[0.52, 1],
-      ).createShader(Offset.zero & size);
-    canvas.drawRect(Offset.zero & size, vignette);
+        stops: const <double>[0, 0.5, 1],
+      ).createShader(bounds);
+    canvas.drawRect(bounds, sheen);
   }
 
-  void _drawRibbon(
+  void _drawGlow(
     Canvas canvas,
     Size size, {
-    required Offset start,
-    required Offset control1,
-    required Offset control2,
-    required Offset end,
-    required List<Color> colors,
-    required double strokeWidth,
+    required Offset center,
+    required double radius,
+    required Color color,
+    required double opacity,
   }) {
-    final path = Path()
-      ..moveTo(start.dx, start.dy)
-      ..cubicTo(
-        control1.dx,
-        control1.dy,
-        control2.dx,
-        control2.dy,
-        end.dx,
-        end.dy,
-      );
-    final bounds = Rect.fromLTWH(0, 0, size.width, size.height);
     final paint = Paint()
-      ..style = PaintingStyle.stroke
-      ..strokeCap = StrokeCap.round
-      ..strokeWidth = strokeWidth
-      ..maskFilter = const MaskFilter.blur(BlurStyle.normal, 54)
-      ..shader = LinearGradient(colors: colors).createShader(bounds);
+      ..shader = RadialGradient(
+        colors: <Color>[
+          color.withValues(alpha: opacity),
+          color.withValues(alpha: 0),
+        ],
+      ).createShader(Rect.fromCircle(center: center, radius: radius));
+    canvas.drawRect(Offset.zero & size, paint);
+  }
+
+  void _drawFlowingLayer(
+    Canvas canvas,
+    Size size, {
+    required double top,
+    required double depth,
+    required List<Color> colors,
+    required double opacity,
+    required bool rise,
+  }) {
+    final y = size.height * top;
+    final direction = rise ? -1.0 : 1.0;
+    final path = Path()
+      ..moveTo(-size.width * 0.08, y + size.height * depth * 0.25)
+      ..cubicTo(
+        size.width * 0.18,
+        y + size.height * depth * direction,
+        size.width * 0.42,
+        y - size.height * depth * direction * 0.45,
+        size.width * 0.66,
+        y + size.height * depth * direction * 0.22,
+      )
+      ..cubicTo(
+        size.width * 0.82,
+        y + size.height * depth * direction * 0.72,
+        size.width * 1.02,
+        y - size.height * depth * direction * 0.15,
+        size.width * 1.08,
+        y + size.height * depth * 0.32,
+      )
+      ..lineTo(size.width * 1.08, size.height * 1.15)
+      ..lineTo(-size.width * 0.08, size.height * 1.15)
+      ..close();
+
+    final paint = Paint()
+      ..shader = LinearGradient(
+        begin: Alignment.centerLeft,
+        end: Alignment.centerRight,
+        colors: colors
+            .map((color) => color.withValues(alpha: opacity))
+            .toList(growable: false),
+      ).createShader(Offset.zero & size);
     canvas.drawPath(path, paint);
+
+    final highlightPath = Path()
+      ..moveTo(-size.width * 0.06, y + size.height * depth * 0.2)
+      ..cubicTo(
+        size.width * 0.25,
+        y + size.height * depth * direction * 0.9,
+        size.width * 0.48,
+        y - size.height * depth * direction * 0.35,
+        size.width * 0.72,
+        y + size.height * depth * direction * 0.3,
+      );
+    canvas.drawPath(
+      highlightPath,
+      Paint()
+        ..color = Colors.white.withValues(alpha: _dark ? 0.07 : 0.16)
+        ..style = PaintingStyle.stroke
+        ..strokeWidth = size.shortestSide * 0.018
+        ..strokeCap = StrokeCap.round
+        ..maskFilter = const MaskFilter.blur(BlurStyle.normal, 24),
+    );
   }
 
   @override
-  bool shouldRepaint(covariant _AuroraWallpaperPainter oldDelegate) => false;
+  bool shouldRepaint(covariant _MacWallpaperPainter oldDelegate) {
+    return brightness != oldDelegate.brightness;
+  }
 }
