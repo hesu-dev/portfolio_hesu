@@ -49,13 +49,16 @@ class PortfolioSkillGroup {
     required String title,
     required Iterable<String> skills,
   }) {
-    return PortfolioSkillGroup._constant(
+    return PortfolioSkillGroup.constant(
       title: title,
       skills: List<String>.unmodifiable(skills),
     );
   }
 
-  const PortfolioSkillGroup._constant({
+  /// Creates a compile-time constant from const list values.
+  ///
+  /// Use the default constructor for runtime iterables so they are copied.
+  const PortfolioSkillGroup.constant({
     required this.title,
     required this.skills,
   });
@@ -81,7 +84,7 @@ class PortfolioProject {
     required Iterable<String> technologies,
     required Iterable<PortfolioProjectLink> links,
   }) {
-    return PortfolioProject._constant(
+    return PortfolioProject.constant(
       title: title,
       description: description,
       period: period,
@@ -90,7 +93,10 @@ class PortfolioProject {
     );
   }
 
-  const PortfolioProject._constant({
+  /// Creates a compile-time constant from const list values.
+  ///
+  /// Use the default constructor for runtime iterables so they are copied.
+  const PortfolioProject.constant({
     required this.title,
     required this.description,
     required this.period,
@@ -106,7 +112,26 @@ class PortfolioProject {
 }
 
 class PortfolioData {
-  const PortfolioData({
+  factory PortfolioData({
+    required PortfolioIdentity identity,
+    required Iterable<PortfolioExperience> experiences,
+    required Iterable<PortfolioEducation> education,
+    required Iterable<PortfolioSkillGroup> skillGroups,
+    required Iterable<PortfolioProject> projects,
+  }) {
+    return PortfolioData.constant(
+      identity: identity,
+      experiences: List<PortfolioExperience>.unmodifiable(experiences),
+      education: List<PortfolioEducation>.unmodifiable(education),
+      skillGroups: List<PortfolioSkillGroup>.unmodifiable(skillGroups),
+      projects: List<PortfolioProject>.unmodifiable(projects),
+    );
+  }
+
+  /// Creates a compile-time constant from const list values.
+  ///
+  /// Use the default constructor for runtime iterables so they are copied.
+  const PortfolioData.constant({
     required this.identity,
     required this.experiences,
     required this.education,
@@ -164,7 +189,7 @@ class PortfolioData {
   ]);
 }
 
-const portfolioData = PortfolioData(
+const portfolioData = PortfolioData.constant(
   identity: PortfolioIdentity(
     name: '민희수',
     englishName: 'Min He-su',
@@ -212,21 +237,21 @@ const portfolioData = PortfolioData(
     ),
   ],
   skillGroups: <PortfolioSkillGroup>[
-    PortfolioSkillGroup._constant(
+    PortfolioSkillGroup.constant(
       title: 'Development',
       skills: <String>['Flutter', 'Dart', 'React', 'Java'],
     ),
-    PortfolioSkillGroup._constant(
+    PortfolioSkillGroup.constant(
       title: 'Collaboration',
       skills: <String>['Notion', 'Slack', 'Trello'],
     ),
-    PortfolioSkillGroup._constant(
+    PortfolioSkillGroup.constant(
       title: 'Design & UI/UX',
       skills: <String>['Figma', 'Adobe Photoshop', 'Adobe Illustrator'],
     ),
   ],
   projects: <PortfolioProject>[
-    PortfolioProject._constant(
+    PortfolioProject.constant(
       title: 'PersonaChat AI Character Chat',
       description:
           'SNS 로그인, 캐릭터 생성/검색, AI 채팅, 이벤트 이미지, 크레딧 결제를 포함한 '
@@ -235,7 +260,7 @@ const portfolioData = PortfolioData(
       technologies: <String>['Flutter', 'Riverpod', 'Firebase', 'IAP', 'AI'],
       links: <PortfolioProjectLink>[],
     ),
-    PortfolioProject._constant(
+    PortfolioProject.constant(
       title: 'ReadingLog',
       description: '채팅 로그 리더기 앱 기획 및 개발, 파싱용 Chrome 확장 프로그램 개발',
       period: '2026.02 - 2026.05',
@@ -258,7 +283,7 @@ const portfolioData = PortfolioData(
         ),
       ],
     ),
-    PortfolioProject._constant(
+    PortfolioProject.constant(
       title: 'Blue Mentor',
       description: '기계 점검 안전 설비 보고서 작성 앱 기획 및 개발',
       period: '2023.06 - 2024.02',
@@ -276,7 +301,7 @@ const portfolioData = PortfolioData(
         ),
       ],
     ),
-    PortfolioProject._constant(
+    PortfolioProject.constant(
       title: 'IRIS',
       description: '범부처통합연구지원시스템 R&D 참여: 3D 증강현실 기반 교량 점검 시스템 개발',
       period: '2022.12 - 2023.12',
@@ -289,10 +314,10 @@ const portfolioData = PortfolioData(
         ),
       ],
     ),
-    PortfolioProject._constant(
+    PortfolioProject.constant(
       title: 'AI-Bver',
       description: 'AI-beaver 애플리케이션 개발 및 유지보수',
-      period: '2021.12 - 2021.04',
+      period: '2021.12',
       technologies: <String>['PHP', 'Flutter', 'Dart'],
       links: <PortfolioProjectLink>[
         PortfolioProjectLink(
@@ -302,7 +327,7 @@ const portfolioData = PortfolioData(
         ),
       ],
     ),
-    PortfolioProject._constant(
+    PortfolioProject.constant(
       title: 'HiddenTag',
       description: 'HiddenTag 애플리케이션 페이지 유지보수',
       period: '2020.12 - 2021.07',

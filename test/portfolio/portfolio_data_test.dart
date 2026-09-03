@@ -145,6 +145,49 @@ void main() {
       expect(() => project.links.clear(), throwsUnsupportedError);
     });
 
+    test('portfolio data defensively copies mutable runtime collections', () {
+      final sourceExperiences = <PortfolioExperience>[
+        portfolioData.experiences.first,
+      ];
+      final sourceEducation = <PortfolioEducation>[
+        portfolioData.education.first,
+      ];
+      final sourceSkillGroups = <PortfolioSkillGroup>[
+        portfolioData.skillGroups.first,
+      ];
+      final sourceProjects = <PortfolioProject>[portfolioData.projects.first];
+      final data = PortfolioData(
+        identity: portfolioData.identity,
+        experiences: sourceExperiences,
+        education: sourceEducation,
+        skillGroups: sourceSkillGroups,
+        projects: sourceProjects,
+      );
+
+      sourceExperiences.clear();
+      sourceEducation.clear();
+      sourceSkillGroups.clear();
+      sourceProjects.clear();
+
+      expect(data.experiences, hasLength(1));
+      expect(data.education, hasLength(1));
+      expect(data.skillGroups, hasLength(1));
+      expect(data.projects, hasLength(1));
+      expect(() => data.experiences.clear(), throwsUnsupportedError);
+      expect(() => data.education.clear(), throwsUnsupportedError);
+      expect(() => data.skillGroups.clear(), throwsUnsupportedError);
+      expect(() => data.projects.clear(), throwsUnsupportedError);
+    });
+
+    test('uses only the confirmed AI-Bver period', () {
+      final aiBver = portfolioData.projects.singleWhere(
+        (project) => project.title == 'AI-Bver',
+      );
+
+      expect(aiBver.period, '2021.12');
+      expect(RegExp(r'^\d{4}\.\d{2}$').hasMatch(aiBver.period), isTrue);
+    });
+
     test('uses const immutable value types', () {
       const identity = PortfolioIdentity(
         name: '민희수',
@@ -170,12 +213,30 @@ void main() {
         period: '2020',
         link: projectLink,
       );
-      const data = portfolioData;
+      const skillGroup = PortfolioSkillGroup.constant(
+        title: 'Development',
+        skills: <String>['Flutter', 'Dart'],
+      );
+      const project = PortfolioProject.constant(
+        title: 'Project',
+        description: 'Description',
+        period: '2020',
+        technologies: <String>['Flutter'],
+        links: <PortfolioProjectLink>[projectLink],
+      );
+      const data = PortfolioData.constant(
+        identity: identity,
+        experiences: <PortfolioExperience>[experience],
+        education: <PortfolioEducation>[education],
+        skillGroups: <PortfolioSkillGroup>[skillGroup],
+        projects: <PortfolioProject>[project],
+      );
 
       expect(identity.name, '민희수');
       expect(experience.role, 'Developer');
       expect(education.link, same(projectLink));
-      expect(data, same(portfolioData));
+      expect(data.skillGroups.single, same(skillGroup));
+      expect(data.projects.single, same(project));
     });
   });
 
