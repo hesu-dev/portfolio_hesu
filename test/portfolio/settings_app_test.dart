@@ -1,6 +1,7 @@
 import 'dart:ui' as ui;
 
 import 'package:flutter/material.dart';
+import 'package:flutter/rendering.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:portfolio_hesu/portfolio/apps/settings_app.dart';
@@ -289,7 +290,7 @@ void main() {
       tabletController.dispose();
     });
 
-    testWidgets('iPhone과 iPad는 화면 비율 미리보기를 두 열로 맞춘다', (tester) async {
+    testWidgets('iPhone과 iPad는 읽기 가능한 화면 비율 선택지를 배치한다', (tester) async {
       for (final scenario
           in const <
             ({
@@ -348,9 +349,16 @@ void main() {
         );
         final light = tester.getRect(find.byKey(const Key('theme-light')));
         final dark = tester.getRect(find.byKey(const Key('theme-dark')));
-        expect(light.left, lessThan(dark.left));
-        expect((light.top - dark.top).abs(), lessThan(1));
-        expect(light.right, lessThanOrEqualTo(dark.left));
+        final stackForLargeText =
+            scenario.compact && scenario.textScaler.scale(14) >= 20;
+        if (stackForLargeText) {
+          expect((light.left - dark.left).abs(), lessThan(1));
+          expect(light.bottom, lessThanOrEqualTo(dark.top));
+        } else {
+          expect(light.left, lessThan(dark.left));
+          expect((light.top - dark.top).abs(), lessThan(1));
+          expect(light.right, lessThanOrEqualTo(dark.left));
+        }
 
         for (final mode in const <String>['light', 'dark']) {
           final preview = tester.getSize(
@@ -363,6 +371,20 @@ void main() {
             expect(preview.aspectRatio, closeTo(0.64, 0.01));
             expect(preview.width, lessThanOrEqualTo(160));
           }
+
+          final label = mode == 'light' ? '라이트' : '다크';
+          final paragraph = tester.renderObject<RenderParagraph>(
+            find.text(label),
+          );
+          expect(
+            paragraph.didExceedMaxLines,
+            isFalse,
+            reason: '${scenario.size}/$mode 라벨이 잘리면 안 됩니다.',
+          );
+
+          final target = tester.getSize(find.byKey(Key('theme-$mode')));
+          expect(target.width, greaterThanOrEqualTo(44));
+          expect(target.height, greaterThanOrEqualTo(44));
         }
 
         expect(
@@ -371,6 +393,16 @@ void main() {
         );
         expect(find.byKey(const Key('settings-scroll')), findsOneWidget);
         expect(tester.takeException(), isNull, reason: '${scenario.size}');
+
+        final alternate = scenario.preference == PortfolioThemePreference.light
+            ? PortfolioThemePreference.dark
+            : PortfolioThemePreference.light;
+        final alternateChoice = find.byKey(Key('theme-${alternate.name}'));
+        await tester.ensureVisible(alternateChoice);
+        await tester.pumpAndSettle();
+        await tester.tap(alternateChoice);
+        await tester.pumpAndSettle();
+        expect(controller.preference, alternate);
 
         await tester.drag(
           find.byKey(const Key('settings-scroll')),
