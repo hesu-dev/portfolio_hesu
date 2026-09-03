@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/rendering.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:portfolio_hesu/portfolio/theme/apple_theme.dart';
 import 'package:portfolio_hesu/portfolio/widgets/apple_finder_scaffold.dart';
@@ -7,60 +8,69 @@ void main() {
   testWidgets(
     'selected tile keeps folder artwork unchanged and uses neutral surfaces',
     (tester) async {
-      await _pumpTilePair(tester);
+      for (final brightness in Brightness.values) {
+        await _pumpTilePair(tester, brightness: brightness);
 
-      final unselected = find.byKey(const Key('folder-tile-unselected'));
-      final selected = find.byKey(const Key('folder-tile-selected'));
-      final unselectedArtwork = _folderArtwork(tester, unselected);
-      final selectedArtwork = _folderArtwork(tester, selected);
+        final unselected = find.byKey(const Key('folder-tile-unselected'));
+        final selected = find.byKey(const Key('folder-tile-selected'));
+        final unselectedArtwork = _artworkSignature(tester, unselected);
+        final selectedArtwork = _artworkSignature(tester, selected);
 
-      expect(selectedArtwork.icon, unselectedArtwork.icon);
-      expect(selectedArtwork.color, unselectedArtwork.color);
-      expect(selectedArtwork.size, unselectedArtwork.size);
-      expect(
-        find.descendant(of: selected, matching: find.byType(Opacity)),
-        findsNothing,
-      );
-      expect(
-        find.descendant(of: selected, matching: find.byType(CustomPaint)),
-        findsNothing,
-      );
+        expect(selectedArtwork, unselectedArtwork);
+        expect(selectedArtwork['icon'], Icons.folder_rounded);
+        expect(selectedArtwork['color'], const Color(0xFF55B8F5));
+        expect(selectedArtwork['size'], 58);
+        expect(selectedArtwork['opacity'], 1);
+        expect(
+          _opacityChain(tester, selected),
+          _opacityChain(tester, unselected),
+        );
+        expect(
+          find.descendant(of: unselected, matching: find.byType(CustomPaint)),
+          findsNothing,
+        );
+        expect(
+          find.descendant(of: selected, matching: find.byType(CustomPaint)),
+          findsNothing,
+        );
 
-      final unselectedDecoration = _tileDecoration(tester, unselected);
-      final selectedDecoration = _tileDecoration(tester, selected);
-      expect(unselectedDecoration.color, Colors.transparent);
-      expect(selectedDecoration.color, isNot(Colors.transparent));
-      expect(_isNeutralGray(selectedDecoration.color!), isTrue);
-      expect(
-        selectedDecoration.color,
-        isNot(
-          AppleTheme.selectionBackground(
-            tester.element(selected),
-            AppleTheme.blue,
+        final unselectedDecoration = _tileDecoration(tester, unselected);
+        final selectedDecoration = _tileDecoration(tester, selected);
+        expect(unselectedDecoration.color, Colors.transparent);
+        expect(selectedDecoration.color, isNot(Colors.transparent));
+        expect(selectedDecoration.color!.a, 1);
+        expect(_isNeutralGray(selectedDecoration.color!), isTrue);
+        expect(
+          selectedDecoration.copyWith(color: Colors.transparent),
+          unselectedDecoration,
+        );
+        expect(
+          selectedDecoration.color,
+          isNot(
+            AppleTheme.selectionBackground(
+              tester.element(selected),
+              AppleTheme.blue,
+            ),
           ),
-        ),
-      );
-      expect(selectedDecoration.border, isNull);
+        );
+        expect(selectedDecoration.border, isNull);
 
-      final unselectedLabel = _labelText(tester, unselected, 'A');
-      final selectedLabel = _labelText(tester, selected, 'Selected name');
-      expect(selectedLabel.style?.color, unselectedLabel.style?.color);
-      expect(
-        selectedLabel.style?.fontWeight,
-        unselectedLabel.style?.fontWeight,
-      );
-      expect(selectedLabel.style?.color, isNot(AppleTheme.blue));
+        final unselectedLabel = _labelText(tester, unselected, 'A');
+        final selectedLabel = _labelText(tester, selected, 'Selected name');
+        expect(selectedLabel.style, unselectedLabel.style);
+        expect(selectedLabel.style?.color, isNot(AppleTheme.blue));
 
-      final selectedLabelSurface = find.descendant(
-        of: selected,
-        matching: find.byKey(const Key('apple-finder-folder-label-background')),
-      );
-      expect(selectedLabelSurface, findsOneWidget);
-      final labelDecoration =
-          tester.widget<DecoratedBox>(selectedLabelSurface).decoration
-              as BoxDecoration;
-      expect(_isNeutralGray(labelDecoration.color!), isTrue);
-      expect(labelDecoration.border, isNull);
+        final unselectedLabelDecoration = _labelDecoration(tester, unselected);
+        final selectedLabelDecoration = _labelDecoration(tester, selected);
+        expect(unselectedLabelDecoration.color, Colors.transparent);
+        expect(selectedLabelDecoration.color!.a, 1);
+        expect(_isNeutralGray(selectedLabelDecoration.color!), isTrue);
+        expect(
+          selectedLabelDecoration.copyWith(color: Colors.transparent),
+          unselectedLabelDecoration,
+        );
+        expect(selectedLabelDecoration.border, isNull);
+      }
     },
   );
 
@@ -115,6 +125,13 @@ void main() {
           tester.getSize(shortTile).height,
           tester.getSize(longTile).height,
         );
+        expect(tester.getSize(longTile).height, scenario.compact ? 154 : 166);
+        final shortArtworkSignature = _artworkSignature(tester, shortTile);
+        final longArtworkSignature = _artworkSignature(tester, longTile);
+        expect(longArtworkSignature, shortArtworkSignature);
+        expect(longArtworkSignature['icon'], Icons.folder_rounded);
+        expect(longArtworkSignature['color'], const Color(0xFF55B8F5));
+        expect(longArtworkSignature['size'], scenario.compact ? 50 : 58);
         expect(
           tester.getTopLeft(shortArtwork).dy,
           closeTo(tester.getTopLeft(longArtwork).dy, 0.01),
@@ -131,6 +148,10 @@ void main() {
         final longText = tester.widget<Text>(longLabel);
         expect(longText.maxLines, 2);
         expect(longText.overflow, TextOverflow.ellipsis);
+        expect(
+          tester.renderObject<RenderParagraph>(longLabel).didExceedMaxLines,
+          isTrue,
+        );
         expect(tester.takeException(), isNull, reason: '${scenario.viewport}');
       }
     },
@@ -144,6 +165,7 @@ Future<void> _pumpTilePair(
   bool compact = false,
   TextScaler textScaler = TextScaler.noScaling,
   String longLabel = 'Selected name',
+  Brightness brightness = Brightness.light,
 }) async {
   tester.view.devicePixelRatio = 1;
   tester.view.physicalSize = viewport;
@@ -152,7 +174,9 @@ Future<void> _pumpTilePair(
 
   await tester.pumpWidget(
     MaterialApp(
-      theme: AppleTheme.light(),
+      theme: brightness == Brightness.dark
+          ? AppleTheme.dark()
+          : AppleTheme.light(),
       home: MediaQuery(
         data: MediaQueryData(size: viewport, textScaler: textScaler),
         child: Material(
@@ -194,6 +218,30 @@ Future<void> _pumpTilePair(
 Icon _folderArtwork(WidgetTester tester, Finder tile) =>
     tester.widget<Icon>(_folderArtworkFinder(tile));
 
+Map<String, Object?> _artworkSignature(WidgetTester tester, Finder tile) {
+  final artworkFinder = _folderArtworkFinder(tile);
+  final artwork = _folderArtwork(tester, tile);
+  final context = tester.element(artworkFinder);
+  final iconTheme = IconTheme.of(context);
+
+  return <String, Object?>{
+    'icon': artwork.icon,
+    'size': artwork.size ?? iconTheme.size,
+    'fill': artwork.fill ?? iconTheme.fill,
+    'weight': artwork.weight ?? iconTheme.weight,
+    'grade': artwork.grade ?? iconTheme.grade,
+    'opticalSize': artwork.opticalSize ?? iconTheme.opticalSize,
+    'color': artwork.color ?? iconTheme.color,
+    'opacity': iconTheme.opacity ?? 1,
+    'shadows': artwork.shadows ?? iconTheme.shadows,
+    'textDirection': artwork.textDirection ?? Directionality.of(context),
+    'applyTextScaling':
+        artwork.applyTextScaling ?? iconTheme.applyTextScaling ?? false,
+    'blendMode': artwork.blendMode ?? BlendMode.srcOver,
+    'fontWeight': artwork.fontWeight,
+  };
+}
+
 Finder _folderArtworkFinder(Finder tile) => find.descendant(
   of: tile,
   matching: find.byWidgetPredicate(
@@ -210,11 +258,33 @@ BoxDecoration _tileDecoration(WidgetTester tester, Finder tile) =>
             .widget<AnimatedContainer>(
               find.descendant(
                 of: tile,
-                matching: find.byType(AnimatedContainer),
+                matching: find.byKey(
+                  const Key('apple-finder-folder-container'),
+                ),
               ),
             )
             .decoration
         as BoxDecoration;
+
+BoxDecoration _labelDecoration(WidgetTester tester, Finder tile) =>
+    tester
+            .widget<DecoratedBox>(
+              find.descendant(
+                of: tile,
+                matching: find.byKey(
+                  const Key('apple-finder-folder-label-background'),
+                ),
+              ),
+            )
+            .decoration
+        as BoxDecoration;
+
+List<double> _opacityChain(WidgetTester tester, Finder tile) => tester
+    .widgetList<Opacity>(
+      find.descendant(of: tile, matching: find.byType(Opacity)),
+    )
+    .map((widget) => widget.opacity)
+    .toList();
 
 Text _labelText(WidgetTester tester, Finder tile, String label) =>
     tester.widget<Text>(find.descendant(of: tile, matching: find.text(label)));
