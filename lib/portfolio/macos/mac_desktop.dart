@@ -194,8 +194,7 @@ class _MacDesktopState extends State<MacDesktop> {
                     _buildDiscoverabilityHint(),
                     for (final appId in _zOrder)
                       if (_windows[appId] case final window?)
-                        if (!window.minimized)
-                          _buildWindow(window, active: activeApp == appId),
+                        _buildWindow(window, active: activeApp == appId),
                     if (_openPanel != MacSystemPanel.none)
                       Positioned.fill(
                         child: GestureDetector(
@@ -349,17 +348,21 @@ class _MacDesktopState extends State<MacDesktop> {
       top: frame.top,
       width: frame.width,
       height: frame.height,
-      child: MacWindow(
-        appId: appId,
-        data: widget.data,
-        launcher: widget.externalLauncher,
-        active: active,
-        maximized: window.maximized,
-        onFocus: () => _focusApp(appId),
-        onClose: () => _closeApp(appId),
-        onMinimize: () => _minimizeApp(appId),
-        onMaximize: () => _toggleMaximize(appId),
-        onDrag: (delta) => _dragWindow(appId, delta),
+      child: Visibility(
+        visible: !window.minimized,
+        maintainState: true,
+        child: MacWindow(
+          appId: appId,
+          data: widget.data,
+          launcher: widget.externalLauncher,
+          active: active,
+          maximized: window.maximized,
+          onFocus: () => _focusApp(appId),
+          onClose: () => _closeApp(appId),
+          onMinimize: () => _minimizeApp(appId),
+          onMaximize: () => _toggleMaximize(appId),
+          onDrag: (delta) => _dragWindow(appId, delta),
+        ),
       ),
     );
   }
