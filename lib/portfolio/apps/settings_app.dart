@@ -42,7 +42,7 @@ class SettingsApp extends StatelessWidget {
                 return Row(
                   crossAxisAlignment: CrossAxisAlignment.stretch,
                   children: <Widget>[
-                    _SettingsSidebar(controller: themeController),
+                    const _SettingsSidebar(),
                     Expanded(
                       child: _DisplayModePane(
                         controller: themeController,
@@ -61,9 +61,7 @@ class SettingsApp extends StatelessWidget {
 }
 
 class _SettingsSidebar extends StatelessWidget {
-  const _SettingsSidebar({required this.controller});
-
-  final PortfolioThemeController controller;
+  const _SettingsSidebar();
 
   @override
   Widget build(BuildContext context) {
