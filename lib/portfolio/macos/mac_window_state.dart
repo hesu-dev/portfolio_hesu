@@ -44,8 +44,13 @@ class MacWindowState {
     required Size viewport,
   }) {
     final workArea = MacDesktopMetrics.workArea(viewport);
-    final width = (workArea.width * 0.76).clamp(620.0, 860.0);
-    final height = (workArea.height * 0.86).clamp(420.0, 620.0);
+    final settings = appId == PortfolioAppId.settings;
+    final width = settings
+        ? (workArea.width * 0.72).clamp(680.0, 820.0)
+        : (workArea.width * 0.76).clamp(620.0, 860.0);
+    final height = settings
+        ? (workArea.height * 0.9).clamp(480.0, 600.0)
+        : (workArea.height * 0.86).clamp(420.0, 620.0);
     final cascade = Offset(
       (cascadeIndex % 5) * 24.0,
       (cascadeIndex % 5) * 22.0,
