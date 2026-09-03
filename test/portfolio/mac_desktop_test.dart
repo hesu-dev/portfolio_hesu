@@ -459,27 +459,33 @@ void main() {
       expect(find.byKey(const Key('mac-control-center-panel')), findsNothing);
     });
 
-    testWidgets(
-      'Dock restores minimized apps and remains keyboard accessible',
-      (tester) async {
-        final semantics = tester.ensureSemantics();
-        await _pumpPortfolio(tester);
-        await _openDesktopApp(tester, PortfolioAppId.skills);
-        await tester.tap(find.byKey(const Key('window-minimize-skills')));
-        await tester.pumpAndSettle();
+    testWidgets('Dock restores minimized apps with Enter and Space', (
+      tester,
+    ) async {
+      final semantics = tester.ensureSemantics();
+      await _pumpPortfolio(tester);
+      await _openDesktopApp(tester, PortfolioAppId.skills);
+      await tester.tap(find.byKey(const Key('window-minimize-skills')));
+      await tester.pumpAndSettle();
 
-        expect(find.bySemanticsLabel('Open or restore Skills'), findsOneWidget);
-        await tester.tap(find.byKey(const Key('dock-app-skills')));
-        await tester.pumpAndSettle();
+      expect(find.bySemanticsLabel('Open or restore Skills'), findsOneWidget);
+      await _focusDockApp(tester, PortfolioAppId.skills);
+      await tester.sendKeyEvent(LogicalKeyboardKey.enter);
+      await tester.pumpAndSettle();
 
-        expect(find.byKey(const Key('mac-window-skills')), findsOneWidget);
-        expect(
-          find.byKey(const Key('mac-window-active-skills')),
-          findsOneWidget,
-        );
-        semantics.dispose();
-      },
-    );
+      expect(find.byKey(const Key('mac-window-skills')), findsOneWidget);
+      expect(find.byKey(const Key('mac-window-active-skills')), findsOneWidget);
+
+      await tester.tap(find.byKey(const Key('window-minimize-skills')));
+      await tester.pumpAndSettle();
+      await _focusDockApp(tester, PortfolioAppId.skills);
+      await tester.sendKeyEvent(LogicalKeyboardKey.space);
+      await tester.pumpAndSettle();
+
+      expect(find.byKey(const Key('mac-window-skills')), findsOneWidget);
+      expect(find.byKey(const Key('mac-window-active-skills')), findsOneWidget);
+      semantics.dispose();
+    });
   });
 
   testWidgets(
@@ -577,6 +583,18 @@ Future<void> _doubleClick(WidgetTester tester, Finder finder) async {
 Future<void> _openDesktopApp(WidgetTester tester, PortfolioAppId appId) async {
   await _doubleClick(tester, find.byKey(Key('desktop-app-${appId.name}')));
   expect(find.byKey(Key('mac-window-${appId.name}')), findsOneWidget);
+}
+
+Future<void> _focusDockApp(WidgetTester tester, PortfolioAppId appId) async {
+  final focusable = tester.widget<FocusableActionDetector>(
+    find.descendant(
+      of: find.byKey(Key('dock-app-${appId.name}')),
+      matching: find.byType(FocusableActionDetector),
+    ),
+  );
+  focusable.focusNode!.requestFocus();
+  await tester.pump();
+  expect(focusable.focusNode!.hasFocus, isTrue);
 }
 
 class _FakeLauncher implements ExternalLauncher {
