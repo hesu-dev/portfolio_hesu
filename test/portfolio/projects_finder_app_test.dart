@@ -128,6 +128,52 @@ void main() {
       await tester.pumpAndSettle();
       expect(tester.takeException(), isNull);
     });
+
+    testWidgets('desktop 창의 좁은 regular 본문에서도 폴더 폭을 유지하고 여러 행으로 배치한다', (
+      tester,
+    ) async {
+      await _pumpProjects(tester, size: const Size(766, 600));
+
+      final folders = <Finder>[
+        for (var index = 0; index < portfolioData.projects.length; index++)
+          find.byKey(Key('project-selector-$index')),
+      ];
+
+      for (final folder in folders) {
+        expect(
+          tester.getSize(folder).width,
+          greaterThanOrEqualTo(132),
+          reason: 'regular Finder folders must remain readable',
+        );
+      }
+
+      final rowStarts = folders
+          .map((folder) => tester.getTopLeft(folder).dy.round())
+          .toSet();
+      expect(rowStarts.length, greaterThan(1));
+      expect(
+        find.byKey(const Key('finder-file-portfolio-readme')),
+        findsOneWidget,
+      );
+
+      final firstFolder = folders.first;
+      final firstLabel = find.descendant(
+        of: firstFolder,
+        matching: find.byKey(const Key('apple-finder-folder-label')),
+      );
+      final secondFolder = folders[1];
+      final secondLabel = find.descendant(
+        of: secondFolder,
+        matching: find.byKey(const Key('apple-finder-folder-label')),
+      );
+      expect(tester.widget<Text>(firstLabel).maxLines, 2);
+      expect(tester.widget<Text>(firstLabel).overflow, TextOverflow.ellipsis);
+      expect(
+        tester.getTopLeft(firstLabel).dy,
+        closeTo(tester.getTopLeft(secondLabel).dy, 0.01),
+      );
+      expect(tester.takeException(), isNull);
+    });
   });
 }
 
