@@ -248,6 +248,12 @@ class _ThemeChoiceState extends State<_ThemeChoice> {
   @override
   Widget build(BuildContext context) {
     final selected = widget.selected;
+    final emphasisColor = AppleTheme.isDark(context)
+        ? const Color(0xFF73B5FF)
+        : AppleTheme.buttonBlue;
+    final descriptionColor = selected
+        ? AppleTheme.primaryLabel(context)
+        : AppleTheme.secondaryLabel(context);
     return Semantics(
       key: Key('theme-$_modeName'),
       label: '${widget.label} 화면 모드',
@@ -285,9 +291,9 @@ class _ThemeChoiceState extends State<_ThemeChoice> {
               borderRadius: BorderRadius.circular(16),
               border: Border.all(
                 color: _showFocus
-                    ? AppleTheme.blue
+                    ? emphasisColor
                     : selected
-                    ? AppleTheme.blue
+                    ? emphasisColor
                     : AppleTheme.separator(context),
                 width: _showFocus ? 3 : (selected ? 2 : 0.8),
               ),
@@ -321,7 +327,9 @@ class _ThemeChoiceState extends State<_ThemeChoice> {
                           const SizedBox(height: 2),
                           Text(
                             widget.description,
-                            style: AppleTheme.caption(context),
+                            style: AppleTheme.caption(
+                              context,
+                            ).copyWith(color: descriptionColor),
                           ),
                         ],
                       ),
