@@ -166,6 +166,25 @@ abstract final class AppleTheme {
   static Color subtleShadow(BuildContext context) =>
       Colors.black.withValues(alpha: isDark(context) ? 0.28 : 0.08);
 
+  static Color pillBackground(BuildContext context, Color accent) {
+    return Color.alphaBlend(
+      accent.withValues(alpha: isDark(context) ? 0.2 : 0.1),
+      surface(context),
+    );
+  }
+
+  static Color pillForeground(BuildContext context) => primaryLabel(context);
+
+  static Color selectionBackground(BuildContext context, Color accent) {
+    return Color.alphaBlend(
+      accent.withValues(alpha: isDark(context) ? 0.28 : 0.13),
+      panel(context),
+    );
+  }
+
+  static Color selectionForeground(BuildContext context) =>
+      primaryLabel(context);
+
   static TextStyle largeTitle(BuildContext context) =>
       Theme.of(context).textTheme.displaySmall!;
 
@@ -366,9 +385,10 @@ class ApplePill extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final foreground = AppleTheme.pillForeground(context);
     return DecoratedBox(
       decoration: BoxDecoration(
-        color: color.withValues(alpha: AppleTheme.isDark(context) ? 0.2 : 0.1),
+        color: AppleTheme.pillBackground(context, color),
         borderRadius: BorderRadius.circular(999),
         border: Border.all(color: color.withValues(alpha: 0.18)),
       ),
@@ -378,7 +398,7 @@ class ApplePill extends StatelessWidget {
           mainAxisSize: MainAxisSize.min,
           children: <Widget>[
             if (icon case final pillIcon?) ...<Widget>[
-              Icon(pillIcon, size: 14, color: color),
+              Icon(pillIcon, size: 14, color: foreground),
               const SizedBox(width: 6),
             ],
             Flexible(
@@ -386,7 +406,7 @@ class ApplePill extends StatelessWidget {
                 label,
                 overflow: TextOverflow.ellipsis,
                 style: Theme.of(context).textTheme.labelMedium?.copyWith(
-                  color: color,
+                  color: foreground,
                   fontWeight: FontWeight.w600,
                 ),
               ),

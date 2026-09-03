@@ -357,9 +357,7 @@ class _ProjectSelector extends StatelessWidget {
               ),
               decoration: BoxDecoration(
                 color: selected
-                    ? AppleTheme.blue.withValues(
-                        alpha: AppleTheme.isDark(context) ? 0.28 : 0.13,
-                      )
+                    ? AppleTheme.selectionBackground(context, AppleTheme.blue)
                     : Colors.transparent,
                 borderRadius: BorderRadius.circular(compact ? 999 : 12),
                 border: compact
@@ -390,7 +388,7 @@ class _ProjectSelector extends StatelessWidget {
                       overflow: TextOverflow.ellipsis,
                       style: Theme.of(context).textTheme.labelMedium?.copyWith(
                         color: selected
-                            ? AppleTheme.blue
+                            ? AppleTheme.selectionForeground(context)
                             : AppleTheme.primaryLabel(context),
                         fontWeight: selected
                             ? FontWeight.w700
