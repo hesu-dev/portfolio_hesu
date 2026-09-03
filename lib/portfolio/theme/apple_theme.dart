@@ -131,7 +131,7 @@ abstract final class AppleTheme {
       ),
       outlinedButtonTheme: OutlinedButtonThemeData(
         style: OutlinedButton.styleFrom(
-          foregroundColor: dark ? const Color(0xFF73B5FF) : blue,
+          foregroundColor: dark ? const Color(0xFF73B5FF) : buttonBlue,
           side: BorderSide(color: colorScheme.outlineVariant),
           shape: RoundedRectangleBorder(
             borderRadius: BorderRadius.circular(12),

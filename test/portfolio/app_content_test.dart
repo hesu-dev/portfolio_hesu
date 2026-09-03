@@ -148,6 +148,17 @@ void main() {
       expect(_contrastRatio(background, foreground), greaterThanOrEqualTo(4.5));
     });
 
+    test('light outlined button labels meet AA contrast on white', () {
+      final theme = AppleTheme.light();
+      final foreground = theme.outlinedButtonTheme.style!.foregroundColor!
+          .resolve(<WidgetState>{})!;
+
+      expect(
+        _contrastRatio(theme.colorScheme.surface, foreground),
+        greaterThanOrEqualTo(4.5),
+      );
+    });
+
     testWidgets('toolbar grows without overflow at 200 percent text scale', (
       tester,
     ) async {
