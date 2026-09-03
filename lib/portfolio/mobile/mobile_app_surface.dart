@@ -8,6 +8,7 @@ import '../services/external_launcher.dart';
 import '../theme/apple_theme.dart';
 import '../theme/portfolio_theme_controller.dart';
 import '../widgets/apple_app_icon.dart';
+import '../widgets/apple_finder_scaffold.dart';
 
 class MobileAppSurface extends StatelessWidget {
   const MobileAppSurface({
@@ -31,6 +32,21 @@ class MobileAppSurface extends StatelessWidget {
   Widget build(BuildContext context) {
     final radius = tablet ? 28.0 : 0.0;
     final label = AppleAppIcon.labelFor(appId);
+    final integratesFinderToolbar = appId == PortfolioAppId.projects;
+    final finderWindowChrome = integratesFinderToolbar
+        ? AppleFinderWindowChrome(
+            leadingControls: MacTrafficControls(
+              appId: appId,
+              windowLabel: label,
+              maximized: !tablet,
+              onClose: onClose,
+              targetSize: 32,
+              secondaryControlsInteractive: false,
+            ),
+            onDragUpdate: (_) {},
+            cursor: MouseCursor.defer,
+          )
+        : null;
 
     return Padding(
       padding: tablet
@@ -63,12 +79,13 @@ class MobileAppSurface extends StatelessWidget {
             color: AppleTheme.surface(context),
             child: Column(
               children: <Widget>[
-                _MobileAppNavigationBar(
-                  appId: appId,
-                  label: label,
-                  tablet: tablet,
-                  onClose: onClose,
-                ),
+                if (!integratesFinderToolbar)
+                  _MobileAppNavigationBar(
+                    appId: appId,
+                    label: label,
+                    tablet: tablet,
+                    onClose: onClose,
+                  ),
                 Expanded(
                   child: PortfolioAppContent(
                     appId: appId,
@@ -77,6 +94,7 @@ class MobileAppSurface extends StatelessWidget {
                     themeController: themeController,
                     compact: !tablet,
                     tablet: tablet,
+                    finderWindowChrome: finderWindowChrome,
                   ),
                 ),
               ],
@@ -125,7 +143,7 @@ class _MobileAppNavigationBar extends StatelessWidget {
                 windowLabel: label,
                 maximized: !tablet,
                 onClose: onClose,
-                targetSize: 44,
+                targetSize: 32,
                 secondaryControlsInteractive: false,
               ),
               SizedBox(width: tablet ? 10 : 6),
