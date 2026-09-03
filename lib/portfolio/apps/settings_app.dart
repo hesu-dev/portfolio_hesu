@@ -305,8 +305,10 @@ class _DisplayModeContent extends StatelessWidget {
               tablet: tablet,
             );
 
+            late final Widget choices;
+
             if (compact) {
-              return Container(
+              choices = Container(
                 key: const Key('settings-mobile-mode-panel'),
                 padding: const EdgeInsets.all(10),
                 decoration: BoxDecoration(
@@ -326,22 +328,35 @@ class _DisplayModeContent extends StatelessWidget {
                   ],
                 ),
               );
+            } else {
+              final stackChoices = constraints.maxWidth < 430;
+              choices = stackChoices
+                  ? Column(
+                      crossAxisAlignment: CrossAxisAlignment.stretch,
+                      children: <Widget>[
+                        light,
+                        const SizedBox(height: 14),
+                        dark,
+                      ],
+                    )
+                  : Row(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: <Widget>[
+                        Expanded(child: light),
+                        const SizedBox(width: 18),
+                        Expanded(child: dark),
+                      ],
+                    );
             }
 
-            final stackChoices = constraints.maxWidth < 430;
-            return stackChoices
-                ? Column(
-                    crossAxisAlignment: CrossAxisAlignment.stretch,
-                    children: <Widget>[light, const SizedBox(height: 14), dark],
-                  )
-                : Row(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: <Widget>[
-                      Expanded(child: light),
-                      const SizedBox(width: 18),
-                      Expanded(child: dark),
-                    ],
-                  );
+            return Align(
+              alignment: Alignment.topCenter,
+              child: FractionallySizedBox(
+                key: const Key('settings-mode-choice-group'),
+                widthFactor: 0.5,
+                child: choices,
+              ),
+            );
           },
         ),
       ],
@@ -606,75 +621,84 @@ class _AppearancePreview extends StatelessWidget {
 
     final preview = AspectRatio(
       aspectRatio: formFactor.aspectRatio,
-      child: DecoratedBox(
-        decoration: BoxDecoration(
-          color: canvas,
-          borderRadius: BorderRadius.circular(11),
-          border: Border.all(color: line.withValues(alpha: 0.45)),
-        ),
-        child: Padding(
-          padding: const EdgeInsets.all(8),
-          child: Row(
-            children: <Widget>[
-              Container(
-                width: 26,
-                decoration: BoxDecoration(
-                  color: side,
-                  borderRadius: BorderRadius.circular(6),
-                ),
-              ),
-              const SizedBox(width: 6),
-              Expanded(
-                child: Container(
-                  padding: const EdgeInsets.all(8),
-                  decoration: BoxDecoration(
-                    color: surface,
-                    borderRadius: BorderRadius.circular(6),
+      child: LayoutBuilder(
+        builder: (context, constraints) {
+          final scale = (constraints.maxWidth / 120).clamp(0.35, 1.0);
+          return DecoratedBox(
+            decoration: BoxDecoration(
+              color: canvas,
+              borderRadius: BorderRadius.circular(11 * scale),
+              border: Border.all(color: line.withValues(alpha: 0.45)),
+            ),
+            child: Padding(
+              padding: EdgeInsets.all(8 * scale),
+              child: Row(
+                children: <Widget>[
+                  Container(
+                    width: 26 * scale,
+                    decoration: BoxDecoration(
+                      color: side,
+                      borderRadius: BorderRadius.circular(6 * scale),
+                    ),
                   ),
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: <Widget>[
-                      Container(
-                        width: 42,
-                        height: 5,
-                        decoration: BoxDecoration(
-                          color: line,
-                          borderRadius: BorderRadius.circular(99),
-                        ),
+                  SizedBox(width: 6 * scale),
+                  Expanded(
+                    child: Container(
+                      padding: EdgeInsets.all(8 * scale),
+                      decoration: BoxDecoration(
+                        color: surface,
+                        borderRadius: BorderRadius.circular(6 * scale),
                       ),
-                      const SizedBox(height: 7),
-                      Expanded(
-                        child: Row(
-                          children: <Widget>[
-                            Expanded(
-                              child: Container(
-                                decoration: BoxDecoration(
-                                  color: AppleTheme.blue.withValues(
-                                    alpha: 0.82,
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: <Widget>[
+                          Container(
+                            width: 42 * scale,
+                            height: 5 * scale,
+                            decoration: BoxDecoration(
+                              color: line,
+                              borderRadius: BorderRadius.circular(99),
+                            ),
+                          ),
+                          SizedBox(height: 7 * scale),
+                          Expanded(
+                            child: Row(
+                              children: <Widget>[
+                                Expanded(
+                                  child: Container(
+                                    decoration: BoxDecoration(
+                                      color: AppleTheme.blue.withValues(
+                                        alpha: 0.82,
+                                      ),
+                                      borderRadius: BorderRadius.circular(
+                                        5 * scale,
+                                      ),
+                                    ),
                                   ),
-                                  borderRadius: BorderRadius.circular(5),
                                 ),
-                              ),
-                            ),
-                            const SizedBox(width: 5),
-                            Expanded(
-                              child: Container(
-                                decoration: BoxDecoration(
-                                  color: side,
-                                  borderRadius: BorderRadius.circular(5),
+                                SizedBox(width: 5 * scale),
+                                Expanded(
+                                  child: Container(
+                                    decoration: BoxDecoration(
+                                      color: side,
+                                      borderRadius: BorderRadius.circular(
+                                        5 * scale,
+                                      ),
+                                    ),
+                                  ),
                                 ),
-                              ),
+                              ],
                             ),
-                          ],
-                        ),
+                          ),
+                        ],
                       ),
-                    ],
+                    ),
                   ),
-                ),
+                ],
               ),
-            ],
-          ),
-        ),
+            ),
+          );
+        },
       ),
     );
     final maxWidth = formFactor.maxWidth;
