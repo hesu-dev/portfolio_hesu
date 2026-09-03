@@ -151,6 +151,12 @@ class PortfolioData {
   String get mailUrl => 'mailto:${identity.email}';
   String get monogram => _deriveMonogram(identity);
   String get terminalPrompt => '${_deriveTerminalUser(identity)}@portfolio ~ %';
+  String get appTitle {
+    final localName = identity.name.trim();
+    final englishName = identity.englishName.trim();
+    final displayName = localName.isNotEmpty ? localName : englishName;
+    return displayName.isEmpty ? '포트폴리오' : '$displayName 포트폴리오';
+  }
 
   String get allSearchableText => <String>[
     identity.name,
