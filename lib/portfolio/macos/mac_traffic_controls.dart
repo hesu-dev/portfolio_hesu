@@ -24,6 +24,7 @@ class MacTrafficControls extends StatelessWidget {
   static const Color maximizeColor = Color(0xFF28C840);
   static const double visualDiameter = 14;
   static const double visualCenterSpacing = 24;
+  static const double minimumTargetWidth = 28;
   static const double defaultTargetSize = 32;
 
   final PortfolioAppId appId;
@@ -48,6 +49,7 @@ class MacTrafficControls extends StatelessWidget {
         glyph: Icons.close_rounded,
         onPressed: onClose,
         targetSize: targetSize,
+        visualOffset: minimumTargetWidth - visualCenterSpacing,
       ),
       if (secondaryControlsInteractive) ...<Widget>[
         _MacTrafficButton(
@@ -60,6 +62,7 @@ class MacTrafficControls extends StatelessWidget {
           glyph: Icons.remove_rounded,
           onPressed: onMinimize!,
           targetSize: targetSize,
+          visualOffset: 0,
         ),
         _MacTrafficButton(
           controlKey: Key('window-maximize-${appId.name}'),
@@ -73,6 +76,7 @@ class MacTrafficControls extends StatelessWidget {
           glyph: null,
           onPressed: onMaximize!,
           targetSize: targetSize,
+          visualOffset: visualCenterSpacing - minimumTargetWidth,
         ),
       ] else ...<Widget>[
         _MacTrafficDecoration(
@@ -82,6 +86,7 @@ class MacTrafficControls extends StatelessWidget {
           color: minimizeColor,
           glyph: Icons.remove_rounded,
           targetSize: targetSize,
+          visualOffset: 0,
         ),
         _MacTrafficDecoration(
           controlKey: Key('window-maximize-${appId.name}'),
@@ -90,6 +95,7 @@ class MacTrafficControls extends StatelessWidget {
           color: maximizeColor,
           glyph: null,
           targetSize: targetSize,
+          visualOffset: visualCenterSpacing - minimumTargetWidth,
         ),
       ],
     ];
@@ -113,6 +119,7 @@ class _MacTrafficButton extends StatefulWidget {
     required this.glyph,
     required this.onPressed,
     required this.targetSize,
+    required this.visualOffset,
   });
 
   final Key controlKey;
@@ -124,6 +131,7 @@ class _MacTrafficButton extends StatefulWidget {
   final IconData? glyph;
   final VoidCallback onPressed;
   final double targetSize;
+  final double visualOffset;
 
   @override
   State<_MacTrafficButton> createState() => _MacTrafficButtonState();
@@ -185,42 +193,45 @@ class _MacTrafficButtonState extends State<_MacTrafficButton> {
               behavior: HitTestBehavior.opaque,
               onTap: _activate,
               child: SizedBox(
-                width: MacTrafficControls.visualCenterSpacing,
+                width: MacTrafficControls.minimumTargetWidth,
                 height: widget.targetSize,
-                child: Stack(
-                  alignment: Alignment.center,
-                  children: <Widget>[
-                    if (_showFocus)
-                      Container(
-                        key: widget.focusKey,
-                        width: 22,
-                        height: 22,
-                        decoration: BoxDecoration(
-                          shape: BoxShape.circle,
-                          border: Border.all(
-                            color: const Color(0xFF0A84FF),
-                            width: 2,
+                child: Transform.translate(
+                  offset: Offset(widget.visualOffset, 0),
+                  child: Stack(
+                    alignment: Alignment.center,
+                    children: <Widget>[
+                      if (_showFocus)
+                        Container(
+                          key: widget.focusKey,
+                          width: 22,
+                          height: 22,
+                          decoration: BoxDecoration(
+                            shape: BoxShape.circle,
+                            border: Border.all(
+                              color: const Color(0xFF0A84FF),
+                              width: 2,
+                            ),
                           ),
                         ),
+                      Container(
+                        key: widget.visualKey,
+                        width: MacTrafficControls.visualDiameter,
+                        height: MacTrafficControls.visualDiameter,
+                        decoration: BoxDecoration(
+                          color: widget.color,
+                          shape: BoxShape.circle,
+                        ),
+                        child: widget.glyph == null
+                            ? null
+                            : Icon(
+                                widget.glyph,
+                                key: widget.glyphKey,
+                                size: 9,
+                                color: const Color(0xA6000000),
+                              ),
                       ),
-                    Container(
-                      key: widget.visualKey,
-                      width: MacTrafficControls.visualDiameter,
-                      height: MacTrafficControls.visualDiameter,
-                      decoration: BoxDecoration(
-                        color: widget.color,
-                        shape: BoxShape.circle,
-                      ),
-                      child: widget.glyph == null
-                          ? null
-                          : Icon(
-                              widget.glyph,
-                              key: widget.glyphKey,
-                              size: 9,
-                              color: const Color(0xA6000000),
-                            ),
-                    ),
-                  ],
+                    ],
+                  ),
                 ),
               ),
             ),
@@ -239,6 +250,7 @@ class _MacTrafficDecoration extends StatelessWidget {
     required this.color,
     required this.glyph,
     required this.targetSize,
+    required this.visualOffset,
   });
 
   final Key controlKey;
@@ -247,28 +259,32 @@ class _MacTrafficDecoration extends StatelessWidget {
   final Color color;
   final IconData? glyph;
   final double targetSize;
+  final double visualOffset;
 
   @override
   Widget build(BuildContext context) {
     return ExcludeSemantics(
       child: SizedBox(
         key: controlKey,
-        width: MacTrafficControls.visualCenterSpacing,
+        width: MacTrafficControls.minimumTargetWidth,
         height: targetSize,
-        child: Center(
-          child: Container(
-            key: visualKey,
-            width: MacTrafficControls.visualDiameter,
-            height: MacTrafficControls.visualDiameter,
-            decoration: BoxDecoration(color: color, shape: BoxShape.circle),
-            child: glyph == null
-                ? null
-                : Icon(
-                    glyph,
-                    key: glyphKey,
-                    size: 9,
-                    color: const Color(0xA6000000),
-                  ),
+        child: Transform.translate(
+          offset: Offset(visualOffset, 0),
+          child: Center(
+            child: Container(
+              key: visualKey,
+              width: MacTrafficControls.visualDiameter,
+              height: MacTrafficControls.visualDiameter,
+              decoration: BoxDecoration(color: color, shape: BoxShape.circle),
+              child: glyph == null
+                  ? null
+                  : Icon(
+                      glyph,
+                      key: glyphKey,
+                      size: 9,
+                      color: const Color(0xA6000000),
+                    ),
+            ),
           ),
         ),
       ),

@@ -325,8 +325,8 @@ void main() {
         final circle = tester.widget<Container>(visual);
         final decoration = circle.decoration! as BoxDecoration;
 
-        expect(targetSize, const Size(24, 32));
-        expect(semanticsSize, const Size(24, 32));
+        expect(targetSize, const Size(28, 32));
+        expect(semanticsSize, const Size(28, 32));
         expect(tester.getSize(visual).width, inInclusiveRange(13, 14));
         expect(tester.getSize(visual).height, inInclusiveRange(13, 14));
         expect(decoration.color, colors[control]);

@@ -273,7 +273,7 @@ void main() {
     );
 
     testWidgets(
-      'iPad traffic lights show static red X and yellow minus glyphs',
+      'iPad traffic lights keep tight visuals inside taller targets',
       (tester) async {
         final semantics = tester.ensureSemantics();
         await _pumpSurface(
@@ -282,15 +282,25 @@ void main() {
           appId: PortfolioAppId.about,
         );
 
-        for (final control in const <String>['minimize', 'maximize']) {
+        final visualCenters = <Offset>[];
+        for (final control in const <String>['close', 'minimize', 'maximize']) {
           final target = find.byKey(Key('window-$control-about'));
+          final visual = find.byKey(Key('window-$control-about-visual'));
           expect(target, findsOneWidget);
-          expect(tester.getSize(target), const Size(24, 32));
+          expect(tester.getSize(target), const Size(28, 44));
+          visualCenters.add(tester.getCenter(visual));
 
           final semanticsData = tester.getSemantics(target).getSemanticsData();
-          expect(semanticsData.flagsCollection.isButton, isFalse);
-          expect(semanticsData.hasAction(ui.SemanticsAction.tap), isFalse);
+          if (control == 'close') {
+            expect(semanticsData.flagsCollection.isButton, isTrue);
+            expect(semanticsData.hasAction(ui.SemanticsAction.tap), isTrue);
+          } else {
+            expect(semanticsData.flagsCollection.isButton, isFalse);
+            expect(semanticsData.hasAction(ui.SemanticsAction.tap), isFalse);
+          }
         }
+        expect(visualCenters[1].dx - visualCenters[0].dx, closeTo(24, 0.01));
+        expect(visualCenters[2].dx - visualCenters[1].dx, closeTo(24, 0.01));
         expect(find.bySemanticsLabel('Minimize About window'), findsNothing);
         expect(find.bySemanticsLabel('Restore About window'), findsNothing);
         expect(find.bySemanticsLabel('Maximize About window'), findsNothing);
