@@ -167,7 +167,7 @@ void main() {
       expect(monogramFile.existsSync(), isTrue);
       if (monogramFile.existsSync()) {
         final monogram = monogramFile.readAsStringSync();
-        expect(monogram, contains('<title>민희수 모노그램</title>'));
+        expect(_elementText(monogram, 'title'), '민희수 모노그램');
         expect(monogram.toLowerCase(), isNot(contains('flutter')));
       }
 
