@@ -489,8 +489,7 @@ void main() {
         );
 
         final trashIcon = find.byKey(const Key('home-app-trash'));
-        await tester.ensureVisible(trashIcon);
-        await tester.pumpAndSettle();
+        await _scrollHomeIconIntoView(tester, trashIcon, reason: '$size');
         await tester.tap(trashIcon);
         await tester.pumpAndSettle();
 
@@ -532,9 +531,13 @@ Future<void> _scrollHomeIconIntoView(
   final homeScroll = find.byKey(const Key('mobile-home-scroll'));
 
   for (var attempt = 0; attempt < 16; attempt += 1) {
-    if (icon.evaluate().isNotEmpty &&
-        tester.getRect(homeScroll).overlaps(tester.getRect(icon))) {
-      break;
+    if (icon.evaluate().isNotEmpty) {
+      final scrollRect = tester.getRect(homeScroll);
+      final iconRect = tester.getRect(icon);
+      if (iconRect.top >= scrollRect.top + 4 &&
+          iconRect.bottom <= scrollRect.bottom - 4) {
+        break;
+      }
     }
     await tester.drag(homeScroll, const Offset(0, -100));
     await tester.pumpAndSettle();
