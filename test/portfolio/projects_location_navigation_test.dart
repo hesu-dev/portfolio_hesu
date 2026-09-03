@@ -152,6 +152,23 @@ void main() {
       );
     });
 
+    testWidgets('개인 프로젝트의 긴 폴더 제목은 iPad에서도 두 줄로 개행된다', (tester) async {
+      await _pumpProjects(tester, size: const Size(834, 700), tablet: true);
+
+      await tester.tap(
+        find.byKey(const Key('projects-finder-location-personal-projects')),
+      );
+      await tester.pumpAndSettle();
+
+      final readingLog = find.text('ReadingLog');
+      final personaChat = find.text('PersonaChat AI Character Chat');
+      expect(
+        tester.getTopLeft(readingLog).dx,
+        lessThan(tester.getTopLeft(personaChat).dx),
+      );
+      expect(tester.getSize(personaChat).height, greaterThan(20));
+    });
+
     testWidgets(
       'iPhone and iPad use the same location set and selection flow',
       (tester) async {

@@ -342,15 +342,13 @@ class _ProjectFolderGrid extends StatelessWidget {
       builder: (context, constraints) {
         const spacing = 10.0;
         const minimumTileWidth = 132.0;
-        final itemCount = projects.length;
         final gridWidth = compact
             ? constraints.maxWidth.clamp(0.0, minimumTileWidth * 2 + spacing)
             : constraints.maxWidth;
-        final columnCount = compact
-            ? 2
-            : ((gridWidth + spacing) / (minimumTileWidth + spacing))
-                  .floor()
-                  .clamp(1, itemCount);
+        final availableColumns =
+            ((gridWidth + spacing) / (minimumTileWidth + spacing)).floor();
+        final regularColumnCount = availableColumns < 1 ? 1 : availableColumns;
+        final columnCount = compact ? 2 : regularColumnCount;
         final tileWidth = compact
             ? ((gridWidth - spacing) / columnCount).clamp(0.0, minimumTileWidth)
             : (gridWidth - spacing * (columnCount - 1)) / columnCount;
