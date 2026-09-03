@@ -91,6 +91,11 @@ void main() {
       expect(_metaContent(indexHtml, 'description'), _portfolioDescription);
       expect(_metaContent(indexHtml, 'theme-color'), '#121316');
       expect(
+        _metaContent(indexHtml, 'viewport'),
+        isNull,
+        reason: 'Flutter bootstrap owns responsive viewport configuration.',
+      );
+      expect(
         _metaContent(indexHtml, 'apple-mobile-web-app-title'),
         '민희수 포트폴리오',
       );
