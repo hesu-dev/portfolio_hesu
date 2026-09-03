@@ -375,7 +375,7 @@ void main() {
 
         expect(
           find.byKey(const Key('apple-app-artwork-about')),
-          findsNWidgets(2),
+          findsOneWidget,
         );
 
         await tester.tap(find.byKey(const Key('home-app-about')));
@@ -384,9 +384,12 @@ void main() {
         expect(find.byKey(const Key('mobile-app-surface')), findsOneWidget);
         expect(
           find.byKey(const Key('mac-traffic-controls-about')),
+          findsNothing,
+        );
+        expect(
+          find.byKey(const Key('mobile-back-close-about')),
           findsOneWidget,
         );
-        expect(find.byKey(const Key('mobile-home-back')), findsNothing);
         expect(find.byKey(const Key('apple-app-artwork-about')), findsNothing);
       },
     );
