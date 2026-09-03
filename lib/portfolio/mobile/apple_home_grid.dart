@@ -176,7 +176,7 @@ class _IPadProfileWidget extends StatelessWidget {
               ),
               alignment: Alignment.center,
               child: Text(
-                _profileMonogram(data.identity),
+                data.monogram,
                 style: const TextStyle(
                   color: Colors.white,
                   fontSize: 24,
@@ -247,27 +247,3 @@ const List<String> _months = <String>[
   'November',
   'December',
 ];
-
-String _profileMonogram(PortfolioIdentity identity) {
-  final words = identity.englishName
-      .trim()
-      .split(RegExp(r'[\s-]+'))
-      .where((word) => word.isNotEmpty)
-      .toList(growable: false);
-
-  if (words.length >= 2) {
-    return String.fromCharCodes(<int>[
-      words.first.runes.first,
-      words[1].runes.first,
-    ]).toUpperCase();
-  }
-  if (words case <String>[final word]) {
-    return String.fromCharCodes(word.runes.take(2)).toUpperCase();
-  }
-
-  final localName = identity.name.trim();
-  if (localName.isNotEmpty) {
-    return String.fromCharCodes(localName.runes.take(2)).toUpperCase();
-  }
-  return 'ME';
-}
