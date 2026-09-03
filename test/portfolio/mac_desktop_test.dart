@@ -269,7 +269,7 @@ void main() {
         await tester.tap(find.byKey(const Key('project-selector-1')));
         await tester.pumpAndSettle();
 
-        expect(find.text('hesu@portfolio ~ % skills'), findsOneWidget);
+        expect(find.text('hs0647@portfolio ~ % skills'), findsOneWidget);
         expect(
           tester
               .widget<Text>(find.byKey(const Key('project-detail-title')))
@@ -294,7 +294,7 @@ void main() {
           find.byKey(const Key('mac-window-active-terminal')),
           findsOneWidget,
         );
-        expect(find.text('hesu@portfolio ~ % skills'), findsOneWidget);
+        expect(find.text('hs0647@portfolio ~ % skills'), findsOneWidget);
         expect(
           tester
               .widget<Text>(find.byKey(const Key('project-detail-title')))
@@ -355,7 +355,7 @@ void main() {
         await tester.pumpAndSettle();
 
         expect(find.byKey(const Key('mac-window-terminal')), findsOneWidget);
-        expect(find.text('hesu@portfolio ~ % skills'), findsOneWidget);
+        expect(find.text('hs0647@portfolio ~ % skills'), findsOneWidget);
         semantics.dispose();
       },
     );

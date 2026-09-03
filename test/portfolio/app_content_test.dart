@@ -503,6 +503,59 @@ void main() {
       expect(tester.takeException(), isNull);
     });
 
+    testWidgets('terminal derives one consistent prompt from injected email', (
+      tester,
+    ) async {
+      final data = _dataWithIdentity(
+        name: '에이다 러브레이스',
+        englishName: 'Ada Lovelace',
+        email: 'ada.dev@example.com',
+      );
+      const prompt = 'ada.dev@portfolio ~ %';
+      await _pumpApp(
+        tester,
+        appId: PortfolioAppId.terminal,
+        launcher: _FakeExternalLauncher(),
+        data: data,
+        size: const Size(360, 600),
+        compact: true,
+      );
+
+      expect(find.text(prompt), findsOneWidget);
+
+      await tester.enterText(find.byKey(const Key('terminal-input')), 'help');
+      await tester.tap(find.byKey(const Key('terminal-submit')));
+      await tester.pump();
+      expect(find.text('$prompt help'), findsOneWidget);
+
+      await tester.enterText(find.byKey(const Key('terminal-input')), 'clear');
+      await tester.tap(find.byKey(const Key('terminal-submit')));
+      await tester.pump();
+      expect(find.text('$prompt help'), findsNothing);
+      expect(find.text(prompt), findsOneWidget);
+    });
+
+    testWidgets('terminal falls back to a safe English-name prompt', (
+      tester,
+    ) async {
+      final data = _dataWithIdentity(
+        name: '그레이스 호퍼',
+        englishName: 'Grace Hopper',
+        email: 'invalid email',
+      );
+      await _pumpApp(
+        tester,
+        appId: PortfolioAppId.terminal,
+        launcher: _FakeExternalLauncher(),
+        data: data,
+        size: const Size(360, 600),
+        compact: true,
+      );
+
+      expect(find.text('grace-hopper@portfolio ~ %'), findsOneWidget);
+      expect(find.textContaining('hesu@portfolio'), findsNothing);
+    });
+
     testWidgets('system actions use the injected launcher and report failure', (
       tester,
     ) async {
