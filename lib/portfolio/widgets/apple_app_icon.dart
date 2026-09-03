@@ -38,7 +38,7 @@ class AppleAppIcon extends StatefulWidget {
     PortfolioAppId.projects => 'Projects',
     PortfolioAppId.terminal => 'Terminal',
     PortfolioAppId.settings => '설정',
-    PortfolioAppId.thisMac => 'This Mac',
+    PortfolioAppId.thisMac => '프로젝트',
     PortfolioAppId.trash => 'Trash',
     PortfolioAppId.github => 'GitHub',
     PortfolioAppId.mail => 'Mail',
