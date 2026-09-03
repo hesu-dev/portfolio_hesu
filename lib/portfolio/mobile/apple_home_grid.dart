@@ -110,6 +110,12 @@ class _MobileNotesProfileButton extends StatelessWidget {
         : const Color(0xFF515158);
     final largeText = MediaQuery.textScalerOf(context).scale(1) > 1.4;
     final shortTablet = tablet && MediaQuery.sizeOf(context).height < 500;
+    final profileLineStyle =
+        (Theme.of(context).textTheme.titleMedium ?? const TextStyle()).copyWith(
+          fontSize: tablet ? 18 : 17,
+          fontWeight: FontWeight.w600,
+          height: 1.2,
+        );
 
     return AppleNotesSurface(
       key: widgetKey,
@@ -149,19 +155,14 @@ class _MobileNotesProfileButton extends StatelessWidget {
                   data.name,
                   maxLines: 1,
                   overflow: TextOverflow.ellipsis,
-                  style: Theme.of(context).textTheme.titleLarge?.copyWith(
-                    color: bodyForeground,
-                    fontSize: tablet ? 23 : 20,
-                  ),
+                  style: profileLineStyle.copyWith(color: bodyForeground),
                 ),
                 const SizedBox(height: 3),
                 Text(
                   data.identity.headline,
-                  maxLines: 2,
+                  maxLines: 1,
                   overflow: TextOverflow.ellipsis,
-                  style: AppleTheme.caption(
-                    context,
-                  ).copyWith(color: secondaryForeground, height: 1.3),
+                  style: profileLineStyle.copyWith(color: secondaryForeground),
                 ),
               ],
             ),

@@ -67,6 +67,34 @@ void main() {
         expect(find.byKey(const Key('about-app')), findsOneWidget);
         semantics.dispose();
       });
+
+      testWidgets(
+        '${scenario.$2 ? 'iPad' : 'iPhone'} 메모의 이름과 소개는 같은 스타일의 두 줄이다',
+        (tester) async {
+          await _pumpMobileHome(tester, size: scenario.$1, tablet: scenario.$2);
+
+          final profile = find.byKey(Key(scenario.$3));
+          final name = tester.widget<Text>(
+            find.descendant(
+              of: profile,
+              matching: find.text(portfolioData.identity.name),
+            ),
+          );
+          final headline = tester.widget<Text>(
+            find.descendant(
+              of: profile,
+              matching: find.text(portfolioData.identity.headline),
+            ),
+          );
+
+          expect(name.maxLines, 1);
+          expect(headline.maxLines, 1);
+          expect(name.style?.fontSize, headline.style?.fontSize);
+          expect(name.style?.fontWeight, headline.style?.fontWeight);
+          expect(name.style?.height, headline.style?.height);
+          expect(name.style?.fontSize, inInclusiveRange(16, 18));
+        },
+      );
     }
 
     testWidgets('iPad와 iPhone 메모는 Enter와 Space로 About을 연다', (tester) async {
