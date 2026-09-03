@@ -748,7 +748,7 @@ Future<void> _pumpDock(
       ),
     ),
   );
-  await tester.pump();
+  await tester.pumpAndSettle();
 }
 
 Future<void> _pumpAdaptivePortfolio(
