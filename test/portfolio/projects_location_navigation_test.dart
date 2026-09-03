@@ -1,6 +1,7 @@
 import 'dart:ui' as ui;
 
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:portfolio_hesu/portfolio/apps/projects_app.dart';
 import 'package:portfolio_hesu/portfolio/data/portfolio_data.dart';
@@ -415,6 +416,43 @@ void main() {
         expect(_toolbarTitle(tester), '데스크탑');
         expect(tester.takeException(), isNull, reason: '$size');
       }
+    });
+
+    testWidgets('새 창 뒤의 Projects는 키보드 입력에서도 비활성화된다', (tester) async {
+      final semantics = tester.ensureSemantics();
+      await _pumpPortfolio(tester, size: const Size(834, 700));
+
+      await tester.tap(find.byKey(const Key('home-app-projects')));
+      await tester.pumpAndSettle();
+      await tester.tap(
+        find.byKey(const Key('projects-finder-location-desktop')),
+      );
+      await tester.pumpAndSettle();
+
+      final mailShortcut = find.bySemanticsLabel('Open Mail');
+      var mailIsFocused = false;
+      for (var index = 0; index < 32 && !mailIsFocused; index++) {
+        await tester.sendKeyEvent(LogicalKeyboardKey.tab);
+        await tester.pump();
+        mailIsFocused =
+            tester
+                .getSemantics(mailShortcut)
+                .getSemanticsData()
+                .flagsCollection
+                .isFocused ==
+            ui.Tristate.isTrue;
+      }
+      expect(mailIsFocused, isTrue);
+
+      await tester.sendKeyEvent(LogicalKeyboardKey.enter);
+      await tester.pumpAndSettle();
+      expect(find.byKey(const Key('mobile-app-surface')), findsNWidgets(2));
+
+      await tester.sendKeyEvent(LogicalKeyboardKey.enter);
+      await tester.pumpAndSettle();
+      expect(find.byKey(const Key('mobile-app-surface')), findsNWidgets(2));
+      expect(find.byKey(const Key('mail-app')), findsOneWidget);
+      semantics.dispose();
     });
 
     testWidgets('데스크탑 app shortcuts open another macOS window', (tester) async {

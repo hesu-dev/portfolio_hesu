@@ -173,22 +173,27 @@ class _AppleMobileShellState extends State<AppleMobileShell> {
                                         child: IgnorePointer(
                                           ignoring:
                                               index != _appStack.length - 1,
-                                          child: ExcludeSemantics(
+                                          child: ExcludeFocus(
                                             excluding:
                                                 index != _appStack.length - 1,
-                                            child: MobileAppSurface(
-                                              key: ValueKey<String>(
-                                                'mobile-window-$index-'
-                                                '${_appStack[index].name}',
+                                            child: ExcludeSemantics(
+                                              excluding:
+                                                  index != _appStack.length - 1,
+                                              child: MobileAppSurface(
+                                                key: ValueKey<String>(
+                                                  'mobile-window-$index-'
+                                                  '${_appStack[index].name}',
+                                                ),
+                                                appId: _appStack[index],
+                                                data: widget.data,
+                                                launcher:
+                                                    widget.externalLauncher,
+                                                themeController:
+                                                    widget.themeController,
+                                                tablet: widget.tablet,
+                                                onClose: _closeApp,
+                                                onOpenApp: _openAppWindow,
                                               ),
-                                              appId: _appStack[index],
-                                              data: widget.data,
-                                              launcher: widget.externalLauncher,
-                                              themeController:
-                                                  widget.themeController,
-                                              tablet: widget.tablet,
-                                              onClose: _closeApp,
-                                              onOpenApp: _openAppWindow,
                                             ),
                                           ),
                                         ),
