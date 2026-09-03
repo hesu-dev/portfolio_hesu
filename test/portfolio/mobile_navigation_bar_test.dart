@@ -10,6 +10,7 @@ import 'package:portfolio_hesu/portfolio/services/external_launcher.dart';
 import 'package:portfolio_hesu/portfolio/theme/apple_theme.dart';
 import 'package:portfolio_hesu/portfolio/theme/portfolio_theme_controller.dart';
 import 'package:portfolio_hesu/portfolio/widgets/apple_app_artwork.dart';
+import 'package:portfolio_hesu/portfolio/widgets/apple_mobile_navigation_header.dart';
 
 void main() {
   group('mobile app navigation bar', () {
@@ -29,14 +30,7 @@ void main() {
           final close = find.byKey(Key('mobile-back-close-${appId.name}'));
 
           expect(navigationBar, findsOneWidget);
-          expect(
-            find.byWidgetPredicate(
-              (widget) =>
-                  widget.runtimeType.toString() ==
-                  'AppleMobileNavigationHeader',
-            ),
-            findsOneWidget,
-          );
+          expect(find.byType(AppleMobileNavigationHeader), findsOneWidget);
           expect(find.byType(MacTrafficControls), findsNothing);
           expect(close, findsOneWidget);
           expect(tester.getSize(close), const Size(44, 44));
@@ -131,9 +125,6 @@ void main() {
           await tester.pumpWidget(const SizedBox.shrink());
           await _pumpSurface(tester, size: const Size(834, 1194), appId: appId);
 
-          final navigationBar = find.byKey(
-            const Key('mobile-app-navigation-bar'),
-          );
           final close = find.byKey(Key('mobile-back-close-${appId.name}'));
 
           expect(find.byType(MacTrafficControls), findsNothing);
@@ -177,14 +168,7 @@ void main() {
           );
           expect(find.byKey(const Key('mobile-app-title')), findsNothing);
           expect(finderToolbar, findsOneWidget);
-          expect(
-            find.byWidgetPredicate(
-              (widget) =>
-                  widget.runtimeType.toString() ==
-                  'AppleMobileNavigationHeader',
-            ),
-            findsOneWidget,
-          );
+          expect(find.byType(AppleMobileNavigationHeader), findsOneWidget);
           expect(find.byType(MacTrafficControls), findsNothing);
           expect(
             find.byKey(const Key('mobile-back-close-projects')),
