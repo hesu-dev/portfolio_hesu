@@ -42,6 +42,7 @@ class AppleFinderScaffold extends StatelessWidget {
     required this.onBack,
     required this.onForward,
     required this.bodyBuilder,
+    this.toolbarTitle,
     this.backTooltip = '뒤로',
     this.forwardTooltip = '앞으로',
     this.windowChrome,
@@ -60,6 +61,7 @@ class AppleFinderScaffold extends StatelessWidget {
   final VoidCallback onBack;
   final VoidCallback onForward;
   final AppleFinderBodyBuilder bodyBuilder;
+  final String? toolbarTitle;
   final String backTooltip;
   final String forwardTooltip;
   final AppleFinderWindowChrome? windowChrome;
@@ -73,7 +75,7 @@ class AppleFinderScaffold extends StatelessWidget {
         children: <Widget>[
           AppleFinderToolbar(
             key: Key('$keyPrefix-finder-toolbar'),
-            currentLocation: currentLocation,
+            currentLocation: toolbarTitle ?? currentLocation,
             compact: compact,
             canGoBack: canGoBack,
             canGoForward: canGoForward,
@@ -96,7 +98,7 @@ class AppleFinderScaffold extends StatelessWidget {
                   return Row(
                     children: <Widget>[
                       SizedBox(
-                        width: tablet ? 224 : 252,
+                        width: tablet ? 176 : 252,
                         child: AppleFinderSidebar(
                           key: Key('$keyPrefix-finder-sidebar'),
                           ownerName: ownerName,
@@ -340,12 +342,9 @@ class AppleFinderFolderTile extends StatelessWidget {
   Widget build(BuildContext context) {
     final tileHeight = compact ? 154.0 : 166.0;
     final folderSize = compact ? 50.0 : 58.0;
-    final selectedTileColor = AppleTheme.isDark(context)
+    final selectedArtworkColor = AppleTheme.isDark(context)
         ? const Color(0xFF3A3A3A)
         : const Color(0xFFE2E2E2);
-    final selectedLabelColor = AppleTheme.isDark(context)
-        ? const Color(0xFF2C2C2C)
-        : const Color(0xFFD0D0D0);
 
     return AppleSelectionControl(
       semanticsLabel: semanticsLabel,
@@ -361,17 +360,28 @@ class AppleFinderFolderTile extends StatelessWidget {
           vertical: compact ? 10 : 12,
         ),
         decoration: BoxDecoration(
-          color: selected ? selectedTileColor : Colors.transparent,
+          color: Colors.transparent,
           borderRadius: BorderRadius.circular(14),
         ),
         child: Column(
           mainAxisAlignment: MainAxisAlignment.center,
           children: <Widget>[
-            Icon(
-              Icons.folder_rounded,
-              key: const Key('apple-finder-folder-artwork'),
-              size: folderSize,
-              color: const Color(0xFF55B8F5),
+            AnimatedContainer(
+              key: const Key('apple-finder-folder-artwork-background'),
+              duration: const Duration(milliseconds: 160),
+              width: folderSize + 14,
+              height: folderSize + 8,
+              alignment: Alignment.center,
+              decoration: BoxDecoration(
+                color: selected ? selectedArtworkColor : Colors.transparent,
+                borderRadius: BorderRadius.circular(10),
+              ),
+              child: Icon(
+                Icons.folder_rounded,
+                key: const Key('apple-finder-folder-artwork'),
+                size: folderSize,
+                color: const Color(0xFF55B8F5),
+              ),
             ),
             const SizedBox(height: 8),
             SizedBox(
@@ -381,7 +391,7 @@ class AppleFinderFolderTile extends StatelessWidget {
                 child: DecoratedBox(
                   key: const Key('apple-finder-folder-label-background'),
                   decoration: BoxDecoration(
-                    color: selected ? selectedLabelColor : Colors.transparent,
+                    color: Colors.transparent,
                     borderRadius: BorderRadius.circular(6),
                   ),
                   child: Padding(
