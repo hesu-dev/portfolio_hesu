@@ -4,6 +4,7 @@ import 'package:flutter/services.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:portfolio_hesu/portfolio/apps/portfolio_app_content.dart';
 import 'package:portfolio_hesu/portfolio/data/portfolio_data.dart';
+import 'package:portfolio_hesu/portfolio/macos/mac_dock.dart';
 import 'package:portfolio_hesu/portfolio/models/portfolio_app_id.dart';
 import 'package:portfolio_hesu/portfolio/portfolio_app.dart';
 import 'package:portfolio_hesu/portfolio/services/external_launcher.dart';
@@ -200,17 +201,47 @@ void main() {
       await _pumpPortfolio(tester);
       await _openDesktopApp(tester, PortfolioAppId.about);
 
+      expect(
+        find.byKey(const Key('mac-traffic-controls-about')),
+        findsOneWidget,
+      );
+
+      const colors = <String, Color>{
+        'close': Color(0xFFFF5F57),
+        'minimize': Color(0xFFFEBC2E),
+        'maximize': Color(0xFF28C840),
+      };
+
       for (final control in const <String>['close', 'minimize', 'maximize']) {
         final target = find.byKey(Key('window-$control-about'));
         final visual = find.byKey(Key('window-$control-about-visual'));
         final targetSize = tester.getSize(target);
         final semanticsSize = tester.getSemantics(target).rect.size;
+        final circle = tester.widget<Container>(visual);
+        final decoration = circle.decoration! as BoxDecoration;
 
-        expect(targetSize.width, inInclusiveRange(28, 44));
-        expect(targetSize.height, inInclusiveRange(28, 44));
-        expect(semanticsSize.width, inInclusiveRange(28, 44));
-        expect(semanticsSize.height, inInclusiveRange(28, 44));
-        expect(tester.getSize(visual), const Size.square(14));
+        expect(targetSize.width, inInclusiveRange(32, 44));
+        expect(targetSize.height, inInclusiveRange(32, 44));
+        expect(semanticsSize.width, inInclusiveRange(32, 44));
+        expect(semanticsSize.height, inInclusiveRange(32, 44));
+        expect(tester.getSize(visual).width, inInclusiveRange(13, 14));
+        expect(tester.getSize(visual).height, inInclusiveRange(13, 14));
+        expect(decoration.color, colors[control]);
+        expect(circle.child, isNull, reason: '$control must not show a mark');
+        expect(
+          find.descendant(of: visual, matching: find.byType(Icon)),
+          findsNothing,
+        );
+        expect(
+          find.byTooltip(
+            '${control == 'close'
+                ? 'Close'
+                : control == 'minimize'
+                ? 'Minimize'
+                : 'Maximize'} About window',
+          ),
+          findsOneWidget,
+        );
       }
 
       final minimizeTarget = tester.getRect(
@@ -222,6 +253,30 @@ void main() {
       expect(find.byKey(const Key('mac-window-about')), findsNothing);
       expect(find.byKey(const Key('dock-running-about')), findsOneWidget);
       semantics.dispose();
+    });
+
+    testWidgets('traffic lights retain keyboard focus and callbacks', (
+      tester,
+    ) async {
+      await _pumpPortfolio(tester);
+      await _openDesktopApp(tester, PortfolioAppId.about);
+
+      await _focusWindowControl(tester, 'minimize', PortfolioAppId.about);
+      await tester.sendKeyEvent(LogicalKeyboardKey.enter);
+      await tester.pumpAndSettle();
+      expect(find.byKey(const Key('mac-window-about')), findsNothing);
+
+      await tester.tap(find.byKey(const Key('dock-app-about')));
+      await tester.pumpAndSettle();
+      await _focusWindowControl(tester, 'maximize', PortfolioAppId.about);
+      await tester.sendKeyEvent(LogicalKeyboardKey.space);
+      await tester.pumpAndSettle();
+      expect(find.bySemanticsLabel('Restore About window'), findsOneWidget);
+
+      await _focusWindowControl(tester, 'close', PortfolioAppId.about);
+      await tester.sendKeyEvent(LogicalKeyboardKey.enter);
+      await tester.pumpAndSettle();
+      expect(find.byKey(const Key('mac-window-about')), findsNothing);
     });
 
     testWidgets('title-bar drag clamps windows into the visible work area', (
@@ -405,32 +460,136 @@ void main() {
       semantics.dispose();
     });
 
-    testWidgets('shows desktop menu labels, status controls, and Dock apps', (
+    testWidgets(
+      'shows desktop chrome and only fixed Dock launchers initially',
+      (tester) async {
+        await _pumpPortfolio(tester);
+
+        for (final label in const <String>[
+          'Finder',
+          'File',
+          'Edit',
+          'View',
+          'Window',
+          'Help',
+        ]) {
+          expect(find.text(label), findsOneWidget);
+        }
+        expect(find.byKey(const Key('mac-wifi-status')), findsOneWidget);
+        expect(find.byKey(const Key('mac-battery-status')), findsOneWidget);
+        expect(
+          find.byKey(const Key('mac-control-center-button')),
+          findsOneWidget,
+        );
+        expect(find.byKey(const Key('mac-clock-button')), findsOneWidget);
+
+        for (final appId in _pinnedDockApps) {
+          expect(find.byKey(Key('dock-app-${appId.name}')), findsOneWidget);
+        }
+        expect(find.byKey(const Key('dock-app-trash')), findsOneWidget);
+        for (final appId in _dynamicDockApps) {
+          expect(find.byKey(Key('dock-app-${appId.name}')), findsNothing);
+          expect(find.byKey(Key('desktop-app-${appId.name}')), findsOneWidget);
+        }
+      },
+    );
+
+    testWidgets('uses a borderless theme-derived translucent Dock surface', (
+      tester,
+    ) async {
+      await _pumpDock(tester, brightness: Brightness.light);
+      final dock = find.byKey(const Key('mac-dock'));
+      final lightDecoration =
+          tester.widget<Container>(dock).decoration! as BoxDecoration;
+      final lightColor = lightDecoration.color!;
+
+      expect(lightDecoration.border, isNull);
+      expect(lightColor.a, closeTo(0.78, 0.02));
+      expect(lightDecoration.boxShadow, isNotEmpty);
+      expect(
+        find.descendant(of: dock, matching: find.byType(BackdropFilter)),
+        findsOneWidget,
+      );
+
+      await _pumpDock(tester, brightness: Brightness.dark);
+      final darkDecoration =
+          tester.widget<Container>(dock).decoration! as BoxDecoration;
+      final darkColor = darkDecoration.color!;
+
+      expect(darkDecoration.border, isNull);
+      expect(darkColor.a, closeTo(0.78, 0.02));
+      expect(darkColor, isNot(lightColor));
+    });
+
+    testWidgets('adds and removes unpinned running apps dynamically', (
+      tester,
+    ) async {
+      await _pumpPortfolio(tester, size: const Size(1024, 700));
+
+      for (final appId in _dynamicDockApps) {
+        expect(find.byKey(Key('dock-app-${appId.name}')), findsNothing);
+
+        await _openDesktopApp(tester, appId);
+        expect(find.byKey(Key('dock-app-${appId.name}')), findsOneWidget);
+        expect(
+          find.byKey(Key('mac-dock-dynamic-${appId.name}')),
+          findsOneWidget,
+        );
+        expect(find.byKey(Key('dock-running-${appId.name}')), findsOneWidget);
+
+        await tester.tap(find.byKey(Key('window-close-${appId.name}')));
+        await tester.pumpAndSettle();
+        expect(find.byKey(Key('dock-app-${appId.name}')), findsNothing);
+        expect(find.byKey(Key('desktop-app-${appId.name}')), findsOneWidget);
+      }
+    });
+
+    testWidgets('keeps minimized dynamic apps and restores them from Dock', (
       tester,
     ) async {
       await _pumpPortfolio(tester);
+      await _openDesktopApp(tester, PortfolioAppId.settings);
 
-      for (final label in const <String>[
-        'Finder',
-        'File',
-        'Edit',
-        'View',
-        'Window',
-        'Help',
-      ]) {
-        expect(find.text(label), findsOneWidget);
-      }
-      expect(find.byKey(const Key('mac-wifi-status')), findsOneWidget);
-      expect(find.byKey(const Key('mac-battery-status')), findsOneWidget);
+      await tester.tap(find.byKey(const Key('window-minimize-settings')));
+      await tester.pumpAndSettle();
+      expect(find.byKey(const Key('dock-app-settings')), findsOneWidget);
+      expect(find.byKey(const Key('dock-running-settings')), findsOneWidget);
+      expect(find.byKey(const Key('mac-window-settings')), findsNothing);
+
+      await _focusDockApp(tester, PortfolioAppId.settings);
+      await tester.sendKeyEvent(LogicalKeyboardKey.space);
+      await tester.pumpAndSettle();
+
+      expect(find.byKey(const Key('mac-window-settings')), findsOneWidget);
       expect(
-        find.byKey(const Key('mac-control-center-button')),
+        find.byKey(const Key('mac-window-active-settings')),
         findsOneWidget,
       );
-      expect(find.byKey(const Key('mac-clock-button')), findsOneWidget);
+      expect(
+        find.byKey(const Key('mac-window-settings'), skipOffstage: false),
+        findsOneWidget,
+      );
+    });
 
-      for (final appId in PortfolioAppId.values) {
-        expect(find.byKey(Key('dock-app-${appId.name}')), findsOneWidget);
+    testWidgets('keeps the complete Dock overflow-free at 1024 and 200%', (
+      tester,
+    ) async {
+      await _pumpPortfolio(
+        tester,
+        size: const Size(1024, 700),
+        textScaler: const TextScaler.linear(2),
+      );
+
+      for (final appId in _dynamicDockApps) {
+        await _openDesktopApp(tester, appId);
+        await tester.tap(find.byKey(Key('window-minimize-${appId.name}')));
+        await tester.pumpAndSettle();
       }
+
+      final dockRect = tester.getRect(find.byKey(const Key('mac-dock')));
+      expect(dockRect.left, greaterThanOrEqualTo(0));
+      expect(dockRect.right, lessThanOrEqualTo(1024));
+      expect(tester.takeException(), isNull);
     });
 
     testWidgets('toggles exclusive system panels and dismisses them', (
@@ -520,6 +679,20 @@ const Map<PortfolioAppId, String> _labels = <PortfolioAppId, String>{
   PortfolioAppId.trash: 'Trash',
 };
 
+const List<PortfolioAppId> _pinnedDockApps = <PortfolioAppId>[
+  PortfolioAppId.about,
+  PortfolioAppId.skills,
+  PortfolioAppId.projects,
+  PortfolioAppId.terminal,
+  PortfolioAppId.mail,
+];
+
+const List<PortfolioAppId> _dynamicDockApps = <PortfolioAppId>[
+  PortfolioAppId.settings,
+  PortfolioAppId.thisMac,
+  PortfolioAppId.github,
+];
+
 const PortfolioData _customPortfolioData = PortfolioData.constant(
   identity: PortfolioIdentity(
     name: '커스텀 개발자',
@@ -539,6 +712,7 @@ Future<void> _pumpPortfolio(
   WidgetTester tester, {
   Size size = const Size(1440, 900),
   ExternalLauncher? launcher,
+  TextScaler textScaler = TextScaler.noScaling,
 }) async {
   tester.view.devicePixelRatio = 1;
   tester.view.physicalSize = size;
@@ -546,7 +720,33 @@ Future<void> _pumpPortfolio(
   addTearDown(tester.view.resetPhysicalSize);
 
   await tester.pumpWidget(
-    PortfolioApp(externalLauncher: launcher ?? _FakeLauncher()),
+    MediaQuery(
+      data: MediaQueryData(size: size, textScaler: textScaler),
+      child: PortfolioApp(externalLauncher: launcher ?? _FakeLauncher()),
+    ),
+  );
+  await tester.pump();
+}
+
+Future<void> _pumpDock(
+  WidgetTester tester, {
+  required Brightness brightness,
+}) async {
+  await tester.pumpWidget(
+    MaterialApp(
+      theme: brightness == Brightness.light
+          ? AppleTheme.light()
+          : AppleTheme.dark(),
+      home: Material(
+        child: Center(
+          child: MacDock(
+            runningApps: const <PortfolioAppId>{},
+            activeApp: null,
+            onAppPressed: (_) {},
+          ),
+        ),
+      ),
+    ),
   );
   await tester.pump();
 }
@@ -592,6 +792,22 @@ Future<void> _focusDockApp(WidgetTester tester, PortfolioAppId appId) async {
   final focusable = tester.widget<FocusableActionDetector>(
     find.descendant(
       of: find.byKey(Key('dock-app-${appId.name}')),
+      matching: find.byType(FocusableActionDetector),
+    ),
+  );
+  focusable.focusNode!.requestFocus();
+  await tester.pump();
+  expect(focusable.focusNode!.hasFocus, isTrue);
+}
+
+Future<void> _focusWindowControl(
+  WidgetTester tester,
+  String control,
+  PortfolioAppId appId,
+) async {
+  final focusable = tester.widget<FocusableActionDetector>(
+    find.descendant(
+      of: find.byKey(Key('window-$control-${appId.name}')),
       matching: find.byType(FocusableActionDetector),
     ),
   );
