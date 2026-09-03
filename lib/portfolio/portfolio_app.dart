@@ -1,9 +1,22 @@
+import 'dart:ui' show PointerDeviceKind;
+
 import 'package:flutter/material.dart';
 import 'package:portfolio_hesu/portfolio/data/portfolio_data.dart';
 import 'package:portfolio_hesu/portfolio/services/external_launcher.dart';
 import 'package:portfolio_hesu/portfolio/theme/apple_theme.dart';
 import 'package:portfolio_hesu/portfolio/theme/portfolio_theme_controller.dart';
 import 'package:portfolio_hesu/portfolio/widgets/adaptive_portfolio_shell.dart';
+
+class PortfolioScrollBehavior extends MaterialScrollBehavior {
+  const PortfolioScrollBehavior();
+
+  @override
+  Set<PointerDeviceKind> get dragDevices => <PointerDeviceKind>{
+    ...super.dragDevices,
+    PointerDeviceKind.touch,
+    PointerDeviceKind.mouse,
+  };
+}
 
 class PortfolioApp extends StatefulWidget {
   const PortfolioApp({
@@ -74,6 +87,7 @@ class _PortfolioAppState extends State<PortfolioApp> {
         darkTheme: AppleTheme.dark(),
         themeMode: _themeController.themeMode,
         themeAnimationDuration: Duration.zero,
+        scrollBehavior: const PortfolioScrollBehavior(),
         home: child,
       ),
     );
