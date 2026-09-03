@@ -2,17 +2,19 @@ import 'dart:async';
 import 'dart:ui';
 
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 
 import '../models/portfolio_app_id.dart';
 import '../widgets/apple_app_icon.dart';
 import 'mac_window_state.dart';
 
-enum MacSystemPanel { none, controlCenter, notifications }
+enum MacSystemPanel { none, systemMenu, controlCenter, notifications }
 
 class MacMenuBar extends StatefulWidget {
   const MacMenuBar({
     required this.activeApp,
     required this.openPanel,
+    required this.onSystemMenuPressed,
     required this.onControlCenterPressed,
     required this.onClockPressed,
     super.key,
@@ -20,6 +22,7 @@ class MacMenuBar extends StatefulWidget {
 
   final PortfolioAppId? activeApp;
   final MacSystemPanel openPanel;
+  final VoidCallback onSystemMenuPressed;
   final VoidCallback onControlCenterPressed;
   final VoidCallback onClockPressed;
 
@@ -74,16 +77,11 @@ class _MacMenuBarState extends State<MacMenuBar> {
             child: Row(
               children: <Widget>[
                 const SizedBox(width: 9),
-                Semantics(
-                  label: 'Portfolio system menu',
-                  child: const Icon(
-                    Icons.brightness_7_rounded,
-                    key: Key('mac-system-icon'),
-                    size: 17,
-                    color: foreground,
-                  ),
+                _SystemMenuButton(
+                  selected: widget.openPanel == MacSystemPanel.systemMenu,
+                  onPressed: widget.onSystemMenuPressed,
                 ),
-                const SizedBox(width: 9),
+                const SizedBox(width: 6),
                 ConstrainedBox(
                   constraints: const BoxConstraints(maxWidth: 110),
                   child: Text(
@@ -158,6 +156,143 @@ class _MacMenuBarState extends State<MacMenuBar> {
       ),
     );
   }
+}
+
+class _SystemMenuButton extends StatefulWidget {
+  const _SystemMenuButton({required this.selected, required this.onPressed});
+
+  final bool selected;
+  final VoidCallback onPressed;
+
+  @override
+  State<_SystemMenuButton> createState() => _SystemMenuButtonState();
+}
+
+class _SystemMenuButtonState extends State<_SystemMenuButton> {
+  final FocusNode _focusNode = FocusNode(debugLabel: 'mac-system-menu');
+  bool _showFocus = false;
+
+  @override
+  void didUpdateWidget(covariant _SystemMenuButton oldWidget) {
+    super.didUpdateWidget(oldWidget);
+    if (widget.selected && !oldWidget.selected) {
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        if (mounted) {
+          _focusNode.requestFocus();
+        }
+      });
+    }
+  }
+
+  @override
+  void dispose() {
+    _focusNode.dispose();
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return Semantics(
+      key: const Key('mac-system-menu-button'),
+      label: 'Open system menu',
+      button: true,
+      expanded: widget.selected,
+      onTap: widget.onPressed,
+      child: Focus(
+        focusNode: _focusNode,
+        onFocusChange: (value) {
+          if (_showFocus != value) {
+            setState(() => _showFocus = value);
+          }
+        },
+        onKeyEvent: (_, event) {
+          if (event is KeyDownEvent &&
+              (event.logicalKey == LogicalKeyboardKey.enter ||
+                  event.logicalKey == LogicalKeyboardKey.space)) {
+            widget.onPressed();
+            return KeyEventResult.handled;
+          }
+          return KeyEventResult.ignored;
+        },
+        child: MouseRegion(
+          cursor: SystemMouseCursors.click,
+          child: ExcludeSemantics(
+            child: Tooltip(
+              message: 'System menu',
+              child: GestureDetector(
+                behavior: HitTestBehavior.opaque,
+                onTap: () {
+                  _focusNode.requestFocus();
+                  widget.onPressed();
+                },
+                child: AnimatedContainer(
+                  duration: const Duration(milliseconds: 120),
+                  width: 28,
+                  height: 26,
+                  decoration: BoxDecoration(
+                    color: widget.selected
+                        ? Colors.black.withValues(alpha: 0.09)
+                        : Colors.transparent,
+                    borderRadius: BorderRadius.circular(7),
+                    border: _showFocus
+                        ? Border.all(color: const Color(0xFF0A84FF), width: 1.5)
+                        : null,
+                  ),
+                  alignment: Alignment.center,
+                  child: const CustomPaint(
+                    key: Key('mac-system-icon'),
+                    size: Size(16, 16),
+                    painter: _SystemMarkPainter(),
+                  ),
+                ),
+              ),
+            ),
+          ),
+        ),
+      ),
+    );
+  }
+}
+
+class _SystemMarkPainter extends CustomPainter {
+  const _SystemMarkPainter();
+
+  @override
+  void paint(Canvas canvas, Size size) {
+    final paint = Paint()..color = const Color(0xFF17171B);
+    final center = size.center(Offset.zero);
+    canvas
+      ..drawRRect(
+        RRect.fromRectAndRadius(
+          Rect.fromCenter(
+            center: Offset(center.dx - 3.1, center.dy + 1.8),
+            width: 6.2,
+            height: 9.4,
+          ),
+          const Radius.circular(3.2),
+        ),
+        paint,
+      )
+      ..drawRRect(
+        RRect.fromRectAndRadius(
+          Rect.fromCenter(
+            center: Offset(center.dx + 3.1, center.dy + 1.8),
+            width: 6.2,
+            height: 9.4,
+          ),
+          const Radius.circular(3.2),
+        ),
+        paint,
+      )
+      ..save()
+      ..translate(center.dx + 2.4, center.dy - 5.2)
+      ..rotate(-0.45)
+      ..drawOval(const Rect.fromLTWH(-1.6, -2.7, 3.2, 5.4), paint)
+      ..restore();
+  }
+
+  @override
+  bool shouldRepaint(covariant _SystemMarkPainter oldDelegate) => false;
 }
 
 class _MenuLabel extends StatelessWidget {
@@ -297,6 +432,84 @@ class MacControlCenterPanel extends StatelessWidget {
           ),
         ],
       ),
+    );
+  }
+}
+
+class MacSystemMenuPanel extends StatelessWidget {
+  const MacSystemMenuPanel({
+    required this.onOpenAbout,
+    required this.onOpenThisMac,
+    super.key,
+  });
+
+  final VoidCallback onOpenAbout;
+  final VoidCallback onOpenThisMac;
+
+  @override
+  Widget build(BuildContext context) {
+    return _MacSystemPanelSurface(
+      panelKey: const Key('mac-system-menu-panel'),
+      width: 252,
+      child: Column(
+        mainAxisSize: MainAxisSize.min,
+        crossAxisAlignment: CrossAxisAlignment.stretch,
+        children: <Widget>[
+          _SystemMenuItem(
+            actionKey: const Key('system-menu-about'),
+            label: 'About This Portfolio',
+            icon: Icons.person_outline_rounded,
+            onPressed: onOpenAbout,
+          ),
+          const Divider(height: 11),
+          _SystemMenuItem(
+            actionKey: const Key('system-menu-this-mac'),
+            label: 'Open This Mac',
+            icon: Icons.laptop_mac_rounded,
+            onPressed: onOpenThisMac,
+          ),
+          const SizedBox(height: 5),
+          const Padding(
+            padding: EdgeInsets.symmetric(horizontal: 10),
+            child: Text(
+              'Min He-su · Flutter portfolio',
+              style: TextStyle(fontSize: 10.5, color: Color(0xFF77777D)),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+class _SystemMenuItem extends StatelessWidget {
+  const _SystemMenuItem({
+    required this.actionKey,
+    required this.label,
+    required this.icon,
+    required this.onPressed,
+  });
+
+  final Key actionKey;
+  final String label;
+  final IconData icon;
+  final VoidCallback onPressed;
+
+  @override
+  Widget build(BuildContext context) {
+    return TextButton.icon(
+      key: actionKey,
+      onPressed: onPressed,
+      style: TextButton.styleFrom(
+        foregroundColor: const Color(0xFF252529),
+        minimumSize: const Size.fromHeight(36),
+        padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 8),
+        alignment: Alignment.centerLeft,
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(9)),
+        textStyle: const TextStyle(fontSize: 13, fontWeight: FontWeight.w500),
+      ),
+      icon: Icon(icon, size: 17),
+      label: Text(label),
     );
   }
 }

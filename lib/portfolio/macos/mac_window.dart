@@ -251,6 +251,7 @@ class _TrafficButton extends StatelessWidget {
       key: controlKey,
       label: label,
       button: true,
+      excludeSemantics: true,
       onTap: onPressed,
       child: Tooltip(
         message: label,

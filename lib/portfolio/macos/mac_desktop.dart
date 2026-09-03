@@ -208,11 +208,13 @@ class _MacDesktopState extends State<MacDesktop> {
                         ),
                       ),
                     Positioned(
+                      key: const Key('mac-dock-layer'),
                       left: 0,
                       right: 0,
                       bottom: 12,
                       child: Center(
                         child: MacDock(
+                          key: const Key('mac-dock-widget'),
                           runningApps: _windows.keys.toSet(),
                           activeApp: activeApp,
                           onAppPressed: _openApp,
@@ -220,12 +222,16 @@ class _MacDesktopState extends State<MacDesktop> {
                       ),
                     ),
                     Positioned(
+                      key: const Key('mac-menu-bar-layer'),
                       top: 0,
                       left: 0,
                       right: 0,
                       child: MacMenuBar(
+                        key: const Key('mac-menu-bar-widget'),
                         activeApp: activeApp,
                         openPanel: _openPanel,
+                        onSystemMenuPressed: () =>
+                            _togglePanel(MacSystemPanel.systemMenu),
                         onControlCenterPressed: () =>
                             _togglePanel(MacSystemPanel.controlCenter),
                         onClockPressed: () =>
@@ -237,6 +243,15 @@ class _MacDesktopState extends State<MacDesktop> {
                         top: 42,
                         right: 12,
                         child: MacControlCenterPanel(),
+                      ),
+                    if (_openPanel == MacSystemPanel.systemMenu)
+                      Positioned(
+                        top: 38,
+                        left: 8,
+                        child: MacSystemMenuPanel(
+                          onOpenAbout: () => _openApp(PortfolioAppId.about),
+                          onOpenThisMac: () => _openApp(PortfolioAppId.thisMac),
+                        ),
                       ),
                     if (_openPanel == MacSystemPanel.notifications)
                       const Positioned(
