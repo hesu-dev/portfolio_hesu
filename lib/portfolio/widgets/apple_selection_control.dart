@@ -9,6 +9,7 @@ class AppleSelectionControl extends StatefulWidget {
     required this.onPressed,
     required this.borderRadius,
     required this.child,
+    this.focusColor,
     super.key,
   });
 
@@ -17,6 +18,7 @@ class AppleSelectionControl extends StatefulWidget {
   final VoidCallback onPressed;
   final BorderRadius borderRadius;
   final Widget child;
+  final Color? focusColor;
 
   @override
   State<AppleSelectionControl> createState() => _AppleSelectionControlState();
@@ -60,7 +62,9 @@ class _AppleSelectionControlState extends State<AppleSelectionControl> {
                       decoration: BoxDecoration(
                         borderRadius: widget.borderRadius,
                         border: Border.all(
-                          color: AppleTheme.selectionForeground(context),
+                          color:
+                              widget.focusColor ??
+                              AppleTheme.selectionForeground(context),
                           width: 2,
                         ),
                       ),
