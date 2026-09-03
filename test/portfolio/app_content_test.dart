@@ -268,6 +268,40 @@ void main() {
     });
 
     testWidgets(
+      'app bodies omit the duplicate icon and title toolbar on every form factor',
+      (tester) async {
+        for (final scenario in const <({Size size, bool compact, bool tablet})>[
+          (size: Size(360, 640), compact: true, tablet: false),
+          (size: Size(834, 900), compact: false, tablet: true),
+          (size: Size(1024, 700), compact: false, tablet: false),
+        ]) {
+          for (final appId in const <PortfolioAppId>[
+            PortfolioAppId.skills,
+            PortfolioAppId.trash,
+            PortfolioAppId.github,
+            PortfolioAppId.mail,
+          ]) {
+            await _pumpApp(
+              tester,
+              appId: appId,
+              launcher: _FakeExternalLauncher(),
+              size: scenario.size,
+              compact: scenario.compact,
+              tablet: scenario.tablet,
+            );
+
+            expect(
+              find.byType(AppleToolbar),
+              findsNothing,
+              reason: '${appId.name} $scenario',
+            );
+            expect(tester.takeException(), isNull, reason: '$appId $scenario');
+          }
+        }
+      },
+    );
+
+    testWidgets(
       'about shows canonical identity, career, education, and contact',
       (tester) async {
         await _pumpApp(
