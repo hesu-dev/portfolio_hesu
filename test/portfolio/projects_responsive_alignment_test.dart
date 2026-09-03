@@ -82,7 +82,7 @@ void main() {
             label: '최근 항목',
             icon: Icons.access_time_filled_rounded,
           ),
-          (id: 'career', label: '경력', icon: Icons.business_center_rounded),
+          (id: 'career', label: '회사', icon: Icons.business_center_rounded),
           (
             id: 'personal-projects',
             label: '개인',

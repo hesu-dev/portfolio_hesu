@@ -13,7 +13,7 @@ import 'package:portfolio_hesu/portfolio/widgets/apple_finder_scaffold.dart';
 void main() {
   group('Projects Finder locations', () {
     testWidgets(
-      'defaults to 경력 and keeps Finder shortcuts above four locations',
+      'defaults to 회사 and keeps Finder shortcuts above four locations',
       (tester) async {
         await _pumpProjects(tester, size: const Size(900, 650));
 
@@ -22,7 +22,7 @@ void main() {
         for (final label in const <String>[
           'iCloud Drive',
           '데스크탑',
-          '경력',
+          '회사',
           '개인 프로젝트',
         ]) {
           expect(
@@ -43,7 +43,16 @@ void main() {
           find.descendant(of: sidebar, matching: find.text(portfolioData.name)),
           findsNothing,
         );
-        expect(_toolbarTitle(tester), '경력');
+        expect(_toolbarTitle(tester), '회사');
+        expect(
+          tester
+              .getSemantics(
+                find.byKey(const Key('projects-finder-location-career')),
+              )
+              .getSemanticsData()
+              .label,
+          '회사 위치 열기',
+        );
         expect(
           tester
               .getSemantics(
@@ -116,7 +125,7 @@ void main() {
       },
     );
 
-    testWidgets('경력 and 개인 프로젝트 share one folder and detail component', (
+    testWidgets('회사 and 개인 프로젝트 share one folder and detail component', (
       tester,
     ) async {
       final data = _categorizedData();
@@ -206,7 +215,7 @@ void main() {
             find.byKey(const Key('projects-finder-locations')),
             findsNothing,
           );
-          for (final label in const <String>['최근 항목', '경력', '개인']) {
+          for (final label in const <String>['최근 항목', '회사', '개인']) {
             expect(
               find.descendant(of: dock, matching: find.text(label)),
               findsOneWidget,
@@ -229,6 +238,15 @@ void main() {
           expect(
             _isSelected(tester, const Key('projects-finder-location-career')),
             isTrue,
+          );
+          expect(
+            tester
+                .getSemantics(
+                  find.byKey(const Key('projects-finder-location-career')),
+                )
+                .getSemanticsData()
+                .label,
+            'Open 회사',
           );
 
           await tester.tap(
@@ -300,7 +318,7 @@ void main() {
           final title = tester.widget<Text>(
             find.descendant(
               of: find.byKey(const Key('projects-finder-current-location')),
-              matching: find.text('경력'),
+              matching: find.text('회사'),
             ),
           );
 
@@ -349,7 +367,7 @@ void main() {
       expect(_toolbarTitle(tester), '데스크탑');
       await tester.tap(find.byKey(const Key('projects-finder-back')));
       await tester.pumpAndSettle();
-      expect(_toolbarTitle(tester), '경력');
+      expect(_toolbarTitle(tester), '회사');
       await tester.tap(find.byKey(const Key('projects-finder-forward')));
       await tester.pumpAndSettle();
       expect(_toolbarTitle(tester), '데스크탑');
@@ -477,7 +495,7 @@ void main() {
           find.byKey(const Key('projects-collection-scroll')),
           findsOneWidget,
         );
-        expect(_toolbarTitle(tester), '경력');
+        expect(_toolbarTitle(tester), '회사');
         expect(find.text('Reordered career'), findsOneWidget);
         expect(
           tester

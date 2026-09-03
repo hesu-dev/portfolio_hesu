@@ -8,7 +8,7 @@ import 'package:portfolio_hesu/portfolio/widgets/apple_finder_scaffold.dart';
 
 void main() {
   group('Finder형 Projects 화면', () {
-    testWidgets('기본 경력 위치에서 분류된 폴더와 상세 뎁스를 탐색한다', (tester) async {
+    testWidgets('기본 회사 위치에서 분류된 폴더와 상세 뎁스를 탐색한다', (tester) async {
       await _pumpProjects(tester, size: const Size(900, 650));
 
       expect(find.byKey(const Key('projects-finder-toolbar')), findsOneWidget);
@@ -17,7 +17,7 @@ void main() {
       expect(
         find.descendant(
           of: find.byKey(const Key('projects-finder-current-location')),
-          matching: find.text('경력'),
+          matching: find.text('회사'),
         ),
         findsOneWidget,
       );
@@ -30,7 +30,7 @@ void main() {
         '위치',
         'iCloud Drive',
         '데스크탑',
-        '경력',
+        '회사',
         '개인 프로젝트',
       ];
       var previousY = -1.0;

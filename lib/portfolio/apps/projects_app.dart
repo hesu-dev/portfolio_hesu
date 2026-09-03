@@ -28,7 +28,7 @@ extension on _ProjectsLocation {
     _ProjectsLocation.recent => '최근 항목',
     _ProjectsLocation.iCloudDrive => 'iCloud Drive',
     _ProjectsLocation.desktop => '데스크탑',
-    _ProjectsLocation.career => '경력',
+    _ProjectsLocation.career => '회사',
     _ProjectsLocation.personalProjects => '개인 프로젝트',
   };
 
