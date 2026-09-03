@@ -15,7 +15,7 @@ class AppleHomeGrid extends StatelessWidget {
     super.key,
   });
 
-  static const List<PortfolioAppId> apps = PortfolioAppId.values;
+  static const List<PortfolioAppId> apps = portfolioLauncherAppIds;
 
   final PortfolioData data;
   final bool tablet;
