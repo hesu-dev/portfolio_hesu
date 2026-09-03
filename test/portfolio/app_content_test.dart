@@ -349,6 +349,40 @@ void main() {
     });
 
     testWidgets(
+      'skills master-detail categories expose accessible 44px controls',
+      (tester) async {
+        final semantics = tester.ensureSemantics();
+        await _pumpApp(
+          tester,
+          appId: PortfolioAppId.skills,
+          launcher: _FakeExternalLauncher(),
+          size: const Size(900, 650),
+        );
+
+        final development = find.byKey(
+          const Key('skills-category-Development'),
+        );
+        expect(tester.getSize(development).height, greaterThanOrEqualTo(44));
+        final developmentSemantics = tester.getSemantics(
+          find.bySemanticsLabel('Select skill category Development'),
+        );
+        final developmentData = developmentSemantics.getSemanticsData();
+        expect(developmentData.flagsCollection.isButton, ui.Tristate.isTrue);
+        expect(developmentData.flagsCollection.isSelected, ui.Tristate.isTrue);
+        expect(developmentData.hasAction(SemanticsAction.tap), isTrue);
+
+        await tester.sendKeyEvent(LogicalKeyboardKey.tab);
+        await tester.sendKeyEvent(LogicalKeyboardKey.tab);
+        await tester.sendKeyEvent(LogicalKeyboardKey.enter);
+        await tester.pumpAndSettle();
+
+        expect(find.text('Notion'), findsOneWidget);
+        expect(find.text('Flutter'), findsNothing);
+        semantics.dispose();
+      },
+    );
+
+    testWidgets(
       'project selector updates detail and exposes all six projects',
       (tester) async {
         await _pumpApp(
@@ -380,6 +414,49 @@ void main() {
           expect(find.text(technology), findsOneWidget);
         }
         expect(tester.takeException(), isNull);
+      },
+    );
+
+    testWidgets(
+      'project master-detail selectors expose selection and keyboard access',
+      (tester) async {
+        final semantics = tester.ensureSemantics();
+        await _pumpApp(
+          tester,
+          appId: PortfolioAppId.projects,
+          launcher: _FakeExternalLauncher(),
+          size: const Size(900, 650),
+        );
+
+        final firstProject = portfolioData.projects.first;
+        final firstSelector = find.byKey(const Key('project-selector-0'));
+        expect(tester.getSize(firstSelector).height, greaterThanOrEqualTo(44));
+        final firstSemantics = tester.getSemantics(
+          find.bySemanticsLabel('Select project ${firstProject.title}'),
+        );
+        final firstData = firstSemantics.getSemanticsData();
+        expect(firstData.flagsCollection.isButton, ui.Tristate.isTrue);
+        expect(firstData.flagsCollection.isSelected, ui.Tristate.isTrue);
+        expect(firstData.hasAction(SemanticsAction.tap), isTrue);
+
+        await tester.sendKeyEvent(LogicalKeyboardKey.tab);
+        await tester.sendKeyEvent(LogicalKeyboardKey.tab);
+        await tester.sendKeyEvent(LogicalKeyboardKey.space);
+        await tester.pumpAndSettle();
+
+        expect(
+          _textAtKey(tester, const Key('project-detail-title')),
+          portfolioData.projects[1].title,
+        );
+        final secondData = tester
+            .getSemantics(
+              find.bySemanticsLabel(
+                'Select project ${portfolioData.projects[1].title}',
+              ),
+            )
+            .getSemanticsData();
+        expect(secondData.flagsCollection.isSelected, ui.Tristate.isTrue);
+        semantics.dispose();
       },
     );
 
