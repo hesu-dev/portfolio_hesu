@@ -8,7 +8,7 @@ import 'package:portfolio_hesu/portfolio/widgets/apple_finder_scaffold.dart';
 
 void main() {
   group('Finder형 Projects 화면', () {
-    testWidgets('기본 뎁스는 전체 파일 목록만 표시하고 폴더 탭으로 상세를 탐색한다', (tester) async {
+    testWidgets('기본 경력 위치에서 분류된 폴더와 상세 뎁스를 탐색한다', (tester) async {
       await _pumpProjects(tester, size: const Size(900, 650));
 
       expect(find.byKey(const Key('projects-finder-toolbar')), findsOneWidget);
@@ -17,7 +17,7 @@ void main() {
       expect(
         find.descendant(
           of: find.byKey(const Key('projects-finder-current-location')),
-          matching: find.text('Projects'),
+          matching: find.text('경력'),
         ),
         findsOneWidget,
       );
@@ -29,7 +29,9 @@ void main() {
         '공유',
         '위치',
         'iCloud Drive',
-        portfolioData.identity.name,
+        '데스크탑',
+        '경력',
+        '개인 프로젝트',
       ];
       var previousY = -1.0;
       for (final label in orderedLabels) {
@@ -52,71 +54,47 @@ void main() {
         tester.getSize(collectionScroll).height,
         closeTo(tester.getSize(sidebar).height, 1),
       );
-      for (var index = 0; index < portfolioData.projects.length; index++) {
+      for (var index = 0; index < 4; index++) {
         expect(
           find.descendant(
             of: grid,
-            matching: find.byKey(Key('project-selector-$index')),
+            matching: find.byKey(Key('projects-career-folder-$index')),
           ),
           findsOneWidget,
         );
       }
       expect(
-        find.descendant(
-          of: grid,
-          matching: find.byKey(const Key('finder-file-portfolio-readme')),
-        ),
+        find.byKey(const Key('finder-file-portfolio-readme')),
         findsNothing,
       );
-      expect(find.text('6개 항목'), findsOneWidget);
 
-      await tester.tap(find.byKey(const Key('project-selector-1')));
+      await tester.tap(find.byKey(const Key('projects-career-folder-1')));
       await tester.pumpAndSettle();
       expect(find.byKey(const Key('projects-finder-grid')), findsNothing);
       expect(find.byKey(const Key('projects-collection-scroll')), findsNothing);
       expect(find.byKey(const Key('projects-detail-scroll')), findsOneWidget);
       expect(
         tester.widget<Text>(find.byKey(const Key('project-detail-title'))).data,
-        portfolioData.projects[1].title,
-      );
-      expect(
-        find.descendant(
-          of: find.byKey(const Key('projects-finder-current-location')),
-          matching: find.text(portfolioData.projects[1].title),
-        ),
-        findsOneWidget,
+        'IRIS',
       );
 
       await tester.tap(find.byKey(const Key('projects-finder-back')));
       await tester.pumpAndSettle();
-      expect(find.byKey(const Key('projects-finder-grid')), findsOneWidget);
-      expect(
-        find.byKey(const Key('projects-collection-scroll')),
-        findsOneWidget,
-      );
-      expect(find.byKey(const Key('projects-detail-scroll')), findsNothing);
-      expect(find.byKey(const Key('project-detail-title')), findsNothing);
       expect(
         tester
             .widget<AppleFinderFolderTile>(
-              find.byKey(const Key('project-selector-1')),
+              find.byKey(const Key('project-selector-3')),
             )
             .selected,
         isTrue,
       );
-      expect(
-        find.descendant(
-          of: find.byKey(const Key('projects-finder-current-location')),
-          matching: find.text('Projects'),
-        ),
-        findsOneWidget,
-      );
+      expect(find.byKey(const Key('project-detail-title')), findsNothing);
 
       await tester.tap(find.byKey(const Key('projects-finder-forward')));
       await tester.pumpAndSettle();
       expect(
         tester.widget<Text>(find.byKey(const Key('project-detail-title'))).data,
-        portfolioData.projects[1].title,
+        'IRIS',
       );
     });
 
@@ -145,11 +123,11 @@ void main() {
 
         final grid = find.byKey(const Key('projects-finder-grid'));
         expect(grid, findsOneWidget, reason: '$contentWidth');
-        for (var index = 0; index < portfolioData.projects.length; index++) {
+        for (var index = 0; index < 4; index++) {
           expect(
             find.descendant(
               of: grid,
-              matching: find.byKey(Key('project-selector-$index')),
+              matching: find.byKey(Key('projects-career-folder-$index')),
             ),
             findsOneWidget,
           );
@@ -208,8 +186,8 @@ void main() {
       expect(find.byKey(const Key('project-detail-title')), findsNothing);
 
       final folders = <Finder>[
-        for (var index = 0; index < portfolioData.projects.length; index++)
-          find.byKey(Key('project-selector-$index')),
+        for (var index = 0; index < 4; index++)
+          find.byKey(Key('projects-career-folder-$index')),
       ];
       for (final folder in folders) {
         expect(tester.getSize(folder).width, 132);
@@ -236,22 +214,11 @@ void main() {
       );
       expect(tester.takeException(), isNull);
 
-      await tester.tap(find.byKey(const Key('project-selector-1')));
+      await tester.tap(find.byKey(const Key('projects-career-folder-1')));
       await tester.pumpAndSettle();
       expect(find.byKey(const Key('projects-finder-grid')), findsNothing);
-      expect(find.byKey(const Key('projects-collection-scroll')), findsNothing);
       expect(find.byKey(const Key('projects-detail-scroll')), findsOneWidget);
-      expect(
-        tester.widget<Text>(find.byKey(const Key('project-detail-title'))).data,
-        portfolioData.projects[1].title,
-      );
-      expect(find.byKey(const Key('project-link-1-0')), findsOneWidget);
-
-      await tester.drag(
-        find.byKey(const Key('projects-detail-scroll')),
-        const Offset(0, -260),
-      );
-      await tester.pumpAndSettle();
+      expect(find.byKey(const Key('project-link-3-0')), findsOneWidget);
       expect(tester.takeException(), isNull);
     });
 
@@ -261,8 +228,8 @@ void main() {
         await _pumpProjects(tester, size: Size(width, 700), compact: true);
 
         final folders = <Finder>[
-          for (var index = 0; index < portfolioData.projects.length; index++)
-            find.byKey(Key('project-selector-$index')),
+          for (var index = 0; index < 4; index++)
+            find.byKey(Key('projects-career-folder-$index')),
         ];
         for (final folder in folders) {
           expect(tester.getSize(folder).width, 132, reason: '$width');
@@ -294,8 +261,8 @@ void main() {
       expect(find.byKey(const Key('project-detail-title')), findsNothing);
 
       final folders = <Finder>[
-        for (var index = 0; index < portfolioData.projects.length; index++)
-          find.byKey(Key('project-selector-$index')),
+        for (var index = 0; index < 4; index++)
+          find.byKey(Key('projects-career-folder-$index')),
       ];
 
       for (final folder in folders) {

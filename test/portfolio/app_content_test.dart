@@ -473,7 +473,7 @@ void main() {
     );
 
     testWidgets(
-      'project list exposes only the six project folders before detail',
+      'project categories expose all six folders before their detail depth',
       (tester) async {
         await _pumpApp(
           tester,
@@ -482,25 +482,24 @@ void main() {
           size: const Size(900, 650),
         );
 
-        for (var index = 0; index < portfolioData.projects.length; index++) {
+        for (final index in const <int>[2, 3, 4, 5]) {
           expect(find.byKey(Key('project-selector-$index')), findsOneWidget);
         }
-        expect(
-          find.byKey(const Key('finder-file-portfolio-readme')),
-          findsNothing,
+        expect(find.byKey(const Key('project-selector-0')), findsNothing);
+        expect(find.byKey(const Key('project-selector-1')), findsNothing);
+
+        await tester.tap(
+          find.byKey(const Key('projects-finder-location-personal-projects')),
         );
-        expect(find.byKey(const Key('projects-detail-scroll')), findsNothing);
-        expect(find.byKey(const Key('project-detail-title')), findsNothing);
+        await tester.pumpAndSettle();
+        expect(find.byKey(const Key('project-selector-0')), findsOneWidget);
+        expect(find.byKey(const Key('project-selector-1')), findsOneWidget);
 
         await tester.tap(find.byKey(const Key('project-selector-1')));
         await tester.pumpAndSettle();
 
         final readingLog = portfolioData.projects[1];
         expect(find.byKey(const Key('projects-finder-grid')), findsNothing);
-        expect(
-          find.byKey(const Key('finder-file-portfolio-readme')),
-          findsNothing,
-        );
         expect(
           _textAtKey(tester, const Key('project-detail-title')),
           readingLog.title,
@@ -525,22 +524,35 @@ void main() {
           size: const Size(900, 650),
         );
 
-        final firstProject = portfolioData.projects.first;
-        final firstSelector = find.byKey(const Key('project-selector-0'));
+        final firstProject = portfolioData.projects[2];
+        final firstSelector = find.byKey(const Key('project-selector-2'));
         expect(tester.getSize(firstSelector).height, greaterThanOrEqualTo(44));
-        final firstSemantics = tester.getSemantics(firstSelector);
-        final firstData = firstSemantics.getSemanticsData();
+        final firstData = tester.getSemantics(firstSelector).getSemanticsData();
         expect(firstData.label, 'Open project ${firstProject.title}');
         expect(firstData.flagsCollection.isButton, isTrue);
         expect(firstData.flagsCollection.isSelected, ui.Tristate.isFalse);
         expect(firstData.hasAction(SemanticsAction.tap), isTrue);
 
-        await tester.sendKeyEvent(LogicalKeyboardKey.tab);
-        await tester.pump();
-        final focusedFirstData = tester
-            .getSemantics(firstSelector)
-            .getSemanticsData();
-        expect(focusedFirstData.flagsCollection.isFocused, ui.Tristate.isTrue);
+        for (var index = 0; index < 12; index++) {
+          await tester.sendKeyEvent(LogicalKeyboardKey.tab);
+          await tester.pump();
+          if (tester
+                  .getSemantics(firstSelector)
+                  .getSemanticsData()
+                  .flagsCollection
+                  .isFocused ==
+              ui.Tristate.isTrue) {
+            break;
+          }
+        }
+        expect(
+          tester
+              .getSemantics(firstSelector)
+              .getSemanticsData()
+              .flagsCollection
+              .isFocused,
+          ui.Tristate.isTrue,
+        );
         await tester.sendKeyEvent(LogicalKeyboardKey.enter);
         await tester.pumpAndSettle();
 
@@ -554,7 +566,7 @@ void main() {
         await tester.pumpAndSettle();
 
         final returnedFirstSelector = find.byKey(
-          const Key('project-selector-0'),
+          const Key('project-selector-2'),
         );
         final returnedFirstData = tester
             .getSemantics(returnedFirstSelector)
@@ -575,7 +587,7 @@ void main() {
         for (final brightness in Brightness.values) {
           for (final scenario in <(PortfolioAppId, String)>[
             (PortfolioAppId.skills, 'skills-category-Development'),
-            (PortfolioAppId.projects, 'project-selector-0'),
+            (PortfolioAppId.projects, 'projects-career-folder-0'),
           ]) {
             await tester.pumpWidget(const SizedBox.shrink());
             await _pumpApp(
@@ -613,8 +625,13 @@ void main() {
 
             expect(focusOutline, findsNothing);
 
-            await tester.sendKeyEvent(LogicalKeyboardKey.tab);
-            await tester.pump();
+            for (var index = 0; index < 12; index++) {
+              await tester.sendKeyEvent(LogicalKeyboardKey.tab);
+              await tester.pump();
+              if (focusOutline.evaluate().isNotEmpty) {
+                break;
+              }
+            }
 
             expect(focusOutline, findsOneWidget, reason: '$scenario');
             final focusDecoration =
@@ -652,7 +669,7 @@ void main() {
             brightness: brightness,
           );
 
-          final selector = find.byKey(const Key('project-selector-0'));
+          final selector = find.byKey(const Key('projects-career-folder-0'));
           final tile = find.descendant(
             of: selector,
             matching: find.byKey(const Key('apple-finder-folder-container')),
@@ -671,7 +688,7 @@ void main() {
           );
           final label = find.descendant(
             of: selector,
-            matching: find.text(portfolioData.projects.first.title),
+            matching: find.text(portfolioData.projects[2].title),
           );
           final initialTileDecoration =
               tester.widget<AnimatedContainer>(tile).decoration
@@ -693,7 +710,9 @@ void main() {
           await tester.tap(find.byKey(const Key('projects-finder-back')));
           await tester.pumpAndSettle();
 
-          final returnedSelector = find.byKey(const Key('project-selector-0'));
+          final returnedSelector = find.byKey(
+            const Key('projects-career-folder-0'),
+          );
           final returnedTileDecoration =
               tester
                       .widget<AnimatedContainer>(
@@ -734,7 +753,7 @@ void main() {
               .widget<Text>(
                 find.descendant(
                   of: returnedSelector,
-                  matching: find.text(portfolioData.projects.first.title),
+                  matching: find.text(portfolioData.projects[2].title),
                 ),
               )
               .style;
@@ -772,6 +791,7 @@ void main() {
         size: const Size(360, 600),
         compact: true,
       );
+      await _openProjectsLocation(tester, 'personal-projects');
 
       await tester.tap(find.byKey(const Key('project-selector-1')));
       await tester.pumpAndSettle();
@@ -796,6 +816,7 @@ void main() {
           launcher: launcher,
           size: const Size(900, 650),
         );
+        await _openProjectsLocation(tester, 'personal-projects');
 
         await tester.tap(find.byKey(const Key('project-selector-1')));
         await tester.pumpAndSettle();
@@ -839,6 +860,7 @@ void main() {
           launcher: launcher,
           size: const Size(900, 650),
         );
+        await _openProjectsLocation(tester, 'personal-projects');
 
         await tester.tap(find.byKey(const Key('project-selector-1')));
         await tester.pumpAndSettle();
@@ -881,6 +903,7 @@ void main() {
           launcher: launcher,
           size: const Size(900, 650),
         );
+        await _openProjectsLocation(tester, 'personal-projects');
 
         await tester.tap(find.byKey(const Key('project-selector-1')));
         await tester.pumpAndSettle();
@@ -914,6 +937,7 @@ void main() {
         launcher: launcher,
         size: const Size(900, 650),
       );
+      await _openProjectsLocation(tester, 'personal-projects');
 
       await tester.tap(find.byKey(const Key('project-selector-1')));
       await tester.pumpAndSettle();
@@ -924,6 +948,7 @@ void main() {
 
       await tester.tap(find.byKey(const Key('projects-finder-back')));
       await tester.pumpAndSettle();
+      await _openProjectsLocation(tester, 'career');
       await tester.tap(find.byKey(const Key('project-selector-2')));
       await tester.pumpAndSettle();
       launcher.complete(0, false);
@@ -1242,6 +1267,16 @@ Future<void> _pumpApp(
     ),
   );
   await tester.pump();
+}
+
+Future<void> _openProjectsLocation(
+  WidgetTester tester,
+  String locationId,
+) async {
+  final location = find.byKey(Key('projects-finder-location-$locationId'));
+  await tester.ensureVisible(location);
+  await tester.tap(location);
+  await tester.pumpAndSettle();
 }
 
 String _visibleText(WidgetTester tester) {
