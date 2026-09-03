@@ -11,7 +11,7 @@ enum PortfolioAppId {
   settings,
 }
 
-/// Apps exposed as launcher icons on the desktop and mobile home screens.
+/// Apps exposed as launcher icons on the macOS desktop surfaces.
 ///
 /// [PortfolioAppId.thisMac] remains only as an internal legacy route for shared
 /// component coverage. Launchers and the system menu use
