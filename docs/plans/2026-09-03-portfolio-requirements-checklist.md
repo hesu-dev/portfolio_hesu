@@ -34,7 +34,7 @@
 | 앱은 실행/최소화 중에만 Dock에 나타나고 종료 시 사라짐 | 충족 | 모든 실행 가능 앱의 open/minimize/restore/close 수명주기 테스트가 통과한다. |
 | 창 신호등은 공용 컴포넌트 한 개로 통일 | 충족 | 모든 macOS 창은 `MacTrafficControls`를 사용하고 앱 내부의 중복 원을 제거했다. |
 | Finder 창처럼 신호등·뒤로/앞으로·타이틀·보기 도구 정렬 | 충족 | 데스크톱 `Projects`는 공용 Finder chrome에서 신호등·뒤로/앞으로·중앙 타이틀·보기 도구를 한 줄에 배치한다. iPad/iPhone은 기기 규칙에 맞춘 별도 compact chrome을 공유한다. |
-| 신호등 빨강 X·노랑 −·초록 무표식, 눌림 효과 제거 | 충족 | 공용 `MacTrafficControls`가 세 창 버튼을 한 번만 그리고 빨강/노랑에만 지정 글리프를 표시한다. hover·pressed 색상 변화는 없다. |
+| 신호등 빨강 X·노랑 −·초록 무표식, 눌림 효과 제거 | 충족 | 공용 `MacTrafficControls`가 세 창 버튼을 한 번만 그리고 빨강/노랑에만 지정 글리프를 표시한다. hover·pressed 색상 변화는 없으며, 시각 간격은 유지한 채 포인터 영역을 desktop 28×32px·iPad 28×44px로 확보했다. |
 
 ## 앱 아이콘
 
@@ -80,8 +80,10 @@
 | 선택 폴더는 아이콘 주변만 회색 표시 | 충족 | light/dark 모두 청색 폴더 artwork·라벨·전체 타일은 불변이고 아이콘 바로 주변에만 중립 회색 배경을 둔다. |
 | 긴 폴더 이름은 정해진 폭 안에서 개행하고 정렬 유지 | 충족 | 항목 수와 무관하게 사용 가능한 열 수로 Finder 타일 폭을 고정하고 이름을 최대 두 줄 ellipsis로 제한한다. iPad 개인 프로젝트에서도 PersonaChat이 두 줄로 개행된다. |
 | 프로젝트 6개 이상을 누락 없이 표시하고 좁은 화면에서도 정렬 유지 | 충족 | 최근 항목은 6개 프로젝트를 모두 표시하고 경력·개인은 분류된 전체 항목을 다중 행 스크롤 그리드로 표시한다. 설명은 상세 뎁스로 분리돼 목록 높이를 잠식하지 않는다. |
+| 폴더 정렬 밀도를 desktop·iPad·iPhone에서 공통화 | 충족 | 모든 Finder가 112px 고정 셀과 8px 간격을 공유한다. 390px은 3열, 834px 최근 항목은 6개가 한 행에 배치되며 긴 이름은 기존 64px 두 줄 영역을 유지한다. |
 | iPad/iPhone Finder에서 사이드바·원형 위치 목록 제거 | 충족 | compact Finder는 파일 영역의 폭을 전부 사용하며 데스크톱 사이드바와 `최근 항목` 원형 목록을 렌더링하지 않는다. |
 | iPad/iPhone Finder 하단 탐색은 최근 항목·경력·개인만 제공 | 충족 | 내부 3탭 Finder 독이 각 위치 페이지에 연결되고 세 번째 탭 라벨은 compact한 `개인`으로 표시한다. 홈 화면의 앱 Dock과는 별개다. |
+| iPad/iPhone Finder 하단 탐색 아이콘·라벨 중앙 정렬 | 충족 | 세 항목이 같은 폭의 슬롯 전체를 사용하며 아이콘과 라벨 중심이 각각 내부 독 1/3 지점과 1px 이내로 일치한다. |
 | 데스크톱 Finder의 최근 항목 탐색 연결 | 충족 | 사이드바 `최근 항목`을 누르면 ReadingLog부터 전체 6개 프로젝트가 표시되고 선택·뒤로/앞으로 기록도 유지된다. `공유`는 실제 데이터 연동 전 시각 자리표시자다. |
 
 ## iPad와 iPhone 앱 화면
@@ -93,11 +95,13 @@
 | `< 홈` 텍스트형 뒤로가기 제거 | 충족 | iPhone 일반 앱은 44px 원형 뒤로 화살표로 앱을 닫고, iPad 일반 앱은 공용 신호등을 사용한다. 텍스트형 홈 버튼은 없다. |
 | 일반 앱의 기기별 닫기 규칙 통일 | 충족 | 데스크톱·iPad 일반 앱은 공용 `MacTrafficControls`, iPhone 일반 앱은 공용 원형 뒤로 버튼을 사용한다. |
 | iPad/iPhone Finder 전용 상단바 | 충족 | 두 기기 모두 신호등 없이 왼쪽 원형 뒤로 버튼, 실제 중앙 타이틀, 오른쪽 비동작 `…` 버튼을 사용한다. |
+| iPhone 앱 상단 타이틀을 화면 기준 중앙 정렬 | 충족 | 좌우 컨트롤 폭과 무관하게 공용 mobile navigation title의 중심이 viewport 중심과 일치하며 Finder도 같은 기준을 사용한다. |
 | 상단바 제목을 한 번만 표시 | 충족 | 일반 앱은 기기별 공용 chrome에 제목을 한 번만 표시하고 Projects는 Finder 상단바 중앙에만 표시한다. |
 | 신호등 아래의 `앱 아이콘 + 왼쪽 타이틀` 중복 행 제거 | 충족 | Skills, Trash, GitHub, Mail의 공용 본문 toolbar를 제거하고 Mac/iPad/iPhone 상단 chrome만 제목을 소유한다. |
 | About의 중복 아이콘·제목 영역과 중첩 메모 제거 | 충족 | 앱 내부 toolbar와 두 번째 메모 카드를 없애고 navigation bar 아래 한 장의 종이 본문만 렌더링한다. |
 | macOS Finder 데스크탑의 앱은 기존 창을 교체하지 않고 새 창으로 열기 | 충족 | 데스크탑 위치의 앱을 열면 Projects Finder를 유지한 채 각 앱을 독립 창으로 연다. iPad/iPhone은 최신 3탭 요구에 따라 데스크탑 위치 자체를 노출하지 않는다. |
 | iPad/iPhone 홈 앱 Dock 숨김 | 충족 | viewport 크기와 실제 touch 기반 기기 판정을 함께 사용해 태블릿·모바일 홈에서는 macOS식 하단 앱 Dock을 렌더링하지 않는다. |
+| Projects 원형 뒤로 버튼은 상세만 내부 이동하고 폴더 루트에서는 닫기 | 충족 | iPhone/iPad 모두 프로젝트 상세에서는 해당 목록으로 돌아가고, 경력·최근 항목·개인 프로젝트의 루트에서는 홈으로 앱을 닫는다. Tooltip과 semantics도 상태에 맞게 바뀐다. |
 
 ## 터미널
 
@@ -117,7 +121,7 @@
 | 화면 모드 위에 프로필과 `he-su min` 표시 | 충족 | wide sidebar와 compact 화면 모두 profile row가 화면 모드보다 먼저 나온다. |
 | 화면 모드에 새 SVG 아이콘 사용 | 충족 | 원격 참조 없이 새로 그린 로컬 `settings-display-mode.svg`를 렌더링한다. |
 | 데스크톱 설정 화면 구성 유지 | 충족 | macOS 설정은 좌측 프로필·검색과 우측 화면 모드 구성을 유지한다. |
-| iPad/iPhone 설정은 기기 비율의 Light/Dark 미리보기 | 충족 | compact 설정은 프로필 아래에 세로형 화면 미리보기 두 개를 나란히 놓고 선택 상태를 즉시 반영한다. 옵션 아래의 불필요한 시스템 설정 항목은 모사하지 않는다. |
+| iPad/iPhone 설정은 기기 비율의 Light/Dark 미리보기 | 충족 | iPhone은 세로형 0.64 비율, iPad는 카드 폭을 사용하는 4:3 비율의 미리보기 두 개를 나란히 놓고 선택 상태를 즉시 반영한다. desktop 2.05 비율은 유지하며 옵션 아래의 불필요한 시스템 설정 항목은 모사하지 않는다. |
 | 모든 공개 화면의 Light/Dark 지원 | 충족 | 홈, 공용 창 chrome, Finder, About, Skills, Terminal, Settings, macOS 메뉴 막대와 세 시스템 패널을 양 테마로 렌더링하고 대비 계약을 검증한다. |
 | 웹/PWA 기본 chrome도 Light와 일치 | 충족 | `MaterialApp.color`, HTML `theme-color`, manifest 배경·테마 색을 기본 Light `#F4F4F7`로 통일했다. 앱 내부에서 선택한 Dark는 전역 Flutter 테마가 즉시 반영한다. |
 
@@ -144,19 +148,19 @@
 | 공통 레이아웃으로 향후 일괄 수정 | 충족 | Mac window, Finder, Notes, mobile navigation, app artwork를 각각 공용 컴포넌트로 유지한다. |
 | 한국어 Conventional/Angular 커밋 제목 | 충족 | 이번 작업의 새 커밋 제목은 한국어 Conventional Commit 형식을 준수한다. |
 | 작업을 가능한 작은 커밋으로 분리 | 충족 | 테스트·자산·공용 컴포넌트·기능·수정을 독립 커밋으로 분리했다. |
-| 전체 정적 분석·테스트·Pages/Vercel 빌드 | 충족 | 최종 소스에서 정적 분석 0건, 전체 260개 테스트 통과, Pages·Vercel release web build 성공을 확인했다. |
+| 전체 정적 분석·테스트·Pages/Vercel 빌드 | 충족 | 최종 소스에서 정적 분석 0건, 전체 267개 테스트 통과, Pages·Vercel release web build 성공을 확인했다. |
 | 데스크톱·iPad·iPhone 실화면 검수 | 충족 | 로컬 인앱 브라우저에서 세 폼팩터의 핵심 화면과 Light/Dark 전환을 다시 확인하고 자동 양 테마 계약으로 나머지 조합을 보완했다. |
 
-## 2026-09-03 최종 검증 기록
+## 2026-09-04 최종 검증 기록
 
-- `flutter test --reporter compact`: 전체 260개 통과
+- `flutter test --reporter compact`: 전체 267개 통과
 - `flutter analyze`: 문제 없음
 - GitHub Pages 경로 `/portfolio_hesu/` release web build: 성공, 생성된 `<base href="/portfolio_hesu/">` 확인
 - Vercel 루트 경로 `/` release web build: 성공, 생성된 `<base href="/">` 확인
 - `git diff --check`: 통과
-- 실제 렌더링: macOS 1280×720 Light 홈·Finder와 Dark 설정·메뉴·제어 센터·알림·About·Terminal, iPad 834×1112의 홈·About·Finder·설정, iPhone 390×844의 홈·Skills·Finder 3탭·설정·About을 확인
+- 실제 렌더링: macOS 1280×720 Light 홈·Finder와 Dark 설정·메뉴·제어 센터·알림·About·Terminal, iPad 834×1112의 홈·About·Finder 6열·4:3 설정, iPhone 390×844의 홈·Skills·Finder 3열·설정·About을 확인
 - Finder 재검수: macOS `최근 항목`이 전체 6개 프로젝트로 이동하고 ReadingLog가 첫 번째이며, 상세에서 돌아오면 폴더 아이콘 주변에만 중립 회색 선택 배경이 남는 것을 확인
-- 모바일 재검수: 홈 앱 Dock은 숨고, Projects 내부에만 `최근 항목`·`경력`·`개인` 3탭 탐색이 있으며 iPhone/iPad Finder는 신호등 없이 뒤로·중앙 타이틀·`…`를 사용
+- 모바일 재검수: 홈 앱 Dock은 숨고, Projects 내부에만 `최근 항목`·`경력`·`개인` 3탭 탐색이 있으며 세 아이콘·라벨은 각 1/3 중심에 정렬된다. iPhone/iPad Finder는 신호등 없이 상태별 뒤로/닫기·중앙 타이틀·`…`를 사용한다.
 - 테마 재검수: 기본 Light, iPhone 설정의 즉시 Dark 전환, Dark About 메모·Terminal·macOS 창/메뉴/시스템 패널의 가독성을 확인
 - 독립 요구사항 감사: 핵심 런타임 미충족과 Critical 항목 없음. 감사에서 발견한 데스크톱 `최근 항목` 비동작과 웹 기본 dark chrome은 각각 수정하고 회귀 테스트를 추가함
 - 외부 상태 변경: GitHub Pages 중단과 Vercel 배포는 아직 실행하지 않음
