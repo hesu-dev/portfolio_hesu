@@ -38,7 +38,7 @@ class AppleMobileShell extends StatefulWidget {
 }
 
 class _AppleMobileShellState extends State<AppleMobileShell> {
-  PortfolioAppId? _activeApp;
+  final List<PortfolioAppId> _appStack = <PortfolioAppId>[];
   Timer? _clockTimer;
   late DateTime _now;
 
@@ -87,22 +87,30 @@ class _AppleMobileShellState extends State<AppleMobileShell> {
   }
 
   void _openApp(PortfolioAppId appId) {
-    if (_activeApp == appId) {
+    if (_appStack.length == 1 && _appStack.last == appId) {
       return;
     }
-    setState(() => _activeApp = appId);
+    setState(() {
+      _appStack
+        ..clear()
+        ..add(appId);
+    });
+  }
+
+  void _openAppWindow(PortfolioAppId appId) {
+    setState(() => _appStack.add(appId));
   }
 
   void _closeApp() {
-    if (_activeApp == null) {
+    if (_appStack.isEmpty) {
       return;
     }
-    setState(() => _activeApp = null);
+    setState(() => _appStack.removeLast());
   }
 
   @override
   Widget build(BuildContext context) {
-    final activeApp = _activeApp;
+    final activeApp = _appStack.isEmpty ? null : _appStack.last;
 
     return Material(
       type: MaterialType.transparency,
@@ -142,17 +150,51 @@ class _AppleMobileShellState extends State<AppleMobileShell> {
                       child: activeApp == null
                           ? _buildHome()
                           : SizedBox.expand(
-                              key: ValueKey<String>(
-                                'mobile-active-${activeApp.name}',
+                              key: const ValueKey<String>(
+                                'mobile-window-stack',
                               ),
-                              child: MobileAppSurface(
-                                appId: activeApp,
-                                data: widget.data,
-                                launcher: widget.externalLauncher,
-                                themeController: widget.themeController,
-                                tablet: widget.tablet,
-                                onClose: _closeApp,
-                                onOpenApp: _openApp,
+                              child: Stack(
+                                children: <Widget>[
+                                  for (
+                                    var index = 0;
+                                    index < _appStack.length;
+                                    index++
+                                  )
+                                    Positioned.fill(
+                                      child: Padding(
+                                        padding: widget.tablet && index > 0
+                                            ? EdgeInsets.only(
+                                                left: index * 12,
+                                                top: index * 10,
+                                                right: index * 4,
+                                                bottom: index * 4,
+                                              )
+                                            : EdgeInsets.zero,
+                                        child: IgnorePointer(
+                                          ignoring:
+                                              index != _appStack.length - 1,
+                                          child: ExcludeSemantics(
+                                            excluding:
+                                                index != _appStack.length - 1,
+                                            child: MobileAppSurface(
+                                              key: ValueKey<String>(
+                                                'mobile-window-$index-'
+                                                '${_appStack[index].name}',
+                                              ),
+                                              appId: _appStack[index],
+                                              data: widget.data,
+                                              launcher: widget.externalLauncher,
+                                              themeController:
+                                                  widget.themeController,
+                                              tablet: widget.tablet,
+                                              onClose: _closeApp,
+                                              onOpenApp: _openAppWindow,
+                                            ),
+                                          ),
+                                        ),
+                                      ),
+                                    ),
+                                ],
                               ),
                             ),
                     ),

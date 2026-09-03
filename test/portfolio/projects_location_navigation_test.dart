@@ -383,7 +383,7 @@ void main() {
       },
     );
 
-    testWidgets('데스크탑 app shortcuts open apps from iPhone and iPad shells', (
+    testWidgets('데스크탑 app shortcuts open a new iPhone and iPad window', (
       tester,
     ) async {
       for (final size in const <Size>[Size(390, 700), Size(834, 700)]) {
@@ -404,7 +404,15 @@ void main() {
         await tester.pumpAndSettle();
 
         expect(find.byKey(const Key('mail-app')), findsOneWidget);
-        expect(find.byKey(const Key('projects-app')), findsNothing);
+        expect(find.byKey(const Key('projects-app')), findsOneWidget);
+        expect(find.byKey(const Key('mobile-app-surface')), findsNWidgets(2));
+
+        await tester.tap(find.byKey(const Key('window-close-mail')));
+        await tester.pumpAndSettle();
+
+        expect(find.byKey(const Key('mail-app')), findsNothing);
+        expect(find.byKey(const Key('projects-app')), findsOneWidget);
+        expect(_toolbarTitle(tester), '데스크탑');
         expect(tester.takeException(), isNull, reason: '$size');
       }
     });
