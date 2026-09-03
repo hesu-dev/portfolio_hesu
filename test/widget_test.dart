@@ -1,164 +1,147 @@
-import 'dart:async';
-
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
-import 'package:font_awesome_flutter/font_awesome_flutter.dart';
-import 'package:portfolio_hesu/main.dart';
-import 'package:portfolio_hesu/platform/browser_environment.dart';
-import 'package:portfolio_hesu/views/sections/project/project.dart';
-import 'package:portfolio_hesu/views/sections/project/project_item.dart';
-import 'package:portfolio_hesu/views/widgets/animation/bounce_arrow_btn.dart';
-import 'package:portfolio_hesu/views/widgets/custom_card.dart';
+import 'package:portfolio_hesu/portfolio/portfolio_app.dart';
+import 'package:portfolio_hesu/portfolio/services/external_launcher.dart';
+import 'package:portfolio_hesu/portfolio/widgets/adaptive_portfolio_shell.dart';
 
-class FakeBrowserEnvironment implements BrowserEnvironment {
-  FakeBrowserEnvironment({this.pageIndex = 0, bool isPrintMode = false})
-    : _isPrintMode = isPrintMode;
+void main() {
+  group('PortfolioApp', () {
+    testWidgets('builds a MaterialApp root and injects its launcher', (
+      tester,
+    ) async {
+      final launcher = CallbackExternalLauncher((_) async => true);
 
-  int pageIndex;
+      await tester.pumpWidget(PortfolioApp(externalLauncher: launcher));
 
-  bool _isPrintMode;
-  final StreamController<bool> _printModeController =
-      StreamController<bool>.broadcast();
+      expect(find.byType(MaterialApp), findsOneWidget);
+      final shell = tester.widget<AdaptivePortfolioShell>(
+        find.byType(AdaptivePortfolioShell),
+      );
+      expect(shell.externalLauncher, same(launcher));
+    });
 
-  @override
-  bool get isPrintMode => _isPrintMode;
+    testWidgets('shows only the canonical portfolio identity', (tester) async {
+      await _pumpAtWidth(tester, 390);
 
-  @override
-  Stream<bool> get onPrintModeChanged => _printModeController.stream;
+      expect(find.text('민희수'), findsOneWidget);
+      expect(find.textContaining('천주아'), findsNothing);
+      expect(find.textContaining('juah'), findsNothing);
+    });
+  });
 
-  void setPrintMode(bool value) {
-    if (_isPrintMode == value) return;
-    _isPrintMode = value;
-    _printModeController.add(value);
-  }
+  group('AdaptivePortfolioShell', () {
+    testWidgets('selects representative iPhone, iPad, and Mac widths', (
+      tester,
+    ) async {
+      await _expectShellAtWidth(tester, 390, 'iphone-shell');
+      await _expectShellAtWidth(tester, 834, 'ipad-shell');
+      await _expectShellAtWidth(tester, 1440, 'mac-shell');
+    });
 
-  @override
-  int loadPageIndex() => pageIndex;
+    testWidgets('switches at the exact 600 and 1024 pixel boundaries', (
+      tester,
+    ) async {
+      await _expectShellAtWidth(tester, 599, 'iphone-shell');
+      await _expectShellAtWidth(tester, 600, 'ipad-shell');
+      await _expectShellAtWidth(tester, 1023, 'ipad-shell');
+      await _expectShellAtWidth(tester, 1024, 'mac-shell');
+    });
+  });
 
-  @override
-  void savePageIndex(int index) {
-    pageIndex = index;
+  group('UrlLauncherExternalLauncher', () {
+    test('rejects malformed and unsupported URIs before delegating', () async {
+      final delegatedUris = <Uri>[];
+      final launcher = UrlLauncherExternalLauncher(
+        delegate: (uri) async {
+          delegatedUris.add(uri);
+          return true;
+        },
+      );
+
+      expect(await launcher.launch(Uri.parse('/relative')), isFalse);
+      expect(
+        await launcher.launch(Uri.parse('https:///missing-host')),
+        isFalse,
+      );
+      expect(await launcher.launch(Uri.parse('mailto:')), isFalse);
+      expect(await launcher.launch(Uri.parse('mailto:@')), isFalse);
+      expect(await launcher.launch(Uri.parse('mailto:user@')), isFalse);
+      expect(await launcher.launch(Uri.parse('mailto:@example.com')), isFalse);
+      expect(
+        await launcher.launch(Uri.parse('mailto:%FF@example.com')),
+        isFalse,
+      );
+      expect(
+        await launcher.launch(Uri.parse('ftp://downloads.example.com/file')),
+        isFalse,
+      );
+      expect(delegatedUris, isEmpty);
+    });
+
+    test('delegates supported web and email URIs', () async {
+      final delegatedUris = <Uri>[];
+      final launcher = UrlLauncherExternalLauncher(
+        delegate: (uri) async {
+          delegatedUris.add(uri);
+          return true;
+        },
+      );
+      final httpsUri = Uri.parse('https://github.com/hesu-dev/');
+      final mailUri = Uri.parse('mailto:hs0647@naver.com');
+
+      expect(await launcher.launch(httpsUri), isTrue);
+      expect(await launcher.launch(mailUri), isTrue);
+      expect(delegatedUris, <Uri>[httpsUri, mailUri]);
+    });
+
+    test('returns false when the delegate cannot launch', () async {
+      final launcher = UrlLauncherExternalLauncher(
+        delegate: (_) async => false,
+      );
+
+      expect(await launcher.launch(Uri.parse('https://example.com')), isFalse);
+    });
+
+    test('converts delegate errors into a false result', () async {
+      final launcher = UrlLauncherExternalLauncher(
+        delegate: (_) async => throw StateError('launcher unavailable'),
+      );
+
+      expect(await launcher.launch(Uri.parse('https://example.com')), isFalse);
+    });
+  });
+}
+
+Future<void> _expectShellAtWidth(
+  WidgetTester tester,
+  double width,
+  String expectedKey,
+) async {
+  await _pumpAtWidth(tester, width);
+
+  expect(
+    find.byKey(Key(expectedKey)),
+    findsOneWidget,
+    reason: 'Expected $expectedKey at width $width',
+  );
+  for (final key in const <String>['iphone-shell', 'ipad-shell', 'mac-shell']) {
+    if (key != expectedKey) {
+      expect(
+        find.byKey(Key(key)),
+        findsNothing,
+        reason: 'Did not expect $key at width $width',
+      );
+    }
   }
 }
 
-void main() {
-  testWidgets('keeps paged home layout during normal browsing', (tester) async {
-    final browserEnvironment = FakeBrowserEnvironment();
+Future<void> _pumpAtWidth(WidgetTester tester, double width) async {
+  tester.view.devicePixelRatio = 1;
+  tester.view.physicalSize = Size(width, 900);
+  addTearDown(tester.view.resetDevicePixelRatio);
+  addTearDown(tester.view.resetPhysicalSize);
 
-    await tester.pumpWidget(
-      PortfolioClone(browserEnvironment: browserEnvironment),
-    );
-
-    expect(find.byType(PageView), findsOneWidget);
-    expect(find.byType(BounceArrowButton), findsWidgets);
-  });
-
-  testWidgets('switches to a continuous print layout for printing', (
-    tester,
-  ) async {
-    final browserEnvironment = FakeBrowserEnvironment();
-
-    await tester.pumpWidget(
-      PortfolioClone(browserEnvironment: browserEnvironment),
-    );
-
-    browserEnvironment.setPrintMode(true);
-    await tester.pump();
-
-    expect(find.byType(PageView), findsNothing);
-    expect(find.byType(BounceArrowButton), findsNothing);
-    expect(find.text('Projects'), findsOneWidget);
-    expect(find.text('Skills'), findsOneWidget);
-  });
-
-  testWidgets('lays out project cards with dates without vertical overflow', (
-    tester,
-  ) async {
-    final flutterErrors = <FlutterErrorDetails>[];
-    final previousOnError = FlutterError.onError;
-    FlutterError.onError = flutterErrors.add;
-    addTearDown(() {
-      FlutterError.onError = previousOnError;
-    });
-
-    await tester.pumpWidget(
-      MaterialApp(
-        home: Scaffold(
-          body: SingleChildScrollView(
-            child: Align(
-              alignment: Alignment.topCenter,
-              child: SizedBox(
-                width: 260,
-                child: ProjectsGrid(
-                  items: const [
-                    Project(
-                      'APP : Blue Mentor Develop',
-                      '블루멘토 기계점검 안전설비 보고서 작성 어플 기획 및 개발',
-                      ['Flutter', 'Dart', 'node.js'],
-                      'https://play.google.com/store/apps/details?id=com.lsmk.BlueMentor',
-                      'https://apps.apple.com/us/app/%EB%B8%94%EB%A3%A8%EB%A9%98%ED%86%A0/id6475704951',
-                      '2023-012-04~2023, 7, 17',
-                      '',
-                    ),
-                  ],
-                ),
-              ),
-            ),
-          ),
-        ),
-      ),
-    );
-    await tester.pumpAndSettle();
-    FlutterError.onError = previousOnError;
-
-    expect(
-      flutterErrors
-          .where(
-            (error) =>
-                error.exceptionAsString().contains('A RenderFlex overflowed'),
-          )
-          .toList(),
-      isEmpty,
-    );
-  });
-
-  testWidgets('keeps project card actions close to the bottom edge', (
-    tester,
-  ) async {
-    await tester.pumpWidget(
-      MaterialApp(
-        home: Scaffold(
-          body: SingleChildScrollView(
-            child: Align(
-              alignment: Alignment.topCenter,
-              child: SizedBox(
-                width: 260,
-                child: ProjectsGrid(
-                  items: const [
-                    Project(
-                      'APP : ReadingLog Develop',
-                      '채팅로그 리더기 어플 기획 및 개발 및 크롬 웹스토어 확장프로그램 개발.',
-                      ['Flutter', 'Dart', 'node.js'],
-                      'https://play.google.com/store/apps/details?id=com.reha.readinglog',
-                      'https://apps.apple.com/kr/app/%EB%A6%AC%EB%94%A9%EB%A1%9C%EA%B7%B8/id6759693995',
-                      '2026-02 ~ 2026-5',
-                      'https://chromewebstore.google.com/detail/r20-jsonexporter/galgbmfkkpehcijjfcaffifmfjbmlfbo',
-                    ),
-                  ],
-                ),
-              ),
-            ),
-          ),
-        ),
-      ),
-    );
-    await tester.pumpAndSettle();
-
-    final cardRect = tester.getRect(find.byType(CustomCard));
-    final actionRect = tester.getRect(
-      find.widgetWithIcon(IconButton, FontAwesomeIcons.link),
-    );
-
-    expect(cardRect.bottom - actionRect.bottom, lessThanOrEqualTo(24));
-  });
+  await tester.pumpWidget(
+    PortfolioApp(externalLauncher: CallbackExternalLauncher((_) async => true)),
+  );
 }
