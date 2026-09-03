@@ -15,16 +15,7 @@ class MacDock extends StatelessWidget {
     super.key,
   });
 
-  static const List<PortfolioAppId> launchableApps = <PortfolioAppId>[
-    PortfolioAppId.about,
-    PortfolioAppId.skills,
-    PortfolioAppId.projects,
-    PortfolioAppId.terminal,
-    PortfolioAppId.mail,
-    PortfolioAppId.settings,
-    PortfolioAppId.thisMac,
-    PortfolioAppId.github,
-  ];
+  static const List<PortfolioAppId> launchableApps = portfolioDockAppIds;
 
   static const List<PortfolioAppId> utilityApps = <PortfolioAppId>[
     PortfolioAppId.trash,
