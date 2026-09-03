@@ -338,6 +338,15 @@ class AppleFinderFolderTile extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final tileHeight = compact ? 154.0 : 166.0;
+    final folderSize = compact ? 50.0 : 58.0;
+    final selectedTileColor = AppleTheme.isDark(context)
+        ? const Color(0xFF3A3A3A)
+        : const Color(0xFFE2E2E2);
+    final selectedLabelColor = AppleTheme.isDark(context)
+        ? const Color(0xFF2C2C2C)
+        : const Color(0xFFD0D0D0);
+
     return AppleSelectionControl(
       semanticsLabel: semanticsLabel,
       selected: selected,
@@ -345,36 +354,52 @@ class AppleFinderFolderTile extends StatelessWidget {
       borderRadius: BorderRadius.circular(14),
       child: AnimatedContainer(
         duration: const Duration(milliseconds: 160),
-        constraints: const BoxConstraints(minHeight: 126),
+        height: tileHeight,
         padding: EdgeInsets.symmetric(
           horizontal: compact ? 8 : 10,
           vertical: compact ? 10 : 12,
         ),
         decoration: BoxDecoration(
-          color: selected
-              ? AppleTheme.selectionBackground(context, AppleTheme.blue)
-              : Colors.transparent,
+          color: selected ? selectedTileColor : Colors.transparent,
           borderRadius: BorderRadius.circular(14),
         ),
         child: Column(
           mainAxisAlignment: MainAxisAlignment.center,
           children: <Widget>[
             Icon(
-              selected ? Icons.folder_open_rounded : Icons.folder_rounded,
-              size: compact ? 50 : 58,
-              color: selected ? AppleTheme.blue : const Color(0xFF55B8F5),
+              Icons.folder_rounded,
+              key: const Key('apple-finder-folder-artwork'),
+              size: folderSize,
+              color: const Color(0xFF55B8F5),
             ),
             const SizedBox(height: 8),
-            Text(
-              label,
-              maxLines: 2,
-              overflow: TextOverflow.ellipsis,
-              textAlign: TextAlign.center,
-              style: Theme.of(context).textTheme.labelMedium?.copyWith(
-                color: selected
-                    ? AppleTheme.selectionForeground(context)
-                    : AppleTheme.primaryLabel(context),
-                fontWeight: selected ? FontWeight.w700 : FontWeight.w500,
+            SizedBox(
+              height: 64,
+              child: Align(
+                alignment: Alignment.topCenter,
+                child: DecoratedBox(
+                  key: const Key('apple-finder-folder-label-background'),
+                  decoration: BoxDecoration(
+                    color: selected ? selectedLabelColor : Colors.transparent,
+                    borderRadius: BorderRadius.circular(6),
+                  ),
+                  child: Padding(
+                    padding: const EdgeInsets.symmetric(
+                      horizontal: 6,
+                      vertical: 2,
+                    ),
+                    child: Text(
+                      label,
+                      maxLines: 2,
+                      overflow: TextOverflow.ellipsis,
+                      textAlign: TextAlign.center,
+                      style: Theme.of(context).textTheme.labelMedium?.copyWith(
+                        color: AppleTheme.primaryLabel(context),
+                        fontWeight: FontWeight.w500,
+                      ),
+                    ),
+                  ),
+                ),
               ),
             ),
           ],
