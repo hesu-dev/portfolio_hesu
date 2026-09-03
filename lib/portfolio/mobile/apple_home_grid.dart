@@ -122,29 +122,18 @@ class _MobileNotesProfileButton extends StatelessWidget {
       cardKey: cardKey,
       headerKey: const Key('mobile-notes-profile-header'),
       bodyKey: const Key('mobile-notes-profile-body'),
-      size: tablet
+      size: tablet && !shortTablet
           ? AppleNotesSurfaceSize.regular
           : AppleNotesSurfaceSize.compact,
       darkPaper: dark,
       showSeparator: !shortTablet,
-      showBody: !shortTablet,
       headerTitle: null,
       semanticLabel: '${data.name} 소개 열기',
       excludeSemantics: true,
       onTap: onPressed,
-      headerTrailing: shortTablet
-          ? Text(
-              data.name,
-              maxLines: 1,
-              overflow: TextOverflow.ellipsis,
-              textAlign: TextAlign.end,
-              style: Theme.of(context).textTheme.titleMedium?.copyWith(
-                color: const Color(0xFF3A2700),
-                fontWeight: FontWeight.w700,
-              ),
-            )
-          : null,
-      bodyPadding: EdgeInsets.all(largeText ? 10 : (tablet ? 18 : 14)),
+      bodyPadding: EdgeInsets.all(
+        largeText ? (shortTablet ? 6 : 10) : (tablet ? 18 : 14),
+      ),
       body: Row(
         children: <Widget>[
           Expanded(
