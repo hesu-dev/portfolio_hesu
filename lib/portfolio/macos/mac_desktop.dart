@@ -249,6 +249,7 @@ class _MacDesktopState extends State<MacDesktop> {
                         top: 38,
                         left: 8,
                         child: MacSystemMenuPanel(
+                          identityName: widget.data.identity.englishName,
                           onOpenAbout: () => _openApp(PortfolioAppId.about),
                           onOpenThisMac: () => _openApp(PortfolioAppId.thisMac),
                         ),

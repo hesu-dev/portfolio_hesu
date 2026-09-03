@@ -438,11 +438,13 @@ class MacControlCenterPanel extends StatelessWidget {
 
 class MacSystemMenuPanel extends StatelessWidget {
   const MacSystemMenuPanel({
+    required this.identityName,
     required this.onOpenAbout,
     required this.onOpenThisMac,
     super.key,
   });
 
+  final String identityName;
   final VoidCallback onOpenAbout;
   final VoidCallback onOpenThisMac;
 
@@ -469,11 +471,11 @@ class MacSystemMenuPanel extends StatelessWidget {
             onPressed: onOpenThisMac,
           ),
           const SizedBox(height: 5),
-          const Padding(
-            padding: EdgeInsets.symmetric(horizontal: 10),
+          Padding(
+            padding: const EdgeInsets.symmetric(horizontal: 10),
             child: Text(
-              'Min He-su · Flutter portfolio',
-              style: TextStyle(fontSize: 10.5, color: Color(0xFF77777D)),
+              '$identityName · Flutter portfolio',
+              style: const TextStyle(fontSize: 10.5, color: Color(0xFF77777D)),
             ),
           ),
         ],
