@@ -117,8 +117,19 @@ class _ProjectsAppState extends State<ProjectsApp> {
   @override
   void didUpdateWidget(covariant ProjectsApp oldWidget) {
     super.didUpdateWidget(oldWidget);
-    if (!identical(oldWidget.data, widget.data) ||
-        !identical(oldWidget.launcher, widget.launcher)) {
+    if (!identical(oldWidget.data, widget.data)) {
+      _launchRequestGeneration++;
+      _history
+        ..clear()
+        ..add(const _ProjectsDestination(_ProjectsLocation.career));
+      _historyCursor = 0;
+      _selectedProject.clear();
+      _launchFeedback = null;
+      _launchSucceeded = false;
+      _pendingLaunches.clear();
+      return;
+    }
+    if (!identical(oldWidget.launcher, widget.launcher)) {
       _launchRequestGeneration++;
       _launchFeedback = null;
       _pendingLaunches.clear();
@@ -252,6 +263,7 @@ class _ProjectsAppState extends State<ProjectsApp> {
           : widget.data.projects[projectIndex].title,
       ownerName: widget.data.identity.name,
       locations: _finderLocations,
+      selectedLocationId: location.id,
       onLocationSelected: _selectLocationById,
       compact: widget.compact,
       tablet: widget.tablet,
