@@ -6,9 +6,9 @@ import '../models/portfolio_app_id.dart';
 
 /// Scalable, code-native artwork shared by every portfolio app launcher.
 ///
-/// Primary app marks are drawn with Flutter paths instead of bundled platform
-/// artwork. Utility apps keep their established Material glyphs for visual
-/// continuity with the existing desktop.
+/// Primary app marks and Trash are drawn with Flutter paths instead of bundled
+/// platform artwork. The remaining utility apps keep their established
+/// Material glyphs for visual continuity with the existing desktop.
 class AppleAppArtwork extends StatelessWidget {
   const AppleAppArtwork({required this.appId, required this.size, super.key})
     : assert(size > 0);
@@ -22,17 +22,21 @@ class AppleAppArtwork extends StatelessWidget {
     PortfolioAppId.projects ||
     PortfolioAppId.terminal ||
     PortfolioAppId.mail ||
-    PortfolioAppId.settings => true,
-    PortfolioAppId.thisMac ||
-    PortfolioAppId.github ||
-    PortfolioAppId.trash => false,
+    PortfolioAppId.settings ||
+    PortfolioAppId.trash => true,
+    PortfolioAppId.thisMac || PortfolioAppId.github => false,
+  };
+
+  static bool usesTransparentFrame(PortfolioAppId appId) => switch (appId) {
+    PortfolioAppId.projects || PortfolioAppId.trash => true,
+    _ => false,
   };
 
   static List<Color> colorsFor(PortfolioAppId appId) => switch (appId) {
     PortfolioAppId.about => const <Color>[Color(0xFF79DCFF), Color(0xFF2167E8)],
     PortfolioAppId.skills => const <Color>[
-      Color(0xFF35364A),
-      Color(0xFF171824),
+      Color(0xFFFFFFFF),
+      Color(0xFFF7F7F8),
     ],
     PortfolioAppId.projects => const <Color>[
       Color(0xFF7DE2FF),
@@ -50,7 +54,13 @@ class AppleAppArtwork extends StatelessWidget {
       Color(0xFF8C8C91),
       Color(0xFF3B3C42),
     ],
-    PortfolioAppId.trash => const <Color>[Color(0xFFF4F5F7), Color(0xFFA9ADB5)],
+    PortfolioAppId.trash => const <Color>[
+      Color(0xFFE01E5A),
+      Color(0xFFECB22E),
+      Color(0xFF2EB67D),
+      Color(0xFF36C5F0),
+      Color(0xFF7559D9),
+    ],
     PortfolioAppId.github => const <Color>[
       Color(0xFF42454D),
       Color(0xFF111216),
@@ -61,7 +71,6 @@ class AppleAppArtwork extends StatelessWidget {
   static IconData utilityIconFor(PortfolioAppId appId) => switch (appId) {
     PortfolioAppId.thisMac => Icons.laptop_mac_rounded,
     PortfolioAppId.github => Icons.code_rounded,
-    PortfolioAppId.trash => Icons.delete_rounded,
     _ => throw ArgumentError.value(
       appId,
       'appId',
@@ -73,40 +82,61 @@ class AppleAppArtwork extends StatelessWidget {
   Widget build(BuildContext context) {
     final radius = size * 0.28;
     final bespoke = usesBespokeArtwork(appId);
+    final transparentFrame = usesTransparentFrame(appId);
+
+    final Widget artwork = switch (appId) {
+      PortfolioAppId.projects => Transform.scale(
+        key: const Key('apple-app-artwork-projects-silhouette'),
+        scale: 1.18,
+        child: CustomPaint(
+          painter: _AppleAppArtworkPainter(appId),
+          child: const SizedBox.expand(),
+        ),
+      ),
+      PortfolioAppId.terminal => CustomPaint(
+        foregroundPainter: _AppleAppArtworkPainter(appId),
+        child: const ColoredBox(
+          key: Key('apple-app-artwork-terminal-screen'),
+          color: Color(0xFF0B0D11),
+        ),
+      ),
+      _ when bespoke => CustomPaint(
+        painter: _AppleAppArtworkPainter(appId),
+        child: const SizedBox.expand(),
+      ),
+      _ => Center(
+        child: Icon(
+          utilityIconFor(appId),
+          color: Colors.white,
+          size: size * 0.5,
+        ),
+      ),
+    };
 
     return SizedBox.square(
       dimension: size,
       child: ExcludeSemantics(
         key: Key('apple-app-artwork-${appId.name}'),
         child: DecoratedBox(
-          decoration: BoxDecoration(
-            gradient: LinearGradient(
-              begin: Alignment.topLeft,
-              end: Alignment.bottomRight,
-              colors: colorsFor(appId),
-            ),
-            borderRadius: BorderRadius.circular(radius),
-            border: Border.all(
-              color: Colors.white.withValues(alpha: 0.44),
-              width: math.max(0.5, size * 0.014),
-            ),
-          ),
-          child: ClipRRect(
-            borderRadius: BorderRadius.circular(radius),
-            child: bespoke
-                ? CustomPaint(
-                    painter: _AppleAppArtworkPainter(appId),
-                    child: const SizedBox.expand(),
-                  )
-                : Center(
-                    child: Icon(
-                      utilityIconFor(appId),
-                      color: appId == PortfolioAppId.trash
-                          ? const Color(0xFF4D5058)
-                          : Colors.white,
-                      size: size * 0.5,
-                    ),
+          decoration: transparentFrame
+              ? const BoxDecoration()
+              : BoxDecoration(
+                  gradient: LinearGradient(
+                    begin: Alignment.topLeft,
+                    end: Alignment.bottomRight,
+                    colors: colorsFor(appId),
                   ),
+                  borderRadius: BorderRadius.circular(radius),
+                  border: Border.all(
+                    color: Colors.white.withValues(alpha: 0.44),
+                    width: math.max(0.5, size * 0.014),
+                  ),
+                ),
+          child: ClipRRect(
+            borderRadius: transparentFrame
+                ? BorderRadius.zero
+                : BorderRadius.circular(radius),
+            child: artwork,
           ),
         ),
       ),
@@ -121,7 +151,10 @@ class _AppleAppArtworkPainter extends CustomPainter {
 
   @override
   void paint(Canvas canvas, Size size) {
-    _drawGlassHighlight(canvas, size);
+    if (!AppleAppArtwork.usesTransparentFrame(appId) &&
+        appId != PortfolioAppId.terminal) {
+      _drawGlassHighlight(canvas, size);
+    }
     switch (appId) {
       case PortfolioAppId.about:
         _drawAbout(canvas, size);
@@ -135,8 +168,9 @@ class _AppleAppArtworkPainter extends CustomPainter {
         _drawMail(canvas, size);
       case PortfolioAppId.settings:
         _drawSettings(canvas, size);
-      case PortfolioAppId.thisMac:
       case PortfolioAppId.trash:
+        _drawTrash(canvas, size);
+      case PortfolioAppId.thisMac:
       case PortfolioAppId.github:
         throw StateError('Utility artwork is rendered by its existing glyph.');
     }
@@ -212,41 +246,56 @@ class _AppleAppArtworkPainter extends CustomPainter {
   }
 
   void _drawSkills(Canvas canvas, Size size) {
-    final center = size.center(Offset.zero);
-    canvas.drawCircle(
-      center,
-      size.width * 0.12,
-      Paint()..color = Colors.white.withValues(alpha: 0.16),
-    );
-
-    const colors = <Color>[
-      Color(0xFF36C5B5),
-      Color(0xFFF4C94C),
-      Color(0xFFED5C73),
-      Color(0xFFB779E8),
-    ];
-    const angles = <double>[-2.3, -0.72, 0.84, 2.42];
-
-    for (var index = 0; index < colors.length; index++) {
-      canvas.save();
-      canvas.translate(center.dx, center.dy);
-      canvas.rotate(angles[index]);
-      final capsule = RRect.fromRectAndRadius(
-        Rect.fromLTWH(
-          size.width * 0.03,
-          -size.height * 0.09,
-          size.width * 0.34,
-          size.height * 0.18,
-        ),
-        Radius.circular(size.width * 0.1),
-      );
+    final unit = size.width;
+    final radius = Radius.circular(unit * 0.065);
+    void capsule(Rect rect, Color color) {
       canvas.drawRRect(
-        capsule.shift(Offset(0, size.height * 0.025)),
-        Paint()..color = Colors.black.withValues(alpha: 0.18),
+        RRect.fromRectAndRadius(rect, radius),
+        Paint()..color = color,
       );
-      canvas.drawRRect(capsule, Paint()..color = colors[index]);
-      canvas.restore();
     }
+
+    const red = Color(0xFFE01E5A);
+    const green = Color(0xFF2EB67D);
+    const yellow = Color(0xFFECB22E);
+    const blue = Color(0xFF36C5F0);
+
+    capsule(
+      Rect.fromLTWH(unit * 0.16, unit * 0.3, unit * 0.35, unit * 0.13),
+      red,
+    );
+    canvas.drawCircle(
+      Offset(unit * 0.37, unit * 0.21),
+      unit * 0.065,
+      Paint()..color = red,
+    );
+    capsule(
+      Rect.fromLTWH(unit * 0.57, unit * 0.16, unit * 0.13, unit * 0.35),
+      green,
+    );
+    canvas.drawCircle(
+      Offset(unit * 0.79, unit * 0.37),
+      unit * 0.065,
+      Paint()..color = green,
+    );
+    capsule(
+      Rect.fromLTWH(unit * 0.49, unit * 0.57, unit * 0.35, unit * 0.13),
+      yellow,
+    );
+    canvas.drawCircle(
+      Offset(unit * 0.63, unit * 0.79),
+      unit * 0.065,
+      Paint()..color = yellow,
+    );
+    capsule(
+      Rect.fromLTWH(unit * 0.3, unit * 0.49, unit * 0.13, unit * 0.35),
+      blue,
+    );
+    canvas.drawCircle(
+      Offset(unit * 0.21, unit * 0.63),
+      unit * 0.065,
+      Paint()..color = blue,
+    );
   }
 
   void _drawProjects(Canvas canvas, Size size) {
@@ -276,31 +325,6 @@ class _AppleAppArtworkPainter extends CustomPainter {
     canvas.drawPath(rearFolder, shadow);
     canvas.restore();
     canvas.drawPath(rearFolder, Paint()..color = const Color(0xFF0B5DBB));
-
-    final paper = RRect.fromRectAndRadius(
-      Rect.fromLTWH(
-        size.width * 0.31,
-        size.height * 0.31,
-        size.width * 0.46,
-        size.height * 0.35,
-      ),
-      Radius.circular(size.width * 0.045),
-    );
-    canvas.drawRRect(paper, Paint()..color = const Color(0xFFEFFBFF));
-    final paperLine = Paint()
-      ..color = const Color(0xFF8BCDF5)
-      ..strokeWidth = size.width * 0.025
-      ..strokeCap = StrokeCap.round;
-    canvas.drawLine(
-      Offset(size.width * 0.4, size.height * 0.43),
-      Offset(size.width * 0.69, size.height * 0.43),
-      paperLine,
-    );
-    canvas.drawLine(
-      Offset(size.width * 0.4, size.height * 0.51),
-      Offset(size.width * 0.62, size.height * 0.51),
-      paperLine,
-    );
 
     final frontFolder = Path()
       ..moveTo(size.width * 0.12, size.height * 0.43)
@@ -336,28 +360,13 @@ class _AppleAppArtworkPainter extends CustomPainter {
   }
 
   void _drawTerminal(Canvas canvas, Size size) {
-    final panel = RRect.fromRectAndRadius(
-      Rect.fromLTWH(
-        size.width * 0.12,
-        size.height * 0.17,
-        size.width * 0.76,
-        size.height * 0.66,
-      ),
-      Radius.circular(size.width * 0.1),
-    );
-    canvas.drawRRect(
-      panel.shift(Offset(0, size.height * 0.035)),
-      Paint()..color = Colors.black.withValues(alpha: 0.3),
-    );
-    canvas.drawRRect(panel, Paint()..color = const Color(0xFF0B0D11));
-
     final prompt = TextPainter(
       text: TextSpan(
         text: '>_',
         style: TextStyle(
           color: const Color(0xFFB8FFD4),
           fontFamily: 'monospace',
-          fontSize: size.width * 0.32,
+          fontSize: size.width * 0.36,
           fontWeight: FontWeight.w700,
           height: 1,
           letterSpacing: -size.width * 0.035,
@@ -365,8 +374,147 @@ class _AppleAppArtworkPainter extends CustomPainter {
       ),
       textDirection: TextDirection.ltr,
     )..layout();
-    prompt.paint(canvas, Offset(size.width * 0.2, size.height * 0.37));
+    prompt.paint(canvas, Offset(size.width * 0.17, size.height * 0.34));
     prompt.dispose();
+  }
+
+  void _drawTrash(Canvas canvas, Size size) {
+    final unit = size.width;
+    final contents = AppleAppArtwork.colorsFor(PortfolioAppId.trash);
+
+    canvas.drawOval(
+      Rect.fromCenter(
+        center: Offset(unit * 0.5, size.height * 0.9),
+        width: unit * 0.52,
+        height: size.height * 0.12,
+      ),
+      Paint()
+        ..color = Colors.black.withValues(alpha: 0.22)
+        ..maskFilter = MaskFilter.blur(BlurStyle.normal, unit * 0.045),
+    );
+
+    final contentShapes = <Path>[
+      Path()
+        ..moveTo(unit * 0.25, size.height * 0.43)
+        ..lineTo(unit * 0.3, size.height * 0.14)
+        ..lineTo(unit * 0.48, size.height * 0.22)
+        ..lineTo(unit * 0.45, size.height * 0.48)
+        ..close(),
+      Path()
+        ..moveTo(unit * 0.36, size.height * 0.43)
+        ..lineTo(unit * 0.44, size.height * 0.1)
+        ..lineTo(unit * 0.61, size.height * 0.18)
+        ..lineTo(unit * 0.57, size.height * 0.47)
+        ..close(),
+      Path()
+        ..moveTo(unit * 0.48, size.height * 0.45)
+        ..lineTo(unit * 0.59, size.height * 0.16)
+        ..lineTo(unit * 0.75, size.height * 0.27)
+        ..lineTo(unit * 0.68, size.height * 0.5)
+        ..close(),
+      Path()
+        ..moveTo(unit * 0.18, size.height * 0.36)
+        ..lineTo(unit * 0.3, size.height * 0.23)
+        ..lineTo(unit * 0.43, size.height * 0.4)
+        ..lineTo(unit * 0.31, size.height * 0.52)
+        ..close(),
+      Path()
+        ..moveTo(unit * 0.57, size.height * 0.39)
+        ..lineTo(unit * 0.72, size.height * 0.18)
+        ..lineTo(unit * 0.84, size.height * 0.35)
+        ..lineTo(unit * 0.7, size.height * 0.52)
+        ..close(),
+    ];
+    for (var index = 0; index < contentShapes.length; index++) {
+      canvas.drawPath(
+        contentShapes[index],
+        Paint()..color = contents[index % contents.length],
+      );
+    }
+
+    final bin = Path()
+      ..moveTo(unit * 0.2, size.height * 0.34)
+      ..quadraticBezierTo(
+        unit * 0.21,
+        size.height * 0.29,
+        unit * 0.27,
+        size.height * 0.3,
+      )
+      ..lineTo(unit * 0.73, size.height * 0.3)
+      ..quadraticBezierTo(
+        unit * 0.79,
+        size.height * 0.29,
+        unit * 0.8,
+        size.height * 0.34,
+      )
+      ..lineTo(unit * 0.72, size.height * 0.86)
+      ..quadraticBezierTo(
+        unit * 0.71,
+        size.height * 0.91,
+        unit * 0.65,
+        size.height * 0.92,
+      )
+      ..lineTo(unit * 0.35, size.height * 0.92)
+      ..quadraticBezierTo(
+        unit * 0.29,
+        size.height * 0.91,
+        unit * 0.28,
+        size.height * 0.86,
+      )
+      ..close();
+    canvas.drawPath(
+      bin,
+      Paint()
+        ..shader = LinearGradient(
+          begin: Alignment.topLeft,
+          end: Alignment.bottomRight,
+          colors: <Color>[
+            Colors.white.withValues(alpha: 0.92),
+            const Color(0xFFB7C1CD).withValues(alpha: 0.76),
+          ],
+        ).createShader(Offset.zero & size),
+    );
+    canvas.drawPath(
+      bin,
+      Paint()
+        ..color = const Color(0xFF8E99A6).withValues(alpha: 0.72)
+        ..style = PaintingStyle.stroke
+        ..strokeWidth = math.max(0.9, unit * 0.018),
+    );
+
+    final rib = Paint()
+      ..color = Colors.white.withValues(alpha: 0.62)
+      ..style = PaintingStyle.stroke
+      ..strokeWidth = math.max(0.7, unit * 0.012)
+      ..strokeCap = StrokeCap.round;
+    for (final x in <double>[0.35, 0.43, 0.51, 0.59, 0.67]) {
+      canvas.drawLine(
+        Offset(unit * x, size.height * 0.39),
+        Offset(unit * (0.5 + (x - 0.5) * 0.75), size.height * 0.84),
+        rib,
+      );
+    }
+
+    final rim = RRect.fromRectAndRadius(
+      Rect.fromLTWH(unit * 0.17, size.height * 0.29, unit * 0.66, unit * 0.13),
+      Radius.circular(unit * 0.065),
+    );
+    canvas.drawRRect(
+      rim,
+      Paint()
+        ..shader = const LinearGradient(
+          begin: Alignment.topCenter,
+          end: Alignment.bottomCenter,
+          colors: <Color>[Color(0xFFF9FCFF), Color(0xFFB8C1CB)],
+        ).createShader(Offset.zero & size),
+    );
+    canvas.drawRRect(
+      rim,
+      Paint()
+        ..color = const Color(0xFF87919D).withValues(alpha: 0.8)
+        ..style = PaintingStyle.stroke
+        ..strokeWidth = math.max(0.8, unit * 0.014),
+    );
   }
 
   void _drawMail(Canvas canvas, Size size) {

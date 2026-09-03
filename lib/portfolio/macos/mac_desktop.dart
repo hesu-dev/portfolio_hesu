@@ -405,6 +405,7 @@ class _MacDesktopIconState extends State<_MacDesktopIcon> {
   Widget build(BuildContext context) {
     final appId = widget.appId;
     final label = AppleAppIcon.labelFor(appId);
+    final transparentArtwork = AppleAppArtwork.usesTransparentFrame(appId);
 
     return Semantics(
       key: Key('desktop-app-${appId.name}'),
@@ -462,26 +463,33 @@ class _MacDesktopIconState extends State<_MacDesktopIcon> {
                   mainAxisSize: MainAxisSize.min,
                   children: <Widget>[
                     Container(
+                      key: Key('desktop-app-artwork-frame-${appId.name}'),
                       width: 50,
                       height: 50,
                       decoration: BoxDecoration(
-                        gradient: LinearGradient(
-                          begin: Alignment.topLeft,
-                          end: Alignment.bottomRight,
-                          colors: AppleAppIcon.colorsFor(appId),
-                        ),
+                        gradient: transparentArtwork
+                            ? null
+                            : LinearGradient(
+                                begin: Alignment.topLeft,
+                                end: Alignment.bottomRight,
+                                colors: AppleAppIcon.colorsFor(appId),
+                              ),
                         borderRadius: BorderRadius.circular(14),
-                        border: Border.all(
-                          color: Colors.white.withValues(alpha: 0.48),
-                          width: 0.8,
-                        ),
-                        boxShadow: <BoxShadow>[
-                          BoxShadow(
-                            color: Colors.black.withValues(alpha: 0.24),
-                            blurRadius: 12,
-                            offset: const Offset(0, 6),
-                          ),
-                        ],
+                        border: transparentArtwork
+                            ? null
+                            : Border.all(
+                                color: Colors.white.withValues(alpha: 0.48),
+                                width: 0.8,
+                              ),
+                        boxShadow: transparentArtwork
+                            ? const <BoxShadow>[]
+                            : <BoxShadow>[
+                                BoxShadow(
+                                  color: Colors.black.withValues(alpha: 0.24),
+                                  blurRadius: 12,
+                                  offset: const Offset(0, 6),
+                                ),
+                              ],
                       ),
                       child: AppleAppArtwork(appId: appId, size: 50),
                     ),
