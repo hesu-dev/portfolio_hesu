@@ -4,6 +4,51 @@ import 'package:flutter/material.dart';
 
 import '../models/portfolio_app_id.dart';
 
+/// The normalized launcher frame shared by macOS, iPadOS, and iOS surfaces.
+///
+/// App artwork owns its silhouette while this frame only supplies a consistent
+/// optical shadow. Transparent folder and Trash artwork deliberately receive no
+/// rounded-square decoration so their outlines can paint beyond the frame.
+class AppleAppArtworkFrame extends StatelessWidget {
+  const AppleAppArtworkFrame({
+    required this.appId,
+    required this.size,
+    this.frameKey,
+    super.key,
+  }) : assert(size > 0);
+
+  final PortfolioAppId appId;
+  final double size;
+  final Key? frameKey;
+
+  @override
+  Widget build(BuildContext context) {
+    final transparent = AppleAppArtwork.usesTransparentFrame(appId);
+    return Container(
+      key: frameKey,
+      width: size,
+      height: size,
+      decoration: BoxDecoration(
+        borderRadius: transparent ? null : BorderRadius.circular(size * 0.28),
+        boxShadow: transparent
+            ? const <BoxShadow>[]
+            : <BoxShadow>[
+                BoxShadow(
+                  color: Colors.black.withValues(alpha: 0.2),
+                  blurRadius: size * 0.23,
+                  offset: Offset(0, size * 0.11),
+                ),
+              ],
+      ),
+      child: Stack(
+        clipBehavior: Clip.none,
+        fit: StackFit.expand,
+        children: <Widget>[AppleAppArtwork(appId: appId, size: size)],
+      ),
+    );
+  }
+}
+
 /// Scalable, code-native artwork shared by every portfolio app launcher.
 ///
 /// Primary app marks and Trash are drawn with Flutter paths instead of bundled
@@ -113,32 +158,36 @@ class AppleAppArtwork extends StatelessWidget {
       ),
     };
 
+    final content = transparentFrame
+        ? Stack(
+            clipBehavior: Clip.none,
+            fit: StackFit.expand,
+            children: <Widget>[artwork],
+          )
+        : DecoratedBox(
+            decoration: BoxDecoration(
+              gradient: LinearGradient(
+                begin: Alignment.topLeft,
+                end: Alignment.bottomRight,
+                colors: colorsFor(appId),
+              ),
+              borderRadius: BorderRadius.circular(radius),
+              border: Border.all(
+                color: Colors.white.withValues(alpha: 0.44),
+                width: math.max(0.5, size * 0.014),
+              ),
+            ),
+            child: ClipRRect(
+              borderRadius: BorderRadius.circular(radius),
+              child: artwork,
+            ),
+          );
+
     return SizedBox.square(
       dimension: size,
       child: ExcludeSemantics(
         key: Key('apple-app-artwork-${appId.name}'),
-        child: DecoratedBox(
-          decoration: transparentFrame
-              ? const BoxDecoration()
-              : BoxDecoration(
-                  gradient: LinearGradient(
-                    begin: Alignment.topLeft,
-                    end: Alignment.bottomRight,
-                    colors: colorsFor(appId),
-                  ),
-                  borderRadius: BorderRadius.circular(radius),
-                  border: Border.all(
-                    color: Colors.white.withValues(alpha: 0.44),
-                    width: math.max(0.5, size * 0.014),
-                  ),
-                ),
-          child: ClipRRect(
-            borderRadius: transparentFrame
-                ? BorderRadius.zero
-                : BorderRadius.circular(radius),
-            child: artwork,
-          ),
-        ),
+        child: content,
       ),
     );
   }
