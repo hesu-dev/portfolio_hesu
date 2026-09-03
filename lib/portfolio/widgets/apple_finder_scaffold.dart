@@ -719,6 +719,7 @@ class AppleFinderFolderTile extends StatelessWidget {
       selected: selected,
       onPressed: onPressed,
       borderRadius: BorderRadius.circular(14),
+      overlayColor: const WidgetStatePropertyAll<Color>(Colors.transparent),
       child: AnimatedContainer(
         key: const Key('apple-finder-folder-container'),
         duration: const Duration(milliseconds: 160),

@@ -10,6 +10,7 @@ class AppleSelectionControl extends StatefulWidget {
     required this.borderRadius,
     required this.child,
     this.focusColor,
+    this.overlayColor,
     super.key,
   });
 
@@ -19,6 +20,7 @@ class AppleSelectionControl extends StatefulWidget {
   final BorderRadius borderRadius;
   final Widget child;
   final Color? focusColor;
+  final WidgetStateProperty<Color?>? overlayColor;
 
   @override
   State<AppleSelectionControl> createState() => _AppleSelectionControlState();
@@ -51,6 +53,7 @@ class _AppleSelectionControlState extends State<AppleSelectionControl> {
           onTap: widget.onPressed,
           onFocusChange: _handleFocusChange,
           borderRadius: widget.borderRadius,
+          overlayColor: widget.overlayColor,
           child: Stack(
             children: <Widget>[
               widget.child,

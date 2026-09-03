@@ -42,6 +42,22 @@ void main() {
         expect(selectedDecoration.border, isNull);
         expect(selectedDecoration.boxShadow, anyOf(isNull, isEmpty));
 
+        final selectedInkWell = tester.widget<InkWell>(
+          find.descendant(of: selected, matching: find.byType(InkWell)),
+        );
+        expect(
+          selectedInkWell.overlayColor?.resolve(<WidgetState>{
+            WidgetState.hovered,
+          }),
+          Colors.transparent,
+        );
+        expect(
+          selectedInkWell.overlayColor?.resolve(<WidgetState>{
+            WidgetState.pressed,
+          }),
+          Colors.transparent,
+        );
+
         final unselectedArtworkBackground = _artworkBackgroundDecoration(
           tester,
           unselected,
