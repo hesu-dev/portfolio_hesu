@@ -283,38 +283,24 @@ class TrashApp extends StatelessWidget {
   Widget build(BuildContext context) {
     return AppleAppSurface(
       key: const Key('trash-app'),
-      child: Column(
-        children: <Widget>[
-          AppleToolbar(
-            title: 'Trash',
-            subtitle: '0 items',
-            compact: compact,
-            leading: const Icon(Icons.delete_rounded),
-          ),
-          Expanded(
-            child: LayoutBuilder(
-              builder: (context, constraints) {
-                return SingleChildScrollView(
-                  key: const Key('trash-scroll'),
-                  physics: const BouncingScrollPhysics(
-                    parent: AlwaysScrollableScrollPhysics(),
-                  ),
-                  child: ConstrainedBox(
-                    constraints: BoxConstraints(
-                      minHeight: constraints.maxHeight,
-                    ),
-                    child: AppleEmptyState(
-                      icon: Icons.delete_outline_rounded,
-                      title: 'Trash is Empty',
-                      message:
-                          'There are no deleted portfolio items for ${data.identity.englishName}.',
-                    ),
-                  ),
-                );
-              },
+      child: LayoutBuilder(
+        builder: (context, constraints) {
+          return SingleChildScrollView(
+            key: const Key('trash-scroll'),
+            physics: const BouncingScrollPhysics(
+              parent: AlwaysScrollableScrollPhysics(),
             ),
-          ),
-        ],
+            child: ConstrainedBox(
+              constraints: BoxConstraints(minHeight: constraints.maxHeight),
+              child: AppleEmptyState(
+                icon: Icons.delete_outline_rounded,
+                title: 'Trash is Empty',
+                message:
+                    'There are no deleted portfolio items for ${data.identity.englishName}.',
+              ),
+            ),
+          );
+        },
       ),
     );
   }
@@ -466,133 +452,117 @@ class _ExternalProfilePageState extends State<_ExternalProfilePage> {
     final padding = widget.compact ? 16.0 : (widget.tablet ? 24.0 : 30.0);
     return AppleAppSurface(
       key: Key(widget.rootKey),
-      child: Column(
+      child: ListView(
+        key: Key('${widget.rootKey}-scroll'),
+        padding: EdgeInsets.all(padding),
         children: <Widget>[
-          AppleToolbar(
-            title: widget.title,
-            subtitle: widget.subtitle,
-            compact: widget.compact,
-            leading: Icon(widget.icon, color: AppleTheme.blue),
-          ),
-          Expanded(
-            child: ListView(
-              key: Key('${widget.rootKey}-scroll'),
-              padding: EdgeInsets.all(padding),
-              children: <Widget>[
-                Center(
-                  child: ConstrainedBox(
-                    constraints: const BoxConstraints(maxWidth: 620),
+          Center(
+            child: ConstrainedBox(
+              constraints: const BoxConstraints(maxWidth: 620),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.stretch,
+                children: <Widget>[
+                  AppleSurfaceCard(
+                    padding: EdgeInsets.all(widget.compact ? 20 : 28),
                     child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.stretch,
                       children: <Widget>[
-                        AppleSurfaceCard(
-                          padding: EdgeInsets.all(widget.compact ? 20 : 28),
-                          child: Column(
-                            children: <Widget>[
-                              Container(
-                                width: widget.compact ? 76 : 92,
-                                height: widget.compact ? 76 : 92,
-                                decoration: BoxDecoration(
-                                  gradient: LinearGradient(
-                                    begin: Alignment.topLeft,
-                                    end: Alignment.bottomRight,
-                                    colors: widget.colors,
-                                  ),
-                                  borderRadius: BorderRadius.circular(
-                                    widget.compact ? 22 : 27,
-                                  ),
-                                  boxShadow: <BoxShadow>[
-                                    BoxShadow(
-                                      color: widget.colors.last.withValues(
-                                        alpha: 0.25,
-                                      ),
-                                      blurRadius: 24,
-                                      offset: const Offset(0, 10),
-                                    ),
-                                  ],
+                        Container(
+                          width: widget.compact ? 76 : 92,
+                          height: widget.compact ? 76 : 92,
+                          decoration: BoxDecoration(
+                            gradient: LinearGradient(
+                              begin: Alignment.topLeft,
+                              end: Alignment.bottomRight,
+                              colors: widget.colors,
+                            ),
+                            borderRadius: BorderRadius.circular(
+                              widget.compact ? 22 : 27,
+                            ),
+                            boxShadow: <BoxShadow>[
+                              BoxShadow(
+                                color: widget.colors.last.withValues(
+                                  alpha: 0.25,
                                 ),
-                                child: Icon(
-                                  widget.icon,
-                                  color: Colors.white,
-                                  size: widget.compact ? 36 : 42,
-                                ),
-                              ),
-                              const SizedBox(height: 18),
-                              Text(
-                                widget.data.identity.englishName,
-                                textAlign: TextAlign.center,
-                                style: Theme.of(
-                                  context,
-                                ).textTheme.headlineSmall,
-                              ),
-                              const SizedBox(height: 5),
-                              Text(
-                                widget.title == 'Mail'
-                                    ? widget.data.identity.email
-                                    : widget.data.identity.headline,
-                                textAlign: TextAlign.center,
-                                style: AppleTheme.body(context).copyWith(
-                                  color: AppleTheme.secondaryLabel(context),
-                                ),
-                              ),
-                              const SizedBox(height: 20),
-                              FilledButton.icon(
-                                key: Key(widget.actionKey),
-                                onPressed: _launch,
-                                icon: Icon(
-                                  widget.title == 'Mail'
-                                      ? Icons.edit_rounded
-                                      : Icons.open_in_new_rounded,
-                                  size: 18,
-                                ),
-                                label: Text(widget.actionLabel),
+                                blurRadius: 24,
+                                offset: const Offset(0, 10),
                               ),
                             ],
+                          ),
+                          child: Icon(
+                            widget.icon,
+                            color: Colors.white,
+                            size: widget.compact ? 36 : 42,
                           ),
                         ),
-                        if (_feedback case final message?) ...<Widget>[
-                          const SizedBox(height: 14),
-                          AppleFeedbackBanner(
-                            key: Key(widget.feedbackKey),
-                            message: message,
-                            success: _succeeded,
-                          ),
-                        ],
                         const SizedBox(height: 18),
-                        AppleSurfaceCard(
-                          radius: 17,
-                          child: Column(
-                            crossAxisAlignment: CrossAxisAlignment.start,
-                            children: <Widget>[
-                              Text(
-                                widget.title == 'Mail'
-                                    ? 'Contact card'
-                                    : 'Profile card',
-                                style: AppleTheme.title(context),
-                              ),
-                              const SizedBox(height: 12),
-                              _InfoRow(
-                                label: 'Name',
-                                value:
-                                    '${widget.data.identity.name} · ${widget.data.identity.englishName}',
-                              ),
-                              const SizedBox(height: 10),
-                              _InfoRow(
-                                label: widget.title == 'Mail'
-                                    ? 'Address'
-                                    : 'Profile',
-                                value: widget.title == 'Mail'
-                                    ? widget.data.identity.email
-                                    : widget.data.identity.githubUrl,
-                              ),
-                            ],
+                        Text(
+                          widget.data.identity.englishName,
+                          textAlign: TextAlign.center,
+                          style: Theme.of(context).textTheme.headlineSmall,
+                        ),
+                        const SizedBox(height: 5),
+                        Text(
+                          widget.title == 'Mail'
+                              ? widget.data.identity.email
+                              : widget.data.identity.headline,
+                          textAlign: TextAlign.center,
+                          style: AppleTheme.body(
+                            context,
+                          ).copyWith(color: AppleTheme.secondaryLabel(context)),
+                        ),
+                        const SizedBox(height: 20),
+                        FilledButton.icon(
+                          key: Key(widget.actionKey),
+                          onPressed: _launch,
+                          icon: Icon(
+                            widget.title == 'Mail'
+                                ? Icons.edit_rounded
+                                : Icons.open_in_new_rounded,
+                            size: 18,
                           ),
+                          label: Text(widget.actionLabel),
                         ),
                       ],
                     ),
                   ),
-                ),
-              ],
+                  if (_feedback case final message?) ...<Widget>[
+                    const SizedBox(height: 14),
+                    AppleFeedbackBanner(
+                      key: Key(widget.feedbackKey),
+                      message: message,
+                      success: _succeeded,
+                    ),
+                  ],
+                  const SizedBox(height: 18),
+                  AppleSurfaceCard(
+                    radius: 17,
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: <Widget>[
+                        Text(
+                          widget.title == 'Mail'
+                              ? 'Contact card'
+                              : 'Profile card',
+                          style: AppleTheme.title(context),
+                        ),
+                        const SizedBox(height: 12),
+                        _InfoRow(
+                          label: 'Name',
+                          value:
+                              '${widget.data.identity.name} · ${widget.data.identity.englishName}',
+                        ),
+                        const SizedBox(height: 10),
+                        _InfoRow(
+                          label: widget.title == 'Mail' ? 'Address' : 'Profile',
+                          value: widget.title == 'Mail'
+                              ? widget.data.identity.email
+                              : widget.data.identity.githubUrl,
+                        ),
+                      ],
+                    ),
+                  ),
+                ],
+              ),
             ),
           ),
         ],
