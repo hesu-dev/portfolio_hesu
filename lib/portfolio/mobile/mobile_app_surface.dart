@@ -125,8 +125,8 @@ class _MobileAppNavigationBar extends StatelessWidget {
                 windowLabel: label,
                 maximized: !tablet,
                 onClose: onClose,
-                onMinimize: onClose,
-                onMaximize: () {},
+                targetSize: 44,
+                secondaryControlsInteractive: false,
               ),
               SizedBox(width: tablet ? 10 : 6),
               Expanded(
