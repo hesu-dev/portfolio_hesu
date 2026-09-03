@@ -382,6 +382,25 @@ void main() {
       expect(find.byKey(const Key('mac-window-about')), findsNothing);
     });
 
+    testWidgets(
+      'window title bar keeps the app title without duplicate artwork',
+      (tester) async {
+        await _pumpPortfolio(tester);
+        await _openDesktopApp(tester, PortfolioAppId.trash);
+
+        final titleBar = find.byKey(const Key('mac-window-titlebar-trash'));
+        expect(titleBar, findsOneWidget);
+        expect(
+          find.descendant(of: titleBar, matching: find.byType(AppleAppArtwork)),
+          findsNothing,
+        );
+        expect(
+          find.descendant(of: titleBar, matching: find.text('Trash')),
+          findsOneWidget,
+        );
+      },
+    );
+
     testWidgets('title-bar drag clamps windows into the visible work area', (
       tester,
     ) async {
