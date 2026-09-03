@@ -14,6 +14,9 @@ void main() {
       await tester.pumpWidget(PortfolioApp(externalLauncher: launcher));
 
       expect(find.byType(MaterialApp), findsOneWidget);
+      final app = tester.widget<MaterialApp>(find.byType(MaterialApp));
+      expect(app.title, '민희수 포트폴리오');
+      expect(app.color, const Color(0xFF121316));
       final shell = tester.widget<AdaptivePortfolioShell>(
         find.byType(AdaptivePortfolioShell),
       );
