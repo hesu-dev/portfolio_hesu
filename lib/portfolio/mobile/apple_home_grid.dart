@@ -123,6 +123,7 @@ class _IPadProfileWidget extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final now = DateTime.now();
+    final dark = AppleTheme.isDark(context);
     final date =
         '${_weekdays[now.weekday - 1]}, ${_months[now.month - 1]} '
         '${now.day}';
@@ -132,24 +133,29 @@ class _IPadProfileWidget extends StatelessWidget {
       container: true,
       label: '${data.name} portfolio profile',
       child: Container(
+        key: const Key('ipad-profile-card'),
         padding: const EdgeInsets.all(22),
         decoration: BoxDecoration(
           gradient: LinearGradient(
             begin: Alignment.topLeft,
             end: Alignment.bottomRight,
-            colors: <Color>[
-              Colors.white.withValues(alpha: 0.72),
-              const Color(0xFFE9F2FF).withValues(alpha: 0.64),
-            ],
+            colors: dark
+                ? const <Color>[Color(0xF2292C36), Color(0xF21B2433)]
+                : <Color>[
+                    Colors.white.withValues(alpha: 0.72),
+                    const Color(0xFFE9F2FF).withValues(alpha: 0.64),
+                  ],
           ),
           borderRadius: BorderRadius.circular(28),
           border: Border.all(
-            color: Colors.white.withValues(alpha: 0.72),
+            color: Colors.white.withValues(alpha: dark ? 0.18 : 0.72),
             width: 0.9,
           ),
           boxShadow: <BoxShadow>[
             BoxShadow(
-              color: const Color(0xFF385A90).withValues(alpha: 0.12),
+              color: dark
+                  ? Colors.black.withValues(alpha: 0.34)
+                  : const Color(0xFF385A90).withValues(alpha: 0.12),
               blurRadius: 28,
               offset: const Offset(0, 12),
             ),
