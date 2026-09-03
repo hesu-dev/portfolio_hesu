@@ -69,12 +69,23 @@
 2. 모바일 플랫폼으로 판별된 넓은 화면도 Mac 셸 대신 iPad 셸을 선택하는 테스트를 작성한다.
 3. Dock 렌더링과 예약 여백을 제거하고 적응형 기기 판별을 구현한다.
 
-### Task 6: 회귀·시각 검증 및 요구사항 문서 갱신
+### Task 6: 모바일·태블릿 화면 모드 선택 UI 재구성
+
+**Files:**
+- Modify: `test/portfolio/settings_app_test.dart`
+- Modify: `test/portfolio/settings_profile_svg_test.dart`
+- Modify: `lib/portfolio/apps/settings_app.dart`
+
+1. 데스크탑 설정의 사이드바·화면 모드 구성이 그대로 유지되는 테스트를 고정한다.
+2. iPhone·iPad는 사이드바 없이 화면 폭에 비례한 라이트/다크 미리보기를 나란히 표시하는 실패 테스트를 작성한다.
+3. 두 선택지는 즉시 전체 테마를 전환하고, 200% 글자 크기에서는 가로 넘침 없이 스크롤되도록 구현한다.
+
+### Task 7: 라이트·다크 회귀·시각 검증 및 요구사항 문서 갱신
 
 **Files:**
 - Modify: `docs/plans/2026-09-03-portfolio-requirements-checklist.md`
 
 1. 관련 테스트를 먼저 실행하고 전체 테스트와 `flutter analyze`를 실행한다.
-2. iPhone, iPad, Mac 크기로 로컬 화면을 확인하고 Skills·창 헤더·홈 화면을 캡처해 비교한다.
-3. 체크리스트를 실제 검증 결과로 갱신한다.
+2. iPhone, iPad, Mac 크기와 라이트·다크 양쪽으로 로컬 화면을 확인하고 Skills·Finder·설정·창 헤더·홈 화면을 캡처해 비교한다.
+3. 기존 전체 앱도 라이트·다크에서 렌더링 및 스크롤 오류가 없는지 점검하고 체크리스트를 실제 검증 결과로 갱신한다.
 4. 변경을 한국어 Conventional Commits 형식으로 기능 단위마다 나누어 커밋한다.
