@@ -12,8 +12,9 @@
 | 참조 페이지를 그대로 복제하지 않고 개인 콘텐츠 사용 | 충족 | 참조 인물/URL이 런타임과 웹 메타데이터에 없음을 테스트한다. |
 | 현재 Flutter 경력 소속과 업무 문구 갱신 | 충족 | `Junior Flutter Developer`의 소속은 `(주)상상력 집단`, 설명은 `node 웹사이트 서비스 기획 및 개발, 출시 후 유지보수`로 표시한다. |
 | GitHub Pages에서 Vercel로 이전 가능하게 구성 | 충족 | Vercel 도메인 루트용 `/` release 빌드 절차와 고정 Flutter SDK 설정을 문서화했다. |
-| GitHub Pages 중단 및 Vercel 외부 배포 | 진행 중 | Pages 자동 배포 workflow와 README의 공개 URL은 제거했다. `main` 반영 후 저장소 Pages 설정과 `gh-pages`를 제거한다. Vercel 외부 배포는 아직 수행하지 않는다. |
-| 공개 저장소의 과거 자산 재배포 위험 관리 | 진행 중 | 레거시 자산과 자동 재배포 경로는 현재 트리에서 제거했다. Pages 설정·브랜치 정리 후에도 공개 Git 과거 이력의 제3자 복제 위험은 남는다. |
+| GitHub Pages 중단 | 충족 | 자동 배포 workflow를 제거·비활성화하고, 저장소 Pages 게시를 해제한 뒤 소스를 `None`으로 저장했다. Pages API의 404와 원격 `gh-pages` 삭제를 확인했다. |
+| Vercel 외부 배포 | 보류 | 루트(`/`) 빌드와 이전 설정은 준비했지만, 사용자가 추후 이전할 예정이므로 실제 Vercel 프로젝트 생성·배포는 수행하지 않는다. |
+| 공개 저장소의 과거 자산 재배포 위험 관리 | 진행 중 | 레거시 자산과 자동 재배포 경로, Pages 배포 브랜치는 제거했다. 공개 Git 과거 이력을 제3자가 복제·재배포하는 위험은 저장소를 공개로 유지하는 동안 남는다. |
 
 ## 반응형 셸
 
@@ -161,7 +162,6 @@
 
 - `flutter test --reporter compact`: 전체 272개 통과
 - `flutter analyze`: 문제 없음
-- GitHub Pages 경로 `/portfolio_hesu/` release web build: 성공, 생성된 `<base href="/portfolio_hesu/">` 확인
 - Vercel 루트 경로 `/` release web build: 성공, 생성된 `<base href="/">` 확인
 - `git diff --check`: 통과
 - 실제 렌더링: macOS 1280×720 Light 홈·Finder와 Dark 설정·메뉴·제어 센터·알림·About·Terminal, iPad 834×1112의 홈·About·Finder 6열·4:3 설정, iPhone 390×844의 홈·Skills·Finder 3열·설정·About을 확인
@@ -169,6 +169,6 @@
 - 모바일 재검수: 홈 앱 Dock은 숨고, Projects 내부에만 `최근 항목`·`회사`·`개인` 3탭 탐색이 있으며 세 아이콘·라벨은 각 1/3 중심에 정렬된다. pill 배경은 투명하고 iPhone/iPad Finder는 신호등 없이 상태별 뒤로/닫기·중앙 자연 높이 타이틀·`…`를 사용한다.
 - 테마 재검수: 기본 Light, iPhone 설정의 즉시 Dark 전환, Dark About 메모·Terminal·macOS 창/메뉴/시스템 패널의 가독성을 확인
 - 독립 요구사항 감사: 핵심 런타임 미충족과 Critical 항목 없음. 감사에서 발견한 데스크톱 `최근 항목` 비동작과 웹 기본 dark chrome은 각각 수정하고 회귀 테스트를 추가함
-- 외부 상태 변경: 소스의 Pages workflow는 제거했으며 원격 Pages 설정·`gh-pages` 제거와 Vercel 배포는 아직 실행하지 않음
-- `main` 반영 전에 기존 Pages workflow를 비활성화하고, 반영 후 Pages 설정과 배포 브랜치를 제거해 자동 재배포를 차단한다.
-- 공개 저장소 과거 이력/기존 `gh-pages` 정리는 별도 배포 단계에서 수행
+- 외부 상태 변경: 기존 Pages workflow 2개를 비활성화하고, Pages 게시 해제와 배포 소스 `None` 저장을 완료했다. Pages API는 404를 반환한다.
+- 원격 `gh-pages` 브랜치를 삭제해 기존 저장소에서 자동 재게시될 경로를 제거했다.
+- 공개 저장소 과거 이력의 제3자 복제·재배포 위험은 남으며, 이를 없애려면 저장소 비공개 전환 또는 별도의 이력 정리가 필요하다.
