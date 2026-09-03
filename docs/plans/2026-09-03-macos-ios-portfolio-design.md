@@ -2,11 +2,15 @@
 
 ## Goal
 
-Replace the currently served Flutter portfolio with a responsive Apple-inspired portfolio: a macOS desktop experience on wide screens and an iPhone home-screen experience on mobile. The interface must use only Min He-su's existing portfolio content and links.
+Replace the currently served Flutter portfolio with a responsive Apple-inspired portfolio: a macOS desktop experience on wide screens, an iPadOS experience on tablet widths, and an iPhone home-screen experience on mobile. The interface must use only Min He-su's existing portfolio content and links.
 
 ## Product direction
 
-The reference portfolio is useful for its desktop metaphor and depth of interaction, but its Windows styling, identity, project content, and public assets will not be copied. On viewports 820 logical pixels wide or larger, the portfolio renders as a modern macOS desktop. Narrower viewports render as an iPhone home screen instead of a reduced desktop or a “use a PC” blocker.
+The reference portfolio is useful for its desktop metaphor and depth of interaction, but its Windows styling, identity, project content, and public assets will not be copied. The responsive experience has three deliberate shells instead of shrinking one layout:
+
+- 1024 logical pixels and wider: modern macOS desktop.
+- 600–1023 logical pixels: iPadOS home screen and tablet app surfaces.
+- Below 600 logical pixels: iPhone home screen and phone app surfaces.
 
 Both shells expose the same core apps and the same immutable portfolio data:
 
@@ -20,11 +24,11 @@ No text, email address, project, or outbound link belonging to the reference sit
 
 ## Architecture
 
-`PortfolioData` is the single source of truth for identity, biography, experience, skills, projects, and links. Responsive shell widgets consume this data without duplicating it. The root uses `LayoutBuilder` to select `MacDesktop` or `IPhoneHome` at the 820-pixel breakpoint.
+`PortfolioData` is the single source of truth for identity, biography, experience, skills, projects, and links. Responsive shell widgets consume this data without duplicating it. The root uses `LayoutBuilder` to select `MacDesktop`, `IPadHome`, or `IPhoneHome` at the 1024- and 600-pixel breakpoints.
 
 The macOS shell owns a small window-manager state: open, minimized, maximized, active z-order, position, and size. Apps open from desktop icons or the Dock. Window chrome supports close, minimize, maximize/restore, focus, and title-bar dragging. The shell includes a menu bar, animated translucent Dock, Apple menu, Control Center, and notification panel. Visuals use Flutter gradients, blur, shadows, and vector/material symbols; no remote wallpaper dependency is required.
 
-The iPhone shell uses safe-area insets, a status bar, paged-looking app grid, translucent Dock, and home indicator. Tapping an app opens a full-screen mobile surface with native-style navigation. About, Skills, Projects, Terminal, GitHub, and Mail share the same app identifiers as macOS. Closing an app returns to the home screen, and links launch externally only after an explicit tap.
+The iPad and iPhone shells use safe-area insets, status bars, app grids, translucent Docks, and home indicators. The iPad layout uses a wider grid, larger widgets, and tablet-sized app cards; the iPhone uses a compact four-column grid and full-screen app surfaces. About, Skills, Projects, Terminal, GitHub, and Mail share the same app identifiers as macOS. Closing an app returns to the home screen, and links launch externally only after an explicit tap.
 
 ## Desktop apps
 
@@ -36,9 +40,13 @@ The iPhone shell uses safe-area insets, a status bar, paged-looking app grid, tr
 - **Trash:** empty-state window.
 - **GitHub / Mail:** external actions tied only to Min He-su's addresses.
 
-## Mobile apps
+## iPad apps
 
-The mobile About, Skills, Projects, and Terminal views keep the same information hierarchy but replace floating windows with full-screen app navigation. Project details use vertical cards and large tap targets. External GitHub, store, research, and email actions remain explicit. Landscape phones keep the iPhone shell unless the logical width crosses the breakpoint.
+The iPad shell presents a spacious home grid, a date/profile widget, and a floating Dock. Apps open as large rounded tablet surfaces with persistent navigation where useful. Project selection uses a master-detail layout when space permits, while narrow split views fall back to stacked cards. The shell remains recognizably iPadOS in both portrait and landscape orientations.
+
+## iPhone apps
+
+The iPhone About, Skills, Projects, and Terminal views keep the same information hierarchy but replace floating windows with full-screen app navigation. Project details use vertical cards and large tap targets. External GitHub, store, research, and email actions remain explicit. Landscape phones keep the iPhone shell unless the logical width crosses the tablet breakpoint.
 
 ## Interaction and accessibility
 
