@@ -1,0 +1,19 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512" role="img" aria-labelledby="title description">
+  <title id="title">민희수 모노그램</title>
+  <desc id="description">짙은 남색 배경 위에 M과 H를 형상화한 흰색 모노그램</desc>
+  <defs>
+    <linearGradient id="background" x1="72" y1="52" x2="448" y2="468" gradientUnits="userSpaceOnUse">
+      <stop offset="0" stop-color="#111827"/>
+      <stop offset="0.55" stop-color="#172554"/>
+      <stop offset="1" stop-color="#075985"/>
+    </linearGradient>
+    <radialGradient id="glow" cx="0" cy="0" r="1" gradientTransform="translate(394 104) rotate(128) scale(302)">
+      <stop stop-color="#38BDF8" stop-opacity="0.7"/>
+      <stop offset="1" stop-color="#0A84FF" stop-opacity="0"/>
+    </radialGradient>
+  </defs>
+  <rect x="16" y="16" width="480" height="480" rx="112" fill="url(#background)"/>
+  <rect x="16" y="16" width="480" height="480" rx="112" fill="url(#glow)"/>
+  <path d="M96 352V166L184 260L272 166V352" fill="none" stroke="#FFFFFF" stroke-width="34" stroke-linecap="round" stroke-linejoin="round"/>
+  <path d="M320 166V352M320 259H416M416 166V352" fill="none" stroke="#BAE6FD" stroke-width="34" stroke-linecap="round"/>
+</svg>
