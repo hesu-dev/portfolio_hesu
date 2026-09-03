@@ -32,7 +32,7 @@ void main() {
 
       expect(currentRole.role, 'Junior Flutter Developer');
       expect(currentRole.organization, '(주)상상력 집단');
-      expect(currentRole.description, 'Node 웹사이트 서비스 기획 및 개발, 출시 후 유지보수');
+      expect(currentRole.description, 'node 웹사이트 서비스 기획 및 개발, 출시 후 유지보수');
     });
 
     test('classifies work and personal projects for Finder locations', () {

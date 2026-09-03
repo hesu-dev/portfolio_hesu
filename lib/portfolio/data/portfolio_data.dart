@@ -288,7 +288,7 @@ const portfolioData = PortfolioData.constant(
       role: 'Junior Flutter Developer',
       organization: '(주)상상력 집단',
       period: '2026 - Present',
-      description: 'Node 웹사이트 서비스 기획 및 개발, 출시 후 유지보수',
+      description: 'node 웹사이트 서비스 기획 및 개발, 출시 후 유지보수',
     ),
     PortfolioExperience(
       role: 'Junior Flutter Developer',
