@@ -219,6 +219,36 @@ void main() {
   });
 
   group('macOS menu bar and Dock', () {
+    testWidgets('opens an accessible system menu with keyboard activation', (
+      tester,
+    ) async {
+      final semantics = tester.ensureSemantics();
+      await _pumpPortfolio(tester);
+      final systemMenu = find.byKey(const Key('mac-system-menu-button'));
+
+      expect(find.bySemanticsLabel('Open system menu'), findsOneWidget);
+      await tester.tap(systemMenu);
+      await tester.pumpAndSettle();
+      expect(find.byKey(const Key('mac-system-menu-panel')), findsOneWidget);
+      expect(find.text('About This Portfolio'), findsOneWidget);
+      expect(FocusManager.instance.primaryFocus?.debugLabel, 'mac-system-menu');
+
+      await tester.sendKeyEvent(LogicalKeyboardKey.escape);
+      await tester.pumpAndSettle();
+      expect(find.byKey(const Key('mac-system-menu-panel')), findsNothing);
+      expect(FocusManager.instance.primaryFocus?.debugLabel, 'mac-system-menu');
+
+      await tester.sendKeyEvent(LogicalKeyboardKey.space);
+      await tester.pumpAndSettle();
+      expect(find.byKey(const Key('mac-system-menu-panel')), findsOneWidget);
+
+      await tester.tap(find.byKey(const Key('system-menu-about')));
+      await tester.pumpAndSettle();
+      expect(find.byKey(const Key('mac-system-menu-panel')), findsNothing);
+      expect(find.byKey(const Key('mac-window-about')), findsOneWidget);
+      semantics.dispose();
+    });
+
     testWidgets('shows desktop menu labels, status controls, and Dock apps', (
       tester,
     ) async {
