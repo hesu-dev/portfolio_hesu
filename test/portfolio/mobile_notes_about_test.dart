@@ -230,7 +230,6 @@ class _MobileHomeHarnessState extends State<_MobileHomeHarness> {
     return AppleHomeGrid(
       data: widget.data,
       tablet: widget.tablet,
-      now: DateTime(2026, 9, 3, 13, 27),
       onOpen: (appId) => setState(() => _openApp = appId),
     );
   }

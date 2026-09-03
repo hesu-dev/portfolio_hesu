@@ -195,13 +195,11 @@ Future<void> _pumpSurface(
     _IconSurface.iPad => AppleHomeGrid(
       data: portfolioData,
       tablet: true,
-      now: DateTime(2026, 9, 3, 13, 27),
       onOpen: (_) {},
     ),
     _IconSurface.iPhone => AppleHomeGrid(
       data: portfolioData,
       tablet: false,
-      now: DateTime(2026, 9, 3, 13, 27),
       onOpen: (_) {},
     ),
     _IconSurface.dock => Center(
