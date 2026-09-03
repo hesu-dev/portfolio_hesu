@@ -352,38 +352,40 @@ void main() {
       );
     });
 
-    testWidgets('reuses primary artwork on iPhone home and app chrome', (
-      tester,
-    ) async {
-      final themeController = PortfolioThemeController();
-      addTearDown(themeController.dispose);
-      await _setViewport(tester, const Size(390, 844));
+    testWidgets(
+      'keeps app artwork on iPhone home and removes it from app chrome',
+      (tester) async {
+        final themeController = PortfolioThemeController();
+        addTearDown(themeController.dispose);
+        await _setViewport(tester, const Size(390, 844));
 
-      await tester.pumpWidget(
-        MaterialApp(
-          theme: AppleTheme.light(),
-          home: AppleMobileShell(
-            data: portfolioData,
-            externalLauncher: _FakeLauncher(),
-            themeController: themeController,
-            tablet: false,
-            now: _fixedNow,
+        await tester.pumpWidget(
+          MaterialApp(
+            theme: AppleTheme.light(),
+            home: AppleMobileShell(
+              data: portfolioData,
+              externalLauncher: _FakeLauncher(),
+              themeController: themeController,
+              tablet: false,
+              now: _fixedNow,
+            ),
           ),
-        ),
-      );
-      await tester.pump();
+        );
+        await tester.pump();
 
-      expect(
-        find.byKey(const Key('apple-app-artwork-about')),
-        findsNWidgets(2),
-      );
+        expect(
+          find.byKey(const Key('apple-app-artwork-about')),
+          findsNWidgets(2),
+        );
 
-      await tester.tap(find.byKey(const Key('home-app-about')));
-      await tester.pumpAndSettle();
+        await tester.tap(find.byKey(const Key('home-app-about')));
+        await tester.pumpAndSettle();
 
-      expect(find.byKey(const Key('mobile-app-surface')), findsOneWidget);
-      expect(find.byKey(const Key('apple-app-artwork-about')), findsOneWidget);
-    });
+        expect(find.byKey(const Key('mobile-app-surface')), findsOneWidget);
+        expect(find.byKey(const Key('mobile-home-back')), findsOneWidget);
+        expect(find.byKey(const Key('apple-app-artwork-about')), findsNothing);
+      },
+    );
   });
 }
 
