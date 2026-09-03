@@ -404,6 +404,26 @@ void main() {
       },
     );
 
+    testWidgets('Terminal title bar owns the single portfolio zsh title', (
+      tester,
+    ) async {
+      await _pumpPortfolio(tester);
+      await _openDesktopApp(tester, PortfolioAppId.terminal);
+
+      final titleBar = find.byKey(const Key('mac-window-titlebar-terminal'));
+      expect(
+        find.descendant(of: titleBar, matching: find.text('터미널 - 포트폴리오 zsh')),
+        findsOneWidget,
+      );
+      expect(
+        find.descendant(
+          of: find.byKey(const Key('terminal-app')),
+          matching: find.text('portfolio — zsh'),
+        ),
+        findsNothing,
+      );
+    });
+
     testWidgets('title-bar drag clamps windows into the visible work area', (
       tester,
     ) async {

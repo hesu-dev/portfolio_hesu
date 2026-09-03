@@ -32,6 +32,7 @@ class MobileAppSurface extends StatelessWidget {
   Widget build(BuildContext context) {
     final radius = tablet ? 28.0 : 0.0;
     final label = AppleAppIcon.labelFor(appId);
+    final windowTitle = AppleAppIcon.windowTitleFor(appId);
     final integratesFinderToolbar = appId == PortfolioAppId.projects;
     final finderWindowChrome = integratesFinderToolbar
         ? AppleFinderWindowChrome(
@@ -83,6 +84,7 @@ class MobileAppSurface extends StatelessWidget {
                   _MobileAppNavigationBar(
                     appId: appId,
                     label: label,
+                    title: windowTitle,
                     tablet: tablet,
                     onClose: onClose,
                   ),
@@ -110,12 +112,14 @@ class _MobileAppNavigationBar extends StatelessWidget {
   const _MobileAppNavigationBar({
     required this.appId,
     required this.label,
+    required this.title,
     required this.tablet,
     required this.onClose,
   });
 
   final PortfolioAppId appId;
   final String label;
+  final String title;
   final bool tablet;
   final VoidCallback onClose;
 
@@ -149,7 +153,7 @@ class _MobileAppNavigationBar extends StatelessWidget {
               SizedBox(width: tablet ? 10 : 6),
               Expanded(
                 child: Text(
-                  label,
+                  title,
                   key: const Key('mobile-app-title'),
                   maxLines: 1,
                   overflow: TextOverflow.ellipsis,

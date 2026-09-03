@@ -42,6 +42,7 @@ class MacWindow extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final label = AppleAppIcon.labelFor(appId);
+    final windowTitle = AppleAppIcon.windowTitleFor(appId);
     final radius = maximized ? 14.0 : 19.0;
     final integratesFinderToolbar = _integratesFinderToolbar(appId);
     final finderWindowChrome = integratesFinderToolbar
@@ -101,6 +102,7 @@ class MacWindow extends StatelessWidget {
                         _MacWindowTitleBar(
                           appId: appId,
                           label: label,
+                          title: windowTitle,
                           active: active,
                           maximized: maximized,
                           onFocus: onFocus,
@@ -163,6 +165,7 @@ class _MacWindowTitleBar extends StatelessWidget {
   const _MacWindowTitleBar({
     required this.appId,
     required this.label,
+    required this.title,
     required this.active,
     required this.maximized,
     required this.onFocus,
@@ -174,6 +177,7 @@ class _MacWindowTitleBar extends StatelessWidget {
 
   final PortfolioAppId appId;
   final String label;
+  final String title;
   final bool active;
   final bool maximized;
   final VoidCallback onFocus;
@@ -215,7 +219,7 @@ class _MacWindowTitleBar extends StatelessWidget {
               const SizedBox(width: 13),
               Expanded(
                 child: Text(
-                  label,
+                  title,
                   maxLines: 1,
                   overflow: TextOverflow.ellipsis,
                   style: TextStyle(

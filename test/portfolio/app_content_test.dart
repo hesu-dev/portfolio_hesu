@@ -968,6 +968,39 @@ void main() {
       expect(tester.takeException(), isNull);
     });
 
+    testWidgets(
+      'terminal keeps one title and places the flutter run input at the top',
+      (tester) async {
+        await _pumpApp(
+          tester,
+          appId: PortfolioAppId.terminal,
+          launcher: _FakeExternalLauncher(),
+          size: const Size(900, 650),
+        );
+
+        final inputArea = find.byKey(const Key('terminal-input-area'));
+        final transcript = find.byKey(const Key('terminal-transcript'));
+        expect(inputArea, findsOneWidget);
+        expect(transcript, findsOneWidget);
+        expect(
+          tester.getTopLeft(inputArea).dy,
+          lessThan(tester.getTopLeft(transcript).dy),
+        );
+        expect(find.text('portfolio — zsh'), findsNothing);
+
+        await tester.enterText(
+          find.byKey(const Key('terminal-input')),
+          'flutter run',
+        );
+        await tester.tap(find.byKey(const Key('terminal-submit')));
+        await tester.pump();
+
+        expect(find.textContaining('Easter egg'), findsOneWidget);
+        expect(find.textContaining('이미 실행 중'), findsOneWidget);
+        expect(tester.takeException(), isNull);
+      },
+    );
+
     testWidgets('terminal derives one consistent prompt from injected email', (
       tester,
     ) async {

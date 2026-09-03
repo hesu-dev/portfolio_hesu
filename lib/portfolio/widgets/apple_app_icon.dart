@@ -6,6 +6,8 @@ import '../theme/apple_theme.dart';
 import 'apple_app_artwork.dart';
 
 class AppleAppIcon extends StatefulWidget {
+  static const String terminalWindowTitle = '터미널 - 포트폴리오 zsh';
+
   const AppleAppIcon({
     required this.appId,
     this.onTap,
@@ -42,6 +44,11 @@ class AppleAppIcon extends StatefulWidget {
     PortfolioAppId.trash => 'Trash',
     PortfolioAppId.github => 'GitHub',
     PortfolioAppId.mail => 'Mail',
+  };
+
+  static String windowTitleFor(PortfolioAppId appId) => switch (appId) {
+    PortfolioAppId.terminal => terminalWindowTitle,
+    _ => labelFor(appId),
   };
 
   /// Legacy glyph access retained for utility apps that do not have bespoke

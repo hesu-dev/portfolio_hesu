@@ -192,6 +192,33 @@ void main() {
     });
 
     testWidgets(
+      'iPhone and iPad show the single portfolio zsh terminal title',
+      (tester) async {
+        for (final size in const <Size>[Size(390, 844), Size(834, 1194)]) {
+          await tester.pumpWidget(const SizedBox.shrink());
+          await _pumpSurface(
+            tester,
+            size: size,
+            appId: PortfolioAppId.terminal,
+          );
+
+          final navigationBar = find.byKey(
+            const Key('mobile-app-navigation-bar'),
+          );
+          expect(
+            find.descendant(
+              of: navigationBar,
+              matching: find.text('터미널 - 포트폴리오 zsh'),
+            ),
+            findsOneWidget,
+            reason: '$size',
+          );
+          expect(find.text('portfolio — zsh'), findsNothing, reason: '$size');
+        }
+      },
+    );
+
+    testWidgets(
       'yellow and green keep compact decorative slots without actions or semantics',
       (tester) async {
         final semantics = tester.ensureSemantics();

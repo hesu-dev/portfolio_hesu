@@ -88,7 +88,14 @@ class _TerminalAppState extends State<TerminalApp> {
             color: const Color(0xFF121315),
             child: Column(
               children: <Widget>[
-                _TerminalToolbar(compact: widget.compact),
+                _TerminalInput(
+                  key: const Key('terminal-input-area'),
+                  controller: _controller,
+                  focusNode: _focusNode,
+                  compact: widget.compact,
+                  prompt: _prompt,
+                  onSubmitted: _submit,
+                ),
                 Expanded(
                   child: Scrollbar(
                     controller: _scrollController,
@@ -126,73 +133,10 @@ class _TerminalAppState extends State<TerminalApp> {
                     ),
                   ),
                 ),
-                AnimatedPadding(
-                  duration: const Duration(milliseconds: 160),
-                  curve: Curves.easeOut,
-                  padding: EdgeInsets.only(
-                    bottom: MediaQuery.viewInsetsOf(context).bottom,
-                  ),
-                  child: _TerminalInput(
-                    controller: _controller,
-                    focusNode: _focusNode,
-                    compact: widget.compact,
-                    prompt: _prompt,
-                    onSubmitted: _submit,
-                  ),
-                ),
               ],
             ),
           );
         },
-      ),
-    );
-  }
-}
-
-class _TerminalToolbar extends StatelessWidget {
-  const _TerminalToolbar({required this.compact});
-
-  final bool compact;
-
-  @override
-  Widget build(BuildContext context) {
-    return Container(
-      height: compact ? 52 : 58,
-      padding: EdgeInsets.symmetric(horizontal: compact ? 13 : 18),
-      decoration: const BoxDecoration(
-        color: Color(0xFF202125),
-        border: Border(
-          bottom: BorderSide(color: Color(0xFF38393D), width: 0.7),
-        ),
-      ),
-      child: Row(
-        children: <Widget>[
-          Expanded(
-            child: Row(
-              mainAxisAlignment: MainAxisAlignment.center,
-              children: <Widget>[
-                const Icon(
-                  Icons.terminal_rounded,
-                  size: 16,
-                  color: Color(0xFFA8A8AD),
-                ),
-                const SizedBox(width: 7),
-                Flexible(
-                  child: Text(
-                    'portfolio — zsh',
-                    maxLines: 1,
-                    overflow: TextOverflow.ellipsis,
-                    style: TextStyle(
-                      color: const Color(0xFFC9C9CD),
-                      fontSize: compact ? 11.5 : 12.5,
-                      fontWeight: FontWeight.w600,
-                    ),
-                  ),
-                ),
-              ],
-            ),
-          ),
-        ],
       ),
     );
   }
@@ -205,6 +149,7 @@ class _TerminalInput extends StatelessWidget {
     required this.compact,
     required this.prompt,
     required this.onSubmitted,
+    super.key,
   });
 
   final TextEditingController controller;
@@ -273,7 +218,9 @@ class _TerminalInput extends StatelessWidget {
       ),
       decoration: const BoxDecoration(
         color: Color(0xFF18191C),
-        border: Border(top: BorderSide(color: Color(0xFF34353A), width: 0.7)),
+        border: Border(
+          bottom: BorderSide(color: Color(0xFF34353A), width: 0.7),
+        ),
       ),
       child: LayoutBuilder(
         builder: (context, constraints) {
