@@ -54,6 +54,29 @@ void main() {
     expect(decoration.color!.a, closeTo(0.48, 0.001));
   });
 
+  testWidgets('Dock keeps folder and Trash artwork frames transparent', (
+    tester,
+  ) async {
+    await _pumpDock(
+      tester,
+      runningApps: const <PortfolioAppId>{PortfolioAppId.projects},
+    );
+
+    for (final appId in const <PortfolioAppId>[
+      PortfolioAppId.projects,
+      PortfolioAppId.trash,
+    ]) {
+      final frame = find.byKey(Key('dock-app-artwork-frame-${appId.name}'));
+      expect(frame, findsOneWidget);
+      final decoration =
+          tester.widget<Container>(frame).decoration! as BoxDecoration;
+      expect(decoration.color, isNull);
+      expect(decoration.gradient, isNull);
+      expect(decoration.border, isNull);
+      expect(decoration.boxShadow, isEmpty);
+    }
+  });
+
   testWidgets('Terminal content does not draw window traffic controls', (
     tester,
   ) async {
