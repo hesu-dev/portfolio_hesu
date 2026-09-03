@@ -284,7 +284,6 @@ void main() {
         (size: Size(834, 700), compact: false, tablet: true),
       ]) {
         final toolbarColors = <Brightness, Color>{};
-        final dockColors = <Brightness, Color>{};
 
         for (final brightness in Brightness.values) {
           await tester.pumpWidget(const SizedBox.shrink());
@@ -328,7 +327,9 @@ void main() {
             greaterThanOrEqualTo(4.5),
           );
           toolbarColors[brightness] = toolbarDecoration.color!;
-          dockColors[brightness] = dockDecoration.color!;
+          expect(dockDecoration.color, Colors.transparent);
+          expect(dockDecoration.border, isNotNull);
+          expect(dockDecoration.boxShadow, isNotEmpty);
           expect(
             tester.takeException(),
             isNull,
@@ -339,10 +340,6 @@ void main() {
         expect(
           toolbarColors[Brightness.light],
           isNot(toolbarColors[Brightness.dark]),
-        );
-        expect(
-          dockColors[Brightness.light],
-          isNot(dockColors[Brightness.dark]),
         );
       }
     });

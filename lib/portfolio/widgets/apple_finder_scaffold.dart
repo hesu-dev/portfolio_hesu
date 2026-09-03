@@ -344,7 +344,7 @@ class AppleFinderMobileNavigationBar extends StatelessWidget {
             constraints: const BoxConstraints(minHeight: 66),
             padding: const EdgeInsets.all(5),
             decoration: BoxDecoration(
-              color: AppleTheme.surface(context).withValues(alpha: 0.94),
+              color: Colors.transparent,
               borderRadius: BorderRadius.circular(28),
               border: Border.all(
                 color: AppleTheme.separator(context),
