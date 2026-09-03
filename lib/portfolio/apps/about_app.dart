@@ -22,11 +22,13 @@ class AboutApp extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final horizontalPadding = compact ? 16.0 : (tablet ? 24.0 : 32.0);
+    final dark = AppleTheme.isDark(context);
 
     return AppleAppSurface(
       key: const Key('about-app'),
       child: AppleNotesPaper(
         paperKey: const Key('about-notes-body'),
+        darkPaper: dark,
         child: ListView(
           key: const Key('about-scroll'),
           padding: EdgeInsets.fromLTRB(
@@ -66,9 +68,7 @@ class _AboutNotesBody extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    const notePrimary = Color(0xFF242426);
-    const noteSecondary = Color(0xFF515158);
-    const noteAccent = Color(0xFF315879);
+    final colors = _AboutNotePalette.of(context);
 
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
@@ -76,7 +76,7 @@ class _AboutNotesBody extends StatelessWidget {
         Text(
           data.identity.name,
           style: Theme.of(context).textTheme.displaySmall?.copyWith(
-            color: notePrimary,
+            color: colors.primary,
             fontSize: compact ? 28 : 34,
             height: 1.12,
           ),
@@ -85,7 +85,7 @@ class _AboutNotesBody extends StatelessWidget {
         Text(
           data.identity.englishName,
           style: Theme.of(context).textTheme.titleMedium?.copyWith(
-            color: noteSecondary,
+            color: colors.secondary,
             fontWeight: FontWeight.w600,
           ),
         ),
@@ -93,19 +93,19 @@ class _AboutNotesBody extends StatelessWidget {
         Text(
           data.identity.headline,
           style: Theme.of(context).textTheme.titleMedium?.copyWith(
-            color: noteAccent,
+            color: colors.accent,
             fontWeight: FontWeight.w700,
             height: 1.35,
           ),
         ),
         SizedBox(height: compact ? 13 : 16),
-        Container(height: 1, color: const Color(0xFFE3DED2)),
+        Container(height: 1, color: colors.divider),
         SizedBox(height: compact ? 13 : 16),
         Text(
           data.identity.biography,
           style: Theme.of(
             context,
-          ).textTheme.bodyLarge?.copyWith(color: notePrimary, height: 1.58),
+          ).textTheme.bodyLarge?.copyWith(color: colors.primary, height: 1.58),
         ),
         _NoteSectionDivider(compact: compact),
         const _NoteSectionTitle(
@@ -153,7 +153,7 @@ class _NoteSectionDivider extends StatelessWidget {
   Widget build(BuildContext context) {
     return Padding(
       padding: EdgeInsets.symmetric(vertical: compact ? 22 : 28),
-      child: const Divider(height: 1, color: Color(0xFFE3DED2)),
+      child: Divider(height: 1, color: _AboutNotePalette.of(context).divider),
     );
   }
 }
@@ -163,9 +163,12 @@ class _NoteEntryDivider extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return const Padding(
-      padding: EdgeInsets.symmetric(vertical: 14),
-      child: Divider(height: 1, color: Color(0xFFE9E4D9)),
+    return Padding(
+      padding: const EdgeInsets.symmetric(vertical: 14),
+      child: Divider(
+        height: 1,
+        color: _AboutNotePalette.of(context).entryDivider,
+      ),
     );
   }
 }
@@ -178,13 +181,14 @@ class _NoteSectionTitle extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final colors = _AboutNotePalette.of(context);
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: <Widget>[
         Text(
           title,
           style: Theme.of(context).textTheme.titleLarge?.copyWith(
-            color: const Color(0xFF242426),
+            color: colors.primary,
             fontWeight: FontWeight.w800,
           ),
         ),
@@ -193,7 +197,7 @@ class _NoteSectionTitle extends StatelessWidget {
           subtitle,
           style: AppleTheme.caption(
             context,
-          ).copyWith(color: const Color(0xFF65656C)),
+          ).copyWith(color: colors.sectionSecondary),
         ),
       ],
     );
@@ -207,6 +211,7 @@ class _ExperienceCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final colors = _AboutNotePalette.of(context);
     return Padding(
       padding: const EdgeInsets.symmetric(vertical: 4),
       child: Row(
@@ -233,14 +238,14 @@ class _ExperienceCard extends StatelessWidget {
                   children: <Widget>[
                     Text(
                       experience.role,
-                      style: Theme.of(context).textTheme.titleMedium?.copyWith(
-                        color: const Color(0xFF242426),
-                      ),
+                      style: Theme.of(
+                        context,
+                      ).textTheme.titleMedium?.copyWith(color: colors.primary),
                     ),
                     Text(
                       experience.period,
                       style: AppleTheme.caption(context).copyWith(
-                        color: const Color(0xFF315879),
+                        color: colors.accent,
                         fontWeight: FontWeight.w600,
                       ),
                     ),
@@ -250,7 +255,7 @@ class _ExperienceCard extends StatelessWidget {
                 Text(
                   experience.organization,
                   style: AppleTheme.body(context).copyWith(
-                    color: const Color(0xFF515158),
+                    color: colors.secondary,
                     fontWeight: FontWeight.w600,
                   ),
                 ),
@@ -259,7 +264,7 @@ class _ExperienceCard extends StatelessWidget {
                   experience.description,
                   style: AppleTheme.body(
                     context,
-                  ).copyWith(color: const Color(0xFF242426)),
+                  ).copyWith(color: colors.primary),
                 ),
               ],
             ),
@@ -322,6 +327,7 @@ class _EducationCardState extends State<_EducationCard> {
   @override
   Widget build(BuildContext context) {
     final education = widget.education;
+    final colors = _AboutNotePalette.of(context);
     return Padding(
       padding: const EdgeInsets.symmetric(vertical: 4),
       child: Column(
@@ -331,14 +337,12 @@ class _EducationCardState extends State<_EducationCard> {
             education.program,
             style: Theme.of(
               context,
-            ).textTheme.titleMedium?.copyWith(color: const Color(0xFF242426)),
+            ).textTheme.titleMedium?.copyWith(color: colors.primary),
           ),
           const SizedBox(height: 6),
           Text(
             education.institution,
-            style: AppleTheme.body(
-              context,
-            ).copyWith(color: const Color(0xFF515158)),
+            style: AppleTheme.body(context).copyWith(color: colors.secondary),
           ),
           const SizedBox(height: 7),
           Wrap(
@@ -355,8 +359,8 @@ class _EducationCardState extends State<_EducationCard> {
                   key: Key('about-education-link-${widget.index}'),
                   onPressed: () => _openLink(link),
                   style: OutlinedButton.styleFrom(
-                    foregroundColor: const Color(0xFF315879),
-                    side: const BorderSide(color: Color(0xFF9AAAB7)),
+                    foregroundColor: colors.accent,
+                    side: BorderSide(color: colors.linkBorder),
                     minimumSize: const Size(44, 44),
                   ),
                   icon: const Icon(Icons.open_in_new_rounded, size: 17),
@@ -417,6 +421,7 @@ class _ContactItem extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final colors = _AboutNotePalette.of(context);
     return ConstrainedBox(
       constraints: const BoxConstraints(minWidth: 220, maxWidth: 360),
       child: Row(
@@ -439,7 +444,7 @@ class _ContactItem extends StatelessWidget {
                   label,
                   style: AppleTheme.caption(
                     context,
-                  ).copyWith(color: const Color(0xFF65656C)),
+                  ).copyWith(color: colors.sectionSecondary),
                 ),
                 const SizedBox(height: 2),
                 Text(
@@ -447,7 +452,7 @@ class _ContactItem extends StatelessWidget {
                   maxLines: 2,
                   overflow: TextOverflow.ellipsis,
                   style: AppleTheme.body(context).copyWith(
-                    color: const Color(0xFF242426),
+                    color: colors.primary,
                     fontWeight: FontWeight.w600,
                   ),
                 ),
@@ -458,4 +463,48 @@ class _ContactItem extends StatelessWidget {
       ),
     );
   }
+}
+
+class _AboutNotePalette {
+  const _AboutNotePalette({
+    required this.primary,
+    required this.secondary,
+    required this.accent,
+    required this.sectionSecondary,
+    required this.divider,
+    required this.entryDivider,
+    required this.linkBorder,
+  });
+
+  static const light = _AboutNotePalette(
+    primary: Color(0xFF242426),
+    secondary: Color(0xFF515158),
+    accent: Color(0xFF315879),
+    sectionSecondary: Color(0xFF65656C),
+    divider: Color(0xFFE3DED2),
+    entryDivider: Color(0xFFE9E4D9),
+    linkBorder: Color(0xFF9AAAB7),
+  );
+
+  static const dark = _AboutNotePalette(
+    primary: Color(0xFFF5F5F7),
+    secondary: Color(0xFFC8C8CE),
+    accent: Color(0xFF8AC4FF),
+    sectionSecondary: Color(0xFFB7BAC2),
+    divider: Color(0xFF3D4654),
+    entryDivider: Color(0xFF343D4B),
+    linkBorder: Color(0xFF667A8F),
+  );
+
+  static _AboutNotePalette of(BuildContext context) {
+    return AppleTheme.isDark(context) ? dark : light;
+  }
+
+  final Color primary;
+  final Color secondary;
+  final Color accent;
+  final Color sectionSecondary;
+  final Color divider;
+  final Color entryDivider;
+  final Color linkBorder;
 }

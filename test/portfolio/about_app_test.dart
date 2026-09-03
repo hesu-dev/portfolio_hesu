@@ -83,6 +83,74 @@ void main() {
       }
     });
 
+    testWidgets('다크 모드에서 메모 종이와 주요 본문이 어두운 팔레트를 사용한다', (tester) async {
+      await _pumpAbout(
+        tester,
+        data: portfolioData,
+        size: const Size(900, 700),
+        brightness: Brightness.light,
+      );
+      final lightPaper = _decorationAt(
+        tester,
+        const Key('about-notes-body'),
+      ).color!;
+      final lightName = tester
+          .widget<Text>(find.text(portfolioData.identity.name))
+          .style!
+          .color!;
+
+      await _pumpAbout(
+        tester,
+        data: portfolioData,
+        size: const Size(900, 700),
+        brightness: Brightness.dark,
+      );
+      final darkPaper = _decorationAt(
+        tester,
+        const Key('about-notes-body'),
+      ).color!;
+      final darkName = tester
+          .widget<Text>(find.text(portfolioData.identity.name))
+          .style!
+          .color!;
+
+      expect(lightPaper, const Color(0xFFFFFEFC));
+      expect(darkPaper, const Color(0xFF1B2433));
+      expect(
+        darkPaper.computeLuminance(),
+        lessThan(lightPaper.computeLuminance()),
+      );
+      expect(darkName, isNot(lightName));
+
+      for (final text in <String>[
+        portfolioData.identity.name,
+        portfolioData.identity.englishName,
+        portfolioData.identity.headline,
+        portfolioData.identity.biography,
+        'Career',
+        portfolioData.experiences.first.role,
+        portfolioData.experiences.first.organization,
+        portfolioData.experiences.first.description,
+        'Education',
+        portfolioData.education.first.program,
+        portfolioData.education.first.institution,
+        'Contact',
+        'Email',
+        portfolioData.identity.email,
+      ]) {
+        final foreground = tester
+            .widget<Text>(find.text(text).first)
+            .style!
+            .color!;
+        expect(
+          _contrastRatio(foreground, darkPaper),
+          greaterThanOrEqualTo(4.5),
+          reason: '다크 모드 $text',
+        );
+      }
+      expect(tester.takeException(), isNull);
+    });
+
     testWidgets('320x480의 200% 글자 크기에서도 스크롤되며 넘치지 않는다', (tester) async {
       await _pumpAbout(
         tester,
