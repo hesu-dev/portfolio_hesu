@@ -8,6 +8,8 @@ import 'package:portfolio_hesu/portfolio/models/portfolio_app_id.dart';
 import 'package:portfolio_hesu/portfolio/portfolio_app.dart';
 import 'package:portfolio_hesu/portfolio/services/external_launcher.dart';
 import 'package:portfolio_hesu/portfolio/theme/apple_theme.dart';
+import 'package:portfolio_hesu/portfolio/widgets/apple_finder_scaffold.dart';
+import 'package:portfolio_hesu/portfolio/widgets/apple_selection_control.dart';
 
 void main() {
   group('Projects Finder locations', () {
@@ -254,6 +256,116 @@ void main() {
       expect(tester.takeException(), isNull);
     });
 
+    testWidgets('compact strip reveals initial and changed selections', (
+      tester,
+    ) async {
+      await _pumpProjects(tester, size: const Size(320, 700), compact: true);
+      await tester.pumpAndSettle();
+
+      final strip = find.byKey(const Key('projects-finder-locations'));
+      final career = find.byKey(const Key('projects-finder-location-career'));
+      _expectHorizontallyVisible(tester, item: career, viewport: strip);
+
+      tester
+          .widget<AppleSelectionControl>(
+            find.byKey(const Key('projects-finder-location-icloud-drive')),
+          )
+          .onPressed();
+      await tester.pumpAndSettle();
+
+      _expectHorizontallyVisible(
+        tester,
+        item: find.byKey(const Key('projects-finder-location-icloud-drive')),
+        viewport: strip,
+      );
+    });
+
+    testWidgets('configured Finder selection uses a stable location id', (
+      tester,
+    ) async {
+      await tester.pumpWidget(
+        MaterialApp(
+          theme: AppleTheme.light(),
+          home: AppleFinderScaffold(
+            surfaceKey: const Key('stable-id-finder'),
+            keyPrefix: 'stable-id',
+            currentLocation: '중복 이름',
+            selectedLocationId: 'second',
+            ownerName: '테스트 사용자',
+            locations: const <AppleFinderLocation>[
+              AppleFinderLocation(
+                id: 'first',
+                label: '중복 이름',
+                icon: Icons.folder_rounded,
+              ),
+              AppleFinderLocation(
+                id: 'second',
+                label: '중복 이름',
+                icon: Icons.folder_rounded,
+              ),
+            ],
+            onLocationSelected: (_) {},
+            compact: false,
+            tablet: false,
+            canGoBack: false,
+            canGoForward: false,
+            onBack: () {},
+            onForward: () {},
+            bodyBuilder: (_, _) => const SizedBox(),
+          ),
+        ),
+      );
+
+      expect(
+        _isSelected(tester, const Key('stable-id-finder-location-first')),
+        isFalse,
+      );
+      expect(
+        _isSelected(tester, const Key('stable-id-finder-location-second')),
+        isTrue,
+      );
+    });
+
+    testWidgets(
+      'replacing PortfolioData resets detail history to career root',
+      (tester) async {
+        await _pumpProjects(
+          tester,
+          size: const Size(900, 650),
+          data: _categorizedData(),
+        );
+        await tester.tap(find.byKey(const Key('projects-career-folder-0')));
+        await tester.pumpAndSettle();
+        expect(
+          tester
+              .widget<Text>(find.byKey(const Key('project-detail-title')))
+              .data,
+          'Career sample',
+        );
+
+        await _pumpProjects(
+          tester,
+          size: const Size(900, 650),
+          data: _categorizedData(careerTitle: 'Reordered career'),
+        );
+        await tester.pumpAndSettle();
+
+        expect(find.byKey(const Key('project-detail-title')), findsNothing);
+        expect(
+          find.byKey(const Key('projects-collection-scroll')),
+          findsOneWidget,
+        );
+        expect(_toolbarTitle(tester), '경력');
+        expect(find.text('Reordered career'), findsOneWidget);
+        expect(
+          tester
+              .widget<IconButton>(find.byKey(const Key('projects-finder-back')))
+              .onPressed,
+          isNull,
+        );
+      },
+    );
+
     testWidgets('데스크탑 app shortcuts open apps from iPhone and iPad shells', (
       tester,
     ) async {
@@ -312,7 +424,27 @@ String _toolbarTitle(WidgetTester tester) {
   return tester.widget<Text>(title).data!;
 }
 
-PortfolioData _categorizedData() {
+void _expectHorizontallyVisible(
+  WidgetTester tester, {
+  required Finder item,
+  required Finder viewport,
+}) {
+  final itemRect = tester.getRect(item);
+  final viewportRect = tester.getRect(viewport);
+  expect(itemRect.left, greaterThanOrEqualTo(viewportRect.left));
+  expect(itemRect.right, lessThanOrEqualTo(viewportRect.right));
+}
+
+bool _isSelected(WidgetTester tester, Key key) {
+  return tester
+          .getSemantics(find.byKey(key))
+          .getSemanticsData()
+          .flagsCollection
+          .isSelected ==
+      ui.Tristate.isTrue;
+}
+
+PortfolioData _categorizedData({String careerTitle = 'Career sample'}) {
   PortfolioProject project(String title, PortfolioProjectCategory category) {
     return PortfolioProject(
       title: title,
@@ -330,7 +462,7 @@ PortfolioData _categorizedData() {
     education: portfolioData.education,
     skillGroups: portfolioData.skillGroups,
     projects: <PortfolioProject>[
-      project('Career sample', PortfolioProjectCategory.career),
+      project(careerTitle, PortfolioProjectCategory.career),
       project('Personal sample', PortfolioProjectCategory.personal),
     ],
   );
