@@ -6,7 +6,6 @@ import '../models/portfolio_app_id.dart';
 import '../services/external_launcher.dart';
 import '../theme/apple_theme.dart';
 import '../theme/portfolio_theme_controller.dart';
-import '../widgets/apple_app_artwork.dart';
 import '../widgets/apple_app_icon.dart';
 
 class MobileAppSurface extends StatelessWidget {
@@ -64,7 +63,6 @@ class MobileAppSurface extends StatelessWidget {
             child: Column(
               children: <Widget>[
                 _MobileAppNavigationBar(
-                  appId: appId,
                   label: label,
                   tablet: tablet,
                   onClose: onClose,
@@ -90,20 +88,21 @@ class MobileAppSurface extends StatelessWidget {
 
 class _MobileAppNavigationBar extends StatelessWidget {
   const _MobileAppNavigationBar({
-    required this.appId,
     required this.label,
     required this.tablet,
     required this.onClose,
   });
 
-  final PortfolioAppId appId;
   final String label;
   final bool tablet;
   final VoidCallback onClose;
 
   @override
   Widget build(BuildContext context) {
+    final backSlotWidth = tablet ? 88.0 : 80.0;
+
     return DecoratedBox(
+      key: const Key('mobile-app-navigation-bar'),
       decoration: BoxDecoration(
         color: AppleTheme.surface(context).withValues(alpha: 0.96),
         border: Border(
@@ -119,19 +118,33 @@ class _MobileAppNavigationBar extends StatelessWidget {
           ),
           child: Row(
             children: <Widget>[
-              SizedBox.square(
-                dimension: 44,
+              SizedBox(
+                width: backSlotWidth,
+                height: 44,
                 child: Semantics(
-                  label: 'Close $label',
+                  key: const Key('mobile-home-back'),
+                  label: '홈으로 돌아가기',
                   button: true,
                   onTap: onClose,
                   child: ExcludeSemantics(
-                    child: IconButton(
-                      key: const Key('mobile-close'),
-                      tooltip: 'Close $label',
-                      onPressed: onClose,
-                      icon: const Icon(Icons.keyboard_arrow_down_rounded),
-                      color: AppleTheme.blue,
+                    child: Tooltip(
+                      message: '홈으로 돌아가기',
+                      child: TextButton(
+                        onPressed: onClose,
+                        style: TextButton.styleFrom(
+                          foregroundColor: AppleTheme.blue,
+                          minimumSize: const Size(44, 44),
+                          padding: EdgeInsets.zero,
+                          tapTargetSize: MaterialTapTargetSize.shrinkWrap,
+                        ),
+                        child: const Row(
+                          mainAxisSize: MainAxisSize.min,
+                          children: <Widget>[
+                            Icon(Icons.chevron_left_rounded, size: 24),
+                            Text('홈', maxLines: 1, overflow: TextOverflow.clip),
+                          ],
+                        ),
+                      ),
                     ),
                   ),
                 ),
@@ -140,6 +153,7 @@ class _MobileAppNavigationBar extends StatelessWidget {
               Expanded(
                 child: Text(
                   label,
+                  key: const Key('mobile-app-title'),
                   maxLines: 1,
                   overflow: TextOverflow.ellipsis,
                   textAlign: TextAlign.center,
@@ -147,10 +161,7 @@ class _MobileAppNavigationBar extends StatelessWidget {
                 ),
               ),
               const SizedBox(width: 4),
-              SizedBox.square(
-                dimension: 44,
-                child: Center(child: AppleAppArtwork(appId: appId, size: 24)),
-              ),
+              SizedBox(width: backSlotWidth),
             ],
           ),
         ),
