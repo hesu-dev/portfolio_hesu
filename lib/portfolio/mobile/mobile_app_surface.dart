@@ -116,12 +116,19 @@ class _MobileAppNavigationBar extends StatelessWidget {
             children: <Widget>[
               SizedBox.square(
                 dimension: 44,
-                child: IconButton(
-                  key: const Key('mobile-close'),
-                  tooltip: 'Close $label',
-                  onPressed: onClose,
-                  icon: const Icon(Icons.keyboard_arrow_down_rounded),
-                  color: AppleTheme.blue,
+                child: Semantics(
+                  label: 'Close $label',
+                  button: true,
+                  onTap: onClose,
+                  child: ExcludeSemantics(
+                    child: IconButton(
+                      key: const Key('mobile-close'),
+                      tooltip: 'Close $label',
+                      onPressed: onClose,
+                      icon: const Icon(Icons.keyboard_arrow_down_rounded),
+                      color: AppleTheme.blue,
+                    ),
+                  ),
                 ),
               ),
               const SizedBox(width: 4),

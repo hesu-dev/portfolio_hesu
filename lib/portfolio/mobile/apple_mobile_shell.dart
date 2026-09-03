@@ -1,12 +1,14 @@
 import 'package:flutter/material.dart';
 
 import '../data/portfolio_data.dart';
+import '../models/portfolio_app_id.dart';
 import '../services/external_launcher.dart';
 import 'apple_home_grid.dart';
 import 'apple_mobile_dock.dart';
 import 'apple_status_bar.dart';
+import 'mobile_app_surface.dart';
 
-class AppleMobileShell extends StatelessWidget {
+class AppleMobileShell extends StatefulWidget {
   const AppleMobileShell({
     required this.data,
     required this.externalLauncher,
@@ -19,7 +21,30 @@ class AppleMobileShell extends StatelessWidget {
   final bool tablet;
 
   @override
+  State<AppleMobileShell> createState() => _AppleMobileShellState();
+}
+
+class _AppleMobileShellState extends State<AppleMobileShell> {
+  PortfolioAppId? _activeApp;
+
+  void _openApp(PortfolioAppId appId) {
+    if (_activeApp == appId) {
+      return;
+    }
+    setState(() => _activeApp = appId);
+  }
+
+  void _closeApp() {
+    if (_activeApp == null) {
+      return;
+    }
+    setState(() => _activeApp = null);
+  }
+
+  @override
   Widget build(BuildContext context) {
+    final activeApp = _activeApp;
+
     return Material(
       type: MaterialType.transparency,
       child: SizedBox.expand(
@@ -27,39 +52,48 @@ class AppleMobileShell extends StatelessWidget {
           children: <Widget>[
             Positioned.fill(
               child: _AppleMobileWallpaper(
-                tablet: tablet,
+                tablet: widget.tablet,
                 dark: Theme.of(context).brightness == Brightness.dark,
               ),
             ),
             SafeArea(
               child: Column(
                 children: <Widget>[
-                  AppleStatusBar(tablet: tablet),
+                  AppleStatusBar(tablet: widget.tablet),
                   Expanded(
-                    child: KeyedSubtree(
-                      key: const Key('mobile-home'),
-                      child: Stack(
-                        children: <Widget>[
-                          Positioned.fill(
-                            child: AppleHomeGrid(
-                              data: data,
-                              tablet: tablet,
-                              onOpen: (_) {},
-                            ),
-                          ),
-                          Positioned(
-                            left: 12,
-                            right: 12,
-                            bottom: tablet ? 14 : 9,
-                            child: Center(
-                              child: AppleMobileDock(
-                                tablet: tablet,
-                                onOpen: (_) {},
+                    child: AnimatedSwitcher(
+                      duration: const Duration(milliseconds: 240),
+                      reverseDuration: const Duration(milliseconds: 190),
+                      switchInCurve: Curves.easeOutCubic,
+                      switchOutCurve: Curves.easeInCubic,
+                      transitionBuilder: (child, animation) {
+                        return FadeTransition(
+                          opacity: animation,
+                          child: ScaleTransition(
+                            scale: Tween<double>(begin: 0.985, end: 1).animate(
+                              CurvedAnimation(
+                                parent: animation,
+                                curve: Curves.easeOutCubic,
                               ),
                             ),
+                            child: child,
                           ),
-                        ],
-                      ),
+                        );
+                      },
+                      child: activeApp == null
+                          ? _buildHome()
+                          : SizedBox.expand(
+                              key: ValueKey<String>(
+                                'mobile-active-${activeApp.name}',
+                              ),
+                              child: MobileAppSurface(
+                                appId: activeApp,
+                                data: widget.data,
+                                launcher: widget.externalLauncher,
+                                tablet: widget.tablet,
+                                onClose: _closeApp,
+                              ),
+                            ),
                     ),
                   ),
                   const _AppleHomeIndicator(),
@@ -68,6 +102,31 @@ class AppleMobileShell extends StatelessWidget {
             ),
           ],
         ),
+      ),
+    );
+  }
+
+  Widget _buildHome() {
+    return SizedBox.expand(
+      key: const Key('mobile-home'),
+      child: Stack(
+        children: <Widget>[
+          Positioned.fill(
+            child: AppleHomeGrid(
+              data: widget.data,
+              tablet: widget.tablet,
+              onOpen: _openApp,
+            ),
+          ),
+          Positioned(
+            left: 12,
+            right: 12,
+            bottom: widget.tablet ? 14 : 9,
+            child: Center(
+              child: AppleMobileDock(tablet: widget.tablet, onOpen: _openApp),
+            ),
+          ),
+        ],
       ),
     );
   }
