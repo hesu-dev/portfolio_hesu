@@ -191,6 +191,7 @@ void main() {
       await tester.tap(find.byKey(const Key('window-close-about')));
       await tester.pumpAndSettle();
       expect(window, findsNothing);
+      expect(find.byKey(const Key('dock-app-about')), findsNothing);
       expect(find.byKey(const Key('dock-running-about')), findsNothing);
     });
 
@@ -460,39 +461,35 @@ void main() {
       semantics.dispose();
     });
 
-    testWidgets(
-      'shows desktop chrome and only fixed Dock launchers initially',
-      (tester) async {
-        await _pumpPortfolio(tester);
+    testWidgets('shows desktop chrome and only Trash in Dock initially', (
+      tester,
+    ) async {
+      await _pumpPortfolio(tester);
 
-        for (final label in const <String>[
-          'Finder',
-          'File',
-          'Edit',
-          'View',
-          'Window',
-          'Help',
-        ]) {
-          expect(find.text(label), findsOneWidget);
-        }
-        expect(find.byKey(const Key('mac-wifi-status')), findsOneWidget);
-        expect(find.byKey(const Key('mac-battery-status')), findsOneWidget);
-        expect(
-          find.byKey(const Key('mac-control-center-button')),
-          findsOneWidget,
-        );
-        expect(find.byKey(const Key('mac-clock-button')), findsOneWidget);
+      for (final label in const <String>[
+        'Finder',
+        'File',
+        'Edit',
+        'View',
+        'Window',
+        'Help',
+      ]) {
+        expect(find.text(label), findsOneWidget);
+      }
+      expect(find.byKey(const Key('mac-wifi-status')), findsOneWidget);
+      expect(find.byKey(const Key('mac-battery-status')), findsOneWidget);
+      expect(
+        find.byKey(const Key('mac-control-center-button')),
+        findsOneWidget,
+      );
+      expect(find.byKey(const Key('mac-clock-button')), findsOneWidget);
 
-        for (final appId in _pinnedDockApps) {
-          expect(find.byKey(Key('dock-app-${appId.name}')), findsOneWidget);
-        }
-        expect(find.byKey(const Key('dock-app-trash')), findsOneWidget);
-        for (final appId in _dynamicDockApps) {
-          expect(find.byKey(Key('dock-app-${appId.name}')), findsNothing);
-          expect(find.byKey(Key('desktop-app-${appId.name}')), findsOneWidget);
-        }
-      },
-    );
+      expect(find.byKey(const Key('dock-app-trash')), findsOneWidget);
+      for (final appId in _launchableDockApps) {
+        expect(find.byKey(Key('dock-app-${appId.name}')), findsNothing);
+        expect(find.byKey(Key('desktop-app-${appId.name}')), findsOneWidget);
+      }
+    });
 
     testWidgets('uses a borderless theme-derived translucent Dock surface', (
       tester,
@@ -504,7 +501,7 @@ void main() {
       final lightColor = lightDecoration.color!;
 
       expect(lightDecoration.border, isNull);
-      expect(lightColor.a, closeTo(0.78, 0.02));
+      expect(lightColor.a, closeTo(0.48, 0.02));
       expect(lightDecoration.boxShadow, isNotEmpty);
       expect(
         find.descendant(of: dock, matching: find.byType(BackdropFilter)),
@@ -517,7 +514,7 @@ void main() {
       final darkColor = darkDecoration.color!;
 
       expect(darkDecoration.border, isNull);
-      expect(darkColor.a, closeTo(0.78, 0.02));
+      expect(darkColor.a, closeTo(0.48, 0.02));
       expect(darkColor, isNot(lightColor));
     });
 
@@ -575,27 +572,97 @@ void main() {
       },
     );
 
-    testWidgets('adds and removes unpinned running apps dynamically', (
+    testWidgets('shows every launchable app only while open or minimized', (
       tester,
     ) async {
       await _pumpPortfolio(tester, size: const Size(1024, 700));
 
-      for (final appId in _dynamicDockApps) {
+      for (final appId in _launchableDockApps) {
         expect(find.byKey(Key('dock-app-${appId.name}')), findsNothing);
 
         await _openDesktopApp(tester, appId);
         expect(find.byKey(Key('dock-app-${appId.name}')), findsOneWidget);
+        expect(find.byKey(Key('dock-running-${appId.name}')), findsOneWidget);
+
+        await tester.tap(find.byKey(Key('window-minimize-${appId.name}')));
+        await tester.pumpAndSettle();
+        expect(find.byKey(Key('mac-window-${appId.name}')), findsNothing);
+        expect(find.byKey(Key('dock-app-${appId.name}')), findsOneWidget);
+
+        await tester.tap(find.byKey(Key('dock-app-${appId.name}')));
+        await tester.pumpAndSettle();
+        expect(find.byKey(Key('mac-window-${appId.name}')), findsOneWidget);
         expect(
-          find.byKey(Key('mac-dock-dynamic-${appId.name}')),
+          find.byKey(Key('mac-window-active-${appId.name}')),
           findsOneWidget,
         );
-        expect(find.byKey(Key('dock-running-${appId.name}')), findsOneWidget);
 
         await tester.tap(find.byKey(Key('window-close-${appId.name}')));
         await tester.pumpAndSettle();
         expect(find.byKey(Key('dock-app-${appId.name}')), findsNothing);
         expect(find.byKey(Key('desktop-app-${appId.name}')), findsOneWidget);
       }
+    });
+
+    testWidgets('keeps running apps in a stable canonical Dock order', (
+      tester,
+    ) async {
+      const runningApps = <PortfolioAppId>{
+        PortfolioAppId.github,
+        PortfolioAppId.settings,
+        PortfolioAppId.terminal,
+        PortfolioAppId.about,
+      };
+      await _pumpDock(
+        tester,
+        brightness: Brightness.light,
+        runningApps: runningApps,
+        activeApp: PortfolioAppId.github,
+      );
+
+      final centers = <double>[
+        for (final appId in _launchableDockApps)
+          if (runningApps.contains(appId))
+            tester.getCenter(find.byKey(Key('dock-app-${appId.name}'))).dx,
+      ];
+      expect(centers, orderedEquals(centers.toList()..sort()));
+      for (final appId in _launchableDockApps) {
+        expect(
+          find.byKey(Key('dock-app-${appId.name}')),
+          runningApps.contains(appId) ? findsOneWidget : findsNothing,
+        );
+      }
+      expect(find.byKey(const Key('dock-app-trash')), findsOneWidget);
+    });
+
+    testWidgets('Terminal content omits duplicate traffic-light circles', (
+      tester,
+    ) async {
+      await _pumpPortfolio(tester);
+      await _openDesktopApp(tester, PortfolioAppId.terminal);
+
+      const trafficLightColors = <Color>[
+        Color(0xFFFF5F57),
+        Color(0xFFFFBD2E),
+        Color(0xFF28C840),
+      ];
+      final fakeTrafficLights = find.descendant(
+        of: find.byKey(const Key('terminal-app')),
+        matching: find.byWidgetPredicate((widget) {
+          if (widget is! Container || widget.decoration is! BoxDecoration) {
+            return false;
+          }
+          final decoration = widget.decoration! as BoxDecoration;
+          return decoration.shape == BoxShape.circle &&
+              trafficLightColors.contains(decoration.color);
+        }, description: 'Terminal traffic-light circle'),
+      );
+
+      expect(fakeTrafficLights, findsNothing);
+      expect(
+        find.byKey(const Key('mac-traffic-controls-terminal')),
+        findsOneWidget,
+      );
     });
 
     testWidgets('keeps minimized dynamic apps and restores them from Dock', (
@@ -628,17 +695,13 @@ void main() {
     testWidgets('keeps the complete Dock overflow-free at 1024 and 200%', (
       tester,
     ) async {
-      await _pumpPortfolio(
+      await _pumpDock(
         tester,
+        brightness: Brightness.light,
+        runningApps: _launchableDockApps.toSet(),
         size: const Size(1024, 700),
         textScaler: const TextScaler.linear(2),
       );
-
-      for (final appId in _dynamicDockApps) {
-        await _openDesktopApp(tester, appId);
-        await tester.tap(find.byKey(Key('window-minimize-${appId.name}')));
-        await tester.pumpAndSettle();
-      }
 
       final dockRect = tester.getRect(find.byKey(const Key('mac-dock')));
       expect(dockRect.left, greaterThanOrEqualTo(0));
@@ -733,15 +796,12 @@ const Map<PortfolioAppId, String> _labels = <PortfolioAppId, String>{
   PortfolioAppId.trash: 'Trash',
 };
 
-const List<PortfolioAppId> _pinnedDockApps = <PortfolioAppId>[
+const List<PortfolioAppId> _launchableDockApps = <PortfolioAppId>[
   PortfolioAppId.about,
   PortfolioAppId.skills,
   PortfolioAppId.projects,
   PortfolioAppId.terminal,
   PortfolioAppId.mail,
-];
-
-const List<PortfolioAppId> _dynamicDockApps = <PortfolioAppId>[
   PortfolioAppId.settings,
   PortfolioAppId.thisMac,
   PortfolioAppId.github,
@@ -787,12 +847,23 @@ Future<void> _pumpDock(
   required Brightness brightness,
   Set<PortfolioAppId> runningApps = const <PortfolioAppId>{},
   PortfolioAppId? activeApp,
+  Size size = const Size(800, 600),
+  TextScaler textScaler = TextScaler.noScaling,
 }) async {
+  tester.view.devicePixelRatio = 1;
+  tester.view.physicalSize = size;
+  addTearDown(tester.view.resetDevicePixelRatio);
+  addTearDown(tester.view.resetPhysicalSize);
+
   await tester.pumpWidget(
     MaterialApp(
       theme: brightness == Brightness.light
           ? AppleTheme.light()
           : AppleTheme.dark(),
+      builder: (context, child) => MediaQuery(
+        data: MediaQuery.of(context).copyWith(textScaler: textScaler),
+        child: child!,
+      ),
       home: Material(
         child: Center(
           child: MacDock(
