@@ -370,6 +370,12 @@ void main() {
 
       expect(_topLevelYamlValue(pubspec, 'description'), _portfolioDescription);
       expect(pubspec.toLowerCase(), isNot(contains('a new flutter project')));
+      expect(pubspec, contains('url_launcher:'));
+      expect(pubspec, contains('uses-material-design: true'));
+      expect(pubspec, isNot(contains('animated_text_kit:')));
+      expect(pubspec, isNot(contains('font_awesome_flutter:')));
+      expect(pubspec, isNot(contains('cupertino_icons:')));
+      expect(pubspec, isNot(contains('assets/image/')));
     });
   });
 
@@ -409,7 +415,7 @@ void main() {
     expect(
       readme,
       contains(
-        'git clone --depth 1 --branch stable '
+        'git clone --depth 1 --branch 3.38.9 '
         'https://github.com/flutter/flutter.git .flutter',
       ),
     );
@@ -426,6 +432,30 @@ void main() {
     expect(readme, contains('Output Directory'));
     expect(readme, contains('사전 빌드'));
     expect(readme, contains('정적 배포'));
+    expect(readme, contains('독립적으로 제작'));
+    expect(readme, contains('Apple과 제휴하거나 보증받지 않았습니다'));
+    expect(readme, contains('Slack과 제휴하거나 보증받지 않았습니다'));
+    expect(readme, contains('원본 자산을 포함하지 않습니다'));
+  });
+
+  test('uses one reproducible and serialized GitHub Pages workflow', () {
+    final workflow = _projectFile(
+      '.github/workflows/flutter-web.yml',
+    ).readAsStringSync();
+
+    expect(workflow, contains('push:'));
+    expect(workflow, contains('- main'));
+    expect(workflow, contains('workflow_dispatch:'));
+    expect(workflow, contains('permissions:'));
+    expect(workflow, contains('contents: write'));
+    expect(workflow, contains('concurrency:'));
+    expect(workflow, contains('cancel-in-progress: true'));
+    expect(workflow, contains('flutter-version: 3.38.9'));
+    expect(
+      workflow,
+      contains('--base-href /portfolio_hesu/ --pwa-strategy=none'),
+    );
+    expect(_projectFile('.github/workflows/deploy.yml').existsSync(), isFalse);
   });
 
   group('repository output hygiene', () {
@@ -496,13 +526,40 @@ void main() {
       expect(ignoreRules, isNot(contains('/assets/')));
     });
 
-    test('preserves source assets, web sources, and Pages workflows', () {
-      expect(_projectFile('assets/image/pixelphoto.png').existsSync(), isTrue);
+    test('removes legacy UI and image assets while preserving web sources', () {
+      for (final stalePath in <String>[
+        'lib/views',
+        'lib/platform',
+        'assets/image',
+        'assets/image/pixelphoto.png',
+      ]) {
+        expect(
+          FileSystemEntity.typeSync(
+            _projectRoot().uri.resolve(stalePath).toFilePath(),
+          ),
+          FileSystemEntityType.notFound,
+          reason: stalePath,
+        );
+      }
       expect(_projectFile('web/index.html').existsSync(), isTrue);
       expect(
         _projectFile('.github/workflows/flutter-web.yml').existsSync(),
         isTrue,
       );
+    });
+
+    test('removes superseded local deployment and redesign files', () {
+      for (final stalePath in <String>[
+        'deploy.sh',
+        'docs/plans/2026-03-20-portfolio-redesign.md',
+        '.github/workflows/deploy.yml',
+      ]) {
+        expect(
+          _projectFile(stalePath).existsSync(),
+          isFalse,
+          reason: stalePath,
+        );
+      }
     });
 
     test('ignores the project-local Flutter SDK used by Vercel', () {
