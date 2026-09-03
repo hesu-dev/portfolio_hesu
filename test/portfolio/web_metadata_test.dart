@@ -53,9 +53,13 @@ String? _metaContent(String html, String name) {
 }
 
 String? _linkHref(String html, String rel) {
+  return _linkAttributes(html, rel)?['href'];
+}
+
+Map<String, String>? _linkAttributes(String html, String rel) {
   for (final attributes in _elements(html, 'link')) {
     if (attributes['rel'] == rel) {
-      return attributes['href'];
+      return attributes;
     }
   }
   return null;
@@ -139,6 +143,47 @@ void main() {
       expect(lowerCaseManifest, isNot(contains('portfolio_hesu')));
       expect(lowerCaseManifest, isNot(contains('portfolio-juah')));
       expect(manifestSource, isNot(contains('천주아')));
+    });
+
+    test('uses the Min He-su monogram instead of Flutter starter icons', () {
+      final indexHtml = _projectFile('web/index.html').readAsStringSync();
+      final favicon = _linkAttributes(indexHtml, 'icon');
+      final touchIcon = _linkAttributes(indexHtml, 'apple-touch-icon');
+      final manifest =
+          jsonDecode(_projectFile('web/manifest.json').readAsStringSync())
+              as Map<String, dynamic>;
+      final icons = (manifest['icons'] as List<dynamic>)
+          .cast<Map<String, dynamic>>();
+
+      expect(favicon?['href'], 'icons/min-hesu-monogram.svg');
+      expect(favicon?['type'], 'image/svg+xml');
+      expect(touchIcon?['href'], 'icons/min-hesu-monogram.svg');
+      expect(icons, hasLength(1));
+      expect(icons.single['src'], 'icons/min-hesu-monogram.svg');
+      expect(icons.single['sizes'], 'any');
+      expect(icons.single['type'], 'image/svg+xml');
+
+      final monogramFile = _projectFile('web/icons/min-hesu-monogram.svg');
+      expect(monogramFile.existsSync(), isTrue);
+      if (monogramFile.existsSync()) {
+        final monogram = monogramFile.readAsStringSync();
+        expect(monogram, contains('<title>민희수 모노그램</title>'));
+        expect(monogram.toLowerCase(), isNot(contains('flutter')));
+      }
+
+      for (final stalePath in <String>[
+        'web/favicon.png',
+        'web/icons/Icon-192.png',
+        'web/icons/Icon-512.png',
+        'web/icons/Icon-maskable-192.png',
+        'web/icons/Icon-maskable-512.png',
+      ]) {
+        expect(
+          _projectFile(stalePath).existsSync(),
+          isFalse,
+          reason: stalePath,
+        );
+      }
     });
   });
 
