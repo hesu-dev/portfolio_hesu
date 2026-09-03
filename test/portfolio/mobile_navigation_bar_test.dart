@@ -14,10 +14,12 @@ import 'package:portfolio_hesu/portfolio/widgets/apple_app_artwork.dart';
 void main() {
   group('mobile app navigation bar', () {
     testWidgets(
-      'every iPhone and iPad app uses shared traffic lights and a left title',
+      'every non-Projects iPhone and iPad app uses shared traffic lights and a left title',
       (tester) async {
         for (final size in const <Size>[Size(390, 844), Size(834, 1194)]) {
-          for (final appId in PortfolioAppId.values) {
+          for (final appId in PortfolioAppId.values.where(
+            (appId) => appId != PortfolioAppId.projects,
+          )) {
             await tester.pumpWidget(const SizedBox.shrink());
             await _pumpSurface(tester, size: size, appId: appId);
 
@@ -39,7 +41,7 @@ void main() {
             );
             expect(
               tester.widget<MacTrafficControls>(trafficControls).targetSize,
-              44,
+              32,
             );
             expect(
               tester
@@ -79,6 +81,73 @@ void main() {
       },
     );
 
+    testWidgets(
+      'Projects integrates mobile traffic lights into one Finder toolbar',
+      (tester) async {
+        for (final size in const <Size>[Size(390, 844), Size(834, 1194)]) {
+          await tester.pumpWidget(const SizedBox.shrink());
+          await _pumpSurface(
+            tester,
+            size: size,
+            appId: PortfolioAppId.projects,
+          );
+
+          final finderToolbar = find.byKey(
+            const Key('projects-finder-toolbar'),
+          );
+          final trafficControls = find.descendant(
+            of: finderToolbar,
+            matching: find.byType(MacTrafficControls),
+          );
+          final currentLocation = find.descendant(
+            of: finderToolbar,
+            matching: find.byKey(const Key('projects-finder-current-location')),
+          );
+
+          expect(
+            find.byKey(const Key('mobile-app-navigation-bar')),
+            findsNothing,
+          );
+          expect(find.byKey(const Key('mobile-app-title')), findsNothing);
+          expect(finderToolbar, findsOneWidget);
+          expect(trafficControls, findsOneWidget);
+          expect(currentLocation, findsOneWidget);
+
+          final controlsWidget = tester.widget<MacTrafficControls>(
+            trafficControls,
+          );
+          expect(controlsWidget.appId, PortfolioAppId.projects);
+          expect(controlsWidget.targetSize, 32);
+          expect(controlsWidget.secondaryControlsInteractive, isFalse);
+          expect(tester.takeException(), isNull, reason: '$size');
+        }
+      },
+    );
+
+    testWidgets('Projects Finder red traffic light closes the surface', (
+      tester,
+    ) async {
+      await _pumpSurface(
+        tester,
+        size: const Size(390, 844),
+        appId: PortfolioAppId.projects,
+      );
+
+      final finderToolbar = find.byKey(const Key('projects-finder-toolbar'));
+      final closeButton = find.descendant(
+        of: finderToolbar,
+        matching: find.byKey(const Key('window-close-projects')),
+      );
+
+      expect(closeButton, findsOneWidget);
+      expect(tester.getSize(closeButton), const Size.square(32));
+      await tester.tap(closeButton);
+      await tester.pumpAndSettle();
+
+      expect(find.byKey(const Key('mobile-home')), findsOneWidget);
+      expect(find.byKey(const Key('mobile-app-surface')), findsNothing);
+    });
+
     testWidgets('red traffic light closes the surface and returns home', (
       tester,
     ) async {
@@ -91,7 +160,7 @@ void main() {
 
       final closeButton = find.byKey(const Key('window-close-about'));
       expect(find.bySemanticsLabel('Close About window'), findsOneWidget);
-      expect(tester.getSize(closeButton), const Size.square(44));
+      expect(tester.getSize(closeButton), const Size.square(32));
       final semanticsData = tester.getSemantics(closeButton).getSemanticsData();
       expect(semanticsData.flagsCollection.isButton, isTrue);
       expect(semanticsData.hasAction(ui.SemanticsAction.tap), isTrue);
@@ -104,7 +173,7 @@ void main() {
     });
 
     testWidgets(
-      'yellow and green remain decorative 44px circles without actions or semantics',
+      'yellow and green remain decorative 32px circles without actions or semantics',
       (tester) async {
         final semantics = tester.ensureSemantics();
         await _pumpSurface(
@@ -116,7 +185,7 @@ void main() {
         for (final control in const <String>['minimize', 'maximize']) {
           final target = find.byKey(Key('window-$control-about'));
           expect(target, findsOneWidget);
-          expect(tester.getSize(target), const Size.square(44));
+          expect(tester.getSize(target), const Size.square(32));
 
           final semanticsData = tester.getSemantics(target).getSemanticsData();
           expect(semanticsData.flagsCollection.isButton, isFalse);
