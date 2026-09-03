@@ -127,6 +127,59 @@ void main() {
       expect(controller.preference, PortfolioThemePreference.light);
     });
 
+    testWidgets('선택·비선택 카드의 설명과 포커스 링은 두 테마에서 대비를 충족한다', (tester) async {
+      for (final preference in PortfolioThemePreference.values) {
+        final controller = PortfolioThemeController(initial: preference);
+        addTearDown(controller.dispose);
+        await _pumpSettings(
+          tester,
+          controller: controller,
+          size: const Size(820, 620),
+        );
+
+        for (final choice in const <(String, String)>[
+          ('light', '밝고 선명한 화면'),
+          ('dark', '눈이 편안한 어두운 화면'),
+        ]) {
+          final choiceKey = Key('theme-${choice.$1}');
+          final background = _choiceDecoration(tester, choiceKey).color!;
+          final description = tester
+              .widgetList<Text>(
+                find.descendant(
+                  of: find.byKey(choiceKey),
+                  matching: find.byType(Text),
+                ),
+              )
+              .singleWhere((text) => text.data == choice.$2)
+              .style!
+              .color!;
+
+          expect(
+            _contrastRatio(description, background),
+            greaterThanOrEqualTo(4.5),
+            reason: '${preference.name}/${choice.$1} 설명 텍스트와 카드 배경',
+          );
+
+          final action = tester.widget<FocusableActionDetector>(
+            find.descendant(
+              of: find.byKey(choiceKey),
+              matching: find.byType(FocusableActionDetector),
+            ),
+          );
+          action.focusNode!.requestFocus();
+          await tester.pumpAndSettle();
+
+          final focusedDecoration = _choiceDecoration(tester, choiceKey);
+          final focusColor = focusedDecoration.border!.top.color;
+          expect(
+            _contrastRatio(focusColor, focusedDecoration.color!),
+            greaterThanOrEqualTo(3),
+            reason: '${preference.name}/${choice.$1} 포커스 링과 카드 배경',
+          );
+        }
+      }
+    });
+
     testWidgets('좁은 화면과 200% 글자 크기에서 한 열로 스크롤된다', (tester) async {
       final controller = PortfolioThemeController();
       addTearDown(controller.dispose);
@@ -299,4 +352,26 @@ String _visibleText(WidgetTester tester) {
       .widgetList<Text>(find.byType(Text))
       .map((widget) => widget.data ?? widget.textSpan?.toPlainText() ?? '')
       .join('\n');
+}
+
+BoxDecoration _choiceDecoration(WidgetTester tester, Key key) {
+  final containers = tester.widgetList<AnimatedContainer>(
+    find.descendant(
+      of: find.byKey(key),
+      matching: find.byType(AnimatedContainer),
+    ),
+  );
+  return containers.first.decoration! as BoxDecoration;
+}
+
+double _contrastRatio(Color first, Color second) {
+  final firstLuminance = first.computeLuminance();
+  final secondLuminance = second.computeLuminance();
+  final lighter = firstLuminance > secondLuminance
+      ? firstLuminance
+      : secondLuminance;
+  final darker = firstLuminance > secondLuminance
+      ? secondLuminance
+      : firstLuminance;
+  return (lighter + 0.05) / (darker + 0.05);
 }
