@@ -18,6 +18,7 @@ class MobileAppSurface extends StatelessWidget {
     required this.themeController,
     required this.tablet,
     required this.onClose,
+    this.onOpenApp,
     super.key,
   });
 
@@ -27,6 +28,7 @@ class MobileAppSurface extends StatelessWidget {
   final PortfolioThemeController themeController;
   final bool tablet;
   final VoidCallback onClose;
+  final ValueChanged<PortfolioAppId>? onOpenApp;
 
   @override
   Widget build(BuildContext context) {
@@ -97,6 +99,7 @@ class MobileAppSurface extends StatelessWidget {
                     compact: !tablet,
                     tablet: tablet,
                     finderWindowChrome: finderWindowChrome,
+                    onOpenApp: onOpenApp,
                   ),
                 ),
               ],

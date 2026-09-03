@@ -152,6 +152,7 @@ class _AppleMobileShellState extends State<AppleMobileShell> {
                                 themeController: widget.themeController,
                                 tablet: widget.tablet,
                                 onClose: _closeApp,
+                                onOpenApp: _openApp,
                               ),
                             ),
                     ),

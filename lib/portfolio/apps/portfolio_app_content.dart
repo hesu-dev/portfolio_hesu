@@ -22,6 +22,7 @@ class PortfolioAppContent extends StatelessWidget {
     this.compact = false,
     this.tablet = false,
     this.finderWindowChrome,
+    this.onOpenApp,
     super.key,
   });
 
@@ -32,6 +33,7 @@ class PortfolioAppContent extends StatelessWidget {
   final bool compact;
   final bool tablet;
   final AppleFinderWindowChrome? finderWindowChrome;
+  final ValueChanged<PortfolioAppId>? onOpenApp;
 
   @override
   Widget build(BuildContext context) {
@@ -53,6 +55,7 @@ class PortfolioAppContent extends StatelessWidget {
         compact: compact,
         tablet: tablet,
         finderWindowChrome: finderWindowChrome,
+        onOpenApp: onOpenApp,
       ),
       PortfolioAppId.terminal => TerminalApp(
         data: data,

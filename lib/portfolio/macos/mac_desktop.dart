@@ -361,6 +361,7 @@ class _MacDesktopState extends State<MacDesktop> {
           onMinimize: () => _minimizeApp(appId),
           onMaximize: () => _toggleMaximize(appId),
           onDrag: (delta) => _dragWindow(appId, delta),
+          onOpenApp: _openApp,
         ),
       ),
     );

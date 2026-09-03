@@ -24,6 +24,7 @@ class MacWindow extends StatelessWidget {
     required this.onMinimize,
     required this.onMaximize,
     required this.onDrag,
+    this.onOpenApp,
     super.key,
   });
 
@@ -38,6 +39,7 @@ class MacWindow extends StatelessWidget {
   final VoidCallback onMinimize;
   final VoidCallback onMaximize;
   final ValueChanged<Offset> onDrag;
+  final ValueChanged<PortfolioAppId>? onOpenApp;
 
   @override
   Widget build(BuildContext context) {
@@ -122,6 +124,7 @@ class MacWindow extends StatelessWidget {
                                 themeController: themeController,
                                 compact: constraints.maxWidth < 650,
                                 finderWindowChrome: finderWindowChrome,
+                                onOpenApp: onOpenApp,
                               );
                             },
                           ),
