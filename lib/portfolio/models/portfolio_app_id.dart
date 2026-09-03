@@ -12,9 +12,9 @@ enum PortfolioAppId {
 
 /// Apps exposed as launcher icons on the desktop and mobile home screens.
 ///
-/// [PortfolioAppId.thisMac] remains an internal project-hub route that can be
-/// opened from the system menu, but is intentionally hidden to avoid showing a
-/// second project launcher beside [PortfolioAppId.projects].
+/// [PortfolioAppId.thisMac] remains only as an internal legacy route for shared
+/// component coverage. Launchers and the system menu use
+/// [PortfolioAppId.projects] as the single public project entry point.
 const List<PortfolioAppId> portfolioLauncherAppIds = <PortfolioAppId>[
   PortfolioAppId.about,
   PortfolioAppId.skills,
