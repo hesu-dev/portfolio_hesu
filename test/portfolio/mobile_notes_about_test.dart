@@ -28,8 +28,16 @@ void main() {
         expect(tester.widget(profile), isA<AppleNotesSurface>());
         expect(
           find.descendant(of: profile, matching: find.text('메모')),
-          findsOneWidget,
+          findsNothing,
         );
+        expect(
+          find.descendant(
+            of: profile,
+            matching: find.text(portfolioData.monogram),
+          ),
+          findsNothing,
+        );
+        expect(find.byKey(const Key('ipad-profile-date')), findsNothing);
         expect(
           find.descendant(
             of: profile,
@@ -45,7 +53,7 @@ void main() {
           findsOneWidget,
         );
         final semanticsData = tester.getSemantics(profile).getSemanticsData();
-        expect(semanticsData.label, contains('메모'));
+        expect(semanticsData.label, isNot(contains('메모')));
         expect(semanticsData.label, contains(portfolioData.identity.name));
         expect(semanticsData.flagsCollection.isButton, isTrue);
         expect(semanticsData.hasAction(ui.SemanticsAction.tap), isTrue);

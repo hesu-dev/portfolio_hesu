@@ -247,7 +247,7 @@ void main() {
   });
 
   group('iPad home and app surface', () {
-    testWidgets('refreshes status time and profile date as time advances', (
+    testWidgets('refreshes status time without rendering a profile date', (
       tester,
     ) async {
       final clock = _MutableClock(DateTime(2026, 9, 3, 23, 59));
@@ -278,13 +278,13 @@ void main() {
 
       expect(find.byKey(const Key('apple-status-time')), findsOneWidget);
       expect(find.text('23:59'), findsOneWidget);
-      expect(find.text('Thursday, September 3'), findsOneWidget);
+      expect(find.text('Thursday, September 3'), findsNothing);
 
       clock.current = DateTime(2026, 9, 4);
       await tester.pump(const Duration(seconds: 1));
 
       expect(find.text('0:00'), findsOneWidget);
-      expect(find.text('Friday, September 4'), findsOneWidget);
+      expect(find.text('Friday, September 4'), findsNothing);
       expect(find.text('23:59'), findsNothing);
       expect(find.text('Thursday, September 3'), findsNothing);
 
@@ -309,13 +309,11 @@ void main() {
       expect(tester.takeException(), isNull);
     });
 
-    testWidgets('derives the profile monogram from injected identity data', (
-      tester,
-    ) async {
+    testWidgets('does not render a profile monogram tile', (tester) async {
       final data = _profileData(name: '테스트 사용자', englishName: 'Apple Tester');
       await _pumpShell(tester, size: const Size(834, 1194), data: data);
 
-      expect(find.text('AT'), findsOneWidget);
+      expect(find.text('AT'), findsNothing);
       expect(find.text('MH'), findsNothing);
     });
 
@@ -340,19 +338,7 @@ void main() {
 
       final name = tester.widget<Text>(find.text('어두운 사용자'));
       expect(name.style?.color?.computeLuminance(), greaterThan(0.7));
-
-      final date = tester.widget<Text>(
-        find.descendant(
-          of: find.byKey(const Key('ipad-profile-card')),
-          matching: find.byWidgetPredicate(
-            (widget) => widget is Text && (widget.data?.contains(',') ?? false),
-          ),
-        ),
-      );
-      expect(
-        _contrastRatio(date.style!.color!, gradient.colors.first),
-        greaterThanOrEqualTo(4.5),
-      );
+      expect(find.byKey(const Key('ipad-profile-date')), findsNothing);
       expect(tester.takeException(), isNull);
     });
 
