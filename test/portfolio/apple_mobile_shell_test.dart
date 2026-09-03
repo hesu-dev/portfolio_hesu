@@ -191,6 +191,7 @@ void main() {
         (PortfolioAppId.skills, 'skills-category-Development'),
         (PortfolioAppId.projects, 'project-selector-0'),
       ]) {
+        await tester.pumpWidget(const SizedBox.shrink());
         await _pumpShell(
           tester,
           size: const Size(320, 480),
