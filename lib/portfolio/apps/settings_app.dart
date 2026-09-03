@@ -33,6 +33,7 @@ class SettingsApp extends StatelessWidget {
               data: data,
               controller: themeController,
               compact: true,
+              tablet: tablet,
             );
           }
           return Row(
@@ -44,6 +45,7 @@ class SettingsApp extends StatelessWidget {
                   data: data,
                   controller: themeController,
                   compact: false,
+                  tablet: false,
                 ),
               ),
             ],
@@ -212,11 +214,13 @@ class _DisplayModePane extends StatelessWidget {
     required this.data,
     required this.controller,
     required this.compact,
+    required this.tablet,
   });
 
   final PortfolioData data;
   final PortfolioThemeController controller;
   final bool compact;
+  final bool tablet;
 
   @override
   Widget build(BuildContext context) {
@@ -241,7 +245,11 @@ class _DisplayModePane extends StatelessWidget {
                 _SettingsProfile(data: data, compact: true),
                 const SizedBox(height: 22),
               ],
-              _DisplayModeContent(controller: controller, compact: compact),
+              _DisplayModeContent(
+                controller: controller,
+                compact: compact,
+                tablet: tablet,
+              ),
             ],
           ),
         ),
@@ -251,10 +259,15 @@ class _DisplayModePane extends StatelessWidget {
 }
 
 class _DisplayModeContent extends StatelessWidget {
-  const _DisplayModeContent({required this.controller, required this.compact});
+  const _DisplayModeContent({
+    required this.controller,
+    required this.compact,
+    required this.tablet,
+  });
 
   final PortfolioThemeController controller;
   final bool compact;
+  final bool tablet;
 
   @override
   Widget build(BuildContext context) {
@@ -280,6 +293,7 @@ class _DisplayModeContent extends StatelessWidget {
               selected: controller.preference == PortfolioThemePreference.light,
               onSelected: controller.select,
               compact: compact,
+              tablet: tablet,
             );
             final dark = _ThemeChoice(
               preference: PortfolioThemePreference.dark,
@@ -288,6 +302,7 @@ class _DisplayModeContent extends StatelessWidget {
               selected: controller.preference == PortfolioThemePreference.dark,
               onSelected: controller.select,
               compact: compact,
+              tablet: tablet,
             );
 
             if (compact) {
@@ -362,6 +377,7 @@ class _ThemeChoice extends StatefulWidget {
     required this.selected,
     required this.onSelected,
     required this.compact,
+    required this.tablet,
   });
 
   final PortfolioThemePreference preference;
@@ -370,6 +386,7 @@ class _ThemeChoice extends StatefulWidget {
   final bool selected;
   final ValueChanged<PortfolioThemePreference> onSelected;
   final bool compact;
+  final bool tablet;
 
   @override
   State<_ThemeChoice> createState() => _ThemeChoiceState();
@@ -495,7 +512,9 @@ class _ThemeChoiceState extends State<_ThemeChoice> {
                         key: Key('theme-preview-$_modeName'),
                         dark:
                             widget.preference == PortfolioThemePreference.dark,
-                        portrait: true,
+                        formFactor: widget.tablet
+                            ? _AppearancePreviewFormFactor.tablet
+                            : _AppearancePreviewFormFactor.phone,
                       ),
                       const SizedBox(height: 10),
                       Text(
@@ -557,15 +576,26 @@ class _ThemeChoiceState extends State<_ThemeChoice> {
   }
 }
 
+enum _AppearancePreviewFormFactor {
+  phone(0.64, maxWidth: 160),
+  tablet(4 / 3),
+  desktop(2.05);
+
+  const _AppearancePreviewFormFactor(this.aspectRatio, {this.maxWidth});
+
+  final double aspectRatio;
+  final double? maxWidth;
+}
+
 class _AppearancePreview extends StatelessWidget {
   const _AppearancePreview({
     required this.dark,
-    this.portrait = false,
+    this.formFactor = _AppearancePreviewFormFactor.desktop,
     super.key,
   });
 
   final bool dark;
-  final bool portrait;
+  final _AppearancePreviewFormFactor formFactor;
 
   @override
   Widget build(BuildContext context) {
@@ -575,7 +605,7 @@ class _AppearancePreview extends StatelessWidget {
     final line = dark ? const Color(0xFF6D6E74) : const Color(0xFFB5B6BB);
 
     final preview = AspectRatio(
-      aspectRatio: portrait ? 0.64 : 2.05,
+      aspectRatio: formFactor.aspectRatio,
       child: DecoratedBox(
         decoration: BoxDecoration(
           color: canvas,
@@ -647,13 +677,14 @@ class _AppearancePreview extends StatelessWidget {
         ),
       ),
     );
-    if (!portrait) {
+    final maxWidth = formFactor.maxWidth;
+    if (maxWidth == null) {
       return preview;
     }
     return Center(
       widthFactor: 1,
       child: ConstrainedBox(
-        constraints: const BoxConstraints(maxWidth: 160),
+        constraints: BoxConstraints(maxWidth: maxWidth),
         child: preview,
       ),
     );

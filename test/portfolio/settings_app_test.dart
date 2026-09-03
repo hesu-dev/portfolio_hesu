@@ -212,6 +212,43 @@ void main() {
       }
     });
 
+    testWidgets('iPhone은 세로형, iPad는 4:3 화면 모드 미리보기를 사용한다', (tester) async {
+      final phoneController = PortfolioThemeController();
+      await _pumpSettings(
+        tester,
+        controller: phoneController,
+        size: const Size(390, 844),
+        compact: true,
+      );
+
+      final phonePreview = tester.getSize(
+        find.byKey(const Key('theme-preview-light')),
+      );
+      expect(phonePreview.aspectRatio, closeTo(0.64, 0.01));
+      expect(phonePreview.width, lessThanOrEqualTo(160));
+
+      await tester.pumpWidget(const SizedBox.shrink());
+      phoneController.dispose();
+
+      final tabletController = PortfolioThemeController();
+      await _pumpSettings(
+        tester,
+        controller: tabletController,
+        size: const Size(834, 1194),
+        tablet: true,
+      );
+
+      final tabletPreview = tester.getSize(
+        find.byKey(const Key('theme-preview-light')),
+      );
+      expect(tabletPreview.aspectRatio, closeTo(4 / 3, 0.01));
+      expect(tabletPreview.width, greaterThan(240));
+      expect(tabletPreview.width, greaterThan(phonePreview.width));
+
+      await tester.pumpWidget(const SizedBox.shrink());
+      tabletController.dispose();
+    });
+
     testWidgets('iPhone과 iPad는 화면 비율 미리보기를 두 열로 맞춘다', (tester) async {
       for (final scenario
           in const <
@@ -279,8 +316,13 @@ void main() {
           final preview = tester.getSize(
             find.byKey(Key('theme-preview-$mode')),
           );
-          expect(preview.height, greaterThan(preview.width));
-          expect(preview.width, lessThanOrEqualTo(160));
+          if (scenario.tablet) {
+            expect(preview.aspectRatio, closeTo(4 / 3, 0.01));
+            expect(preview.width, greaterThan(240));
+          } else {
+            expect(preview.aspectRatio, closeTo(0.64, 0.01));
+            expect(preview.width, lessThanOrEqualTo(160));
+          }
         }
 
         expect(
