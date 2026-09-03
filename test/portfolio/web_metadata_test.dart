@@ -290,5 +290,13 @@ void main() {
         isTrue,
       );
     });
+
+    test('ignores the project-local Flutter SDK used by Vercel', () {
+      final ignoreRules = _projectFile(
+        '.gitignore',
+      ).readAsLinesSync().map((line) => line.trim()).toSet();
+
+      expect(ignoreRules, contains('/.flutter/'));
+    });
   });
 }
