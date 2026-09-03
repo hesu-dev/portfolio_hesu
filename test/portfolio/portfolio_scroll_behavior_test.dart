@@ -72,7 +72,15 @@ void main() {
             reason: '${layout.name} ${target.appId.name}',
           );
           if (target.appId == PortfolioAppId.projects) {
-            final firstProject = find.byKey(const Key('project-selector-0'));
+            final collectionScrollable = tester.state<ScrollableState>(
+              find.descendant(
+                of: find.byKey(const Key('projects-collection-scroll')),
+                matching: find.byType(Scrollable),
+              ),
+            );
+            collectionScrollable.position.jumpTo(0);
+            await tester.pump();
+            final firstProject = find.byKey(const Key('project-selector-2'));
             await tester.ensureVisible(firstProject);
             await tester.tap(firstProject);
             await tester.pumpAndSettle();
