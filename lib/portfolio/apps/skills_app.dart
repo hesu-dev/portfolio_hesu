@@ -44,32 +44,19 @@ class _SkillsAppState extends State<SkillsApp> {
   Widget build(BuildContext context) {
     return AppleAppSurface(
       key: const Key('skills-app'),
-      child: Column(
-        children: <Widget>[
-          AppleToolbar(
-            title: 'Skills',
-            subtitle: 'A categorized toolkit',
-            compact: widget.compact,
-            leading: const Icon(Icons.tag_rounded, color: AppleTheme.indigo),
-          ),
-          Expanded(
-            child: widget.data.skillGroups.isEmpty
-                ? const AppleEmptyState(
-                    icon: Icons.folder_off_rounded,
-                    title: 'No skill groups yet',
-                    message: 'Skill categories will appear here.',
-                  )
-                : LayoutBuilder(
-                    builder: (context, constraints) {
-                      final wide =
-                          !widget.compact &&
-                          constraints.maxWidth >= _wideBreakpoint;
-                      return wide ? _buildWide(context) : _buildCompact();
-                    },
-                  ),
-          ),
-        ],
-      ),
+      child: widget.data.skillGroups.isEmpty
+          ? const AppleEmptyState(
+              icon: Icons.folder_off_rounded,
+              title: 'No skill groups yet',
+              message: 'Skill categories will appear here.',
+            )
+          : LayoutBuilder(
+              builder: (context, constraints) {
+                final wide =
+                    !widget.compact && constraints.maxWidth >= _wideBreakpoint;
+                return wide ? _buildWide(context) : _buildCompact();
+              },
+            ),
     );
   }
 
