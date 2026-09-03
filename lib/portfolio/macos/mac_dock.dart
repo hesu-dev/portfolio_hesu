@@ -15,15 +15,21 @@ class MacDock extends StatelessWidget {
     super.key,
   });
 
-  static const List<PortfolioAppId> apps = <PortfolioAppId>[
-    PortfolioAppId.thisMac,
+  static const List<PortfolioAppId> pinnedApps = <PortfolioAppId>[
     PortfolioAppId.about,
     PortfolioAppId.skills,
     PortfolioAppId.projects,
     PortfolioAppId.terminal,
-    PortfolioAppId.settings,
-    PortfolioAppId.github,
     PortfolioAppId.mail,
+  ];
+
+  static const List<PortfolioAppId> dynamicApps = <PortfolioAppId>[
+    PortfolioAppId.settings,
+    PortfolioAppId.thisMac,
+    PortfolioAppId.github,
+  ];
+
+  static const List<PortfolioAppId> utilityApps = <PortfolioAppId>[
     PortfolioAppId.trash,
   ];
 
@@ -33,59 +39,80 @@ class MacDock extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final dynamicRunningApps = dynamicApps
+        .where(runningApps.contains)
+        .toList(growable: false);
+    final theme = Theme.of(context);
+
     return RepaintBoundary(
-      child: ClipRRect(
-        borderRadius: BorderRadius.circular(24),
-        child: BackdropFilter(
-          filter: ImageFilter.blur(sigmaX: 28, sigmaY: 28),
-          child: Container(
-            key: const Key('mac-dock'),
-            height: 82,
-            padding: const EdgeInsets.symmetric(horizontal: 9, vertical: 6),
-            decoration: BoxDecoration(
-              color: const Color(0xFFEFF2F7).withValues(alpha: 0.62),
-              borderRadius: BorderRadius.circular(24),
-              border: Border.all(
-                color: Colors.white.withValues(alpha: 0.62),
-                width: 0.8,
+      child: Container(
+        key: const Key('mac-dock'),
+        height: 82,
+        decoration: BoxDecoration(
+          color: theme.colorScheme.surface.withValues(alpha: 0.78),
+          borderRadius: BorderRadius.circular(24),
+          boxShadow: <BoxShadow>[
+            BoxShadow(
+              color: Colors.black.withValues(
+                alpha: theme.brightness == Brightness.dark ? 0.34 : 0.24,
               ),
-              boxShadow: <BoxShadow>[
-                BoxShadow(
-                  color: Colors.black.withValues(alpha: 0.24),
-                  blurRadius: 30,
-                  offset: const Offset(0, 12),
-                ),
-                BoxShadow(
-                  color: Colors.white.withValues(alpha: 0.22),
-                  blurRadius: 1,
-                  offset: const Offset(0, 1),
-                ),
-              ],
+              blurRadius: 30,
+              offset: const Offset(0, 12),
             ),
-            child: Row(
-              mainAxisSize: MainAxisSize.min,
-              crossAxisAlignment: CrossAxisAlignment.end,
-              children: <Widget>[
-                for (var index = 0; index < apps.length; index++) ...<Widget>[
-                  if (index == apps.length - 1)
-                    Container(
-                      width: 1,
-                      height: 50,
-                      margin: const EdgeInsets.symmetric(horizontal: 6),
-                      color: const Color(0xFF3B3B40).withValues(alpha: 0.22),
+          ],
+        ),
+        child: ClipRRect(
+          borderRadius: BorderRadius.circular(24),
+          child: BackdropFilter(
+            filter: ImageFilter.blur(sigmaX: 28, sigmaY: 28),
+            child: Padding(
+              padding: const EdgeInsets.symmetric(horizontal: 9, vertical: 6),
+              child: Row(
+                mainAxisSize: MainAxisSize.min,
+                crossAxisAlignment: CrossAxisAlignment.end,
+                children: <Widget>[
+                  for (final appId in pinnedApps) _buildDockItem(appId),
+                  if (dynamicRunningApps.isNotEmpty) ...<Widget>[
+                    const _DockSeparator(
+                      key: Key('mac-dock-dynamic-separator'),
                     ),
-                  _MacDockItem(
-                    appId: apps[index],
-                    running: runningApps.contains(apps[index]),
-                    active: activeApp == apps[index],
-                    onPressed: () => onAppPressed(apps[index]),
-                  ),
+                    for (final appId in dynamicRunningApps)
+                      KeyedSubtree(
+                        key: Key('mac-dock-dynamic-${appId.name}'),
+                        child: _buildDockItem(appId),
+                      ),
+                  ],
+                  const _DockSeparator(key: Key('mac-dock-utility-separator')),
+                  for (final appId in utilityApps) _buildDockItem(appId),
                 ],
-              ],
+              ),
             ),
           ),
         ),
       ),
+    );
+  }
+
+  Widget _buildDockItem(PortfolioAppId appId) {
+    return _MacDockItem(
+      appId: appId,
+      running: runningApps.contains(appId),
+      active: activeApp == appId,
+      onPressed: () => onAppPressed(appId),
+    );
+  }
+}
+
+class _DockSeparator extends StatelessWidget {
+  const _DockSeparator({super.key});
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      width: 1,
+      height: 50,
+      margin: const EdgeInsets.symmetric(horizontal: 6),
+      color: Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.2),
     );
   }
 }
@@ -182,19 +209,14 @@ class _MacDockItemState extends State<_MacDockItem> {
                             width: 49,
                             height: 49,
                             decoration: BoxDecoration(
-                              gradient: LinearGradient(
-                                begin: Alignment.topLeft,
-                                end: Alignment.bottomRight,
-                                colors: AppleAppIcon.colorsFor(appId),
-                              ),
                               borderRadius: BorderRadius.circular(14),
-                              border: Border.all(
-                                color: _showFocus
-                                    ? const Color(0xFF0A84FF)
-                                    : Colors.white.withValues(alpha: 0.46),
-                                width: _showFocus ? 2.4 : 0.8,
-                              ),
                               boxShadow: <BoxShadow>[
+                                if (_showFocus)
+                                  const BoxShadow(
+                                    color: Color(0xFF0A84FF),
+                                    blurRadius: 0,
+                                    spreadRadius: 2.5,
+                                  ),
                                 BoxShadow(
                                   color: Colors.black.withValues(alpha: 0.2),
                                   blurRadius: 11,
