@@ -1,5 +1,7 @@
 import 'dart:convert';
 import 'dart:io';
+import 'dart:typed_data';
+import 'dart:ui' as ui;
 
 import 'package:flutter_test/flutter_test.dart';
 
@@ -84,6 +86,59 @@ String? _elementText(String html, String tagName) {
   return pattern.firstMatch(html)?.group(1)?.trim();
 }
 
+final class _DecodedPng {
+  const _DecodedPng({
+    required this.width,
+    required this.height,
+    required this.rgba,
+  });
+
+  final int width;
+  final int height;
+  final Uint8List rgba;
+
+  bool get hasTransparentPixel {
+    for (var index = 3; index < rgba.length; index += 4) {
+      if (rgba[index] < 255) {
+        return true;
+      }
+    }
+    return false;
+  }
+
+  bool get isFullyOpaque => !hasTransparentPixel;
+
+  List<int> pixelAt(int x, int y) {
+    final offset = ((y * width) + x) * 4;
+    return rgba.sublist(offset, offset + 4);
+  }
+}
+
+Future<_DecodedPng> _decodePng(String relativePath) async {
+  final encoded = await _projectFile(relativePath).readAsBytes();
+  final codec = await ui.instantiateImageCodec(encoded);
+  final frame = await codec.getNextFrame();
+  final image = frame.image;
+  final byteData = await image.toByteData(format: ui.ImageByteFormat.rawRgba);
+  if (byteData == null) {
+    image.dispose();
+    codec.dispose();
+    throw StateError('Could not decode $relativePath as RGBA pixels.');
+  }
+
+  final rgba = Uint8List.fromList(
+    byteData.buffer.asUint8List(byteData.offsetInBytes, byteData.lengthInBytes),
+  );
+  final decoded = _DecodedPng(
+    width: image.width,
+    height: image.height,
+    rgba: rgba,
+  );
+  image.dispose();
+  codec.dispose();
+  return decoded;
+}
+
 void main() {
   group('web portfolio metadata sources', () {
     test('index identifies Min He-su and keeps Flutter bootstrap intact', () {
@@ -160,10 +215,11 @@ void main() {
       expect(touchIcon?['href'], 'icons/min-hesu-touch-icon.png');
       expect(touchIcon?['type'], 'image/png');
       expect(touchIcon?['sizes'], '180x180');
-      expect(icons, hasLength(1));
-      expect(icons.single['src'], 'icons/min-hesu-monogram.svg');
-      expect(icons.single['sizes'], 'any');
-      expect(icons.single['type'], 'image/svg+xml');
+      final svgIcon = icons.singleWhere(
+        (icon) => icon['src'] == 'icons/min-hesu-monogram.svg',
+      );
+      expect(svgIcon['sizes'], 'any');
+      expect(svgIcon['type'], 'image/svg+xml');
 
       final monogramFile = _projectFile('web/icons/min-hesu-monogram.svg');
       expect(monogramFile.existsSync(), isTrue);
@@ -202,6 +258,85 @@ void main() {
         );
       }
     });
+
+    test('manifest provides SVG, raster, and maskable icon roles', () {
+      final manifest =
+          jsonDecode(_projectFile('web/manifest.json').readAsStringSync())
+              as Map<String, dynamic>;
+      final icons = (manifest['icons'] as List<dynamic>)
+          .cast<Map<String, dynamic>>();
+      final iconsBySource = <String, Map<String, dynamic>>{
+        for (final icon in icons) icon['src'] as String: icon,
+      };
+
+      expect(iconsBySource.keys, <String>{
+        'icons/min-hesu-monogram.svg',
+        'icons/min-hesu-192.png',
+        'icons/min-hesu-512.png',
+        'icons/min-hesu-maskable-512.png',
+      });
+      expect(iconsBySource['icons/min-hesu-monogram.svg'], <String, dynamic>{
+        'src': 'icons/min-hesu-monogram.svg',
+        'sizes': 'any',
+        'type': 'image/svg+xml',
+        'purpose': 'any',
+      });
+      expect(iconsBySource['icons/min-hesu-192.png'], <String, dynamic>{
+        'src': 'icons/min-hesu-192.png',
+        'sizes': '192x192',
+        'type': 'image/png',
+        'purpose': 'any',
+      });
+      expect(iconsBySource['icons/min-hesu-512.png'], <String, dynamic>{
+        'src': 'icons/min-hesu-512.png',
+        'sizes': '512x512',
+        'type': 'image/png',
+        'purpose': 'any',
+      });
+      expect(
+        iconsBySource['icons/min-hesu-maskable-512.png'],
+        <String, dynamic>{
+          'src': 'icons/min-hesu-maskable-512.png',
+          'sizes': '512x512',
+          'type': 'image/png',
+          'purpose': 'maskable',
+        },
+      );
+    });
+
+    test(
+      'PNG fallbacks have real dimensions and maskable background',
+      () async {
+        const expectedSizes = <String, int>{
+          'web/icons/min-hesu-192.png': 192,
+          'web/icons/min-hesu-512.png': 512,
+          'web/icons/min-hesu-maskable-512.png': 512,
+        };
+
+        for (final entry in expectedSizes.entries) {
+          final file = _projectFile(entry.key);
+          expect(file.existsSync(), isTrue, reason: entry.key);
+          if (!file.existsSync()) {
+            continue;
+          }
+
+          final image = await _decodePng(entry.key);
+          expect(image.width, entry.value, reason: entry.key);
+          expect(image.height, entry.value, reason: entry.key);
+
+          if (entry.key.contains('maskable')) {
+            expect(image.isFullyOpaque, isTrue, reason: entry.key);
+            final corner = image.pixelAt(0, 0);
+            expect(corner[0], inInclusiveRange(14, 20), reason: entry.key);
+            expect(corner[1], inInclusiveRange(21, 28), reason: entry.key);
+            expect(corner[2], inInclusiveRange(35, 44), reason: entry.key);
+            expect(corner[3], 255, reason: entry.key);
+          } else {
+            expect(image.hasTransparentPixel, isTrue, reason: entry.key);
+          }
+        }
+      },
+    );
   });
 
   test('README documents adaptive UI and both web build targets', () {
