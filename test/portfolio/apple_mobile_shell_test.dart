@@ -183,6 +183,31 @@ void main() {
       expect(find.byKey(const Key('about-scroll')), findsOneWidget);
       expect(tester.takeException(), isNull);
     });
+
+    testWidgets('keeps compact Skills and Projects controls usable at 200%', (
+      tester,
+    ) async {
+      for (final scenario in <(PortfolioAppId, String)>[
+        (PortfolioAppId.skills, 'skills-category-Development'),
+        (PortfolioAppId.projects, 'project-selector-0'),
+      ]) {
+        await _pumpShell(
+          tester,
+          size: const Size(320, 480),
+          textScaler: const TextScaler.linear(2),
+        );
+
+        final appIcon = find.byKey(Key('home-app-${scenario.$1.name}'));
+        await tester.ensureVisible(appIcon);
+        await tester.tap(appIcon);
+        await tester.pumpAndSettle();
+
+        final control = find.byKey(Key(scenario.$2));
+        expect(control, findsOneWidget);
+        expect(tester.getSize(control).height, greaterThanOrEqualTo(44));
+        expect(tester.takeException(), isNull, reason: scenario.$1.name);
+      }
+    });
   });
 
   group('iPad home and app surface', () {
