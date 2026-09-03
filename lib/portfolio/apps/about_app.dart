@@ -51,9 +51,7 @@ class AboutApp extends StatelessWidget {
                     child: Column(
                       crossAxisAlignment: CrossAxisAlignment.stretch,
                       children: <Widget>[
-                        _IdentityHeader(data: data, compact: compact),
-                        SizedBox(height: compact ? 16 : 22),
-                        _IntroductionCard(data: data),
+                        _AboutNotesCard(data: data, compact: compact),
                         SizedBox(height: compact ? 24 : 32),
                         const AppleSectionTitle(
                           title: 'Career',
@@ -101,110 +99,161 @@ class AboutApp extends StatelessWidget {
   }
 }
 
-class _IdentityHeader extends StatelessWidget {
-  const _IdentityHeader({required this.data, required this.compact});
+class _AboutNotesCard extends StatelessWidget {
+  const _AboutNotesCard({required this.data, required this.compact});
 
   final PortfolioData data;
   final bool compact;
 
   @override
   Widget build(BuildContext context) {
-    final avatar = Container(
-      width: compact ? 72 : 92,
-      height: compact ? 72 : 92,
+    const noteBody = Color(0xFFFFFEFC);
+    const notePrimary = Color(0xFF242426);
+    const noteSecondary = Color(0xFF515158);
+    const noteAccent = Color(0xFF315879);
+
+    return Container(
+      key: const Key('about-notes-card'),
       decoration: BoxDecoration(
-        gradient: const LinearGradient(
-          begin: Alignment.topLeft,
-          end: Alignment.bottomRight,
-          colors: <Color>[Color(0xFF80D7FF), Color(0xFF4875F7)],
-        ),
+        color: noteBody,
         borderRadius: BorderRadius.circular(compact ? 22 : 28),
+        border: Border.all(
+          color: const Color(0xFFDDA51B).withValues(alpha: 0.72),
+          width: 0.8,
+        ),
         boxShadow: <BoxShadow>[
           BoxShadow(
-            color: AppleTheme.blue.withValues(alpha: 0.22),
-            blurRadius: 24,
-            offset: const Offset(0, 10),
+            color: AppleTheme.subtleShadow(context),
+            blurRadius: 28,
+            offset: const Offset(0, 12),
           ),
         ],
       ),
-      alignment: Alignment.center,
-      child: Text(
-        data.monogram,
-        style: TextStyle(
-          color: Colors.white,
-          fontWeight: FontWeight.w800,
-          fontSize: compact ? 24 : 30,
-          letterSpacing: -0.6,
+      child: ClipRRect(
+        borderRadius: BorderRadius.circular(compact ? 21 : 27),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.stretch,
+          children: <Widget>[
+            Container(
+              key: const Key('about-notes-header'),
+              padding: EdgeInsets.fromLTRB(
+                compact ? 18 : 24,
+                compact ? 16 : 19,
+                compact ? 18 : 24,
+                0,
+              ),
+              decoration: const BoxDecoration(
+                gradient: LinearGradient(
+                  begin: Alignment.topLeft,
+                  end: Alignment.bottomRight,
+                  colors: <Color>[Color(0xFFFFD95A), Color(0xFFFFB51A)],
+                ),
+              ),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.stretch,
+                children: <Widget>[
+                  Row(
+                    children: <Widget>[
+                      Icon(
+                        Icons.folder_outlined,
+                        color: Colors.white,
+                        size: compact ? 27 : 31,
+                      ),
+                      SizedBox(width: compact ? 11 : 14),
+                      Expanded(
+                        child: Text(
+                          '메모',
+                          style: Theme.of(context).textTheme.titleLarge
+                              ?.copyWith(
+                                color: const Color(0xFF3A2700),
+                                fontSize: compact ? 22 : 25,
+                                fontWeight: FontWeight.w700,
+                              ),
+                        ),
+                      ),
+                    ],
+                  ),
+                  SizedBox(height: compact ? 12 : 15),
+                  const SizedBox(
+                    key: Key('about-notes-separator'),
+                    height: 8,
+                    child: CustomPaint(painter: _NotesDotsPainter()),
+                  ),
+                ],
+              ),
+            ),
+            Container(
+              key: const Key('about-notes-body'),
+              padding: EdgeInsets.fromLTRB(
+                compact ? 18 : 26,
+                compact ? 18 : 24,
+                compact ? 18 : 26,
+                compact ? 22 : 28,
+              ),
+              decoration: const BoxDecoration(color: noteBody),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: <Widget>[
+                  Text(
+                    data.identity.name,
+                    style: Theme.of(context).textTheme.displaySmall?.copyWith(
+                      color: notePrimary,
+                      fontSize: compact ? 28 : 34,
+                      height: 1.12,
+                    ),
+                  ),
+                  const SizedBox(height: 5),
+                  Text(
+                    data.identity.englishName,
+                    style: Theme.of(context).textTheme.titleMedium?.copyWith(
+                      color: noteSecondary,
+                      fontWeight: FontWeight.w600,
+                    ),
+                  ),
+                  SizedBox(height: compact ? 15 : 18),
+                  Text(
+                    data.identity.headline,
+                    style: Theme.of(context).textTheme.titleMedium?.copyWith(
+                      color: noteAccent,
+                      fontWeight: FontWeight.w700,
+                      height: 1.35,
+                    ),
+                  ),
+                  SizedBox(height: compact ? 13 : 16),
+                  Container(height: 1, color: const Color(0xFFE3DED2)),
+                  SizedBox(height: compact ? 13 : 16),
+                  Text(
+                    data.identity.biography,
+                    style: Theme.of(context).textTheme.bodyLarge?.copyWith(
+                      color: notePrimary,
+                      height: 1.58,
+                    ),
+                  ),
+                ],
+              ),
+            ),
+          ],
         ),
       ),
-    );
-    final identity = Column(
-      crossAxisAlignment: compact
-          ? CrossAxisAlignment.center
-          : CrossAxisAlignment.start,
-      children: <Widget>[
-        Text(
-          data.identity.name,
-          textAlign: compact ? TextAlign.center : TextAlign.start,
-          style: AppleTheme.largeTitle(context),
-        ),
-        const SizedBox(height: 3),
-        Text(
-          data.identity.englishName,
-          textAlign: compact ? TextAlign.center : TextAlign.start,
-          style: Theme.of(context).textTheme.titleMedium?.copyWith(
-            color: AppleTheme.secondaryLabel(context),
-          ),
-        ),
-        const SizedBox(height: 11),
-        ApplePill(
-          label: data.identity.headline,
-          icon: Icons.flutter_dash_rounded,
-          color: AppleTheme.blue,
-        ),
-      ],
-    );
-
-    if (compact) {
-      return Column(
-        children: <Widget>[avatar, const SizedBox(height: 16), identity],
-      );
-    }
-
-    return Row(
-      children: <Widget>[
-        avatar,
-        const SizedBox(width: 22),
-        Expanded(child: identity),
-      ],
     );
   }
 }
 
-class _IntroductionCard extends StatelessWidget {
-  const _IntroductionCard({required this.data});
-
-  final PortfolioData data;
+class _NotesDotsPainter extends CustomPainter {
+  const _NotesDotsPainter();
 
   @override
-  Widget build(BuildContext context) {
-    return AppleSurfaceCard(
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: <Widget>[
-          Text(
-            'Hello, I’m ${data.identity.englishName}.',
-            style: AppleTheme.title(context),
-          ),
-          const SizedBox(height: 10),
-          Text(
-            data.identity.biography,
-            style: Theme.of(context).textTheme.bodyLarge,
-          ),
-        ],
-      ),
-    );
+  void paint(Canvas canvas, Size size) {
+    final paint = Paint()..color = const Color(0xFF8D6507);
+    const radius = 1.25;
+    const gap = 8.0;
+    for (var x = radius; x <= size.width - radius; x += gap) {
+      canvas.drawCircle(Offset(x, size.height / 2), radius, paint);
+    }
   }
+
+  @override
+  bool shouldRepaint(covariant _NotesDotsPainter oldDelegate) => false;
 }
 
 class _ExperienceCard extends StatelessWidget {
