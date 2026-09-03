@@ -209,6 +209,36 @@ void main() {
         expect(tester.takeException(), isNull, reason: scenario.$1.name);
       }
     });
+
+    testWidgets('opens Terminal without overflow at 200 percent text scale', (
+      tester,
+    ) async {
+      final semantics = tester.ensureSemantics();
+
+      for (final size in const <Size>[Size(390, 844), Size(320, 480)]) {
+        await tester.pumpWidget(const SizedBox.shrink());
+        await _pumpShell(
+          tester,
+          size: size,
+          textScaler: const TextScaler.linear(2),
+        );
+
+        final terminalIcon = find.byKey(const Key('home-app-terminal'));
+        await tester.ensureVisible(terminalIcon);
+        await tester.tap(terminalIcon);
+        await tester.pumpAndSettle();
+
+        expect(find.byKey(const Key('terminal-app')), findsOneWidget);
+        expect(find.bySemanticsLabel('Close Terminal'), findsOneWidget);
+        for (final key in const <String>['mobile-close', 'terminal-submit']) {
+          final targetSize = tester.getSize(find.byKey(Key(key)));
+          expect(targetSize.width, greaterThanOrEqualTo(44), reason: key);
+          expect(targetSize.height, greaterThanOrEqualTo(44), reason: key);
+        }
+        expect(tester.takeException(), isNull, reason: '$size');
+      }
+      semantics.dispose();
+    });
   });
 
   group('iPad home and app surface', () {
