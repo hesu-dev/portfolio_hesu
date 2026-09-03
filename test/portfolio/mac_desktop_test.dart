@@ -3,10 +3,12 @@ import 'package:flutter/gestures.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:portfolio_hesu/portfolio/apps/portfolio_app_content.dart';
+import 'package:portfolio_hesu/portfolio/data/portfolio_data.dart';
 import 'package:portfolio_hesu/portfolio/models/portfolio_app_id.dart';
 import 'package:portfolio_hesu/portfolio/portfolio_app.dart';
 import 'package:portfolio_hesu/portfolio/services/external_launcher.dart';
 import 'package:portfolio_hesu/portfolio/theme/apple_theme.dart';
+import 'package:portfolio_hesu/portfolio/widgets/adaptive_portfolio_shell.dart';
 
 void main() {
   group('macOS adaptive shell', () {
@@ -219,6 +221,18 @@ void main() {
   });
 
   group('macOS menu bar and Dock', () {
+    testWidgets('system menu derives identity from injected portfolio data', (
+      tester,
+    ) async {
+      await _pumpAdaptivePortfolio(tester, data: _customPortfolioData);
+
+      await tester.tap(find.byKey(const Key('mac-system-menu-button')));
+      await tester.pumpAndSettle();
+
+      expect(find.text('Custom Developer · Flutter portfolio'), findsOneWidget);
+      expect(find.text('Min He-su · Flutter portfolio'), findsNothing);
+    });
+
     testWidgets('opens an accessible system menu with keyboard activation', (
       tester,
     ) async {
@@ -357,6 +371,21 @@ const Map<PortfolioAppId, String> _labels = <PortfolioAppId, String>{
   PortfolioAppId.trash: 'Trash',
 };
 
+const PortfolioData _customPortfolioData = PortfolioData.constant(
+  identity: PortfolioIdentity(
+    name: '커스텀 개발자',
+    englishName: 'Custom Developer',
+    email: 'custom@example.com',
+    githubUrl: 'https://example.com/custom',
+    headline: 'Custom Headline',
+    biography: 'Custom Biography',
+  ),
+  experiences: <PortfolioExperience>[],
+  education: <PortfolioEducation>[],
+  skillGroups: <PortfolioSkillGroup>[],
+  projects: <PortfolioProject>[],
+);
+
 Future<void> _pumpPortfolio(
   WidgetTester tester, {
   Size size = const Size(1440, 900),
@@ -369,6 +398,28 @@ Future<void> _pumpPortfolio(
 
   await tester.pumpWidget(
     PortfolioApp(externalLauncher: launcher ?? _FakeLauncher()),
+  );
+  await tester.pump();
+}
+
+Future<void> _pumpAdaptivePortfolio(
+  WidgetTester tester, {
+  required PortfolioData data,
+  Size size = const Size(1440, 900),
+}) async {
+  tester.view.devicePixelRatio = 1;
+  tester.view.physicalSize = size;
+  addTearDown(tester.view.resetDevicePixelRatio);
+  addTearDown(tester.view.resetPhysicalSize);
+
+  await tester.pumpWidget(
+    MaterialApp(
+      theme: AppleTheme.light(),
+      home: AdaptivePortfolioShell(
+        externalLauncher: _FakeLauncher(),
+        data: data,
+      ),
+    ),
   );
   await tester.pump();
 }
