@@ -54,7 +54,7 @@ class _SkillsAppState extends State<SkillsApp> {
               builder: (context, constraints) {
                 final wide =
                     !widget.compact && constraints.maxWidth >= _wideBreakpoint;
-                return wide ? _buildWide(context) : _buildCompact();
+                return wide ? _buildWide(context) : _buildCompact(context);
               },
             ),
     );
@@ -92,24 +92,10 @@ class _SkillsAppState extends State<SkillsApp> {
     );
   }
 
-  Widget _buildCompact() {
-    return Column(
-      children: <Widget>[
-        _CategoryStrip(
-          groups: widget.data.skillGroups,
-          selectedIndex: _selectedIndex,
-          onSelected: _selectCategory,
-        ),
-        Expanded(
-          child: _SkillDetail(
-            key: ValueKey<String>(
-              'skills-detail-$_selectedIndex-${widget.data.skillGroups[_selectedIndex].title}',
-            ),
-            group: widget.data.skillGroups[_selectedIndex],
-            compact: true,
-          ),
-        ),
-      ],
+  Widget _buildCompact(BuildContext context) {
+    return _MobileSkillsView(
+      groups: widget.data.skillGroups,
+      dark: AppleTheme.isDark(context),
     );
   }
 }
@@ -277,55 +263,6 @@ class _CategorySidebar extends StatelessWidget {
   }
 }
 
-class _CategoryStrip extends StatelessWidget {
-  const _CategoryStrip({
-    required this.groups,
-    required this.selectedIndex,
-    required this.onSelected,
-  });
-
-  final List<PortfolioSkillGroup> groups;
-  final int selectedIndex;
-  final ValueChanged<int> onSelected;
-
-  @override
-  Widget build(BuildContext context) {
-    final background = AppleTheme.isDark(context)
-        ? const Color(0xFF2E0C32)
-        : const Color(0xFF4A154B);
-    return DecoratedBox(
-      decoration: BoxDecoration(
-        color: background,
-        border: Border(
-          bottom: BorderSide(
-            color: Colors.white.withValues(alpha: 0.15),
-            width: 0.7,
-          ),
-        ),
-      ),
-      child: SingleChildScrollView(
-        key: const Key('skills-channel-picker'),
-        scrollDirection: Axis.horizontal,
-        padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 9),
-        child: Row(
-          children: <Widget>[
-            for (final entry in groups.indexed) ...<Widget>[
-              _CategoryButton(
-                group: entry.$2,
-                selected: selectedIndex == entry.$1,
-                onTap: () => onSelected(entry.$1),
-                compact: true,
-                navigation: true,
-              ),
-              if (entry.$1 != groups.length - 1) const SizedBox(width: 8),
-            ],
-          ],
-        ),
-      ),
-    );
-  }
-}
-
 class _CategoryButton extends StatelessWidget {
   const _CategoryButton({
     required this.group,
@@ -412,6 +349,228 @@ class _CategoryButton extends StatelessWidget {
                 ),
               ),
           ],
+        ),
+      ),
+    );
+  }
+}
+
+class _MobileSkillsView extends StatelessWidget {
+  const _MobileSkillsView({required this.groups, required this.dark});
+
+  final List<PortfolioSkillGroup> groups;
+  final bool dark;
+
+  @override
+  Widget build(BuildContext context) {
+    final background = dark ? const Color(0xFF1A1D21) : const Color(0xFFF7F7F8);
+    final primary = dark ? const Color(0xFFF8F8F8) : const Color(0xFF1D1C1D);
+    final secondary = dark ? const Color(0xFFB5B7BA) : const Color(0xFF616061);
+    final channels = <({PortfolioSkillGroup group, String skill})>[
+      for (final group in groups)
+        for (final skill in group.skills) (group: group, skill: skill),
+    ];
+
+    return ColoredBox(
+      key: const Key('skills-mobile-surface'),
+      color: background,
+      child: SingleChildScrollView(
+        key: const Key('skills-list'),
+        physics: const BouncingScrollPhysics(
+          parent: AlwaysScrollableScrollPhysics(),
+        ),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.stretch,
+          children: <Widget>[
+            Padding(
+              padding: const EdgeInsets.fromLTRB(18, 18, 18, 10),
+              child: Text(
+                'Portfolio Skills',
+                style: TextStyle(
+                  color: primary,
+                  fontSize: 23,
+                  fontWeight: FontWeight.w800,
+                ),
+              ),
+            ),
+            SingleChildScrollView(
+              key: const Key('skills-mobile-summary-strip'),
+              scrollDirection: Axis.horizontal,
+              physics: const BouncingScrollPhysics(),
+              padding: const EdgeInsets.fromLTRB(18, 4, 18, 18),
+              child: Row(
+                children: <Widget>[
+                  for (final entry in groups.indexed) ...<Widget>[
+                    _MobileSkillSummaryCard(
+                      group: entry.$2,
+                      colorIndex: entry.$1,
+                      dark: dark,
+                    ),
+                    if (entry.$1 != groups.length - 1)
+                      const SizedBox(width: 12),
+                  ],
+                ],
+              ),
+            ),
+            Divider(
+              height: 1,
+              color: dark
+                  ? Colors.white.withValues(alpha: 0.12)
+                  : Colors.black.withValues(alpha: 0.1),
+            ),
+            Padding(
+              padding: const EdgeInsets.fromLTRB(18, 20, 18, 8),
+              child: Row(
+                children: <Widget>[
+                  Text(
+                    '#',
+                    style: TextStyle(
+                      color: secondary,
+                      fontSize: 25,
+                      fontWeight: FontWeight.w500,
+                    ),
+                  ),
+                  SizedBox(width: 10),
+                  Text(
+                    '채널',
+                    style: TextStyle(
+                      color: primary,
+                      fontSize: 18,
+                      fontWeight: FontWeight.w800,
+                    ),
+                  ),
+                ],
+              ),
+            ),
+            Padding(
+              padding: const EdgeInsets.fromLTRB(10, 0, 10, 28),
+              child: Column(
+                key: const Key('skills-mobile-channel-list'),
+                children: <Widget>[
+                  for (final channel in channels)
+                    _MobileSkillChannel(
+                      group: channel.group,
+                      skill: channel.skill,
+                      dark: dark,
+                    ),
+                ],
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+}
+
+class _MobileSkillSummaryCard extends StatelessWidget {
+  const _MobileSkillSummaryCard({
+    required this.group,
+    required this.colorIndex,
+    required this.dark,
+  });
+
+  final PortfolioSkillGroup group;
+  final int colorIndex;
+  final bool dark;
+
+  @override
+  Widget build(BuildContext context) {
+    const accents = <Color>[
+      Color(0xFF36C5F0),
+      Color(0xFF2EB67D),
+      Color(0xFFE01E5A),
+      Color(0xFFECB22E),
+    ];
+    final accent = accents[colorIndex % accents.length];
+
+    return Semantics(
+      label: '${group.title}, ${group.skills.length} skills',
+      readOnly: true,
+      child: ExcludeSemantics(
+        child: Container(
+          key: Key('skills-mobile-summary-${group.title}'),
+          width: 158,
+          constraints: const BoxConstraints(minHeight: 112),
+          padding: const EdgeInsets.all(14),
+          decoration: BoxDecoration(
+            color: dark ? const Color(0xFF222529) : Colors.white,
+            borderRadius: BorderRadius.circular(17),
+            border: Border.all(
+              color: dark ? const Color(0xFF45484C) : const Color(0xFFD8D8DC),
+            ),
+          ),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: <Widget>[
+              Icon(Icons.tag_rounded, color: accent, size: 24),
+              const SizedBox(height: 13),
+              Text(
+                group.title,
+                maxLines: 2,
+                overflow: TextOverflow.ellipsis,
+                style: TextStyle(
+                  color: dark
+                      ? const Color(0xFFF8F8F8)
+                      : const Color(0xFF1D1C1D),
+                  fontSize: 15,
+                  fontWeight: FontWeight.w700,
+                  height: 1.18,
+                ),
+              ),
+              const SizedBox(height: 4),
+              Text(
+                '${group.skills.length}개 스킬',
+                style: TextStyle(
+                  color: dark
+                      ? const Color(0xFFB5B7BA)
+                      : const Color(0xFF616061),
+                  fontSize: 13,
+                  height: 1.2,
+                ),
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+}
+
+class _MobileSkillChannel extends StatelessWidget {
+  const _MobileSkillChannel({
+    required this.group,
+    required this.skill,
+    required this.dark,
+  });
+
+  final PortfolioSkillGroup group;
+  final String skill;
+  final bool dark;
+
+  @override
+  Widget build(BuildContext context) {
+    return Semantics(
+      label: '$skill, ${group.title} skill channel',
+      readOnly: true,
+      child: ExcludeSemantics(
+        child: Container(
+          key: Key('skills-mobile-channel-$skill'),
+          width: double.infinity,
+          constraints: const BoxConstraints(minHeight: 52),
+          alignment: Alignment.centerLeft,
+          padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 9),
+          child: Text(
+            '# $skill',
+            maxLines: 2,
+            overflow: TextOverflow.ellipsis,
+            style: TextStyle(
+              color: dark ? const Color(0xFFE7E8E9) : const Color(0xFF29272A),
+              fontSize: 17,
+              fontWeight: FontWeight.w600,
+              height: 1.25,
+            ),
+          ),
         ),
       ),
     );

@@ -133,7 +133,7 @@ void main() {
   });
 
   group('Slack-inspired Skills compact layout', () {
-    testWidgets('uses a horizontal picker and vertical message rows', (
+    testWidgets('uses summary cards above one complete channel list', (
       tester,
     ) async {
       await _pumpSkills(
@@ -146,30 +146,52 @@ void main() {
       expect(find.byKey(const Key('skills-workspace-rail')), findsNothing);
       expect(find.byKey(const Key('skills-channel-sidebar')), findsNothing);
       expect(find.byKey(const Key('skills-channel-detail')), findsNothing);
-      final picker = find.byKey(const Key('skills-channel-picker'));
-      expect(picker, findsOneWidget);
+      expect(find.byKey(const Key('skills-channel-picker')), findsNothing);
+
+      final cards = find.byKey(const Key('skills-mobile-summary-strip'));
+      expect(cards, findsOneWidget);
       expect(
-        tester.widget<SingleChildScrollView>(picker).scrollDirection,
+        tester.widget<SingleChildScrollView>(cards).scrollDirection,
         Axis.horizontal,
       );
+      for (final group in _data.skillGroups) {
+        expect(
+          find.byKey(Key('skills-mobile-summary-${group.title}')),
+          findsOneWidget,
+        );
+      }
+
+      expect(
+        find.byKey(const Key('skills-mobile-channel-list')),
+        findsOneWidget,
+      );
+      for (final group in _data.skillGroups) {
+        for (final skill in group.skills) {
+          expect(
+            find.byKey(Key('skills-mobile-channel-$skill')),
+            findsOneWidget,
+          );
+          expect(find.text('# $skill'), findsOneWidget);
+        }
+      }
 
       final first = tester.getRect(
-        find.byKey(const Key('skills-message-row-Dart VM')),
+        find.byKey(const Key('skills-mobile-channel-Dart VM')),
       );
       final second = tester.getRect(
-        find.byKey(const Key('skills-message-row-Widget Lab')),
+        find.byKey(const Key('skills-mobile-channel-Widget Lab')),
       );
-      expect(second.top, greaterThan(first.bottom));
+      expect(second.top, greaterThanOrEqualTo(first.bottom));
       expect(second.left, first.left);
 
       final scrollable = find.byKey(const Key('skills-list'));
       final before = tester.getTopLeft(
-        find.byKey(const Key('skills-message-row-Dart VM')),
+        find.byKey(const Key('skills-mobile-channel-Dart VM')),
       );
       await tester.drag(scrollable, const Offset(0, -180));
       await tester.pumpAndSettle();
       final after = tester.getTopLeft(
-        find.byKey(const Key('skills-message-row-Dart VM')),
+        find.byKey(const Key('skills-mobile-channel-Dart VM')),
       );
       expect(after.dy, lessThan(before.dy));
       expect(tester.takeException(), isNull);
@@ -179,16 +201,22 @@ void main() {
       tester,
     ) async {
       await _pumpSkills(tester, size: const Size(679, 600));
-      expect(find.byKey(const Key('skills-channel-picker')), findsOneWidget);
+      expect(
+        find.byKey(const Key('skills-mobile-summary-strip')),
+        findsOneWidget,
+      );
       expect(find.byKey(const Key('skills-workspace-rail')), findsNothing);
 
       await _pumpSkills(tester, size: const Size(680, 600));
       expect(find.byKey(const Key('skills-workspace-rail')), findsOneWidget);
-      expect(find.byKey(const Key('skills-channel-picker')), findsNothing);
+      expect(
+        find.byKey(const Key('skills-mobile-summary-strip')),
+        findsNothing,
+      );
       expect(tester.takeException(), isNull);
     });
 
-    testWidgets('resets the message list to the top when changing channels', (
+    testWidgets('keeps every skill reachable in one touch-scroll surface', (
       tester,
     ) async {
       await _pumpSkills(
@@ -199,29 +227,46 @@ void main() {
       );
 
       final list = find.byKey(const Key('skills-list'));
-      final scrollable = find.descendant(
-        of: list,
-        matching: find.byType(Scrollable),
-      );
-      await tester.drag(list, const Offset(0, -260));
-      await tester.pumpAndSettle();
+      expect(find.text('# Dart VM'), findsOneWidget);
+      expect(find.text('# Motion Study'), findsOneWidget);
+
+      for (var index = 0; index < 4; index++) {
+        await tester.drag(list, const Offset(0, -300));
+        await tester.pumpAndSettle();
+      }
       expect(
-        tester.state<ScrollableState>(scrollable).position.pixels,
-        greaterThan(0),
+        tester
+            .getTopLeft(
+              find.byKey(const Key('skills-mobile-channel-Motion Study')),
+            )
+            .dy,
+        lessThan(480),
       );
-
-      final nextCategory = find.byKey(const Key('skills-category-Team Tools'));
-      await tester.ensureVisible(nextCategory);
-      await tester.tap(nextCategory);
-      await tester.pumpAndSettle();
-
-      expect(tester.state<ScrollableState>(scrollable).position.pixels, 0);
-      final listRect = tester.getRect(list);
-      final firstSkillRect = tester.getRect(
-        find.byKey(const Key('skills-message-row-Planning Board')),
-      );
-      expect(listRect.overlaps(firstSkillRect), isTrue);
       expect(tester.takeException(), isNull);
+    });
+
+    testWidgets('renders distinct readable compact surfaces in both themes', (
+      tester,
+    ) async {
+      Color? previous;
+      for (final brightness in Brightness.values) {
+        await tester.pumpWidget(const SizedBox.shrink());
+        await _pumpSkills(
+          tester,
+          size: const Size(390, 844),
+          compact: true,
+          brightness: brightness,
+        );
+
+        final surface = tester.widget<ColoredBox>(
+          find.byKey(const Key('skills-mobile-surface')),
+        );
+        expect(surface.color, isNot(previous));
+        expect(find.text('# Dart VM'), findsOneWidget);
+        expect(find.text('# Motion Study'), findsOneWidget);
+        expect(tester.takeException(), isNull, reason: brightness.name);
+        previous = surface.color;
+      }
     });
   });
 }
