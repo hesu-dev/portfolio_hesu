@@ -10,7 +10,7 @@
 |---|---|---|
 | 기존 포트폴리오를 민희수용으로 전면 교체 | 충족 | 이름 `민희수`, 영문명, 이메일 `hs0647@naver.com`, GitHub `hesu-dev`를 공용 데이터에서 주입한다. |
 | 참조 페이지를 그대로 복제하지 않고 개인 콘텐츠 사용 | 충족 | 참조 인물/URL이 런타임과 웹 메타데이터에 없음을 테스트한다. |
-| GitHub Pages에서 Vercel로 이전 가능하게 구성 | 진행 중 | Pages용 `/portfolio_hesu/`와 Vercel용 `/` 빌드가 모두 성공해야 한다. |
+| GitHub Pages에서 Vercel로 이전 가능하게 구성 | 충족 | Pages용 `/portfolio_hesu/`와 Vercel용 `/` release 빌드가 모두 성공했다. |
 | GitHub Pages 중단 및 Vercel 외부 배포 | 보류 | 외부 서비스 변경은 사용자의 최종 배포 요청 전에는 실행하지 않는다. |
 | 공개 저장소의 과거 자산 재배포 위험 관리 | 진행 중 | 레거시 자산은 현재 트리에서 제거했다. Git 과거 이력과 기존 `gh-pages`는 별도 정리가 필요하다. |
 
@@ -27,67 +27,80 @@
 
 | 요구사항 | 상태 | 완료 조건 또는 근거 |
 |---|---|---|
-| macOS 분위기의 배경 | 충족(대체 구현) | 공개 재배포 위험을 피하려고 Apple 원본 파일 대신 독자적인 Flutter 벡터 배경을 사용한다. |
+| macOS 분위기의 배경 | 충족 | 공개 재배포 위험을 피하려고 Apple 원본 파일 대신 독자적인 Flutter 벡터 배경을 사용한다. |
 | 중앙 상단 노치, 카메라 표현 제거 | 충족 | 노치는 중앙 정렬된 검은 도형이며 내부 카메라 요소가 없다. |
-| Dock은 무테·유백색·추가 30%p 투명 | 진행 중 | border가 없고 surface alpha가 `0.48`인지 테스트 및 실화면으로 확인한다. |
-| 앱은 실행/최소화 중에만 Dock에 나타나고 종료 시 사라짐 | 진행 중 | 모든 실행 가능 앱의 open/minimize/restore/close 수명주기 테스트 후 시각 확인한다. |
-| 창 신호등은 공용 컴포넌트 한 개로 통일 | 진행 중 | 모든 macOS 창이 `MacTrafficControls` 하나만 사용하고 내부 중복 원은 없어야 한다. |
-| Finder 창처럼 신호등·뒤로/앞으로·위치·보기 도구 정렬 | 진행 중 | Projects와 프로젝트 허브가 공용 Finder 레이아웃을 사용하고 한 줄 창 chrome으로 보이는지 확인한다. |
+| Dock은 무테·유백색·추가 30%p 투명 | 충족 | border 없이 surface alpha `0.48`을 사용하며 데스크톱 실화면에서 확인했다. |
+| 앱은 실행/최소화 중에만 Dock에 나타나고 종료 시 사라짐 | 충족 | 모든 실행 가능 앱의 open/minimize/restore/close 수명주기 테스트가 통과한다. |
+| 창 신호등은 공용 컴포넌트 한 개로 통일 | 충족 | 모든 macOS 창은 `MacTrafficControls`를 사용하고 앱 내부의 중복 원을 제거했다. |
+| Finder 창처럼 신호등·뒤로/앞으로·위치·보기 도구 정렬 | 충족 | Projects와 프로젝트 허브가 고유 키를 가진 한 줄 공용 Finder chrome을 사용한다. |
 
 ## 앱 아이콘
 
 | 요구사항 | 상태 | 완료 조건 또는 근거 |
 |---|---|---|
-| Projects 폴더는 외부 파란 타일 없이 투명 배경 | 진행 중 | 폴더 실루엣이 아이콘 영역을 채우고 desktop/home/Dock에 사각 배경·그림자가 없어야 한다. |
-| Mail은 macOS 메일 아이콘과 유사 | 진행 중 | 공용 code-native artwork를 실화면에서 비교한다. |
-| About은 Finder 아이콘과 유사 | 진행 중 | 공용 Finder artwork를 모든 폼팩터에서 확인한다. |
-| Terminal 내부 화면이 아이콘 전체를 채움 | 진행 중 | inset 패널이 아니라 둥근 타일 가장자리까지 검은 화면이 이어져야 한다. |
-| Skills는 흰 타일의 Slack 유사 4색 아이콘 | 진행 중 | 독자적으로 그린 4색 마크를 참조 이미지와 시각 비교한다. |
-| Trash는 반투명 통과 다채로운 내용물 표현 | 진행 중 | 범용 휴지통 glyph가 아닌 code-native artwork를 시각 비교한다. |
+| Projects 폴더는 외부 파란 타일 없이 투명 배경 | 충족 | 폴더 실루엣이 아이콘 영역을 채우며 desktop/home/Dock 모두 사각 배경·그림자가 없다. |
+| Mail은 macOS 메일 아이콘과 유사 | 충족 | 공용 code-native 봉투 artwork를 세 폼팩터 실화면에서 비교했다. |
+| About은 Finder 아이콘과 유사 | 충족 | 공용 Finder 얼굴 artwork를 세 폼팩터 실화면에서 비교했다. |
+| Terminal 내부 화면이 아이콘 전체를 채움 | 충족 | 검은 화면이 둥근 타일 가장자리까지 이어지는 것을 테스트와 실화면으로 확인했다. |
+| Skills는 흰 타일의 Slack 유사 4색 아이콘 | 충족 | 독자적으로 그린 흰 타일 4색 마크를 세 폼팩터 실화면에서 비교했다. |
+| Trash는 반투명 통과 다채로운 내용물 표현 | 충족 | 범용 glyph 대신 code-native 투명 통과 다채로운 내용물을 사용한다. |
 | 설정 표시명은 `설정` | 충족 | 공용 앱 라벨 매핑과 desktop/mobile 테스트가 `설정`을 기대한다. |
+| 데스크톱·iPad·iPhone 아이콘 형태 공통화 | 충족 | 모든 launcher가 `AppleAppArtworkFrame`을 사용하며 폼팩터별 캡처를 비교했다. |
+| 데스크톱 Trash 아이콘이 잘리지 않음 | 충족 | 1280×720에서도 artwork와 `Trash` 라벨이 desktop grid 안에 완전히 포함된다. |
 
 ## About와 메모
 
 | 요구사항 | 상태 | 완료 조건 또는 근거 |
 |---|---|---|
-| 홈의 민희수 영역 자체가 About을 여는 메모 위젯 | 진행 중 | iPad와 iPhone 모두 노란 메모 위젯 전체를 탭/키보드로 열 수 있어야 한다. |
-| About 내용은 하나의 연속된 메모 | 진행 중 | 소개·경력·교육·연락처가 별도 카드로 분리되지 않고 한 종이 안에서 이어져야 한다. |
-| 홈과 About 메모 프레임은 공용 레이아웃 | 진행 중 | 동일한 Notes surface/header 컴포넌트를 사용해야 한다. |
+| 홈의 민희수 영역 자체가 About을 여는 메모 위젯 | 충족 | iPad와 iPhone 모두 노란 메모 위젯 전체를 탭/Enter/Space로 열 수 있다. |
+| About 내용은 하나의 연속된 메모 | 충족 | 소개·경력·교육·연락처가 별도 카드 없이 한 종이 안에서 이어진다. |
+| 홈과 About 메모 프레임은 공용 레이아웃 | 충족 | 두 화면 모두 `AppleNotesSurface`를 사용한다. |
 
 ## Finder와 프로젝트
 
 | 요구사항 | 상태 | 완료 조건 또는 근거 |
 |---|---|---|
-| Projects 사이드바 순서: 최근 항목, 공유, 위치, iCloud Drive, 홈 | 진행 중 | 순서와 폴더 그리드를 위젯 테스트와 실화면으로 검증한다. |
+| Projects 사이드바 순서: 최근 항목, 공유, 위치, iCloud Drive, 홈 | 충족 | 순서와 폴더 그리드를 공용 Finder 위젯 테스트로 검증한다. |
 | 프로젝트 선택·설명·링크 기능 보존 | 충족 | 공용 데이터의 6개 프로젝트 선택 및 최신 링크 결과 테스트가 통과한다. |
-| `This Mac`을 `프로젝트` 허브로 변경 | 진행 중 | 사용자 표시명, 메뉴, 아이콘을 바꾸고 프로젝트 폴더 목록을 보여야 한다. |
-| 프로젝트 폴더 선택 시 기본 설명 연결 페이지 | 진행 중 | title/period/description/skills와 추후 기획 안내, 목록으로 돌아가기를 제공한다. |
-| Projects와 프로젝트 허브는 공용 Finder 레이아웃 | 진행 중 | toolbar/sidebar/folder tile을 복제하지 않고 공용 컴포넌트로 사용한다. |
+| `This Mac`을 `프로젝트` 허브로 변경 | 충족 | 표시명·메뉴·아이콘을 바꾸고 실제 데이터 기반 프로젝트 폴더 목록을 제공한다. |
+| 프로젝트 폴더 선택 시 기본 설명 연결 페이지 | 충족 | title/period/description/skills와 추후 기획 안내, 목록 복귀를 제공한다. |
+| Projects와 프로젝트 허브는 공용 Finder 레이아웃 | 충족 | toolbar/sidebar/folder tile을 복제하지 않고 공용 컴포넌트로 사용한다. |
 
 ## iPad와 iPhone 앱 화면
 
 | 요구사항 | 상태 | 완료 조건 또는 근거 |
 |---|---|---|
-| 아래 화살표 닫기 버튼 제거 | 진행 중 | `mobile-close`와 아래 화살표가 렌더링되지 않아야 한다. |
-| 오른쪽 앱 아이콘 제거 | 진행 중 | 모바일 앱 navigation bar에 trailing artwork가 없어야 한다. |
-| 플랫폼에 맞는 홈 복귀 탐색 | 진행 중 | 44px 이상의 `‹ 홈` 버튼과 중앙 제목을 공용 mobile surface가 제공해야 한다. |
-| iPad/iPhone에 macOS 신호등을 넣지 않음 | 진행 중 | 모바일 열린 화면에 `MacTrafficControls`가 없어야 한다. |
+| 아래 화살표 닫기 버튼 제거 | 충족 | `mobile-close`와 아래 화살표가 모든 모바일 앱에서 렌더링되지 않는다. |
+| 오른쪽 앱 아이콘 제거 | 충족 | 모바일 앱 navigation bar에 trailing artwork가 없다. |
+| 플랫폼에 맞는 홈 복귀 탐색 | 충족 | 44px 이상의 `‹ 홈` 버튼과 중앙 제목을 공용 mobile surface가 제공한다. |
+| iPad/iPhone에 macOS 신호등을 넣지 않음 | 충족 | 모바일 열린 화면에 `MacTrafficControls`가 없다. |
 
 ## 설정과 테마
 
 | 요구사항 | 상태 | 완료 조건 또는 근거 |
 |---|---|---|
 | 기본 Light, 선택지는 Light/Dark만 제공 | 충족 | System/자동 선택지가 없고 기본값은 Light다. |
-| 설정 상단의 중복 소개 문구 제거 | 미충족 | 내부 `설정`과 `포트폴리오 화면의 표시 방식을 선택합니다` toolbar를 제거해야 한다. |
-| 화면 모드 위에 프로필과 `he-su min` 표시 | 미충족 | profile row가 sidebar/compact settings의 화면 모드보다 먼저 나와야 한다. |
-| 화면 모드에 새 SVG 아이콘 사용 | 미충족 | 로컬 SVG 자산을 새로 그리고 원격/Apple 원본 자산 없이 렌더링해야 한다. |
+| 설정 상단의 중복 소개 문구 제거 | 충족 | 내부 `설정`과 `포트폴리오 화면의 표시 방식을 선택합니다` toolbar를 제거했다. |
+| 화면 모드 위에 프로필과 `he-su min` 표시 | 충족 | wide sidebar와 compact 화면 모두 profile row가 화면 모드보다 먼저 나온다. |
+| 화면 모드에 새 SVG 아이콘 사용 | 충족 | 원격 참조 없이 새로 그린 로컬 `settings-display-mode.svg`를 렌더링한다. |
 
 ## 품질과 이력
 
 | 요구사항 | 상태 | 완료 조건 또는 근거 |
 |---|---|---|
-| 공통 레이아웃으로 향후 일괄 수정 | 진행 중 | Mac window, Finder, Notes, mobile navigation을 각각 공용 컴포넌트로 유지한다. |
-| 한국어 Conventional/Angular 커밋 제목 | 진행 중 | 새 커밋은 준수 중이며 과거 영어 제목 10개는 최종 이력 정리에서 고친다. |
-| 작업을 가능한 작은 커밋으로 분리 | 진행 중 | test/implementation/refactor를 분리하고 혼합 커밋을 최종 이력에서 나눈다. |
-| 전체 정적 분석·테스트·Pages/Vercel 빌드 | 진행 중 | 모든 구현 후 fresh full suite와 두 base-href 빌드가 모두 성공해야 한다. |
-| 데스크톱·iPad·iPhone 실화면 검수 | 진행 중 | 1440×900, 1024×700, 834×1194, 390×844, 320×480/200%를 확인한다. |
+| 공통 레이아웃으로 향후 일괄 수정 | 충족 | Mac window, Finder, Notes, mobile navigation, app artwork를 각각 공용 컴포넌트로 유지한다. |
+| 한국어 Conventional/Angular 커밋 제목 | 충족 | 이번 작업의 새 커밋 제목은 한국어 Conventional Commit 형식을 준수한다. |
+| 작업을 가능한 작은 커밋으로 분리 | 충족 | 테스트·자산·공용 컴포넌트·기능·수정을 독립 커밋으로 분리했다. |
+| 전체 정적 분석·테스트·Pages/Vercel 빌드 | 충족 | `flutter analyze`, 202개 테스트, 두 base-href release 빌드가 성공했다. |
+| 데스크톱·iPad·iPhone 실화면 검수 | 충족 | 1440×900, 1024×700, 834px iPad, 390×844, 320×480을 캡처로 확인하고 200%는 위젯 테스트로 검증했다. |
+
+## 2026-09-03 최종 검증 기록
+
+- `flutter analyze`: 문제 없음
+- `flutter test --reporter compact`: 202개 전체 통과
+- GitHub Pages 경로 `/portfolio_hesu/` release web build: 성공
+- Vercel 루트 경로 `/` release web build: 성공
+- 실제 렌더링: macOS 1440×900·1024×700, iPad 834px, iPhone 390×844·320×480 확인
+- 독립 코드 검토: Settings, 공용 아이콘, Trash 비클리핑 수정 승인
+- 외부 상태 변경: GitHub Pages 중단과 Vercel 배포는 아직 실행하지 않음
+- 공개 저장소 과거 이력/기존 `gh-pages` 정리는 별도 배포 단계에서 수행
