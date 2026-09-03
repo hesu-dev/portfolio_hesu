@@ -158,10 +158,14 @@ class _ProjectGrid extends StatelessWidget {
     return LayoutBuilder(
       key: const Key('projects-finder-grid'),
       builder: (context, constraints) {
+        const spacing = 10.0;
+        const minimumTileWidth = 132.0;
+        final itemCount = projects.length + 1;
         final columnCount = compact
             ? (constraints.maxWidth / 132).floor().clamp(1, 2)
-            : projects.length + 1;
-        const spacing = 10.0;
+            : ((constraints.maxWidth + spacing) / (minimumTileWidth + spacing))
+                  .floor()
+                  .clamp(1, itemCount);
         final tileWidth =
             (constraints.maxWidth - spacing * (columnCount - 1)) / columnCount;
         return Wrap(
@@ -301,9 +305,13 @@ class _ProjectDetail extends StatelessWidget {
 
     return Column(
       children: <Widget>[
-        Padding(
-          padding: const EdgeInsets.fromLTRB(30, 24, 30, 16),
-          child: collection,
+        ConstrainedBox(
+          constraints: const BoxConstraints(maxHeight: 242),
+          child: SingleChildScrollView(
+            key: const Key('projects-collection-scroll'),
+            padding: const EdgeInsets.fromLTRB(30, 24, 30, 16),
+            child: collection,
+          ),
         ),
         Divider(height: 1, color: AppleTheme.separator(context)),
         Expanded(
