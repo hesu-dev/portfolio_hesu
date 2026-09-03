@@ -76,6 +76,76 @@ void main() {
     expect(find.byType(AppleFinderFolderTile), findsNWidgets(2));
   });
 
+  testWidgets('shared Finder separates toolbar title from sidebar location', (
+    tester,
+  ) async {
+    await tester.pumpWidget(
+      MaterialApp(
+        theme: AppleTheme.light(),
+        home: SizedBox.expand(
+          child: AppleFinderScaffold(
+            surfaceKey: const Key('finder-title-harness'),
+            keyPrefix: 'title-harness',
+            currentLocation: 'iCloud Drive',
+            toolbarTitle: 'Projects',
+            ownerName: '테스트 사용자',
+            compact: false,
+            tablet: false,
+            canGoBack: false,
+            canGoForward: false,
+            onBack: () {},
+            onForward: () {},
+            bodyBuilder: (_, _) =>
+                const SizedBox(key: Key('finder-title-body')),
+          ),
+        ),
+      ),
+    );
+    await tester.pump();
+
+    final toolbar = find.byKey(const Key('title-harness-finder-toolbar'));
+    final sidebar = find.byKey(const Key('title-harness-finder-sidebar'));
+    expect(
+      find.descendant(of: toolbar, matching: find.text('Projects')),
+      findsOneWidget,
+    );
+    expect(
+      find.descendant(of: toolbar, matching: find.text('iCloud Drive')),
+      findsNothing,
+    );
+    expect(
+      find.descendant(of: sidebar, matching: find.text('iCloud Drive')),
+      findsOneWidget,
+    );
+    expect(
+      find.byKey(const Key('title-harness-finder-view-options')),
+      findsOneWidget,
+    );
+  });
+
+  testWidgets('wide iPad shared Finder keeps a narrower sidebar', (
+    tester,
+  ) async {
+    await _pumpProjectHub(tester, size: const Size(834, 700), tablet: true);
+
+    final sidebar = find.byKey(const Key('project-hub-finder-sidebar'));
+    final body = find.byKey(const Key('project-hub-folder-list'));
+    expect(sidebar, findsOneWidget);
+    expect(find.byType(AppleFinderSidebar), findsOneWidget);
+    expect(find.byType(AppleFinderLocationStrip), findsNothing);
+    expect(
+      find.byKey(const Key('project-hub-finder-view-options')),
+      findsOneWidget,
+    );
+    expect(tester.getSize(sidebar).width, closeTo(176, 1));
+    expect(
+      tester.getRect(body).left,
+      closeTo(tester.getRect(sidebar).right, 0.01),
+    );
+    expect(tester.getSize(body).width, closeTo(834 - 176, 1));
+    expect(tester.takeException(), isNull);
+  });
+
   testWidgets('shared Finder toolbar accepts leading controls and drag', (
     tester,
   ) async {
