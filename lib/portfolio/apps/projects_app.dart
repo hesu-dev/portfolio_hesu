@@ -32,7 +32,7 @@ class _ProjectsAppState extends State<ProjectsApp> {
   int _launchRequestGeneration = 0;
   String? _launchFeedback;
   bool _launchSucceeded = false;
-  final Set<Uri> _pendingLaunches = <Uri>{};
+  final Map<Uri, int> _pendingLaunches = <Uri, int>{};
 
   int? get _activeProjectIndex => _history[_historyCursor];
 
@@ -90,12 +90,12 @@ class _ProjectsAppState extends State<ProjectsApp> {
   }
 
   Future<void> _openLink(PortfolioProjectLink link) async {
-    if (_pendingLaunches.contains(link.uri)) {
+    if (_pendingLaunches.containsKey(link.uri)) {
       return;
     }
     final requestGeneration = ++_launchRequestGeneration;
     setState(() {
-      _pendingLaunches.add(link.uri);
+      _pendingLaunches[link.uri] = requestGeneration;
       _launchFeedback = null;
     });
     var succeeded = false;
@@ -108,7 +108,9 @@ class _ProjectsAppState extends State<ProjectsApp> {
       return;
     }
     setState(() {
-      _pendingLaunches.remove(link.uri);
+      if (_pendingLaunches[link.uri] == requestGeneration) {
+        _pendingLaunches.remove(link.uri);
+      }
       if (requestGeneration != _launchRequestGeneration) {
         return;
       }
@@ -170,7 +172,7 @@ class _ProjectsAppState extends State<ProjectsApp> {
       compact: compact,
       feedback: _launchFeedback,
       launchSucceeded: _launchSucceeded,
-      pendingLaunches: _pendingLaunches,
+      pendingLaunches: _pendingLaunches.keys.toSet(),
       onOpenLink: _openLink,
     );
   }
@@ -196,7 +198,7 @@ class _ProjectGrid extends StatelessWidget {
       builder: (context, constraints) {
         const spacing = 10.0;
         const minimumTileWidth = 132.0;
-        final itemCount = projects.length + 1;
+        final itemCount = projects.length;
         final gridWidth = compact
             ? constraints.maxWidth.clamp(0.0, minimumTileWidth * 2 + spacing)
             : constraints.maxWidth;
@@ -222,72 +224,17 @@ class _ProjectGrid extends StatelessWidget {
                     child: AppleFinderFolderTile(
                       key: Key('project-selector-${entry.$1}'),
                       label: entry.$2.title,
-                      semanticsLabel: 'Select project ${entry.$2.title}',
+                      semanticsLabel: 'Open project ${entry.$2.title}',
                       selected: selectedIndex == entry.$1,
                       compact: compact,
                       onPressed: () => onSelected(entry.$1),
                     ),
                   ),
-                SizedBox(width: tileWidth, child: const _FinderReadmeFile()),
               ],
             ),
           ),
         );
       },
-    );
-  }
-}
-
-class _FinderReadmeFile extends StatelessWidget {
-  const _FinderReadmeFile();
-
-  @override
-  Widget build(BuildContext context) {
-    return Semantics(
-      key: const Key('finder-file-portfolio-readme'),
-      label: 'Portfolio README file',
-      readOnly: true,
-      child: ExcludeSemantics(
-        child: Container(
-          constraints: const BoxConstraints(minHeight: 126),
-          padding: const EdgeInsets.symmetric(horizontal: 9, vertical: 12),
-          child: Column(
-            mainAxisAlignment: MainAxisAlignment.center,
-            children: <Widget>[
-              Stack(
-                alignment: Alignment.center,
-                children: <Widget>[
-                  Icon(
-                    Icons.insert_drive_file_rounded,
-                    size: 56,
-                    color: AppleTheme.surface(context),
-                    shadows: <Shadow>[
-                      Shadow(
-                        color: AppleTheme.subtleShadow(context),
-                        blurRadius: 5,
-                        offset: const Offset(0, 2),
-                      ),
-                    ],
-                  ),
-                  Icon(
-                    Icons.subject_rounded,
-                    size: 24,
-                    color: AppleTheme.secondaryLabel(context),
-                  ),
-                ],
-              ),
-              const SizedBox(height: 8),
-              Text(
-                'Portfolio README',
-                maxLines: 2,
-                overflow: TextOverflow.ellipsis,
-                textAlign: TextAlign.center,
-                style: Theme.of(context).textTheme.labelMedium,
-              ),
-            ],
-          ),
-        ),
-      ),
     );
   }
 }
@@ -393,7 +340,7 @@ class _FinderProjectCollection extends StatelessWidget {
               children: <Widget>[
                 Expanded(child: Text('프로젝트', style: AppleTheme.title(context))),
                 Text(
-                  '${projects.length + 1}개 항목',
+                  '${projects.length}개 항목',
                   style: AppleTheme.caption(context),
                 ),
               ],

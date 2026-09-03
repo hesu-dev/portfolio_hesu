@@ -473,7 +473,7 @@ void main() {
     );
 
     testWidgets(
-      'project list exposes all six folders and README before opening detail',
+      'project list exposes only the six project folders before detail',
       (tester) async {
         await _pumpApp(
           tester,
@@ -487,7 +487,7 @@ void main() {
         }
         expect(
           find.byKey(const Key('finder-file-portfolio-readme')),
-          findsOneWidget,
+          findsNothing,
         );
         expect(find.byKey(const Key('projects-detail-scroll')), findsNothing);
         expect(find.byKey(const Key('project-detail-title')), findsNothing);
@@ -530,7 +530,7 @@ void main() {
         expect(tester.getSize(firstSelector).height, greaterThanOrEqualTo(44));
         final firstSemantics = tester.getSemantics(firstSelector);
         final firstData = firstSemantics.getSemanticsData();
-        expect(firstData.label, 'Select project ${firstProject.title}');
+        expect(firstData.label, 'Open project ${firstProject.title}');
         expect(firstData.flagsCollection.isButton, isTrue);
         expect(firstData.flagsCollection.isSelected, ui.Tristate.isFalse);
         expect(firstData.hasAction(SemanticsAction.tap), isTrue);
@@ -559,7 +559,7 @@ void main() {
         final returnedFirstData = tester
             .getSemantics(returnedFirstSelector)
             .getSemanticsData();
-        expect(returnedFirstData.label, 'Select project ${firstProject.title}');
+        expect(returnedFirstData.label, 'Open project ${firstProject.title}');
         expect(
           returnedFirstData.flagsCollection.isSelected,
           ui.Tristate.isTrue,
@@ -825,6 +825,48 @@ void main() {
 
         launcher.complete(1, true);
         await tester.pumpAndSettle();
+        expect(tester.takeException(), isNull);
+      },
+    );
+
+    testWidgets(
+      'older same-URI completion cannot unlock a newer pending request',
+      (tester) async {
+        final launcher = _ControlledExternalLauncher();
+        await _pumpApp(
+          tester,
+          appId: PortfolioAppId.projects,
+          launcher: launcher,
+          size: const Size(900, 650),
+        );
+
+        await tester.tap(find.byKey(const Key('project-selector-1')));
+        await tester.pumpAndSettle();
+        final link = find.byKey(const Key('project-link-1-0'));
+        await tester.ensureVisible(link);
+        await tester.tap(link);
+        await tester.pump();
+
+        await tester.tap(find.byKey(const Key('projects-finder-back')));
+        await tester.pumpAndSettle();
+        await tester.tap(find.byKey(const Key('project-selector-1')));
+        await tester.pumpAndSettle();
+        await tester.ensureVisible(link);
+        await tester.tap(link);
+        await tester.pump();
+        expect(launcher.requests, hasLength(2));
+        expect(tester.widget<OutlinedButton>(link).onPressed, isNull);
+
+        launcher.complete(0, false);
+        await tester.pumpAndSettle();
+        expect(tester.widget<OutlinedButton>(link).onPressed, isNull);
+        await tester.tap(link);
+        await tester.pump();
+        expect(launcher.requests, hasLength(2));
+
+        launcher.complete(1, true);
+        await tester.pumpAndSettle();
+        expect(tester.widget<OutlinedButton>(link).onPressed, isNotNull);
         expect(tester.takeException(), isNull);
       },
     );

@@ -66,9 +66,9 @@ void main() {
           of: grid,
           matching: find.byKey(const Key('finder-file-portfolio-readme')),
         ),
-        findsOneWidget,
+        findsNothing,
       );
-      expect(find.text('7개 항목'), findsOneWidget);
+      expect(find.text('6개 항목'), findsOneWidget);
 
       await tester.tap(find.byKey(const Key('project-selector-1')));
       await tester.pumpAndSettle();
@@ -159,7 +159,7 @@ void main() {
             of: grid,
             matching: find.byKey(const Key('finder-file-portfolio-readme')),
           ),
-          findsOneWidget,
+          findsNothing,
         );
         expect(tester.takeException(), isNull, reason: '$contentWidth');
       }
@@ -232,7 +232,7 @@ void main() {
       );
       expect(
         find.byKey(const Key('finder-file-portfolio-readme')),
-        findsOneWidget,
+        findsNothing,
       );
       expect(tester.takeException(), isNull);
 
@@ -312,7 +312,7 @@ void main() {
       expect(rowStarts.length, greaterThan(1));
       expect(
         find.byKey(const Key('finder-file-portfolio-readme')),
-        findsOneWidget,
+        findsNothing,
       );
 
       final firstFolder = folders.first;
