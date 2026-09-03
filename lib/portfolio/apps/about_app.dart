@@ -129,7 +129,7 @@ class _IdentityHeader extends StatelessWidget {
       ),
       alignment: Alignment.center,
       child: Text(
-        'MH',
+        data.monogram,
         style: TextStyle(
           color: Colors.white,
           fontWeight: FontWeight.w800,
