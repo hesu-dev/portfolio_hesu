@@ -27,6 +27,14 @@ void main() {
       expect(portfolioData.projects, hasLength(6));
     });
 
+    test('uses the confirmed current Flutter career copy', () {
+      final currentRole = portfolioData.experiences.first;
+
+      expect(currentRole.role, 'Junior Flutter Developer');
+      expect(currentRole.organization, '(주)상상력 집단');
+      expect(currentRole.description, 'Node 웹사이트 서비스 기획 및 개발, 출시 후 유지보수');
+    });
+
     test('classifies work and personal projects for Finder locations', () {
       final titlesByCategory = <PortfolioProjectCategory, Set<String>>{
         for (final category in PortfolioProjectCategory.values)
@@ -56,6 +64,19 @@ void main() {
       expect(
         projectWithoutExplicitCategory.category,
         PortfolioProjectCategory.career,
+      );
+    });
+
+    test('orders ReadingLog before the other personal project', () {
+      expect(
+        portfolioData.projects
+            .where(
+              (project) =>
+                  project.category == PortfolioProjectCategory.personal,
+            )
+            .map((project) => project.title)
+            .toList(),
+        <String>['ReadingLog', 'PersonaChat AI Character Chat'],
       );
     });
 

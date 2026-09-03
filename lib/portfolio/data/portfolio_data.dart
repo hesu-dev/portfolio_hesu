@@ -286,9 +286,9 @@ const portfolioData = PortfolioData.constant(
   experiences: <PortfolioExperience>[
     PortfolioExperience(
       role: 'Junior Flutter Developer',
-      organization: 'Freelance',
+      organization: '(주)상상력 집단',
       period: '2026 - Present',
-      description: 'Flutter를 이용한 애플리케이션 기획 및 개발',
+      description: 'Node 웹사이트 서비스 기획 및 개발, 출시 후 유지보수',
     ),
     PortfolioExperience(
       role: 'Junior Flutter Developer',
@@ -335,16 +335,6 @@ const portfolioData = PortfolioData.constant(
   ],
   projects: <PortfolioProject>[
     PortfolioProject.constant(
-      title: 'PersonaChat AI Character Chat',
-      category: PortfolioProjectCategory.personal,
-      description:
-          'SNS 로그인, 캐릭터 생성/검색, AI 채팅, 이벤트 이미지, 크레딧 결제를 포함한 '
-          'Flutter 실무형 포트폴리오 프로젝트 설계',
-      period: '2026.07 - 설계',
-      technologies: <String>['Flutter', 'Riverpod', 'Firebase', 'IAP', 'AI'],
-      links: <PortfolioProjectLink>[],
-    ),
-    PortfolioProject.constant(
       title: 'ReadingLog',
       category: PortfolioProjectCategory.personal,
       description: '채팅 로그 리더기 앱 기획 및 개발, 파싱용 Chrome 확장 프로그램 개발',
@@ -367,6 +357,16 @@ const portfolioData = PortfolioData.constant(
               'https://chromewebstore.google.com/detail/r20-jsonexporter/galgbmfkkpehcijjfcaffifmfjbmlfbo?authuser=1&hl=ko',
         ),
       ],
+    ),
+    PortfolioProject.constant(
+      title: 'PersonaChat AI Character Chat',
+      category: PortfolioProjectCategory.personal,
+      description:
+          'SNS 로그인, 캐릭터 생성/검색, AI 채팅, 이벤트 이미지, 크레딧 결제를 포함한 '
+          'Flutter 실무형 포트폴리오 프로젝트 설계',
+      period: '2026.07 - 설계',
+      technologies: <String>['Flutter', 'Riverpod', 'Firebase', 'IAP', 'AI'],
+      links: <PortfolioProjectLink>[],
     ),
     PortfolioProject.constant(
       title: 'Blue Mentor',

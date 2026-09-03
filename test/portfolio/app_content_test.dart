@@ -495,10 +495,10 @@ void main() {
         expect(find.byKey(const Key('project-selector-0')), findsOneWidget);
         expect(find.byKey(const Key('project-selector-1')), findsOneWidget);
 
-        await tester.tap(find.byKey(const Key('project-selector-1')));
+        await tester.tap(find.byKey(const Key('project-selector-0')));
         await tester.pumpAndSettle();
 
-        final readingLog = portfolioData.projects[1];
+        final readingLog = portfolioData.projects[0];
         expect(find.byKey(const Key('projects-finder-grid')), findsNothing);
         expect(
           _textAtKey(tester, const Key('project-detail-title')),
@@ -793,14 +793,14 @@ void main() {
       );
       await _openProjectsLocation(tester, 'personal-projects');
 
-      await tester.tap(find.byKey(const Key('project-selector-1')));
+      await tester.tap(find.byKey(const Key('project-selector-0')));
       await tester.pumpAndSettle();
-      await tester.ensureVisible(find.byKey(const Key('project-link-1-0')));
+      await tester.ensureVisible(find.byKey(const Key('project-link-0-0')));
       await tester.pumpAndSettle();
-      await tester.tap(find.byKey(const Key('project-link-1-0')));
+      await tester.tap(find.byKey(const Key('project-link-0-0')));
       await tester.pumpAndSettle();
 
-      expect(launcher.launched, <Uri>[portfolioData.projects[1].links[0].uri]);
+      expect(launcher.launched, <Uri>[portfolioData.projects[0].links[0].uri]);
       expect(find.byKey(const Key('project-launch-feedback')), findsOneWidget);
       expect(find.textContaining('열 수 없습니다'), findsOneWidget);
       expect(tester.takeException(), isNull);
@@ -818,9 +818,9 @@ void main() {
         );
         await _openProjectsLocation(tester, 'personal-projects');
 
-        await tester.tap(find.byKey(const Key('project-selector-1')));
+        await tester.tap(find.byKey(const Key('project-selector-0')));
         await tester.pumpAndSettle();
-        final link = find.byKey(const Key('project-link-1-0'));
+        final link = find.byKey(const Key('project-link-0-0'));
         await tester.ensureVisible(link);
         await tester.tap(link);
         await tester.pump();
@@ -862,16 +862,16 @@ void main() {
         );
         await _openProjectsLocation(tester, 'personal-projects');
 
-        await tester.tap(find.byKey(const Key('project-selector-1')));
+        await tester.tap(find.byKey(const Key('project-selector-0')));
         await tester.pumpAndSettle();
-        final link = find.byKey(const Key('project-link-1-0'));
+        final link = find.byKey(const Key('project-link-0-0'));
         await tester.ensureVisible(link);
         await tester.tap(link);
         await tester.pump();
 
         await tester.tap(find.byKey(const Key('projects-finder-back')));
         await tester.pumpAndSettle();
-        await tester.tap(find.byKey(const Key('project-selector-1')));
+        await tester.tap(find.byKey(const Key('project-selector-0')));
         await tester.pumpAndSettle();
         await tester.ensureVisible(link);
         await tester.tap(link);
@@ -905,13 +905,13 @@ void main() {
         );
         await _openProjectsLocation(tester, 'personal-projects');
 
-        await tester.tap(find.byKey(const Key('project-selector-1')));
+        await tester.tap(find.byKey(const Key('project-selector-0')));
         await tester.pumpAndSettle();
-        await tester.ensureVisible(find.byKey(const Key('project-link-1-0')));
-        await tester.tap(find.byKey(const Key('project-link-1-0')));
+        await tester.ensureVisible(find.byKey(const Key('project-link-0-0')));
+        await tester.tap(find.byKey(const Key('project-link-0-0')));
         await tester.pump();
-        await tester.ensureVisible(find.byKey(const Key('project-link-1-1')));
-        await tester.tap(find.byKey(const Key('project-link-1-1')));
+        await tester.ensureVisible(find.byKey(const Key('project-link-0-1')));
+        await tester.tap(find.byKey(const Key('project-link-0-1')));
         await tester.pump();
 
         expect(launcher.requests, hasLength(2));
@@ -939,10 +939,10 @@ void main() {
       );
       await _openProjectsLocation(tester, 'personal-projects');
 
-      await tester.tap(find.byKey(const Key('project-selector-1')));
+      await tester.tap(find.byKey(const Key('project-selector-0')));
       await tester.pumpAndSettle();
-      await tester.ensureVisible(find.byKey(const Key('project-link-1-0')));
-      await tester.tap(find.byKey(const Key('project-link-1-0')));
+      await tester.ensureVisible(find.byKey(const Key('project-link-0-0')));
+      await tester.tap(find.byKey(const Key('project-link-0-0')));
       await tester.pump();
       expect(launcher.requests, hasLength(1));
 
