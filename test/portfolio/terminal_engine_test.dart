@@ -81,6 +81,18 @@ void main() {
       expect(output, contains('ready'));
     });
 
+    test('flutter run unlocks the portfolio Easter egg', () {
+      final result = engine.execute('  FLUTTER   RUN  ');
+      final output = result.lines.join('\n');
+
+      expect(result.clear, isFalse);
+      expect(output, contains('Launching'));
+      expect(output, contains('Flutter'));
+      expect(output, contains(portfolioData.identity.name));
+      expect(output, contains('Easter egg'));
+      expect(output, contains('이미 실행 중'));
+    });
+
     test('clear marks the transcript for clearing without output', () {
       final result = engine.execute('clear');
 
@@ -186,6 +198,7 @@ void main() {
         'git status',
         'git log',
         'npm run dev',
+        'flutter run',
         'clear',
         'https://portfolio-juah.vercel.app/',
       ];

@@ -34,6 +34,7 @@ class TerminalEngine {
       'git status' => _gitStatus(),
       'git log' => _gitLog(),
       'npm run dev' => _startPreview(),
+      'flutter run' => _flutterRunEasterEgg(),
       'clear' => TerminalResult(lines: const <String>[], clear: true),
       _ => TerminalResult(
         lines: const <String>[
@@ -117,6 +118,18 @@ class TerminalEngine {
         '> portfolio@1.0.0 dev',
         '> flutter run -d chrome',
         'Portfolio preview for ${data.identity.englishName} is ready.',
+      ],
+    );
+  }
+
+  TerminalResult _flutterRunEasterEgg() {
+    return TerminalResult(
+      lines: <String>[
+        'Launching ${data.appTitle} on Chrome in debug mode...',
+        'Resolving dependencies... done',
+        '✓ Built build/web',
+        '🔥 Flutter hot reload is ready.',
+        '✨ Easter egg unlocked — ${data.identity.name}의 포트폴리오는 이미 실행 중입니다.',
       ],
     );
   }
