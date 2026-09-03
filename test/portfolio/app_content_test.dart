@@ -258,6 +258,44 @@ void main() {
       },
     );
 
+    testWidgets('about derives its avatar monogram from injected identity', (
+      tester,
+    ) async {
+      final englishIdentity = _dataWithIdentity(
+        name: '에이다 러브레이스',
+        englishName: 'Ada Lovelace',
+        email: 'ada@example.com',
+      );
+      await _pumpApp(
+        tester,
+        appId: PortfolioAppId.about,
+        launcher: _FakeExternalLauncher(),
+        data: englishIdentity,
+        size: const Size(360, 600),
+        compact: true,
+      );
+
+      expect(find.text('AL'), findsOneWidget);
+      expect(find.text('MH'), findsNothing);
+
+      final localFallback = _dataWithIdentity(
+        name: '김 민수',
+        englishName: '   ',
+        email: 'invalid email',
+      );
+      await _pumpApp(
+        tester,
+        appId: PortfolioAppId.about,
+        launcher: _FakeExternalLauncher(),
+        data: localFallback,
+        size: const Size(360, 600),
+        compact: true,
+      );
+
+      expect(find.text('김민'), findsOneWidget);
+      expect(find.text('MH'), findsNothing);
+    });
+
     testWidgets('about education action reports external launch failure', (
       tester,
     ) async {
@@ -683,6 +721,28 @@ PortfolioData _dataWithGithubUrl(String githubUrl) {
       englishName: identity.englishName,
       email: identity.email,
       githubUrl: githubUrl,
+      headline: identity.headline,
+      biography: identity.biography,
+    ),
+    experiences: portfolioData.experiences,
+    education: portfolioData.education,
+    skillGroups: portfolioData.skillGroups,
+    projects: portfolioData.projects,
+  );
+}
+
+PortfolioData _dataWithIdentity({
+  required String name,
+  required String englishName,
+  required String email,
+}) {
+  final identity = portfolioData.identity;
+  return PortfolioData(
+    identity: PortfolioIdentity(
+      name: name,
+      englishName: englishName,
+      email: email,
+      githubUrl: identity.githubUrl,
       headline: identity.headline,
       biography: identity.biography,
     ),
