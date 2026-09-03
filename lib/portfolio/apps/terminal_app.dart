@@ -167,18 +167,6 @@ class _TerminalToolbar extends StatelessWidget {
       ),
       child: Row(
         children: <Widget>[
-          for (final color in const <Color>[
-            Color(0xFFFF5F57),
-            Color(0xFFFFBD2E),
-            Color(0xFF28C840),
-          ]) ...<Widget>[
-            Container(
-              width: compact ? 10 : 11,
-              height: compact ? 10 : 11,
-              decoration: BoxDecoration(color: color, shape: BoxShape.circle),
-            ),
-            SizedBox(width: compact ? 6 : 8),
-          ],
           Expanded(
             child: Row(
               mainAxisAlignment: MainAxisAlignment.center,
@@ -204,7 +192,6 @@ class _TerminalToolbar extends StatelessWidget {
               ],
             ),
           ),
-          SizedBox(width: compact ? 42 : 49),
         ],
       ),
     );
