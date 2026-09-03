@@ -274,6 +274,62 @@ void main() {
         );
       },
     );
+
+    testWidgets(
+      'minimized windows preserve state without focus or interaction',
+      (tester) async {
+        final semantics = tester.ensureSemantics();
+        await _pumpPortfolio(tester);
+        await _openDesktopApp(tester, PortfolioAppId.terminal);
+        await tester.enterText(
+          find.byKey(const Key('terminal-input')),
+          'skills',
+        );
+        await tester.tap(find.byKey(const Key('terminal-submit')));
+        await tester.pumpAndSettle();
+
+        expect(
+          tester
+              .widget<EditableText>(find.byType(EditableText))
+              .focusNode
+              .hasFocus,
+          isTrue,
+        );
+        final hiddenControlLocation = tester.getCenter(
+          find.byKey(const Key('window-close-terminal')),
+        );
+
+        await tester.tap(find.byKey(const Key('window-minimize-terminal')));
+        await tester.pumpAndSettle();
+
+        expect(find.byKey(const Key('mac-window-terminal')), findsNothing);
+        expect(
+          find.byKey(const Key('mac-window-terminal'), skipOffstage: false),
+          findsOneWidget,
+        );
+        expect(find.bySemanticsLabel('Close Terminal window'), findsNothing);
+        expect(
+          tester
+              .widget<EditableText>(
+                find.byType(EditableText, skipOffstage: false),
+              )
+              .focusNode
+              .hasFocus,
+          isFalse,
+        );
+
+        await tester.tapAt(hiddenControlLocation);
+        await tester.pumpAndSettle();
+        expect(find.byKey(const Key('dock-running-terminal')), findsOneWidget);
+
+        await tester.tap(find.byKey(const Key('dock-app-terminal')));
+        await tester.pumpAndSettle();
+
+        expect(find.byKey(const Key('mac-window-terminal')), findsOneWidget);
+        expect(find.text('hesu@portfolio ~ % skills'), findsOneWidget);
+        semantics.dispose();
+      },
+    );
   });
 
   group('macOS menu bar and Dock', () {
