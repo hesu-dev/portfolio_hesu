@@ -1,6 +1,34 @@
+import 'dart:convert';
+import 'dart:io';
+
 import 'package:flutter_test/flutter_test.dart';
 import 'package:portfolio_hesu/portfolio/data/portfolio_data.dart';
 import 'package:portfolio_hesu/portfolio/models/portfolio_app_id.dart';
+
+const _portfolioDescription =
+    'Flutter 개발자 민희수의 프로젝트와 기술 경험을 소개하는 반응형 포트폴리오입니다.';
+
+File _projectFile(String relativePath) {
+  var directory = Directory.current.absolute;
+
+  while (true) {
+    final pubspec = File(
+      '${directory.path}${Platform.pathSeparator}pubspec.yaml',
+    );
+    if (pubspec.existsSync()) {
+      return File(
+        '${directory.path}${Platform.pathSeparator}'
+        '${relativePath.replaceAll('/', Platform.pathSeparator)}',
+      );
+    }
+
+    final parent = directory.parent;
+    if (parent.path == directory.path) {
+      throw StateError('Flutter project root could not be found.');
+    }
+    directory = parent;
+  }
+}
 
 void main() {
   group('portfolioData', () {
@@ -251,5 +279,97 @@ void main() {
       PortfolioAppId.github,
       PortfolioAppId.mail,
     ]);
+  });
+
+  group('web portfolio metadata sources', () {
+    test('index identifies Min He-su and keeps Flutter bootstrap intact', () {
+      final indexHtml = _projectFile('web/index.html').readAsStringSync();
+
+      expect(indexHtml, contains('<html lang="ko">'));
+      expect(indexHtml, contains('<title>민희수 포트폴리오</title>'));
+      expect(
+        indexHtml,
+        contains('name="description" content="$_portfolioDescription"'),
+      );
+      expect(
+        indexHtml,
+        contains(
+          'name="viewport" content="width=device-width, initial-scale=1.0"',
+        ),
+      );
+      expect(indexHtml, contains('name="theme-color" content="#121316"'));
+      expect(
+        indexHtml,
+        contains('name="apple-mobile-web-app-title" content="민희수 포트폴리오"'),
+      );
+      expect(indexHtml, contains('<link rel="manifest" href="manifest.json">'));
+      expect(indexHtml, contains('flutter_bootstrap.js'));
+      expect(indexHtml, contains('<noscript>'));
+      expect(indexHtml, contains('민희수의 포트폴리오'));
+
+      final lowerCaseIndex = indexHtml.toLowerCase();
+      expect(lowerCaseIndex, isNot(contains('a new flutter project')));
+      expect(lowerCaseIndex, isNot(contains('portfolio_hesu')));
+      expect(lowerCaseIndex, isNot(contains('portfolio-juah')));
+      expect(indexHtml, isNot(contains('천주아')));
+    });
+
+    test('manifest is valid, consistent, and base-path safe', () {
+      final manifestSource = _projectFile(
+        'web/manifest.json',
+      ).readAsStringSync();
+      final manifest = jsonDecode(manifestSource) as Map<String, dynamic>;
+
+      expect(manifest['name'], '민희수 포트폴리오');
+      expect(manifest['short_name'], '민희수');
+      expect(manifest['description'], _portfolioDescription);
+      expect(manifest['start_url'], '.');
+      expect(manifest['scope'], '.');
+      expect(manifest['display'], 'standalone');
+      expect(manifest['theme_color'], '#121316');
+      expect(manifest['background_color'], '#121316');
+
+      final icons = (manifest['icons'] as List<dynamic>)
+          .cast<Map<String, dynamic>>();
+      expect(icons, isNotEmpty);
+      for (final icon in icons) {
+        final source = icon['src'] as String;
+        expect(Uri.parse(source).hasScheme, isFalse, reason: source);
+        expect(source.startsWith('/'), isFalse, reason: source);
+      }
+
+      final lowerCaseManifest = manifestSource.toLowerCase();
+      expect(lowerCaseManifest, isNot(contains('a new flutter project')));
+      expect(lowerCaseManifest, isNot(contains('portfolio_hesu')));
+      expect(lowerCaseManifest, isNot(contains('portfolio-juah')));
+      expect(manifestSource, isNot(contains('천주아')));
+    });
+  });
+
+  test('README documents adaptive UI and both web build targets', () {
+    final readme = _projectFile('README.md').readAsStringSync();
+
+    expect(readme, contains('macOS'));
+    expect(readme, contains('iPadOS'));
+    expect(readme, contains('iPhone'));
+    expect(readme, contains('Flutter'));
+    expect(readme, contains('flutter run -d chrome'));
+    expect(readme, contains('flutter test'));
+    expect(readme, contains('flutter analyze'));
+    expect(
+      readme,
+      contains(
+        'flutter build web --release --base-href /portfolio_hesu/ '
+        '--pwa-strategy=none',
+      ),
+    );
+    expect(
+      readme,
+      contains('flutter build web --release --base-href / --pwa-strategy=none'),
+    );
+    expect(readme, contains('build/web'));
+    expect(readme, contains('GitHub Pages'));
+    expect(readme, contains('Vercel'));
+    expect(readme, contains('현재 배포는 GitHub Pages를 유지'));
   });
 }
