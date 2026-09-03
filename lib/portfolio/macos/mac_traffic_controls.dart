@@ -10,23 +10,29 @@ class MacTrafficControls extends StatelessWidget {
     required this.windowLabel,
     required this.maximized,
     required this.onClose,
-    required this.onMinimize,
-    required this.onMaximize,
+    this.onMinimize,
+    this.onMaximize,
+    this.targetSize = defaultTargetSize,
+    this.secondaryControlsInteractive = true,
     super.key,
-  });
+  }) : assert(targetSize >= visualDiameter),
+       assert(!secondaryControlsInteractive || onMinimize != null),
+       assert(!secondaryControlsInteractive || onMaximize != null);
 
   static const Color closeColor = Color(0xFFFF5F57);
   static const Color minimizeColor = Color(0xFFFEBC2E);
   static const Color maximizeColor = Color(0xFF28C840);
   static const double visualDiameter = 14;
-  static const double targetSize = 32;
+  static const double defaultTargetSize = 32;
 
   final PortfolioAppId appId;
   final String windowLabel;
   final bool maximized;
   final VoidCallback onClose;
-  final VoidCallback onMinimize;
-  final VoidCallback onMaximize;
+  final VoidCallback? onMinimize;
+  final VoidCallback? onMaximize;
+  final double targetSize;
+  final bool secondaryControlsInteractive;
 
   @override
   Widget build(BuildContext context) {
@@ -42,25 +48,43 @@ class MacTrafficControls extends StatelessWidget {
             label: 'Close $windowLabel window',
             color: closeColor,
             onPressed: onClose,
+            targetSize: targetSize,
           ),
-          _MacTrafficButton(
-            controlKey: Key('window-minimize-${appId.name}'),
-            visualKey: Key('window-minimize-${appId.name}-visual'),
-            focusKey: Key('window-minimize-${appId.name}-focus'),
-            label: 'Minimize $windowLabel window',
-            color: minimizeColor,
-            onPressed: onMinimize,
-          ),
-          _MacTrafficButton(
-            controlKey: Key('window-maximize-${appId.name}'),
-            visualKey: Key('window-maximize-${appId.name}-visual'),
-            focusKey: Key('window-maximize-${appId.name}-focus'),
-            label: maximized
-                ? 'Restore $windowLabel window'
-                : 'Maximize $windowLabel window',
-            color: maximizeColor,
-            onPressed: onMaximize,
-          ),
+          if (secondaryControlsInteractive) ...<Widget>[
+            _MacTrafficButton(
+              controlKey: Key('window-minimize-${appId.name}'),
+              visualKey: Key('window-minimize-${appId.name}-visual'),
+              focusKey: Key('window-minimize-${appId.name}-focus'),
+              label: 'Minimize $windowLabel window',
+              color: minimizeColor,
+              onPressed: onMinimize!,
+              targetSize: targetSize,
+            ),
+            _MacTrafficButton(
+              controlKey: Key('window-maximize-${appId.name}'),
+              visualKey: Key('window-maximize-${appId.name}-visual'),
+              focusKey: Key('window-maximize-${appId.name}-focus'),
+              label: maximized
+                  ? 'Restore $windowLabel window'
+                  : 'Maximize $windowLabel window',
+              color: maximizeColor,
+              onPressed: onMaximize!,
+              targetSize: targetSize,
+            ),
+          ] else ...<Widget>[
+            _MacTrafficDecoration(
+              controlKey: Key('window-minimize-${appId.name}'),
+              visualKey: Key('window-minimize-${appId.name}-visual'),
+              color: minimizeColor,
+              targetSize: targetSize,
+            ),
+            _MacTrafficDecoration(
+              controlKey: Key('window-maximize-${appId.name}'),
+              visualKey: Key('window-maximize-${appId.name}-visual'),
+              color: maximizeColor,
+              targetSize: targetSize,
+            ),
+          ],
         ],
       ),
     );
@@ -75,6 +99,7 @@ class _MacTrafficButton extends StatefulWidget {
     required this.label,
     required this.color,
     required this.onPressed,
+    required this.targetSize,
   });
 
   final Key controlKey;
@@ -83,6 +108,7 @@ class _MacTrafficButton extends StatefulWidget {
   final String label;
   final Color color;
   final VoidCallback onPressed;
+  final double targetSize;
 
   @override
   State<_MacTrafficButton> createState() => _MacTrafficButtonState();
@@ -144,7 +170,7 @@ class _MacTrafficButtonState extends State<_MacTrafficButton> {
               behavior: HitTestBehavior.opaque,
               onTap: _activate,
               child: SizedBox.square(
-                dimension: MacTrafficControls.targetSize,
+                dimension: widget.targetSize,
                 child: Stack(
                   alignment: Alignment.center,
                   children: <Widget>[
@@ -174,6 +200,38 @@ class _MacTrafficButtonState extends State<_MacTrafficButton> {
                 ),
               ),
             ),
+          ),
+        ),
+      ),
+    );
+  }
+}
+
+class _MacTrafficDecoration extends StatelessWidget {
+  const _MacTrafficDecoration({
+    required this.controlKey,
+    required this.visualKey,
+    required this.color,
+    required this.targetSize,
+  });
+
+  final Key controlKey;
+  final Key visualKey;
+  final Color color;
+  final double targetSize;
+
+  @override
+  Widget build(BuildContext context) {
+    return ExcludeSemantics(
+      child: SizedBox.square(
+        key: controlKey,
+        dimension: targetSize,
+        child: Center(
+          child: Container(
+            key: visualKey,
+            width: MacTrafficControls.visualDiameter,
+            height: MacTrafficControls.visualDiameter,
+            decoration: BoxDecoration(color: color, shape: BoxShape.circle),
           ),
         ),
       ),
