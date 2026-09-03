@@ -15,7 +15,7 @@ void main() {
         textScaler: const TextScaler.linear(2),
       );
       await _openDesktopApp(tester, PortfolioAppId.projects);
-      await _openDesktopApp(tester, PortfolioAppId.thisMac);
+      await _openProjectHubFromSystemMenu(tester);
 
       for (final entry in const <({PortfolioAppId appId, String prefix})>[
         (appId: PortfolioAppId.projects, prefix: 'projects'),
@@ -168,6 +168,14 @@ Future<void> _openDesktopApp(WidgetTester tester, PortfolioAppId appId) async {
   await tester.tap(icon);
   await tester.pumpAndSettle();
   expect(find.byKey(Key('mac-window-${appId.name}')), findsOneWidget);
+}
+
+Future<void> _openProjectHubFromSystemMenu(WidgetTester tester) async {
+  await tester.tap(find.byKey(const Key('mac-system-menu-button')));
+  await tester.pumpAndSettle();
+  await tester.tap(find.byKey(const Key('system-menu-this-mac')));
+  await tester.pumpAndSettle();
+  expect(find.byKey(const Key('mac-window-thisMac')), findsOneWidget);
 }
 
 final class _FakeLauncher implements ExternalLauncher {
