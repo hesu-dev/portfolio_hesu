@@ -10,11 +10,7 @@ void main() {
     testWidgets('390px Finder lays three project folders on the first row', (
       tester,
     ) async {
-      await _pumpProjects(
-        tester,
-        size: const Size(390, 700),
-        compact: true,
-      );
+      await _pumpProjects(tester, size: const Size(390, 700), compact: true);
 
       final folders = <Finder>[
         for (var index = 0; index < 4; index++)
@@ -35,11 +31,7 @@ void main() {
     testWidgets('iPad Finder keeps all six recent projects on one dense row', (
       tester,
     ) async {
-      await _pumpProjects(
-        tester,
-        size: const Size(834, 700),
-        tablet: true,
-      );
+      await _pumpProjects(tester, size: const Size(834, 700), tablet: true);
       await tester.tap(
         find.byKey(const Key('projects-finder-location-recent')),
       );

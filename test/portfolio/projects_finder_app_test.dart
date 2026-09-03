@@ -171,9 +171,7 @@ void main() {
       expect(inlineTrafficLights, findsNothing);
     });
 
-    testWidgets('좁은 iPhone은 112px 2열 파일 목록과 별도 상세 뎁스를 스크롤한다', (
-      tester,
-    ) async {
+    testWidgets('좁은 iPhone은 112px 2열 파일 목록과 별도 상세 뎁스를 스크롤한다', (tester) async {
       await _pumpProjects(
         tester,
         size: const Size(320, 480),
@@ -232,9 +230,7 @@ void main() {
       expect(tester.takeException(), isNull);
     });
 
-    testWidgets('넓은 iPhone은 112px 폴더를 가용 폭에 맞춰 조밀하게 배치한다', (
-      tester,
-    ) async {
+    testWidgets('넓은 iPhone은 112px 폴더를 가용 폭에 맞춰 조밀하게 배치한다', (tester) async {
       for (final scenario in const <({double width, int columns})>[
         (width: 448, columns: 3),
         (width: 590, columns: 4),
@@ -276,9 +272,7 @@ void main() {
       }
     });
 
-    testWidgets('desktop 창의 좁은 regular 본문도 같은 고정 폭과 간격으로 배치한다', (
-      tester,
-    ) async {
+    testWidgets('desktop 창의 좁은 regular 본문도 같은 고정 폭과 간격으로 배치한다', (tester) async {
       await _pumpProjects(tester, size: const Size(766, 600));
 
       expect(

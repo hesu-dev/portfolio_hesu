@@ -415,11 +415,7 @@ class _MacDesktopIconState extends State<_MacDesktopIcon> {
         fontSize: 11.5,
         fontWeight: FontWeight.w600,
         shadows: <Shadow>[
-          Shadow(
-            color: Color(0xB3000000),
-            blurRadius: 4,
-            offset: Offset(0, 1),
-          ),
+          Shadow(color: Color(0xB3000000), blurRadius: 4, offset: Offset(0, 1)),
         ],
       ),
     );
@@ -473,10 +469,7 @@ class _MacDesktopIconState extends State<_MacDesktopIcon> {
                       : Colors.transparent,
                   borderRadius: BorderRadius.circular(13),
                   border: _showFocus && !folderLauncher
-                      ? Border.all(
-                          color: const Color(0xFFB8E2FF),
-                          width: 2,
-                        )
+                      ? Border.all(color: const Color(0xFFB8E2FF), width: 2)
                       : null,
                 ),
                 child: Column(
