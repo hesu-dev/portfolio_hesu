@@ -30,9 +30,7 @@ void main() {
       }
     });
 
-    testWidgets('keeps the iPad and iPhone placeholders below 1024', (
-      tester,
-    ) async {
+    testWidgets('keeps the iPad and iPhone shells below 1024', (tester) async {
       await _pumpPortfolio(tester, size: const Size(834, 700));
       expect(find.byKey(const Key('ipad-shell')), findsOneWidget);
       expect(find.byKey(const Key('mac-shell')), findsNothing);
