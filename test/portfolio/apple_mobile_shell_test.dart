@@ -7,6 +7,7 @@ import 'package:portfolio_hesu/portfolio/mobile/apple_mobile_shell.dart';
 import 'package:portfolio_hesu/portfolio/models/portfolio_app_id.dart';
 import 'package:portfolio_hesu/portfolio/services/external_launcher.dart';
 import 'package:portfolio_hesu/portfolio/theme/apple_theme.dart';
+import 'package:portfolio_hesu/portfolio/theme/portfolio_theme_controller.dart';
 import 'package:portfolio_hesu/portfolio/widgets/adaptive_portfolio_shell.dart';
 
 void main() {
@@ -525,6 +526,12 @@ Future<void> _pumpShell(
   TextScaler textScaler = TextScaler.noScaling,
   Brightness brightness = Brightness.light,
 }) async {
+  final themeController = PortfolioThemeController(
+    initial: brightness == Brightness.dark
+        ? PortfolioThemePreference.dark
+        : PortfolioThemePreference.light,
+  );
+  addTearDown(themeController.dispose);
   tester.view.devicePixelRatio = 1;
   tester.view.physicalSize = size;
   addTearDown(tester.view.resetDevicePixelRatio);
@@ -540,6 +547,7 @@ Future<void> _pumpShell(
         child: AdaptivePortfolioShell(
           data: data,
           externalLauncher: launcher ?? _RecordingLauncher(),
+          themeController: themeController,
         ),
       ),
     ),

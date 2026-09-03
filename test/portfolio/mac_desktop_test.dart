@@ -8,6 +8,7 @@ import 'package:portfolio_hesu/portfolio/models/portfolio_app_id.dart';
 import 'package:portfolio_hesu/portfolio/portfolio_app.dart';
 import 'package:portfolio_hesu/portfolio/services/external_launcher.dart';
 import 'package:portfolio_hesu/portfolio/theme/apple_theme.dart';
+import 'package:portfolio_hesu/portfolio/theme/portfolio_theme_controller.dart';
 import 'package:portfolio_hesu/portfolio/widgets/adaptive_portfolio_shell.dart';
 
 void main() {
@@ -554,6 +555,8 @@ Future<void> _pumpAdaptivePortfolio(
   required PortfolioData data,
   Size size = const Size(1440, 900),
 }) async {
+  final themeController = PortfolioThemeController();
+  addTearDown(themeController.dispose);
   tester.view.devicePixelRatio = 1;
   tester.view.physicalSize = size;
   addTearDown(tester.view.resetDevicePixelRatio);
@@ -565,6 +568,7 @@ Future<void> _pumpAdaptivePortfolio(
       home: AdaptivePortfolioShell(
         externalLauncher: _FakeLauncher(),
         data: data,
+        themeController: themeController,
       ),
     ),
   );

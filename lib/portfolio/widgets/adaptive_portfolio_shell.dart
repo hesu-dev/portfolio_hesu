@@ -3,10 +3,12 @@ import 'package:portfolio_hesu/portfolio/data/portfolio_data.dart';
 import 'package:portfolio_hesu/portfolio/macos/mac_desktop.dart';
 import 'package:portfolio_hesu/portfolio/mobile/apple_mobile_shell.dart';
 import 'package:portfolio_hesu/portfolio/services/external_launcher.dart';
+import 'package:portfolio_hesu/portfolio/theme/portfolio_theme_controller.dart';
 
 class AdaptivePortfolioShell extends StatelessWidget {
   const AdaptivePortfolioShell({
     required this.externalLauncher,
+    required this.themeController,
     this.data = portfolioData,
     super.key,
   });
@@ -15,6 +17,7 @@ class AdaptivePortfolioShell extends StatelessWidget {
   static const double macBreakpoint = 1024;
 
   final ExternalLauncher externalLauncher;
+  final PortfolioThemeController themeController;
   final PortfolioData data;
 
   @override
