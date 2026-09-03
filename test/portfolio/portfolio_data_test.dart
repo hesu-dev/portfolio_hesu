@@ -29,9 +29,7 @@ void main() {
 
     test('keeps every active project action', () {
       const expectedLinksByProject = <String, Set<String>>{
-        'PersonaChat AI Character Chat': <String>{
-          'https://github.com/hesu-dev/portfolio_hesu/blob/main/docs/projects/ai-character-chat-app.md',
-        },
+        'PersonaChat AI Character Chat': <String>{},
         'ReadingLog': <String>{
           'https://play.google.com/store/apps/details?id=com.reha.readinglog',
           'https://apps.apple.com/kr/app/%EB%A6%AC%EB%94%A9%EB%A1%9C%EA%B7%B8/id6759693995',
@@ -103,6 +101,50 @@ void main() {
       );
     });
 
+    test('skill groups defensively copy mutable runtime skills', () {
+      final sourceSkills = <String>['Flutter', 'Dart'];
+      final skillGroup = PortfolioSkillGroup(
+        title: 'Development',
+        skills: sourceSkills,
+      );
+
+      sourceSkills.add('Reference content');
+
+      expect(skillGroup.skills, <String>['Flutter', 'Dart']);
+      expect(
+        () => skillGroup.skills.add('Another skill'),
+        throwsUnsupportedError,
+      );
+    });
+
+    test('projects defensively copy mutable runtime collections', () {
+      final sourceTechnologies = <String>['Flutter', 'Dart'];
+      final sourceLinks = <PortfolioProjectLink>[
+        const PortfolioProjectLink(
+          label: 'Source',
+          url: 'https://example.com/source',
+        ),
+      ];
+      final project = PortfolioProject(
+        title: 'Project',
+        description: 'Description',
+        period: '2026',
+        technologies: sourceTechnologies,
+        links: sourceLinks,
+      );
+
+      sourceTechnologies.add('Reference technology');
+      sourceLinks.clear();
+
+      expect(project.technologies, <String>['Flutter', 'Dart']);
+      expect(project.links, hasLength(1));
+      expect(
+        () => project.technologies.add('Another technology'),
+        throwsUnsupportedError,
+      );
+      expect(() => project.links.clear(), throwsUnsupportedError);
+    });
+
     test('uses const immutable value types', () {
       const identity = PortfolioIdentity(
         name: '민희수',
@@ -128,27 +170,12 @@ void main() {
         period: '2020',
         link: projectLink,
       );
-      const skillGroup = PortfolioSkillGroup(
-        title: 'Development',
-        skills: <String>['Flutter', 'Dart'],
-      );
-      const project = PortfolioProject(
-        title: 'Project',
-        description: 'Description',
-        period: '2020',
-        technologies: <String>['Flutter'],
-        links: <PortfolioProjectLink>[projectLink],
-      );
-      const data = PortfolioData(
-        identity: identity,
-        experiences: <PortfolioExperience>[experience],
-        education: <PortfolioEducation>[education],
-        skillGroups: <PortfolioSkillGroup>[skillGroup],
-        projects: <PortfolioProject>[project],
-      );
+      const data = portfolioData;
 
-      expect(data.identity, same(identity));
-      expect(data.projects.single, same(project));
+      expect(identity.name, '민희수');
+      expect(experience.role, 'Developer');
+      expect(education.link, same(projectLink));
+      expect(data, same(portfolioData));
     });
   });
 

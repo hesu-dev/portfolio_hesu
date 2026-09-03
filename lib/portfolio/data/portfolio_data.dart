@@ -45,7 +45,20 @@ class PortfolioEducation {
 }
 
 class PortfolioSkillGroup {
-  const PortfolioSkillGroup({required this.title, required this.skills});
+  factory PortfolioSkillGroup({
+    required String title,
+    required Iterable<String> skills,
+  }) {
+    return PortfolioSkillGroup._constant(
+      title: title,
+      skills: List<String>.unmodifiable(skills),
+    );
+  }
+
+  const PortfolioSkillGroup._constant({
+    required this.title,
+    required this.skills,
+  });
 
   final String title;
   final List<String> skills;
@@ -61,7 +74,23 @@ class PortfolioProjectLink {
 }
 
 class PortfolioProject {
-  const PortfolioProject({
+  factory PortfolioProject({
+    required String title,
+    required String description,
+    required String period,
+    required Iterable<String> technologies,
+    required Iterable<PortfolioProjectLink> links,
+  }) {
+    return PortfolioProject._constant(
+      title: title,
+      description: description,
+      period: period,
+      technologies: List<String>.unmodifiable(technologies),
+      links: List<PortfolioProjectLink>.unmodifiable(links),
+    );
+  }
+
+  const PortfolioProject._constant({
     required this.title,
     required this.description,
     required this.period,
@@ -183,36 +212,30 @@ const portfolioData = PortfolioData(
     ),
   ],
   skillGroups: <PortfolioSkillGroup>[
-    PortfolioSkillGroup(
+    PortfolioSkillGroup._constant(
       title: 'Development',
       skills: <String>['Flutter', 'Dart', 'React', 'Java'],
     ),
-    PortfolioSkillGroup(
+    PortfolioSkillGroup._constant(
       title: 'Collaboration',
       skills: <String>['Notion', 'Slack', 'Trello'],
     ),
-    PortfolioSkillGroup(
+    PortfolioSkillGroup._constant(
       title: 'Design & UI/UX',
       skills: <String>['Figma', 'Adobe Photoshop', 'Adobe Illustrator'],
     ),
   ],
   projects: <PortfolioProject>[
-    PortfolioProject(
+    PortfolioProject._constant(
       title: 'PersonaChat AI Character Chat',
       description:
           'SNS 로그인, 캐릭터 생성/검색, AI 채팅, 이벤트 이미지, 크레딧 결제를 포함한 '
           'Flutter 실무형 포트폴리오 프로젝트 설계',
       period: '2026.07 - 설계',
       technologies: <String>['Flutter', 'Riverpod', 'Firebase', 'IAP', 'AI'],
-      links: <PortfolioProjectLink>[
-        PortfolioProjectLink(
-          label: 'Project brief',
-          url:
-              'https://github.com/hesu-dev/portfolio_hesu/blob/main/docs/projects/ai-character-chat-app.md',
-        ),
-      ],
+      links: <PortfolioProjectLink>[],
     ),
-    PortfolioProject(
+    PortfolioProject._constant(
       title: 'ReadingLog',
       description: '채팅 로그 리더기 앱 기획 및 개발, 파싱용 Chrome 확장 프로그램 개발',
       period: '2026.02 - 2026.05',
@@ -235,7 +258,7 @@ const portfolioData = PortfolioData(
         ),
       ],
     ),
-    PortfolioProject(
+    PortfolioProject._constant(
       title: 'Blue Mentor',
       description: '기계 점검 안전 설비 보고서 작성 앱 기획 및 개발',
       period: '2023.06 - 2024.02',
@@ -253,7 +276,7 @@ const portfolioData = PortfolioData(
         ),
       ],
     ),
-    PortfolioProject(
+    PortfolioProject._constant(
       title: 'IRIS',
       description: '범부처통합연구지원시스템 R&D 참여: 3D 증강현실 기반 교량 점검 시스템 개발',
       period: '2022.12 - 2023.12',
@@ -266,7 +289,7 @@ const portfolioData = PortfolioData(
         ),
       ],
     ),
-    PortfolioProject(
+    PortfolioProject._constant(
       title: 'AI-Bver',
       description: 'AI-beaver 애플리케이션 개발 및 유지보수',
       period: '2021.12 - 2021.04',
@@ -279,7 +302,7 @@ const portfolioData = PortfolioData(
         ),
       ],
     ),
-    PortfolioProject(
+    PortfolioProject._constant(
       title: 'HiddenTag',
       description: 'HiddenTag 애플리케이션 페이지 유지보수',
       period: '2020.12 - 2021.07',
