@@ -106,9 +106,6 @@ void main() {
           textScaler: const TextScaler.linear(2),
         );
 
-        final navigationBar = find.byKey(
-          const Key('mobile-app-navigation-bar'),
-        );
         final title = find.byKey(const Key('mobile-app-title'));
         final titleWidget = tester.widget<Text>(title);
         expect(titleWidget.maxLines, 1);

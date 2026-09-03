@@ -585,15 +585,3 @@ final class _MutableClock {
 
   DateTime call() => current;
 }
-
-double _contrastRatio(Color foreground, Color background) {
-  final foregroundLuminance = foreground.computeLuminance();
-  final backgroundLuminance = background.computeLuminance();
-  final lighter = foregroundLuminance > backgroundLuminance
-      ? foregroundLuminance
-      : backgroundLuminance;
-  final darker = foregroundLuminance > backgroundLuminance
-      ? backgroundLuminance
-      : foregroundLuminance;
-  return (lighter + 0.05) / (darker + 0.05);
-}
