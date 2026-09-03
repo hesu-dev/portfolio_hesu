@@ -26,12 +26,14 @@ class ProjectsApp extends StatefulWidget {
 }
 
 class _ProjectsAppState extends State<ProjectsApp> {
-  int _selectedIndex = 0;
-  final List<int> _history = <int>[0];
+  int? _selectedIndex;
+  final List<int?> _history = <int?>[null];
   int _historyCursor = 0;
   int _launchRequestGeneration = 0;
   String? _launchFeedback;
   bool _launchSucceeded = false;
+
+  int? get _activeProjectIndex => _history[_historyCursor];
 
   @override
   void didUpdateWidget(covariant ProjectsApp oldWidget) {
@@ -41,20 +43,23 @@ class _ProjectsAppState extends State<ProjectsApp> {
       _launchRequestGeneration++;
       _launchFeedback = null;
     }
-    if (_selectedIndex >= widget.data.projects.length) {
-      _selectedIndex = 0;
+    final hasUnavailableProject = _history.any(
+      (index) => index != null && index >= widget.data.projects.length,
+    );
+    if (hasUnavailableProject) {
+      _selectedIndex = null;
       _history
         ..clear()
-        ..add(0);
+        ..add(null);
       _historyCursor = 0;
       _launchFeedback = null;
+    } else if (_selectedIndex != null &&
+        _selectedIndex! >= widget.data.projects.length) {
+      _selectedIndex = null;
     }
   }
 
   void _selectProject(int index) {
-    if (index == _selectedIndex) {
-      return;
-    }
     _launchRequestGeneration++;
     setState(() {
       _selectedIndex = index;
@@ -75,7 +80,6 @@ class _ProjectsAppState extends State<ProjectsApp> {
     _launchRequestGeneration++;
     setState(() {
       _historyCursor = nextCursor;
-      _selectedIndex = _history[_historyCursor];
       _launchFeedback = null;
     });
   }
@@ -101,10 +105,14 @@ class _ProjectsAppState extends State<ProjectsApp> {
 
   @override
   Widget build(BuildContext context) {
+    final activeProjectIndex = _activeProjectIndex;
     return AppleFinderScaffold(
       surfaceKey: const Key('projects-app'),
       keyPrefix: 'projects',
       currentLocation: 'iCloud Drive',
+      toolbarTitle: activeProjectIndex == null
+          ? 'Projects'
+          : widget.data.projects[activeProjectIndex].title,
       ownerName: widget.data.identity.name,
       compact: widget.compact,
       tablet: widget.tablet,
@@ -121,20 +129,31 @@ class _ProjectsAppState extends State<ProjectsApp> {
             message: 'Project reports will appear here.',
           );
         }
-        return _buildDetail(compact: compactLayout);
+        if (activeProjectIndex == null) {
+          return _buildCollection(compact: compactLayout);
+        }
+        return _buildDetail(index: activeProjectIndex, compact: compactLayout);
       },
     );
   }
 
-  Widget _buildDetail({required bool compact}) {
-    return _ProjectDetail(
+  Widget _buildCollection({required bool compact}) {
+    return _ProjectCollection(
       projects: widget.data.projects,
-      project: widget.data.projects[_selectedIndex],
-      projectIndex: _selectedIndex,
+      selectedIndex: _selectedIndex,
+      compact: compact,
+      tablet: widget.tablet,
+      onSelectProject: _selectProject,
+    );
+  }
+
+  Widget _buildDetail({required int index, required bool compact}) {
+    return _ProjectDetail(
+      project: widget.data.projects[index],
+      projectIndex: index,
       compact: compact,
       feedback: _launchFeedback,
       launchSucceeded: _launchSucceeded,
-      onSelectProject: _selectProject,
       onOpenLink: _openLink,
     );
   }
@@ -149,7 +168,7 @@ class _ProjectGrid extends StatelessWidget {
   });
 
   final List<PortfolioProject> projects;
-  final int selectedIndex;
+  final int? selectedIndex;
   final bool compact;
   final ValueChanged<int> onSelected;
 
@@ -162,13 +181,16 @@ class _ProjectGrid extends StatelessWidget {
         const minimumTileWidth = 132.0;
         final itemCount = projects.length + 1;
         final columnCount = compact
-            ? (constraints.maxWidth / 132).floor().clamp(1, 2)
+            ? 2
             : ((constraints.maxWidth + spacing) / (minimumTileWidth + spacing))
                   .floor()
                   .clamp(1, itemCount);
-        final tileWidth =
-            (constraints.maxWidth - spacing * (columnCount - 1)) / columnCount;
+        final tileWidth = compact
+            ? minimumTileWidth
+            : (constraints.maxWidth - spacing * (columnCount - 1)) /
+                  columnCount;
         return Wrap(
+          alignment: compact ? WrapAlignment.center : WrapAlignment.start,
           spacing: spacing,
           runSpacing: 12,
           children: <Widget>[
@@ -248,33 +270,23 @@ class _FinderReadmeFile extends StatelessWidget {
 
 class _ProjectDetail extends StatelessWidget {
   const _ProjectDetail({
-    required this.projects,
     required this.project,
     required this.projectIndex,
     required this.compact,
     required this.feedback,
     required this.launchSucceeded,
-    required this.onSelectProject,
     required this.onOpenLink,
   });
 
-  final List<PortfolioProject> projects;
   final PortfolioProject project;
   final int projectIndex;
   final bool compact;
   final String? feedback;
   final bool launchSucceeded;
-  final ValueChanged<int> onSelectProject;
   final ValueChanged<PortfolioProjectLink> onOpenLink;
 
   @override
   Widget build(BuildContext context) {
-    final collection = _FinderProjectCollection(
-      projects: projects,
-      selectedIndex: projectIndex,
-      compact: compact,
-      onSelected: onSelectProject,
-    );
     final detail = _SelectedProjectDetail(
       project: project,
       projectIndex: projectIndex,
@@ -284,42 +296,45 @@ class _ProjectDetail extends StatelessWidget {
       onOpenLink: onOpenLink,
     );
 
-    if (compact) {
-      return ListView(
-        key: const Key('projects-detail-scroll'),
-        padding: const EdgeInsets.all(16),
-        children: <Widget>[
-          Column(
-            crossAxisAlignment: CrossAxisAlignment.stretch,
-            children: <Widget>[
-              collection,
-              const SizedBox(height: 22),
-              Divider(color: AppleTheme.separator(context)),
-              const SizedBox(height: 18),
-              detail,
-            ],
-          ),
-        ],
-      );
-    }
+    return ListView(
+      key: const Key('projects-detail-scroll'),
+      padding: EdgeInsets.all(compact ? 16 : 30),
+      children: <Widget>[detail],
+    );
+  }
+}
 
-    return Column(
+class _ProjectCollection extends StatelessWidget {
+  const _ProjectCollection({
+    required this.projects,
+    required this.selectedIndex,
+    required this.compact,
+    required this.tablet,
+    required this.onSelectProject,
+  });
+
+  final List<PortfolioProject> projects;
+  final int? selectedIndex;
+  final bool compact;
+  final bool tablet;
+  final ValueChanged<int> onSelectProject;
+
+  @override
+  Widget build(BuildContext context) {
+    return ListView(
+      key: const Key('projects-collection-scroll'),
+      padding: EdgeInsets.fromLTRB(
+        compact ? 16 : (tablet ? 20 : 30),
+        compact ? 16 : 24,
+        compact ? 16 : (tablet ? 20 : 30),
+        24,
+      ),
       children: <Widget>[
-        ConstrainedBox(
-          constraints: const BoxConstraints(maxHeight: 242),
-          child: SingleChildScrollView(
-            key: const Key('projects-collection-scroll'),
-            padding: const EdgeInsets.fromLTRB(30, 24, 30, 16),
-            child: collection,
-          ),
-        ),
-        Divider(height: 1, color: AppleTheme.separator(context)),
-        Expanded(
-          child: ListView(
-            key: const Key('projects-detail-scroll'),
-            padding: const EdgeInsets.all(30),
-            children: <Widget>[detail],
-          ),
+        _FinderProjectCollection(
+          projects: projects,
+          selectedIndex: selectedIndex,
+          compact: compact,
+          onSelected: onSelectProject,
         ),
       ],
     );
@@ -335,7 +350,7 @@ class _FinderProjectCollection extends StatelessWidget {
   });
 
   final List<PortfolioProject> projects;
-  final int selectedIndex;
+  final int? selectedIndex;
   final bool compact;
   final ValueChanged<int> onSelected;
 
