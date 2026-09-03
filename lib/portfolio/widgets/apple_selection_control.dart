@@ -1,5 +1,7 @@
 import 'package:flutter/material.dart';
 
+import '../theme/apple_theme.dart';
+
 class AppleSelectionControl extends StatefulWidget {
   const AppleSelectionControl({
     required this.semanticsLabel,
@@ -47,7 +49,26 @@ class _AppleSelectionControlState extends State<AppleSelectionControl> {
           onTap: widget.onPressed,
           onFocusChange: _handleFocusChange,
           borderRadius: widget.borderRadius,
-          child: widget.child,
+          child: Stack(
+            children: <Widget>[
+              widget.child,
+              if (_focused)
+                Positioned.fill(
+                  child: IgnorePointer(
+                    child: DecoratedBox(
+                      key: const Key('apple-selection-focus'),
+                      decoration: BoxDecoration(
+                        borderRadius: widget.borderRadius,
+                        border: Border.all(
+                          color: AppleTheme.selectionForeground(context),
+                          width: 2,
+                        ),
+                      ),
+                    ),
+                  ),
+                ),
+            ],
+          ),
         ),
       ),
     );
