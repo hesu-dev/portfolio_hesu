@@ -27,6 +27,38 @@ void main() {
       expect(portfolioData.projects, hasLength(6));
     });
 
+    test('classifies work and personal projects for Finder locations', () {
+      final titlesByCategory = <PortfolioProjectCategory, Set<String>>{
+        for (final category in PortfolioProjectCategory.values)
+          category: portfolioData.projects
+              .where((project) => project.category == category)
+              .map((project) => project.title)
+              .toSet(),
+      };
+
+      expect(titlesByCategory[PortfolioProjectCategory.personal], <String>{
+        'PersonaChat AI Character Chat',
+        'ReadingLog',
+      });
+      expect(titlesByCategory[PortfolioProjectCategory.career], <String>{
+        'Blue Mentor',
+        'IRIS',
+        'AI-Bver',
+        'HiddenTag',
+      });
+      final projectWithoutExplicitCategory = PortfolioProject(
+        title: 'Unclassified project',
+        description: 'Defaults safely',
+        period: '2026',
+        technologies: const <String>[],
+        links: const <PortfolioProjectLink>[],
+      );
+      expect(
+        projectWithoutExplicitCategory.category,
+        PortfolioProjectCategory.career,
+      );
+    });
+
     test('keeps every active project action', () {
       const expectedLinksByProject = <String, Set<String>>{
         'PersonaChat AI Character Chat': <String>{},

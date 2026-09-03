@@ -76,6 +76,8 @@ class PortfolioProjectLink {
   Uri get uri => Uri.parse(url);
 }
 
+enum PortfolioProjectCategory { career, personal }
+
 class PortfolioProject {
   factory PortfolioProject({
     required String title,
@@ -83,6 +85,7 @@ class PortfolioProject {
     required String period,
     required Iterable<String> technologies,
     required Iterable<PortfolioProjectLink> links,
+    PortfolioProjectCategory category = PortfolioProjectCategory.career,
   }) {
     return PortfolioProject.constant(
       title: title,
@@ -90,6 +93,7 @@ class PortfolioProject {
       period: period,
       technologies: List<String>.unmodifiable(technologies),
       links: List<PortfolioProjectLink>.unmodifiable(links),
+      category: category,
     );
   }
 
@@ -102,6 +106,7 @@ class PortfolioProject {
     required this.period,
     required this.technologies,
     required this.links,
+    this.category = PortfolioProjectCategory.career,
   });
 
   final String title;
@@ -109,6 +114,7 @@ class PortfolioProject {
   final String period;
   final List<String> technologies;
   final List<PortfolioProjectLink> links;
+  final PortfolioProjectCategory category;
 }
 
 class PortfolioData {
@@ -330,6 +336,7 @@ const portfolioData = PortfolioData.constant(
   projects: <PortfolioProject>[
     PortfolioProject.constant(
       title: 'PersonaChat AI Character Chat',
+      category: PortfolioProjectCategory.personal,
       description:
           'SNS 로그인, 캐릭터 생성/검색, AI 채팅, 이벤트 이미지, 크레딧 결제를 포함한 '
           'Flutter 실무형 포트폴리오 프로젝트 설계',
@@ -339,6 +346,7 @@ const portfolioData = PortfolioData.constant(
     ),
     PortfolioProject.constant(
       title: 'ReadingLog',
+      category: PortfolioProjectCategory.personal,
       description: '채팅 로그 리더기 앱 기획 및 개발, 파싱용 Chrome 확장 프로그램 개발',
       period: '2026.02 - 2026.05',
       technologies: <String>['Flutter', 'Dart', 'JavaScript'],
@@ -362,6 +370,7 @@ const portfolioData = PortfolioData.constant(
     ),
     PortfolioProject.constant(
       title: 'Blue Mentor',
+      category: PortfolioProjectCategory.career,
       description: '기계 점검 안전 설비 보고서 작성 앱 기획 및 개발',
       period: '2023.06 - 2024.02',
       technologies: <String>['Flutter', 'Dart', 'Node.js'],
@@ -380,6 +389,7 @@ const portfolioData = PortfolioData.constant(
     ),
     PortfolioProject.constant(
       title: 'IRIS',
+      category: PortfolioProjectCategory.career,
       description: '범부처통합연구지원시스템 R&D 참여: 3D 증강현실 기반 교량 점검 시스템 개발',
       period: '2022.12 - 2023.12',
       technologies: <String>['React', 'Unity', 'MySQL'],
@@ -393,6 +403,7 @@ const portfolioData = PortfolioData.constant(
     ),
     PortfolioProject.constant(
       title: 'AI-Bver',
+      category: PortfolioProjectCategory.career,
       description: 'AI-beaver 애플리케이션 개발 및 유지보수',
       period: '2021.12',
       technologies: <String>['PHP', 'Flutter', 'Dart'],
@@ -406,6 +417,7 @@ const portfolioData = PortfolioData.constant(
     ),
     PortfolioProject.constant(
       title: 'HiddenTag',
+      category: PortfolioProjectCategory.career,
       description: 'HiddenTag 애플리케이션 페이지 유지보수',
       period: '2020.12 - 2021.07',
       technologies: <String>['Java', 'Apache'],
