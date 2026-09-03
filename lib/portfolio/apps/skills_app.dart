@@ -180,8 +180,8 @@ class _CategoryStrip extends StatelessWidget {
           bottom: BorderSide(color: AppleTheme.separator(context), width: 0.7),
         ),
       ),
-      child: SizedBox(
-        height: 58,
+      child: ConstrainedBox(
+        constraints: const BoxConstraints(minHeight: 58),
         child: SingleChildScrollView(
           scrollDirection: Axis.horizontal,
           padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 9),
@@ -237,6 +237,7 @@ class _CategoryButton extends StatelessWidget {
           borderRadius: BorderRadius.circular(compact ? 999 : 11),
           child: AnimatedContainer(
             duration: const Duration(milliseconds: 160),
+            constraints: compact ? const BoxConstraints(minHeight: 44) : null,
             padding: EdgeInsets.symmetric(
               horizontal: compact ? 13 : 10,
               vertical: compact ? 8 : 11,
