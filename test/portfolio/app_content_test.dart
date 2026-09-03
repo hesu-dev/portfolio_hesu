@@ -39,7 +39,7 @@ void main() {
         PortfolioAppId.skills: 'Skills',
         PortfolioAppId.projects: 'Projects',
         PortfolioAppId.terminal: 'Terminal',
-        PortfolioAppId.settings: 'Settings',
+        PortfolioAppId.settings: '설정',
         PortfolioAppId.thisMac: 'This Mac',
         PortfolioAppId.trash: 'Trash',
         PortfolioAppId.github: 'GitHub',
