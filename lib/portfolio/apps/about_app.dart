@@ -194,6 +194,28 @@ class _AboutNotesCard extends StatelessWidget {
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: <Widget>[
+                  Container(
+                    width: compact ? 42 : 48,
+                    height: compact ? 42 : 48,
+                    padding: const EdgeInsets.all(8),
+                    decoration: BoxDecoration(
+                      color: const Color(0xFF584117),
+                      borderRadius: BorderRadius.circular(compact ? 12 : 14),
+                    ),
+                    child: FittedBox(
+                      fit: BoxFit.scaleDown,
+                      child: Text(
+                        data.monogram,
+                        style: const TextStyle(
+                          color: Colors.white,
+                          fontSize: 18,
+                          fontWeight: FontWeight.w800,
+                          letterSpacing: -0.4,
+                        ),
+                      ),
+                    ),
+                  ),
+                  SizedBox(height: compact ? 12 : 15),
                   Text(
                     data.identity.name,
                     style: Theme.of(context).textTheme.displaySmall?.copyWith(
