@@ -344,7 +344,7 @@ void main() {
     });
 
     testWidgets(
-      'opens a rounded tablet app surface with project master-detail',
+      'opens a rounded tablet Projects list before its detail depth',
       (tester) async {
         await _pumpShell(tester, size: const Size(834, 1194));
 
@@ -353,16 +353,23 @@ void main() {
 
         expect(find.byKey(const Key('mobile-app-surface')), findsOneWidget);
         expect(find.byKey(const Key('projects-app')), findsOneWidget);
-        expect(find.byKey(const Key('projects-detail-scroll')), findsOneWidget);
         expect(
-          tester.getCenter(find.byKey(const Key('project-selector-0'))).dx,
-          lessThan(
-            tester.getCenter(find.byKey(const Key('project-detail-title'))).dx,
-          ),
+          find.byKey(const Key('projects-collection-scroll')),
+          findsOneWidget,
         );
+        expect(find.byKey(const Key('projects-detail-scroll')), findsNothing);
+        expect(find.byKey(const Key('project-detail-title')), findsNothing);
+        for (var index = 0; index < portfolioData.projects.length; index++) {
+          expect(find.byKey(Key('project-selector-$index')), findsOneWidget);
+        }
 
         await tester.tap(find.byKey(const Key('project-selector-1')));
         await tester.pumpAndSettle();
+        expect(
+          find.byKey(const Key('projects-collection-scroll')),
+          findsNothing,
+        );
+        expect(find.byKey(const Key('projects-detail-scroll')), findsOneWidget);
         expect(
           tester
               .widget<Text>(find.byKey(const Key('project-detail-title')))
@@ -441,7 +448,7 @@ void main() {
       }
     });
 
-    testWidgets('scrolls Trash in short iPad layouts at 200 percent', (
+    testWidgets('keeps Trash content visible without a duplicate title row', (
       tester,
     ) async {
       for (final size in const <Size>[Size(600, 400), Size(1023, 600)]) {
@@ -459,13 +466,10 @@ void main() {
 
         final trashScroll = find.byKey(const Key('trash-scroll'));
         expect(trashScroll, findsOneWidget);
-        final scrollable = tester.state<ScrollableState>(
-          find.descendant(of: trashScroll, matching: find.byType(Scrollable)),
-        );
-        expect(scrollable.position.maxScrollExtent, greaterThan(0));
+        expect(find.byType(AppleToolbar), findsNothing);
+        expect(find.text('Trash is Empty'), findsOneWidget);
         await tester.drag(trashScroll, const Offset(0, -80));
         await tester.pumpAndSettle();
-        expect(scrollable.position.pixels, greaterThan(0));
         expect(tester.takeException(), isNull, reason: '$size');
       }
     });

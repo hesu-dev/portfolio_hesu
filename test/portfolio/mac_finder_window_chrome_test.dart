@@ -97,7 +97,7 @@ void main() {
     expect(find.byKey(const Key('dock-running-projects')), findsOneWidget);
   });
 
-  testWidgets('iPad and iPhone retain their mobile navigation chrome', (
+  testWidgets('iPad and iPhone use one integrated Projects Finder toolbar', (
     tester,
   ) async {
     for (final size in const <Size>[Size(834, 700), Size(390, 700)]) {
@@ -107,7 +107,7 @@ void main() {
 
       expect(
         find.byKey(const Key('mobile-app-navigation-bar')),
-        findsOneWidget,
+        findsNothing,
         reason: '$size',
       );
       expect(
@@ -115,21 +115,18 @@ void main() {
         findsOneWidget,
         reason: '$size',
       );
-      final navigationBar = find.byKey(const Key('mobile-app-navigation-bar'));
+      final finderToolbar = find.byKey(const Key('projects-finder-toolbar'));
       expect(
         find.descendant(
-          of: navigationBar,
-          matching: find.byKey(const Key('mac-traffic-controls-projects')),
+          of: finderToolbar,
+          matching: find.byType(MacTrafficControls),
         ),
         findsOneWidget,
         reason: '$size',
       );
       expect(
-        find.descendant(
-          of: find.byKey(const Key('projects-finder-toolbar')),
-          matching: find.byType(MacTrafficControls),
-        ),
-        findsNothing,
+        find.descendant(of: finderToolbar, matching: find.text('Projects')),
+        findsOneWidget,
         reason: '$size',
       );
       expect(tester.takeException(), isNull, reason: '$size');
