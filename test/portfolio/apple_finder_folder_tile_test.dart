@@ -6,7 +6,7 @@ import 'package:portfolio_hesu/portfolio/widgets/apple_finder_scaffold.dart';
 
 void main() {
   testWidgets(
-    'selected tile keeps folder artwork unchanged and uses neutral surfaces',
+    'selected tile limits its neutral highlight to the unchanged artwork',
     (tester) async {
       for (final brightness in Brightness.values) {
         await _pumpTilePair(tester, brightness: brightness);
@@ -37,23 +37,49 @@ void main() {
         final unselectedDecoration = _tileDecoration(tester, unselected);
         final selectedDecoration = _tileDecoration(tester, selected);
         expect(unselectedDecoration.color, Colors.transparent);
-        expect(selectedDecoration.color, isNot(Colors.transparent));
-        expect(selectedDecoration.color!.a, 1);
-        expect(_isNeutralGray(selectedDecoration.color!), isTrue);
-        expect(
-          selectedDecoration.copyWith(color: Colors.transparent),
-          unselectedDecoration,
-        );
-        expect(
-          selectedDecoration.color,
-          isNot(
-            AppleTheme.selectionBackground(
-              tester.element(selected),
-              AppleTheme.blue,
-            ),
-          ),
-        );
+        expect(selectedDecoration.color, Colors.transparent);
+        expect(selectedDecoration, unselectedDecoration);
         expect(selectedDecoration.border, isNull);
+        expect(selectedDecoration.boxShadow, anyOf(isNull, isEmpty));
+
+        final unselectedArtworkBackground = _artworkBackgroundDecoration(
+          tester,
+          unselected,
+        );
+        final selectedArtworkBackground = _artworkBackgroundDecoration(
+          tester,
+          selected,
+        );
+        expect(unselectedArtworkBackground.color, Colors.transparent);
+        expect(selectedArtworkBackground.color, isNot(Colors.transparent));
+        expect(selectedArtworkBackground.color!.a, 1);
+        expect(_isNeutralGray(selectedArtworkBackground.color!), isTrue);
+        expect(
+          selectedArtworkBackground.copyWith(color: Colors.transparent),
+          unselectedArtworkBackground,
+        );
+        expect(selectedArtworkBackground.border, isNull);
+        expect(selectedArtworkBackground.boxShadow, anyOf(isNull, isEmpty));
+
+        final artworkBackgroundRect = tester.getRect(
+          _artworkBackgroundFinder(selected),
+        );
+        final artworkRect = tester.getRect(_folderArtworkFinder(selected));
+        final tileRect = tester.getRect(selected);
+        final labelRect = tester.getRect(_labelFinder(selected));
+        expect(artworkBackgroundRect.width, lessThan(tileRect.width));
+        expect(artworkBackgroundRect.height, lessThan(tileRect.height));
+        expect(artworkBackgroundRect.left, lessThanOrEqualTo(artworkRect.left));
+        expect(
+          artworkBackgroundRect.right,
+          greaterThanOrEqualTo(artworkRect.right),
+        );
+        expect(artworkBackgroundRect.top, lessThanOrEqualTo(artworkRect.top));
+        expect(
+          artworkBackgroundRect.bottom,
+          greaterThanOrEqualTo(artworkRect.bottom),
+        );
+        expect(artworkBackgroundRect.bottom, lessThan(labelRect.top));
 
         final unselectedLabel = _labelText(tester, unselected, 'A');
         final selectedLabel = _labelText(tester, selected, 'Selected name');
@@ -63,13 +89,10 @@ void main() {
         final unselectedLabelDecoration = _labelDecoration(tester, unselected);
         final selectedLabelDecoration = _labelDecoration(tester, selected);
         expect(unselectedLabelDecoration.color, Colors.transparent);
-        expect(selectedLabelDecoration.color!.a, 1);
-        expect(_isNeutralGray(selectedLabelDecoration.color!), isTrue);
-        expect(
-          selectedLabelDecoration.copyWith(color: Colors.transparent),
-          unselectedLabelDecoration,
-        );
+        expect(selectedLabelDecoration.color, Colors.transparent);
+        expect(selectedLabelDecoration, unselectedLabelDecoration);
         expect(selectedLabelDecoration.border, isNull);
+        expect(selectedLabelDecoration.boxShadow, anyOf(isNull, isEmpty));
       }
     },
   );
@@ -77,82 +100,112 @@ void main() {
   testWidgets(
     'long names wrap and keep every tile and artwork aligned at fixed height',
     (tester) async {
-      for (final scenario
-          in const <
-            ({
-              Size viewport,
-              double tileWidth,
-              bool compact,
-              TextScaler textScaler,
-            })
-          >[
-            (
-              viewport: Size(320, 480),
-              tileWidth: 144,
-              compact: true,
-              textScaler: TextScaler.linear(2),
+      for (final brightness in Brightness.values) {
+        for (final scenario
+            in const <
+              ({
+                Size viewport,
+                double tileWidth,
+                bool compact,
+                TextScaler textScaler,
+              })
+            >[
+              (
+                viewport: Size(320, 480),
+                tileWidth: 144,
+                compact: true,
+                textScaler: TextScaler.linear(2),
+              ),
+              (
+                viewport: Size(700, 500),
+                tileWidth: 180,
+                compact: false,
+                textScaler: TextScaler.noScaling,
+              ),
+            ]) {
+          await _pumpTilePair(
+            tester,
+            viewport: scenario.viewport,
+            tileWidth: scenario.tileWidth,
+            compact: scenario.compact,
+            textScaler: scenario.textScaler,
+            longLabel: '아주 긴 프로젝트 폴더 이름으로 두 줄 개행 확인',
+            brightness: brightness,
+          );
+
+          final shortTile = find.byKey(const Key('folder-tile-unselected'));
+          final longTile = find.byKey(const Key('folder-tile-selected'));
+          final shortArtwork = _folderArtworkFinder(shortTile);
+          final longArtwork = _folderArtworkFinder(longTile);
+          final shortArtworkBackground = _artworkBackgroundFinder(shortTile);
+          final longArtworkBackground = _artworkBackgroundFinder(longTile);
+          final shortLabel = _labelFinder(shortTile);
+          final longLabel = _labelFinder(longTile);
+
+          expect(
+            tester.getSize(shortTile).height,
+            tester.getSize(longTile).height,
+          );
+          expect(tester.getSize(longTile).height, scenario.compact ? 154 : 166);
+          final shortArtworkSignature = _artworkSignature(tester, shortTile);
+          final longArtworkSignature = _artworkSignature(tester, longTile);
+          expect(longArtworkSignature, shortArtworkSignature);
+          expect(longArtworkSignature['icon'], Icons.folder_rounded);
+          expect(longArtworkSignature['color'], const Color(0xFF55B8F5));
+          expect(longArtworkSignature['size'], scenario.compact ? 50 : 58);
+          expect(
+            tester.getTopLeft(shortArtwork).dy,
+            closeTo(tester.getTopLeft(longArtwork).dy, 0.01),
+          );
+          expect(
+            tester.getCenter(shortArtwork).dx - tester.getCenter(shortTile).dx,
+            closeTo(
+              tester.getCenter(longArtwork).dx - tester.getCenter(longTile).dx,
+              0.01,
             ),
-            (
-              viewport: Size(700, 500),
-              tileWidth: 180,
-              compact: false,
-              textScaler: TextScaler.noScaling,
+          );
+          expect(
+            tester.getTopLeft(shortArtworkBackground).dy,
+            closeTo(tester.getTopLeft(longArtworkBackground).dy, 0.01),
+          );
+          expect(
+            tester.getCenter(shortArtworkBackground).dx -
+                tester.getCenter(shortTile).dx,
+            closeTo(
+              tester.getCenter(longArtworkBackground).dx -
+                  tester.getCenter(longTile).dx,
+              0.01,
             ),
-          ]) {
-        await _pumpTilePair(
-          tester,
-          viewport: scenario.viewport,
-          tileWidth: scenario.tileWidth,
-          compact: scenario.compact,
-          textScaler: scenario.textScaler,
-          longLabel: '아주 긴 프로젝트 폴더 이름으로 두 줄 개행 확인',
-        );
+          );
+          expect(
+            tester.getTopLeft(shortLabel).dy,
+            closeTo(tester.getTopLeft(longLabel).dy, 0.01),
+          );
+          expect(
+            tester.getCenter(shortLabel).dx - tester.getCenter(shortTile).dx,
+            closeTo(
+              tester.getCenter(longLabel).dx - tester.getCenter(longTile).dx,
+              0.01,
+            ),
+          );
+          expect(
+            tester.getSize(longLabel).height,
+            greaterThan(tester.getSize(shortLabel).height),
+          );
 
-        final shortTile = find.byKey(const Key('folder-tile-unselected'));
-        final longTile = find.byKey(const Key('folder-tile-selected'));
-        final shortArtwork = _folderArtworkFinder(shortTile);
-        final longArtwork = _folderArtworkFinder(longTile);
-        final shortLabel = find.descendant(
-          of: shortTile,
-          matching: find.text('A'),
-        );
-        final longLabel = find.descendant(
-          of: longTile,
-          matching: find.text('아주 긴 프로젝트 폴더 이름으로 두 줄 개행 확인'),
-        );
-
-        expect(
-          tester.getSize(shortTile).height,
-          tester.getSize(longTile).height,
-        );
-        expect(tester.getSize(longTile).height, scenario.compact ? 154 : 166);
-        final shortArtworkSignature = _artworkSignature(tester, shortTile);
-        final longArtworkSignature = _artworkSignature(tester, longTile);
-        expect(longArtworkSignature, shortArtworkSignature);
-        expect(longArtworkSignature['icon'], Icons.folder_rounded);
-        expect(longArtworkSignature['color'], const Color(0xFF55B8F5));
-        expect(longArtworkSignature['size'], scenario.compact ? 50 : 58);
-        expect(
-          tester.getTopLeft(shortArtwork).dy,
-          closeTo(tester.getTopLeft(longArtwork).dy, 0.01),
-        );
-        expect(
-          tester.getTopLeft(shortLabel).dy,
-          closeTo(tester.getTopLeft(longLabel).dy, 0.01),
-        );
-        expect(
-          tester.getSize(longLabel).height,
-          greaterThan(tester.getSize(shortLabel).height),
-        );
-
-        final longText = tester.widget<Text>(longLabel);
-        expect(longText.maxLines, 2);
-        expect(longText.overflow, TextOverflow.ellipsis);
-        expect(
-          tester.renderObject<RenderParagraph>(longLabel).didExceedMaxLines,
-          isTrue,
-        );
-        expect(tester.takeException(), isNull, reason: '${scenario.viewport}');
+          final longText = tester.widget<Text>(longLabel);
+          expect(longText.maxLines, 2);
+          expect(longText.overflow, TextOverflow.ellipsis);
+          expect(
+            tester.renderObject<RenderParagraph>(longLabel).didExceedMaxLines,
+            isTrue,
+          );
+          expect(
+            tester.takeException(),
+            isNull,
+            reason: '$brightness ${scenario.viewport}',
+          );
+        }
       }
     },
   );
@@ -278,6 +331,20 @@ BoxDecoration _labelDecoration(WidgetTester tester, Finder tile) =>
             )
             .decoration
         as BoxDecoration;
+
+BoxDecoration _artworkBackgroundDecoration(WidgetTester tester, Finder tile) =>
+    tester.widget<AnimatedContainer>(_artworkBackgroundFinder(tile)).decoration
+        as BoxDecoration;
+
+Finder _artworkBackgroundFinder(Finder tile) => find.descendant(
+  of: tile,
+  matching: find.byKey(const Key('apple-finder-folder-artwork-background')),
+);
+
+Finder _labelFinder(Finder tile) => find.descendant(
+  of: tile,
+  matching: find.byKey(const Key('apple-finder-folder-label')),
+);
 
 List<double> _opacityChain(WidgetTester tester, Finder tile) => tester
     .widgetList<Opacity>(
