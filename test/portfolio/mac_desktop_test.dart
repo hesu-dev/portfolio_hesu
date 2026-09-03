@@ -297,7 +297,7 @@ void main() {
       expect(find.byKey(const Key('dock-running-about')), findsNothing);
     });
 
-    testWidgets('traffic lights expose larger pointer and semantics targets', (
+    testWidgets('traffic lights use compact non-overlapping pointer targets', (
       tester,
     ) async {
       final semantics = tester.ensureSemantics();
@@ -325,10 +325,8 @@ void main() {
         final circle = tester.widget<Container>(visual);
         final decoration = circle.decoration! as BoxDecoration;
 
-        expect(targetSize.width, inInclusiveRange(32, 44));
-        expect(targetSize.height, inInclusiveRange(32, 44));
-        expect(semanticsSize.width, inInclusiveRange(32, 44));
-        expect(semanticsSize.height, inInclusiveRange(32, 44));
+        expect(targetSize, const Size(20, 32));
+        expect(semanticsSize, const Size(20, 32));
         expect(tester.getSize(visual).width, inInclusiveRange(13, 14));
         expect(tester.getSize(visual).height, inInclusiveRange(13, 14));
         expect(decoration.color, colors[control]);

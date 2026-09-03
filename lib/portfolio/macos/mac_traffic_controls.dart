@@ -86,19 +86,8 @@ class MacTrafficControls extends StatelessWidget {
 
     return SizedBox(
       key: Key('mac-traffic-controls-${appId.name}'),
-      width: targetSize + visualCenterSpacing * 2,
       height: targetSize,
-      child: Stack(
-        clipBehavior: Clip.none,
-        children: <Widget>[
-          for (var index = 0; index < controls.length; index++)
-            Positioned(
-              left: index * visualCenterSpacing,
-              top: 0,
-              child: controls[index],
-            ),
-        ],
-      ),
+      child: Row(mainAxisSize: MainAxisSize.min, children: controls),
     );
   }
 }
@@ -181,8 +170,9 @@ class _MacTrafficButtonState extends State<_MacTrafficButton> {
             child: GestureDetector(
               behavior: HitTestBehavior.opaque,
               onTap: _activate,
-              child: SizedBox.square(
-                dimension: widget.targetSize,
+              child: SizedBox(
+                width: MacTrafficControls.visualCenterSpacing,
+                height: widget.targetSize,
                 child: Stack(
                   alignment: Alignment.center,
                   children: <Widget>[
@@ -235,9 +225,10 @@ class _MacTrafficDecoration extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return ExcludeSemantics(
-      child: SizedBox.square(
+      child: SizedBox(
         key: controlKey,
-        dimension: targetSize,
+        width: MacTrafficControls.visualCenterSpacing,
+        height: targetSize,
         child: Center(
           child: Container(
             key: visualKey,
