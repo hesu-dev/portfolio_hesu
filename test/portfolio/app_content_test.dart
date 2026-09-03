@@ -409,11 +409,10 @@ void main() {
           const Key('skills-category-Development'),
         );
         expect(tester.getSize(development).height, greaterThanOrEqualTo(44));
-        final developmentSemantics = tester.getSemantics(
-          find.bySemanticsLabel('Select skill category Development'),
-        );
+        final developmentSemantics = tester.getSemantics(development);
         final developmentData = developmentSemantics.getSemanticsData();
-        expect(developmentData.flagsCollection.isButton, ui.Tristate.isTrue);
+        expect(developmentData.label, 'Select skill category Development');
+        expect(developmentData.flagsCollection.isButton, isTrue);
         expect(developmentData.flagsCollection.isSelected, ui.Tristate.isTrue);
         expect(developmentData.hasAction(SemanticsAction.tap), isTrue);
 
@@ -477,11 +476,10 @@ void main() {
         final firstProject = portfolioData.projects.first;
         final firstSelector = find.byKey(const Key('project-selector-0'));
         expect(tester.getSize(firstSelector).height, greaterThanOrEqualTo(44));
-        final firstSemantics = tester.getSemantics(
-          find.bySemanticsLabel('Select project ${firstProject.title}'),
-        );
+        final firstSemantics = tester.getSemantics(firstSelector);
         final firstData = firstSemantics.getSemanticsData();
-        expect(firstData.flagsCollection.isButton, ui.Tristate.isTrue);
+        expect(firstData.label, 'Select project ${firstProject.title}');
+        expect(firstData.flagsCollection.isButton, isTrue);
         expect(firstData.flagsCollection.isSelected, ui.Tristate.isTrue);
         expect(firstData.hasAction(SemanticsAction.tap), isTrue);
 
@@ -495,12 +493,12 @@ void main() {
           portfolioData.projects[1].title,
         );
         final secondData = tester
-            .getSemantics(
-              find.bySemanticsLabel(
-                'Select project ${portfolioData.projects[1].title}',
-              ),
-            )
+            .getSemantics(find.byKey(const Key('project-selector-1')))
             .getSemanticsData();
+        expect(
+          secondData.label,
+          'Select project ${portfolioData.projects[1].title}',
+        );
         expect(secondData.flagsCollection.isSelected, ui.Tristate.isTrue);
         semantics.dispose();
       },
