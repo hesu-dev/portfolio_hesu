@@ -12,9 +12,7 @@ import 'package:portfolio_hesu/portfolio/theme/portfolio_theme_controller.dart';
 
 void main() {
   group('Settings 화면 모드', () {
-    testWidgets('넓은 화면은 단일 사이드바와 두 개의 미리보기를 보여준다', (
-      tester,
-    ) async {
+    testWidgets('넓은 화면은 단일 사이드바와 두 개의 미리보기를 보여준다', (tester) async {
       final semantics = tester.ensureSemantics();
       final controller = PortfolioThemeController();
       addTearDown(controller.dispose);
@@ -36,9 +34,12 @@ void main() {
       expect(_visibleText(tester), isNot(contains('System')));
 
       for (final key in const <Key>[Key('theme-light'), Key('theme-dark')]) {
-        expect(tester.getSize(find.byKey(key)).height, greaterThanOrEqualTo(44));
+        expect(
+          tester.getSize(find.byKey(key)).height,
+          greaterThanOrEqualTo(44),
+        );
         final data = tester.getSemantics(find.byKey(key)).getSemanticsData();
-        expect(data.flagsCollection.isButton, ui.Tristate.isTrue);
+        expect(data.flagsCollection.isButton, isTrue);
       }
       expect(
         tester
@@ -63,7 +64,9 @@ void main() {
 
       expect(controller.preference, PortfolioThemePreference.light);
       expect(
-        Theme.of(tester.element(find.byKey(const Key('settings-app')))).brightness,
+        Theme.of(
+          tester.element(find.byKey(const Key('settings-app'))),
+        ).brightness,
         Brightness.light,
       );
 
@@ -72,7 +75,9 @@ void main() {
 
       expect(controller.preference, PortfolioThemePreference.dark);
       expect(
-        Theme.of(tester.element(find.byKey(const Key('settings-app')))).brightness,
+        Theme.of(
+          tester.element(find.byKey(const Key('settings-app'))),
+        ).brightness,
         Brightness.dark,
       );
       expect(find.byKey(const Key('theme-selected-dark')), findsOneWidget);
@@ -84,9 +89,7 @@ void main() {
       expect(find.byKey(const Key('theme-selected-light')), findsOneWidget);
     });
 
-    testWidgets('Enter와 Space 및 포커스 링으로 두 선택지를 조작한다', (
-      tester,
-    ) async {
+    testWidgets('Enter와 Space 및 포커스 링으로 두 선택지를 조작한다', (tester) async {
       final controller = PortfolioThemeController();
       addTearDown(controller.dispose);
       await _pumpSettings(
@@ -102,7 +105,7 @@ void main() {
         ),
       );
       darkAction.focusNode!.requestFocus();
-      await tester.pump();
+      await tester.pumpAndSettle();
       expect(find.byKey(const Key('theme-focus-dark')), findsOneWidget);
 
       await tester.sendKeyEvent(LogicalKeyboardKey.enter);
@@ -116,7 +119,7 @@ void main() {
         ),
       );
       lightAction.focusNode!.requestFocus();
-      await tester.pump();
+      await tester.pumpAndSettle();
       expect(find.byKey(const Key('theme-focus-light')), findsOneWidget);
 
       await tester.sendKeyEvent(LogicalKeyboardKey.space);
@@ -124,9 +127,7 @@ void main() {
       expect(controller.preference, PortfolioThemePreference.light);
     });
 
-    testWidgets('좁은 화면과 200% 글자 크기에서 한 열로 스크롤된다', (
-      tester,
-    ) async {
+    testWidgets('좁은 화면과 200% 글자 크기에서 한 열로 스크롤된다', (tester) async {
       final controller = PortfolioThemeController();
       addTearDown(controller.dispose);
       await _pumpSettings(
@@ -154,20 +155,14 @@ void main() {
   });
 
   group('Settings 셸 연결', () {
-    testWidgets('Mac, iPad, iPhone에서 실행되고 현재 화면을 유지한다', (
-      tester,
-    ) async {
+    testWidgets('Mac, iPad, iPhone에서 실행되고 현재 화면을 유지한다', (tester) async {
       for (final scenario in <(Size, String, String)>[
         (const Size(1440, 900), 'desktop-app-settings', 'mac-window-settings'),
         (const Size(834, 1194), 'home-app-settings', 'mobile-app-surface'),
         (const Size(390, 844), 'home-app-settings', 'mobile-app-surface'),
       ]) {
         final controller = PortfolioThemeController();
-        await _pumpPortfolio(
-          tester,
-          size: scenario.$1,
-          controller: controller,
-        );
+        await _pumpPortfolio(tester, size: scenario.$1, controller: controller);
 
         final launcher = find.byKey(Key(scenario.$2));
         if (scenario.$1.width >= 1024) {
@@ -199,9 +194,7 @@ void main() {
       }
     });
 
-    testWidgets('Mac의 실행 중인 터미널 상태를 테마 변경 뒤에도 보존한다', (
-      tester,
-    ) async {
+    testWidgets('Mac의 실행 중인 터미널 상태를 테마 변경 뒤에도 보존한다', (tester) async {
       final controller = PortfolioThemeController();
       addTearDown(controller.dispose);
       await _pumpPortfolio(
@@ -249,10 +242,7 @@ Future<void> _pumpSettings(
         themeMode: controller.themeMode,
         home: MediaQuery(
           data: MediaQueryData(size: size, textScaler: textScaler),
-          child: SettingsApp(
-            themeController: controller,
-            compact: compact,
-          ),
+          child: SettingsApp(themeController: controller, compact: compact),
         ),
       ),
     ),
@@ -279,10 +269,7 @@ Future<void> _pumpPortfolio(
   await tester.pumpAndSettle();
 }
 
-Future<void> _openDesktopApp(
-  WidgetTester tester,
-  PortfolioAppId appId,
-) async {
+Future<void> _openDesktopApp(WidgetTester tester, PortfolioAppId appId) async {
   final icon = find.byKey(Key('desktop-app-${appId.name}'));
   await tester.tap(icon);
   await tester.pump(const Duration(milliseconds: 50));
