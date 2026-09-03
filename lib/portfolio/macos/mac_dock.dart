@@ -150,6 +150,7 @@ class _MacDockItemState extends State<_MacDockItem> {
     final appId = widget.appId;
     final label = AppleAppIcon.labelFor(appId);
     final lifted = _hovering || _showFocus;
+    final colorScheme = Theme.of(context).colorScheme;
 
     return Semantics(
       key: Key('dock-app-${appId.name}'),
@@ -237,8 +238,8 @@ class _MacDockItemState extends State<_MacDockItem> {
                             height: widget.active ? 5.5 : 4.5,
                             decoration: BoxDecoration(
                               color: widget.active
-                                  ? const Color(0xFF17171B)
-                                  : const Color(0xFF55555B),
+                                  ? colorScheme.onSurface
+                                  : colorScheme.onSurfaceVariant,
                               shape: BoxShape.circle,
                             ),
                           ),
