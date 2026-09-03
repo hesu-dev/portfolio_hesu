@@ -1,9 +1,58 @@
 import 'package:flutter/material.dart';
 
 import '../data/portfolio_data.dart';
+import '../models/portfolio_app_id.dart';
 import '../services/external_launcher.dart';
 import '../theme/apple_theme.dart';
+import '../widgets/apple_app_icon.dart';
 import '../widgets/apple_finder_scaffold.dart';
+
+enum _ProjectsLocation { iCloudDrive, desktop, career, personalProjects }
+
+extension on _ProjectsLocation {
+  String get id => switch (this) {
+    _ProjectsLocation.iCloudDrive => 'icloud-drive',
+    _ProjectsLocation.desktop => 'desktop',
+    _ProjectsLocation.career => 'career',
+    _ProjectsLocation.personalProjects => 'personal-projects',
+  };
+
+  String get label => switch (this) {
+    _ProjectsLocation.iCloudDrive => 'iCloud Drive',
+    _ProjectsLocation.desktop => '데스크탑',
+    _ProjectsLocation.career => '경력',
+    _ProjectsLocation.personalProjects => '개인 프로젝트',
+  };
+
+  IconData get icon => switch (this) {
+    _ProjectsLocation.iCloudDrive => Icons.cloud_rounded,
+    _ProjectsLocation.desktop => Icons.desktop_mac_rounded,
+    _ProjectsLocation.career => Icons.business_center_rounded,
+    _ProjectsLocation.personalProjects => Icons.folder_special_rounded,
+  };
+
+  PortfolioProjectCategory? get category => switch (this) {
+    _ProjectsLocation.career => PortfolioProjectCategory.career,
+    _ProjectsLocation.personalProjects => PortfolioProjectCategory.personal,
+    _ => null,
+  };
+}
+
+@immutable
+class _ProjectsDestination {
+  const _ProjectsDestination(this.location, {this.projectIndex});
+
+  final _ProjectsLocation location;
+  final int? projectIndex;
+}
+
+@immutable
+class _ProjectEntry {
+  const _ProjectEntry({required this.index, required this.project});
+
+  final int index;
+  final PortfolioProject project;
+}
 
 class ProjectsApp extends StatefulWidget {
   const ProjectsApp({
@@ -12,6 +61,7 @@ class ProjectsApp extends StatefulWidget {
     this.compact = false,
     this.tablet = false,
     this.finderWindowChrome,
+    this.onOpenApp,
     super.key,
   });
 
@@ -20,21 +70,49 @@ class ProjectsApp extends StatefulWidget {
   final bool compact;
   final bool tablet;
   final AppleFinderWindowChrome? finderWindowChrome;
+  final ValueChanged<PortfolioAppId>? onOpenApp;
 
   @override
   State<ProjectsApp> createState() => _ProjectsAppState();
 }
 
 class _ProjectsAppState extends State<ProjectsApp> {
-  int? _selectedIndex;
-  final List<int?> _history = <int?>[null];
+  static const List<_ProjectsLocation> _locationValues = <_ProjectsLocation>[
+    _ProjectsLocation.iCloudDrive,
+    _ProjectsLocation.desktop,
+    _ProjectsLocation.career,
+    _ProjectsLocation.personalProjects,
+  ];
+
+  static final List<AppleFinderLocation> _finderLocations = List.unmodifiable(
+    _locationValues.map(
+      (location) => AppleFinderLocation(
+        id: location.id,
+        label: location.label,
+        icon: location.icon,
+      ),
+    ),
+  );
+
+  final List<_ProjectsDestination> _history = <_ProjectsDestination>[
+    _ProjectsDestination(_ProjectsLocation.career),
+  ];
+  final Map<PortfolioProjectCategory, int?> _selectedProject =
+      <PortfolioProjectCategory, int?>{};
   int _historyCursor = 0;
   int _launchRequestGeneration = 0;
   String? _launchFeedback;
   bool _launchSucceeded = false;
   final Map<Uri, int> _pendingLaunches = <Uri, int>{};
 
-  int? get _activeProjectIndex => _history[_historyCursor];
+  _ProjectsDestination get _currentDestination => _history[_historyCursor];
+
+  List<_ProjectEntry> _projectsFor(PortfolioProjectCategory category) {
+    return widget.data.projects.indexed
+        .where((entry) => entry.$2.category == category)
+        .map((entry) => _ProjectEntry(index: entry.$1, project: entry.$2))
+        .toList(growable: false);
+  }
 
   @override
   void didUpdateWidget(covariant ProjectsApp oldWidget) {
@@ -45,35 +123,64 @@ class _ProjectsAppState extends State<ProjectsApp> {
       _launchFeedback = null;
       _pendingLaunches.clear();
     }
-    final hasUnavailableProject = _history.any(
-      (index) => index != null && index >= widget.data.projects.length,
-    );
-    if (hasUnavailableProject) {
-      _selectedIndex = null;
+
+    final historyIsInvalid = _history.any((destination) {
+      final index = destination.projectIndex;
+      if (index == null) {
+        return false;
+      }
+      return index >= widget.data.projects.length ||
+          widget.data.projects[index].category != destination.location.category;
+    });
+    if (historyIsInvalid) {
       _history
         ..clear()
-        ..add(null);
+        ..add(const _ProjectsDestination(_ProjectsLocation.career));
       _historyCursor = 0;
+      _selectedProject.clear();
       _launchFeedback = null;
       _pendingLaunches.clear();
-    } else if (_selectedIndex != null &&
-        _selectedIndex! >= widget.data.projects.length) {
-      _selectedIndex = null;
+      return;
+    }
+
+    for (final category in PortfolioProjectCategory.values) {
+      final selection = _selectedProject[category];
+      if (selection != null &&
+          (selection >= widget.data.projects.length ||
+              widget.data.projects[selection].category != category)) {
+        _selectedProject[category] = null;
+      }
     }
   }
 
-  void _selectProject(int index) {
+  void _selectLocation(_ProjectsLocation location) {
+    final current = _currentDestination;
+    if (location == current.location && current.projectIndex == null) {
+      return;
+    }
     _launchRequestGeneration++;
     setState(() {
-      _selectedIndex = index;
-      if (_historyCursor < _history.length - 1) {
-        _history.removeRange(_historyCursor + 1, _history.length);
-      }
-      _history.add(index);
-      _historyCursor = _history.length - 1;
+      _pushDestination(_ProjectsDestination(location));
       _launchFeedback = null;
       _pendingLaunches.clear();
     });
+  }
+
+  void _pushDestination(_ProjectsDestination destination) {
+    if (_historyCursor < _history.length - 1) {
+      _history.removeRange(_historyCursor + 1, _history.length);
+    }
+    _history.add(destination);
+    _historyCursor = _history.length - 1;
+  }
+
+  void _selectLocationById(String id) {
+    for (final location in _locationValues) {
+      if (location.id == id) {
+        _selectLocation(location);
+        return;
+      }
+    }
   }
 
   void _moveThroughHistory(int offset) {
@@ -84,6 +191,16 @@ class _ProjectsAppState extends State<ProjectsApp> {
     _launchRequestGeneration++;
     setState(() {
       _historyCursor = nextCursor;
+      _launchFeedback = null;
+      _pendingLaunches.clear();
+    });
+  }
+
+  void _selectProject(_ProjectsLocation location, int index) {
+    _launchRequestGeneration++;
+    setState(() {
+      _selectedProject[location.category!] = index;
+      _pushDestination(_ProjectsDestination(location, projectIndex: index));
       _launchFeedback = null;
       _pendingLaunches.clear();
     });
@@ -123,15 +240,19 @@ class _ProjectsAppState extends State<ProjectsApp> {
 
   @override
   Widget build(BuildContext context) {
-    final activeProjectIndex = _activeProjectIndex;
+    final destination = _currentDestination;
+    final location = destination.location;
+    final projectIndex = destination.projectIndex;
     return AppleFinderScaffold(
       surfaceKey: const Key('projects-app'),
       keyPrefix: 'projects',
-      currentLocation: 'iCloud Drive',
-      toolbarTitle: activeProjectIndex == null
-          ? 'Projects'
-          : widget.data.projects[activeProjectIndex].title,
+      currentLocation: location.label,
+      toolbarTitle: projectIndex == null
+          ? location.label
+          : widget.data.projects[projectIndex].title,
       ownerName: widget.data.identity.name,
+      locations: _finderLocations,
+      onLocationSelected: _selectLocationById,
       compact: widget.compact,
       tablet: widget.tablet,
       canGoBack: _historyCursor > 0,
@@ -139,54 +260,65 @@ class _ProjectsAppState extends State<ProjectsApp> {
       onBack: () => _moveThroughHistory(-1),
       onForward: () => _moveThroughHistory(1),
       windowChrome: widget.finderWindowChrome,
-      bodyBuilder: (context, compactLayout) {
-        if (widget.data.projects.isEmpty) {
-          return const AppleEmptyState(
-            icon: Icons.folder_off_rounded,
-            title: 'No projects yet',
-            message: 'Project reports will appear here.',
-          );
-        }
-        if (activeProjectIndex == null) {
-          return _buildCollection(compact: compactLayout);
-        }
-        return _buildDetail(index: activeProjectIndex, compact: compactLayout);
-      },
+      bodyBuilder: (context, compactLayout) =>
+          _buildLocation(destination, compact: compactLayout),
     );
   }
 
-  Widget _buildCollection({required bool compact}) {
-    return _ProjectCollection(
-      projects: widget.data.projects,
-      selectedIndex: _selectedIndex,
-      compact: compact,
-      tablet: widget.tablet,
-      onSelectProject: _selectProject,
-    );
-  }
+  Widget _buildLocation(
+    _ProjectsDestination destination, {
+    required bool compact,
+  }) {
+    final location = destination.location;
+    final projectIndex = destination.projectIndex;
+    if (projectIndex != null) {
+      return _ProjectDetail(
+        project: widget.data.projects[projectIndex],
+        projectIndex: projectIndex,
+        compact: compact,
+        feedback: _launchFeedback,
+        launchSucceeded: _launchSucceeded,
+        pendingLaunches: _pendingLaunches.keys.toSet(),
+        onOpenLink: _openLink,
+      );
+    }
 
-  Widget _buildDetail({required int index, required bool compact}) {
-    return _ProjectDetail(
-      project: widget.data.projects[index],
-      projectIndex: index,
-      compact: compact,
-      feedback: _launchFeedback,
-      launchSucceeded: _launchSucceeded,
-      pendingLaunches: _pendingLaunches.keys.toSet(),
-      onOpenLink: _openLink,
-    );
+    return switch (location) {
+      _ProjectsLocation.iCloudDrive => const _ScrollableEmptyDirectory(
+        contentKey: Key('projects-icloud-empty'),
+        icon: Icons.cloud_outlined,
+        title: 'iCloud Drive가 비어 있습니다',
+        message: '연결된 파일이 생기면 이 위치에 표시됩니다.',
+      ),
+      _ProjectsLocation.desktop => _DesktopApplicationsDirectory(
+        compact: compact,
+        onOpenApp: widget.onOpenApp,
+      ),
+      _ProjectsLocation.career ||
+      _ProjectsLocation.personalProjects => _ProjectConnectionDirectory(
+        key: const Key('projects-connection-directory'),
+        locationId: location.id,
+        locationLabel: location.label,
+        projects: _projectsFor(location.category!),
+        selectedIndex: _selectedProject[location.category!],
+        compact: compact,
+        onSelected: (index) => _selectProject(location, index),
+      ),
+    };
   }
 }
 
-class _ProjectGrid extends StatelessWidget {
-  const _ProjectGrid({
+class _ProjectFolderGrid extends StatelessWidget {
+  const _ProjectFolderGrid({
+    required this.keyPrefix,
     required this.projects,
     required this.selectedIndex,
     required this.compact,
     required this.onSelected,
   });
 
-  final List<PortfolioProject> projects;
+  final String keyPrefix;
+  final List<_ProjectEntry> projects;
   final int? selectedIndex;
   final bool compact;
   final ValueChanged<int> onSelected;
@@ -220,14 +352,15 @@ class _ProjectGrid extends StatelessWidget {
               children: <Widget>[
                 for (final entry in projects.indexed)
                   SizedBox(
+                    key: Key('$keyPrefix-folder-${entry.$1}'),
                     width: tileWidth,
                     child: AppleFinderFolderTile(
-                      key: Key('project-selector-${entry.$1}'),
-                      label: entry.$2.title,
-                      semanticsLabel: 'Open project ${entry.$2.title}',
-                      selected: selectedIndex == entry.$1,
+                      key: Key('project-selector-${entry.$2.index}'),
+                      label: entry.$2.project.title,
+                      semanticsLabel: 'Open project ${entry.$2.project.title}',
+                      selected: selectedIndex == entry.$2.index,
                       compact: compact,
-                      onPressed: () => onSelected(entry.$1),
+                      onPressed: () => onSelected(entry.$2.index),
                     ),
                   ),
               ],
@@ -235,6 +368,149 @@ class _ProjectGrid extends StatelessWidget {
           ),
         );
       },
+    );
+  }
+}
+
+class _ProjectConnectionDirectory extends StatelessWidget {
+  const _ProjectConnectionDirectory({
+    required this.locationId,
+    required this.locationLabel,
+    required this.projects,
+    required this.selectedIndex,
+    required this.compact,
+    required this.onSelected,
+    super.key,
+  });
+
+  final String locationId;
+  final String locationLabel;
+  final List<_ProjectEntry> projects;
+  final int? selectedIndex;
+  final bool compact;
+  final ValueChanged<int> onSelected;
+
+  @override
+  Widget build(BuildContext context) {
+    if (projects.isEmpty) {
+      return _ScrollableEmptyDirectory(
+        contentKey: Key('projects-$locationId-empty'),
+        icon: Icons.folder_open_rounded,
+        title: '$locationLabel 연결 준비 중',
+        message: '분류 정보가 추가되면 이 위치에 프로젝트 폴더가 표시됩니다.',
+      );
+    }
+
+    return _ProjectCollection(
+      locationId: locationId,
+      projects: projects,
+      selectedIndex: selectedIndex,
+      compact: compact,
+      onSelectProject: onSelected,
+    );
+  }
+}
+
+class _ScrollableEmptyDirectory extends StatelessWidget {
+  const _ScrollableEmptyDirectory({
+    required this.contentKey,
+    required this.icon,
+    required this.title,
+    required this.message,
+  });
+
+  final Key contentKey;
+  final IconData icon;
+  final String title;
+  final String message;
+
+  @override
+  Widget build(BuildContext context) {
+    return LayoutBuilder(
+      builder: (context, constraints) {
+        return SingleChildScrollView(
+          physics: const BouncingScrollPhysics(),
+          child: ConstrainedBox(
+            constraints: BoxConstraints(minHeight: constraints.maxHeight),
+            child: AppleEmptyState(
+              key: contentKey,
+              icon: icon,
+              title: title,
+              message: message,
+            ),
+          ),
+        );
+      },
+    );
+  }
+}
+
+class _ProjectCollection extends StatelessWidget {
+  const _ProjectCollection({
+    required this.locationId,
+    required this.projects,
+    required this.selectedIndex,
+    required this.compact,
+    required this.onSelectProject,
+  });
+
+  final String locationId;
+  final List<_ProjectEntry> projects;
+  final int? selectedIndex;
+  final bool compact;
+  final ValueChanged<int> onSelectProject;
+
+  @override
+  Widget build(BuildContext context) {
+    return ListView(
+      key: const Key('projects-collection-scroll'),
+      padding: EdgeInsets.fromLTRB(
+        compact ? 16 : 30,
+        compact ? 16 : 24,
+        compact ? 16 : 30,
+        24,
+      ),
+      children: <Widget>[
+        _FinderProjectCollection(
+          locationId: locationId,
+          projects: projects,
+          selectedIndex: selectedIndex,
+          compact: compact,
+          onSelected: onSelectProject,
+        ),
+      ],
+    );
+  }
+}
+
+class _FinderProjectCollection extends StatelessWidget {
+  const _FinderProjectCollection({
+    required this.locationId,
+    required this.projects,
+    required this.selectedIndex,
+    required this.compact,
+    required this.onSelected,
+  });
+
+  final String locationId;
+  final List<_ProjectEntry> projects;
+  final int? selectedIndex;
+  final bool compact;
+  final ValueChanged<int> onSelected;
+
+  @override
+  Widget build(BuildContext context) {
+    return Center(
+      child: ConstrainedBox(
+        constraints: const BoxConstraints(maxWidth: 760),
+        child: _ProjectFolderGrid(
+          keyPrefix: 'projects-$locationId',
+          projects: projects,
+          selectedIndex: selectedIndex,
+          compact: compact,
+          onSelected: onSelected,
+        ),
+      ),
     );
   }
 }
@@ -260,101 +536,20 @@ class _ProjectDetail extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final detail = _SelectedProjectDetail(
-      project: project,
-      projectIndex: projectIndex,
-      compact: compact,
-      feedback: feedback,
-      launchSucceeded: launchSucceeded,
-      pendingLaunches: pendingLaunches,
-      onOpenLink: onOpenLink,
-    );
-
     return ListView(
       key: const Key('projects-detail-scroll'),
       padding: EdgeInsets.all(compact ? 16 : 30),
-      children: <Widget>[detail],
-    );
-  }
-}
-
-class _ProjectCollection extends StatelessWidget {
-  const _ProjectCollection({
-    required this.projects,
-    required this.selectedIndex,
-    required this.compact,
-    required this.tablet,
-    required this.onSelectProject,
-  });
-
-  final List<PortfolioProject> projects;
-  final int? selectedIndex;
-  final bool compact;
-  final bool tablet;
-  final ValueChanged<int> onSelectProject;
-
-  @override
-  Widget build(BuildContext context) {
-    return ListView(
-      key: const Key('projects-collection-scroll'),
-      padding: EdgeInsets.fromLTRB(
-        compact ? 16 : (tablet ? 20 : 30),
-        compact ? 16 : 24,
-        compact ? 16 : (tablet ? 20 : 30),
-        24,
-      ),
       children: <Widget>[
-        _FinderProjectCollection(
-          projects: projects,
-          selectedIndex: selectedIndex,
+        _SelectedProjectDetail(
+          project: project,
+          projectIndex: projectIndex,
           compact: compact,
-          onSelected: onSelectProject,
+          feedback: feedback,
+          launchSucceeded: launchSucceeded,
+          pendingLaunches: pendingLaunches,
+          onOpenLink: onOpenLink,
         ),
       ],
-    );
-  }
-}
-
-class _FinderProjectCollection extends StatelessWidget {
-  const _FinderProjectCollection({
-    required this.projects,
-    required this.selectedIndex,
-    required this.compact,
-    required this.onSelected,
-  });
-
-  final List<PortfolioProject> projects;
-  final int? selectedIndex;
-  final bool compact;
-  final ValueChanged<int> onSelected;
-
-  @override
-  Widget build(BuildContext context) {
-    return Center(
-      child: ConstrainedBox(
-        constraints: const BoxConstraints(maxWidth: 760),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.stretch,
-          children: <Widget>[
-            Row(
-              children: <Widget>[
-                Expanded(child: Text('프로젝트', style: AppleTheme.title(context))),
-                Text(
-                  '${projects.length}개 항목',
-                  style: AppleTheme.caption(context),
-                ),
-              ],
-            ),
-            const SizedBox(height: 12),
-            _ProjectGrid(
-              projects: projects,
-              selectedIndex: selectedIndex,
-              compact: compact,
-              onSelected: onSelected,
-            ),
-          ],
-        ),
-      ),
     );
   }
 }
@@ -540,6 +735,65 @@ class _ProjectActions extends StatelessWidget {
             ),
           ],
         ],
+      ),
+    );
+  }
+}
+
+class _DesktopApplicationsDirectory extends StatelessWidget {
+  const _DesktopApplicationsDirectory({
+    required this.compact,
+    required this.onOpenApp,
+  });
+
+  final bool compact;
+  final ValueChanged<PortfolioAppId>? onOpenApp;
+
+  @override
+  Widget build(BuildContext context) {
+    return GridView.builder(
+      key: const Key('projects-desktop-app-grid'),
+      padding: EdgeInsets.all(compact ? 16 : 24),
+      physics: const BouncingScrollPhysics(),
+      gridDelegate: SliverGridDelegateWithMaxCrossAxisExtent(
+        maxCrossAxisExtent: compact ? 118 : 132,
+        mainAxisExtent: compact ? 108 : 122,
+        crossAxisSpacing: compact ? 6 : 10,
+        mainAxisSpacing: compact ? 8 : 12,
+      ),
+      itemCount: portfolioLauncherAppIds.length,
+      itemBuilder: (context, index) {
+        final appId = portfolioLauncherAppIds[index];
+        return _DesktopApplicationTile(
+          appId: appId,
+          compact: compact,
+          onOpen: onOpenApp == null ? null : () => onOpenApp!(appId),
+        );
+      },
+    );
+  }
+}
+
+class _DesktopApplicationTile extends StatelessWidget {
+  const _DesktopApplicationTile({
+    required this.appId,
+    required this.compact,
+    required this.onOpen,
+  });
+
+  final PortfolioAppId appId;
+  final bool compact;
+  final VoidCallback? onOpen;
+
+  @override
+  Widget build(BuildContext context) {
+    return Center(
+      child: AppleAppIcon(
+        key: Key('projects-desktop-app-${appId.name}'),
+        appId: appId,
+        compact: compact,
+        size: compact ? 52 : 58,
+        onTap: onOpen,
       ),
     );
   }
