@@ -61,6 +61,7 @@ class _MobileBackCloseButtonState extends State<MobileBackCloseButton> {
     final key = Key('mobile-back-close-${widget.appId.name}');
     return Semantics(
       key: key,
+      container: true,
       label: _actionLabel,
       button: true,
       onTap: widget.onPressed,

@@ -9,6 +9,7 @@ import '../theme/apple_theme.dart';
 import '../theme/portfolio_theme_controller.dart';
 import '../widgets/apple_app_icon.dart';
 import '../widgets/apple_finder_scaffold.dart';
+import '../widgets/apple_mobile_navigation_header.dart';
 import 'mobile_back_close_button.dart';
 
 class MobileAppSurface extends StatelessWidget {
@@ -135,75 +136,27 @@ class _MobileAppNavigationBar extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return DecoratedBox(
+    return AppleMobileNavigationHeader(
       key: const Key('mobile-app-navigation-bar'),
-      decoration: BoxDecoration(
-        color: AppleTheme.surface(context).withValues(alpha: 0.96),
-        border: Border(
-          bottom: BorderSide(color: AppleTheme.separator(context), width: 0.7),
-        ),
-      ),
-      child: ConstrainedBox(
-        constraints: BoxConstraints(minHeight: tablet ? 54 : 50),
-        child: Padding(
-          padding: EdgeInsets.symmetric(
-            horizontal: tablet ? 12 : 8,
-            vertical: 4,
-          ),
-          child: tablet
-              ? Row(
-                  children: <Widget>[
-                    MacTrafficControls(
-                      appId: appId,
-                      windowLabel: label,
-                      maximized: false,
-                      onClose: onClose,
-                      targetSize: 44,
-                      secondaryControlsInteractive: false,
-                    ),
-                    const SizedBox(width: 10),
-                    Expanded(
-                      child: Text(
-                        title,
-                        key: const Key('mobile-app-title'),
-                        maxLines: 1,
-                        overflow: TextOverflow.ellipsis,
-                        textAlign: TextAlign.left,
-                        style: Theme.of(context).textTheme.titleMedium,
-                      ),
-                    ),
-                  ],
-                )
-              : SizedBox(
-                  height: 44,
-                  child: Stack(
-                    alignment: Alignment.center,
-                    children: <Widget>[
-                      PositionedDirectional(
-                        start: 0,
-                        child: MobileBackCloseButton(
-                          appId: appId,
-                          windowLabel: label,
-                          onPressed: onClose,
-                        ),
-                      ),
-                      Positioned.fill(
-                        left: 50,
-                        right: 50,
-                        child: Text(
-                          title,
-                          key: const Key('mobile-app-title'),
-                          maxLines: 1,
-                          overflow: TextOverflow.ellipsis,
-                          textAlign: TextAlign.center,
-                          style: Theme.of(context).textTheme.titleMedium,
-                        ),
-                      ),
-                    ],
-                  ),
-                ),
-        ),
-      ),
+      keyPrefix: 'mobile-app-${appId.name}',
+      title: title,
+      titleKey: const Key('mobile-app-title'),
+      moreKey: Key('mobile-app-more-${appId.name}'),
+      titleInset: tablet ? 104 : 62,
+      leading: tablet
+          ? MacTrafficControls(
+              appId: appId,
+              windowLabel: label,
+              maximized: false,
+              onClose: onClose,
+              targetSize: 44,
+              secondaryControlsInteractive: false,
+            )
+          : MobileBackCloseButton(
+              appId: appId,
+              windowLabel: label,
+              onPressed: onClose,
+            ),
     );
   }
 }

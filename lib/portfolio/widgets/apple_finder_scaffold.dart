@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 
 import '../theme/apple_theme.dart';
+import 'apple_mobile_navigation_header.dart';
 import 'apple_selection_control.dart';
 
 typedef AppleFinderBodyBuilder =
@@ -228,6 +229,19 @@ class AppleFinderToolbar extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    if (mobile) {
+      return AppleMobileNavigationHeader(
+        title: currentLocation,
+        keyPrefix: controlKeyPrefix,
+        leading: leadingControls,
+        titleContainerKey: Key('$controlKeyPrefix-current-location'),
+        titleStyle: Theme.of(context).textTheme.titleMedium?.copyWith(
+          fontSize: 18,
+          fontWeight: FontWeight.w700,
+        ),
+      );
+    }
+
     return MouseRegion(
       cursor: dragCursor ?? MouseCursor.defer,
       child: GestureDetector(
@@ -244,144 +258,61 @@ class AppleFinderToolbar extends StatelessWidget {
               ),
             ),
           ),
-          child: mobile
-              ? _MobileFinderToolbarContent(
-                  currentLocation: currentLocation,
-                  controlKeyPrefix: controlKeyPrefix,
-                  leadingControls: leadingControls,
-                )
-              : ConstrainedBox(
-                  constraints: BoxConstraints(minHeight: compact ? 56 : 62),
-                  child: Padding(
-                    padding: EdgeInsets.symmetric(
-                      horizontal: compact ? 8 : 14,
-                      vertical: 5,
-                    ),
-                    child: Row(
-                      children: <Widget>[
-                        if (leadingControls != null) ...<Widget>[
-                          leadingControls!,
-                          SizedBox(width: compact ? 4 : 10),
-                        ],
-                        IconButton(
-                          key: Key('$controlKeyPrefix-back'),
-                          tooltip: backTooltip,
-                          onPressed: canGoBack ? onBack : null,
-                          icon: const Icon(Icons.chevron_left_rounded),
-                        ),
-                        IconButton(
-                          key: Key('$controlKeyPrefix-forward'),
-                          tooltip: forwardTooltip,
-                          onPressed: canGoForward ? onForward : null,
-                          icon: const Icon(Icons.chevron_right_rounded),
-                        ),
-                        SizedBox(width: compact ? 3 : 10),
-                        Expanded(
-                          child: Container(
-                            key: Key('$controlKeyPrefix-current-location'),
-                            alignment: Alignment.center,
-                            constraints: const BoxConstraints(minHeight: 38),
-                            padding: const EdgeInsets.symmetric(horizontal: 10),
-                            child: Text(
-                              currentLocation,
-                              maxLines: 1,
-                              overflow: TextOverflow.ellipsis,
-                              style: Theme.of(context).textTheme.titleMedium,
-                            ),
-                          ),
-                        ),
-                        SizedBox(width: compact ? 4 : 8),
-                        IconButton(
-                          key: Key('$controlKeyPrefix-view-options'),
-                          tooltip: '보기 방식',
-                          onPressed: onViewPressed,
-                          icon: Icon(
-                            Icons.grid_view_rounded,
-                            color: AppleTheme.secondaryLabel(context),
-                          ),
-                        ),
-                      ],
-                    ),
-                  ),
-                ),
-        ),
-      ),
-    );
-  }
-}
-
-class _MobileFinderToolbarContent extends StatelessWidget {
-  const _MobileFinderToolbarContent({
-    required this.currentLocation,
-    required this.controlKeyPrefix,
-    required this.leadingControls,
-  });
-
-  final String currentLocation;
-  final String controlKeyPrefix;
-  final Widget? leadingControls;
-
-  @override
-  Widget build(BuildContext context) {
-    return SizedBox(
-      height: 64,
-      child: Stack(
-        alignment: Alignment.center,
-        children: <Widget>[
-          PositionedDirectional(
-            start: 8,
-            child: leadingControls ?? const SizedBox.square(dimension: 44),
-          ),
-          Positioned.fill(
-            left: 62,
-            right: 62,
-            child: Container(
-              key: Key('$controlKeyPrefix-current-location'),
-              alignment: Alignment.center,
-              child: Text(
-                currentLocation,
-                maxLines: 1,
-                overflow: TextOverflow.ellipsis,
-                textAlign: TextAlign.center,
-                style: Theme.of(context).textTheme.titleMedium?.copyWith(
-                  fontSize: 18,
-                  fontWeight: FontWeight.w700,
-                ),
+          child: ConstrainedBox(
+            constraints: BoxConstraints(minHeight: compact ? 56 : 62),
+            child: Padding(
+              padding: EdgeInsets.symmetric(
+                horizontal: compact ? 8 : 14,
+                vertical: 5,
               ),
-            ),
-          ),
-          PositionedDirectional(
-            end: 8,
-            child: IgnorePointer(
-              child: ExcludeSemantics(
-                child: SizedBox.square(
-                  key: Key('$controlKeyPrefix-more'),
-                  dimension: 44,
-                  child: Center(
+              child: Row(
+                children: <Widget>[
+                  if (leadingControls != null) ...<Widget>[
+                    leadingControls!,
+                    SizedBox(width: compact ? 4 : 10),
+                  ],
+                  IconButton(
+                    key: Key('$controlKeyPrefix-back'),
+                    tooltip: backTooltip,
+                    onPressed: canGoBack ? onBack : null,
+                    icon: const Icon(Icons.chevron_left_rounded),
+                  ),
+                  IconButton(
+                    key: Key('$controlKeyPrefix-forward'),
+                    tooltip: forwardTooltip,
+                    onPressed: canGoForward ? onForward : null,
+                    icon: const Icon(Icons.chevron_right_rounded),
+                  ),
+                  SizedBox(width: compact ? 3 : 10),
+                  Expanded(
                     child: Container(
-                      width: 40,
-                      height: 40,
+                      key: Key('$controlKeyPrefix-current-location'),
                       alignment: Alignment.center,
-                      decoration: BoxDecoration(
-                        color: AppleTheme.panel(context),
-                        shape: BoxShape.circle,
-                        border: Border.all(
-                          color: AppleTheme.separator(context),
-                          width: 0.8,
-                        ),
-                      ),
-                      child: Icon(
-                        Icons.more_horiz_rounded,
-                        color: AppleTheme.primaryLabel(context),
-                        size: 23,
+                      constraints: const BoxConstraints(minHeight: 38),
+                      padding: const EdgeInsets.symmetric(horizontal: 10),
+                      child: Text(
+                        currentLocation,
+                        maxLines: 1,
+                        overflow: TextOverflow.ellipsis,
+                        style: Theme.of(context).textTheme.titleMedium,
                       ),
                     ),
                   ),
-                ),
+                  SizedBox(width: compact ? 4 : 8),
+                  IconButton(
+                    key: Key('$controlKeyPrefix-view-options'),
+                    tooltip: '보기 방식',
+                    onPressed: onViewPressed,
+                    icon: Icon(
+                      Icons.grid_view_rounded,
+                      color: AppleTheme.secondaryLabel(context),
+                    ),
+                  ),
+                ],
               ),
             ),
           ),
-        ],
+        ),
       ),
     );
   }

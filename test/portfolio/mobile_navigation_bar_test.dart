@@ -29,6 +29,14 @@ void main() {
           final close = find.byKey(Key('mobile-back-close-${appId.name}'));
 
           expect(navigationBar, findsOneWidget);
+          expect(
+            find.byWidgetPredicate(
+              (widget) =>
+                  widget.runtimeType.toString() ==
+                  'AppleMobileNavigationHeader',
+            ),
+            findsOneWidget,
+          );
           expect(find.byType(MacTrafficControls), findsNothing);
           expect(close, findsOneWidget);
           expect(tester.getSize(close), const Size(44, 44));
@@ -57,6 +65,59 @@ void main() {
             greaterThanOrEqualTo(tester.getRect(close).right),
           );
           expect(tester.takeException(), isNull, reason: appId.name);
+        }
+      },
+    );
+
+    testWidgets(
+      'iPhone title keeps its natural height and aligns with the leading control',
+      (tester) async {
+        await _pumpSurface(
+          tester,
+          size: const Size(390, 844),
+          appId: PortfolioAppId.about,
+        );
+
+        final title = find.byKey(const Key('mobile-app-title'));
+        final leading = find.byKey(const Key('mobile-back-close-about'));
+
+        expect(tester.getSize(title).height, lessThan(30));
+        expect(
+          tester.getCenter(title).dy,
+          closeTo(tester.getCenter(leading).dy, 1),
+        );
+        expect(tester.getCenter(title).dx, closeTo(390 / 2, 0.01));
+      },
+    );
+
+    testWidgets(
+      'regular mobile header keeps title blank areas and more inert',
+      (tester) async {
+        for (final size in const <Size>[Size(390, 844), Size(834, 1194)]) {
+          await tester.pumpWidget(const SizedBox.shrink());
+          await _pumpSurface(tester, size: size, appId: PortfolioAppId.about);
+
+          final header = find.byKey(const Key('mobile-app-navigation-bar'));
+          final title = find.byKey(const Key('mobile-app-title'));
+          final more = find.byKey(const Key('mobile-app-more-about'));
+          final headerRect = tester.getRect(header);
+
+          expect(more, findsOneWidget, reason: '$size');
+          await tester.tap(title);
+          await tester.pumpAndSettle();
+          await tester.tapAt(
+            Offset(headerRect.left + 58, headerRect.center.dy),
+          );
+          await tester.pumpAndSettle();
+          await tester.tapAt(
+            Offset(headerRect.right - 58, headerRect.center.dy),
+          );
+          await tester.pumpAndSettle();
+          await tester.tap(more);
+          await tester.pumpAndSettle();
+
+          expect(find.byKey(const Key('mobile-app-surface')), findsOneWidget);
+          expect(find.byKey(const Key('mobile-home')), findsNothing);
         }
       },
     );
@@ -118,6 +179,14 @@ void main() {
           );
           expect(find.byKey(const Key('mobile-app-title')), findsNothing);
           expect(finderToolbar, findsOneWidget);
+          expect(
+            find.byWidgetPredicate(
+              (widget) =>
+                  widget.runtimeType.toString() ==
+                  'AppleMobileNavigationHeader',
+            ),
+            findsOneWidget,
+          );
           expect(find.byType(MacTrafficControls), findsNothing);
           expect(
             find.byKey(const Key('mobile-back-close-projects')),
@@ -141,6 +210,32 @@ void main() {
         }
       },
     );
+
+    testWidgets('Projects header keeps non-leading regions inert', (
+      tester,
+    ) async {
+      for (final size in const <Size>[Size(390, 844), Size(834, 1194)]) {
+        await tester.pumpWidget(const SizedBox.shrink());
+        await _pumpSurface(tester, size: size, appId: PortfolioAppId.projects);
+
+        final header = find.byKey(const Key('projects-finder-toolbar'));
+        final title = find.byKey(const Key('projects-finder-current-location'));
+        final more = find.byKey(const Key('projects-finder-more'));
+        final headerRect = tester.getRect(header);
+
+        await tester.tap(title);
+        await tester.pumpAndSettle();
+        await tester.tapAt(Offset(headerRect.left + 58, headerRect.center.dy));
+        await tester.pumpAndSettle();
+        await tester.tapAt(Offset(headerRect.right - 58, headerRect.center.dy));
+        await tester.pumpAndSettle();
+        await tester.tap(more);
+        await tester.pumpAndSettle();
+
+        expect(find.byKey(const Key('mobile-app-surface')), findsOneWidget);
+        expect(find.byKey(const Key('mobile-home')), findsNothing);
+      }
+    });
 
     testWidgets('Projects Finder back button closes the surface', (
       tester,
@@ -178,8 +273,13 @@ void main() {
           );
           expect(
             tester.getSemantics(circularControl).getSemanticsData().label,
-            startsWith('Close Projects window'),
+            'Close Projects window',
             reason: '$size root semantics',
+          );
+          expect(
+            tester.getSemantics(circularControl).rect.size,
+            const Size(44, 44),
+            reason: '$size root semantics target',
           );
           expect(find.byTooltip('Close Projects window'), findsOneWidget);
 
@@ -189,7 +289,7 @@ void main() {
           expect(find.byKey(const Key('project-detail-title')), findsOneWidget);
           expect(
             tester.getSemantics(circularControl).getSemanticsData().label,
-            startsWith('Back in Projects'),
+            'Back in Projects',
             reason: '$size detail semantics',
           );
           expect(find.byTooltip('Back in Projects'), findsOneWidget);
@@ -205,7 +305,7 @@ void main() {
           expect(find.byKey(const Key('mobile-app-surface')), findsOneWidget);
           expect(
             tester.getSemantics(circularControl).getSemanticsData().label,
-            startsWith('Close Projects window'),
+            'Close Projects window',
             reason: '$size returned root semantics',
           );
           expect(find.byTooltip('Close Projects window'), findsOneWidget);
@@ -384,13 +484,8 @@ void main() {
           final titleWidget = tester.widget<Text>(title);
           expect(titleWidget.maxLines, 1);
           expect(titleWidget.overflow, TextOverflow.ellipsis);
-          expect(
-            titleWidget.textAlign,
-            size.width < 600 ? TextAlign.center : TextAlign.left,
-          );
-          if (size.width < 600) {
-            expect(tester.getCenter(title).dx, closeTo(size.width / 2, 0.01));
-          }
+          expect(titleWidget.textAlign, TextAlign.center);
+          expect(tester.getCenter(title).dx, closeTo(size.width / 2, 0.01));
           if (size.width < 600) {
             expect(find.byType(MacTrafficControls), findsNothing);
             expect(
