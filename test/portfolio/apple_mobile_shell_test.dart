@@ -258,6 +258,19 @@ void main() {
 
       final name = tester.widget<Text>(find.text('어두운 사용자'));
       expect(name.style?.color?.computeLuminance(), greaterThan(0.7));
+
+      final date = tester.widget<Text>(
+        find.descendant(
+          of: find.byKey(const Key('ipad-profile-card')),
+          matching: find.byWidgetPredicate(
+            (widget) => widget is Text && (widget.data?.contains(',') ?? false),
+          ),
+        ),
+      );
+      expect(
+        _contrastRatio(date.style!.color!, gradient.colors.first),
+        greaterThanOrEqualTo(4.5),
+      );
       expect(tester.takeException(), isNull);
     });
 
@@ -433,4 +446,16 @@ final class _RecordingLauncher implements ExternalLauncher {
     uris.add(uri);
     return true;
   }
+}
+
+double _contrastRatio(Color foreground, Color background) {
+  final foregroundLuminance = foreground.computeLuminance();
+  final backgroundLuminance = background.computeLuminance();
+  final lighter = foregroundLuminance > backgroundLuminance
+      ? foregroundLuminance
+      : backgroundLuminance;
+  final darker = foregroundLuminance > backgroundLuminance
+      ? backgroundLuminance
+      : foregroundLuminance;
+  return (lighter + 0.05) / (darker + 0.05);
 }
