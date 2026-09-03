@@ -314,10 +314,12 @@ void main() {
         'minimize': Color(0xFFFEBC2E),
         'maximize': Color(0xFF28C840),
       };
+      final visualCenters = <Offset>[];
 
       for (final control in const <String>['close', 'minimize', 'maximize']) {
         final target = find.byKey(Key('window-$control-about'));
         final visual = find.byKey(Key('window-$control-about-visual'));
+        visualCenters.add(tester.getCenter(visual));
         final targetSize = tester.getSize(target);
         final semanticsSize = tester.getSemantics(target).rect.size;
         final circle = tester.widget<Container>(visual);
@@ -346,6 +348,9 @@ void main() {
           findsOneWidget,
         );
       }
+
+      expect(visualCenters[1].dx - visualCenters[0].dx, closeTo(20, 0.01));
+      expect(visualCenters[2].dx - visualCenters[1].dx, closeTo(20, 0.01));
 
       final minimizeTarget = tester.getRect(
         find.byKey(const Key('window-minimize-about')),

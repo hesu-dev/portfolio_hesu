@@ -23,6 +23,7 @@ class MacTrafficControls extends StatelessWidget {
   static const Color minimizeColor = Color(0xFFFEBC2E);
   static const Color maximizeColor = Color(0xFF28C840);
   static const double visualDiameter = 14;
+  static const double visualCenterSpacing = 20;
   static const double defaultTargetSize = 32;
 
   final PortfolioAppId appId;
@@ -36,55 +37,66 @@ class MacTrafficControls extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final controls = <Widget>[
+      _MacTrafficButton(
+        controlKey: Key('window-close-${appId.name}'),
+        visualKey: Key('window-close-${appId.name}-visual'),
+        focusKey: Key('window-close-${appId.name}-focus'),
+        label: 'Close $windowLabel window',
+        color: closeColor,
+        onPressed: onClose,
+        targetSize: targetSize,
+      ),
+      if (secondaryControlsInteractive) ...<Widget>[
+        _MacTrafficButton(
+          controlKey: Key('window-minimize-${appId.name}'),
+          visualKey: Key('window-minimize-${appId.name}-visual'),
+          focusKey: Key('window-minimize-${appId.name}-focus'),
+          label: 'Minimize $windowLabel window',
+          color: minimizeColor,
+          onPressed: onMinimize!,
+          targetSize: targetSize,
+        ),
+        _MacTrafficButton(
+          controlKey: Key('window-maximize-${appId.name}'),
+          visualKey: Key('window-maximize-${appId.name}-visual'),
+          focusKey: Key('window-maximize-${appId.name}-focus'),
+          label: maximized
+              ? 'Restore $windowLabel window'
+              : 'Maximize $windowLabel window',
+          color: maximizeColor,
+          onPressed: onMaximize!,
+          targetSize: targetSize,
+        ),
+      ] else ...<Widget>[
+        _MacTrafficDecoration(
+          controlKey: Key('window-minimize-${appId.name}'),
+          visualKey: Key('window-minimize-${appId.name}-visual'),
+          color: minimizeColor,
+          targetSize: targetSize,
+        ),
+        _MacTrafficDecoration(
+          controlKey: Key('window-maximize-${appId.name}'),
+          visualKey: Key('window-maximize-${appId.name}-visual'),
+          color: maximizeColor,
+          targetSize: targetSize,
+        ),
+      ],
+    ];
+
     return SizedBox(
       key: Key('mac-traffic-controls-${appId.name}'),
-      child: Row(
-        mainAxisSize: MainAxisSize.min,
+      width: targetSize + visualCenterSpacing * 2,
+      height: targetSize,
+      child: Stack(
+        clipBehavior: Clip.none,
         children: <Widget>[
-          _MacTrafficButton(
-            controlKey: Key('window-close-${appId.name}'),
-            visualKey: Key('window-close-${appId.name}-visual'),
-            focusKey: Key('window-close-${appId.name}-focus'),
-            label: 'Close $windowLabel window',
-            color: closeColor,
-            onPressed: onClose,
-            targetSize: targetSize,
-          ),
-          if (secondaryControlsInteractive) ...<Widget>[
-            _MacTrafficButton(
-              controlKey: Key('window-minimize-${appId.name}'),
-              visualKey: Key('window-minimize-${appId.name}-visual'),
-              focusKey: Key('window-minimize-${appId.name}-focus'),
-              label: 'Minimize $windowLabel window',
-              color: minimizeColor,
-              onPressed: onMinimize!,
-              targetSize: targetSize,
+          for (var index = 0; index < controls.length; index++)
+            Positioned(
+              left: index * visualCenterSpacing,
+              top: 0,
+              child: controls[index],
             ),
-            _MacTrafficButton(
-              controlKey: Key('window-maximize-${appId.name}'),
-              visualKey: Key('window-maximize-${appId.name}-visual'),
-              focusKey: Key('window-maximize-${appId.name}-focus'),
-              label: maximized
-                  ? 'Restore $windowLabel window'
-                  : 'Maximize $windowLabel window',
-              color: maximizeColor,
-              onPressed: onMaximize!,
-              targetSize: targetSize,
-            ),
-          ] else ...<Widget>[
-            _MacTrafficDecoration(
-              controlKey: Key('window-minimize-${appId.name}'),
-              visualKey: Key('window-minimize-${appId.name}-visual'),
-              color: minimizeColor,
-              targetSize: targetSize,
-            ),
-            _MacTrafficDecoration(
-              controlKey: Key('window-maximize-${appId.name}'),
-              visualKey: Key('window-maximize-${appId.name}-visual'),
-              color: maximizeColor,
-              targetSize: targetSize,
-            ),
-          ],
         ],
       ),
     );

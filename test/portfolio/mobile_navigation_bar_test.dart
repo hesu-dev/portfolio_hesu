@@ -119,6 +119,25 @@ void main() {
           expect(controlsWidget.appId, PortfolioAppId.projects);
           expect(controlsWidget.targetSize, 32);
           expect(controlsWidget.secondaryControlsInteractive, isFalse);
+          final centers = <double>[
+            for (final control in const <String>[
+              'close',
+              'minimize',
+              'maximize',
+            ])
+              tester
+                  .getCenter(
+                    find.descendant(
+                      of: finderToolbar,
+                      matching: find.byKey(
+                        Key('window-$control-projects-visual'),
+                      ),
+                    ),
+                  )
+                  .dx,
+          ];
+          expect(centers[1] - centers[0], closeTo(20, 0.01));
+          expect(centers[2] - centers[1], closeTo(20, 0.01));
           expect(tester.takeException(), isNull, reason: '$size');
         }
       },
