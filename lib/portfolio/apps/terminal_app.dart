@@ -21,8 +21,6 @@ class TerminalApp extends StatefulWidget {
 }
 
 class _TerminalAppState extends State<TerminalApp> {
-  static const String _prompt = 'hesu@portfolio ~ %';
-
   final TextEditingController _controller = TextEditingController();
   final FocusNode _focusNode = FocusNode();
   final ScrollController _scrollController = ScrollController();
@@ -31,6 +29,8 @@ class _TerminalAppState extends State<TerminalApp> {
   ];
 
   late TerminalEngine _engine = TerminalEngine(widget.data);
+
+  String get _prompt => widget.data.terminalPrompt;
 
   @override
   void didUpdateWidget(covariant TerminalApp oldWidget) {
@@ -219,6 +219,52 @@ class _TerminalInput extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final promptLabel = Text(
+      prompt,
+      style: TextStyle(
+        color: const Color(0xFF71D98A),
+        fontFamily: 'monospace',
+        fontSize: compact ? 12.5 : 13,
+        fontWeight: FontWeight.w600,
+      ),
+    );
+    final input = TextField(
+      key: const Key('terminal-input'),
+      controller: controller,
+      focusNode: focusNode,
+      onSubmitted: onSubmitted,
+      autocorrect: false,
+      enableSuggestions: false,
+      textInputAction: TextInputAction.send,
+      style: TextStyle(
+        color: const Color(0xFFF3F3F5),
+        fontFamily: 'monospace',
+        fontSize: compact ? 13 : 13.5,
+      ),
+      cursorColor: const Color(0xFF71D98A),
+      decoration: const InputDecoration(
+        isDense: true,
+        hintText: 'Enter a command',
+        hintStyle: TextStyle(color: Color(0xFF74757B)),
+        filled: false,
+        border: InputBorder.none,
+        enabledBorder: InputBorder.none,
+        focusedBorder: InputBorder.none,
+        contentPadding: EdgeInsets.symmetric(vertical: 8),
+      ),
+    );
+    final submit = IconButton(
+      key: const Key('terminal-submit'),
+      onPressed: () => onSubmitted(controller.text),
+      tooltip: 'Run command',
+      visualDensity: VisualDensity.compact,
+      icon: const Icon(
+        Icons.arrow_upward_rounded,
+        color: Color(0xFF71D98A),
+        size: 20,
+      ),
+    );
+
     return Container(
       padding: EdgeInsets.fromLTRB(
         compact ? 12 : 18,
@@ -230,58 +276,29 @@ class _TerminalInput extends StatelessWidget {
         color: Color(0xFF18191C),
         border: Border(top: BorderSide(color: Color(0xFF34353A), width: 0.7)),
       ),
-      child: Row(
-        children: <Widget>[
-          Text(
-            compact ? '~ %' : prompt,
-            style: TextStyle(
-              color: const Color(0xFF71D98A),
-              fontFamily: 'monospace',
-              fontSize: compact ? 12.5 : 13,
-              fontWeight: FontWeight.w600,
+      child: compact
+          ? Column(
+              mainAxisSize: MainAxisSize.min,
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: <Widget>[
+                promptLabel,
+                const SizedBox(height: 3),
+                Row(
+                  children: <Widget>[
+                    Expanded(child: input),
+                    submit,
+                  ],
+                ),
+              ],
+            )
+          : Row(
+              children: <Widget>[
+                promptLabel,
+                const SizedBox(width: 9),
+                Expanded(child: input),
+                submit,
+              ],
             ),
-          ),
-          const SizedBox(width: 9),
-          Expanded(
-            child: TextField(
-              key: const Key('terminal-input'),
-              controller: controller,
-              focusNode: focusNode,
-              onSubmitted: onSubmitted,
-              autocorrect: false,
-              enableSuggestions: false,
-              textInputAction: TextInputAction.send,
-              style: TextStyle(
-                color: const Color(0xFFF3F3F5),
-                fontFamily: 'monospace',
-                fontSize: compact ? 13 : 13.5,
-              ),
-              cursorColor: const Color(0xFF71D98A),
-              decoration: const InputDecoration(
-                isDense: true,
-                hintText: 'Enter a command',
-                hintStyle: TextStyle(color: Color(0xFF74757B)),
-                filled: false,
-                border: InputBorder.none,
-                enabledBorder: InputBorder.none,
-                focusedBorder: InputBorder.none,
-                contentPadding: EdgeInsets.symmetric(vertical: 8),
-              ),
-            ),
-          ),
-          IconButton(
-            key: const Key('terminal-submit'),
-            onPressed: () => onSubmitted(controller.text),
-            tooltip: 'Run command',
-            visualDensity: VisualDensity.compact,
-            icon: const Icon(
-              Icons.arrow_upward_rounded,
-              color: Color(0xFF71D98A),
-              size: 20,
-            ),
-          ),
-        ],
-      ),
     );
   }
 }
