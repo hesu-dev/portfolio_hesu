@@ -58,10 +58,15 @@ void main() {
       (tester) async {
         await _pumpArtwork(tester, PortfolioAppId.projects);
 
-        final decoration = _artworkDecoration(tester, PortfolioAppId.projects);
-        expect(decoration.color, isNull);
-        expect(decoration.gradient, isNull);
-        expect(decoration.border, isNull);
+        final artwork = find.byKey(const Key('apple-app-artwork-projects'));
+        expect(
+          find.descendant(of: artwork, matching: find.byType(DecoratedBox)),
+          findsNothing,
+        );
+        expect(
+          find.descendant(of: artwork, matching: find.byType(ClipRRect)),
+          findsNothing,
+        );
 
         final expandedSilhouette = tester.widget<Transform>(
           find.byKey(const Key('apple-app-artwork-projects-silhouette')),
@@ -90,11 +95,15 @@ void main() {
       (tester) async {
         await _pumpArtwork(tester, PortfolioAppId.trash);
 
-        final decoration = _artworkDecoration(tester, PortfolioAppId.trash);
-        expect(decoration.color, isNull);
-        expect(decoration.gradient, isNull);
-        expect(decoration.border, isNull);
         final artwork = find.byKey(const Key('apple-app-artwork-trash'));
+        expect(
+          find.descendant(of: artwork, matching: find.byType(DecoratedBox)),
+          findsNothing,
+        );
+        expect(
+          find.descendant(of: artwork, matching: find.byType(ClipRRect)),
+          findsNothing,
+        );
         expect(
           find.descendant(of: artwork, matching: find.byType(CustomPaint)),
           findsOneWidget,
@@ -173,13 +182,17 @@ void main() {
       );
 
       final tile = find.byKey(const Key('apple-app-icon-tile-projects'));
-      final animatedFrame = find.descendant(
+      final sharedFrame = find.descendant(
         of: tile,
-        matching: find.byType(AnimatedContainer),
+        matching: find.byType(AppleAppArtworkFrame),
       );
-      expect(animatedFrame, findsOneWidget);
+      expect(sharedFrame, findsOneWidget);
+      final frameContainer = find.descendant(
+        of: sharedFrame,
+        matching: find.byType(Container),
+      );
       final decoration =
-          tester.widget<AnimatedContainer>(animatedFrame).decoration!
+          tester.widget<Container>(frameContainer.first).decoration!
               as BoxDecoration;
       expect(decoration.boxShadow, isEmpty);
     });
