@@ -288,8 +288,8 @@ class _ProjectStrip extends StatelessWidget {
           bottom: BorderSide(color: AppleTheme.separator(context), width: 0.7),
         ),
       ),
-      child: SizedBox(
-        height: 58,
+      child: ConstrainedBox(
+        constraints: const BoxConstraints(minHeight: 58),
         child: SingleChildScrollView(
           scrollDirection: Axis.horizontal,
           padding: const EdgeInsets.symmetric(horizontal: 11, vertical: 8),
@@ -341,6 +341,7 @@ class _ProjectSelector extends StatelessWidget {
           child: AnimatedContainer(
             duration: const Duration(milliseconds: 160),
             constraints: BoxConstraints(
+              minHeight: compact ? 44 : 0,
               maxWidth: compact ? 220 : double.infinity,
             ),
             padding: EdgeInsets.symmetric(
