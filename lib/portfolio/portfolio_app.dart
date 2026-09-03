@@ -6,23 +6,25 @@ import 'package:portfolio_hesu/portfolio/widgets/adaptive_portfolio_shell.dart';
 
 class PortfolioApp extends StatelessWidget {
   const PortfolioApp({
+    this.data = portfolioData,
     this.externalLauncher = const UrlLauncherExternalLauncher(),
     super.key,
   });
 
+  final PortfolioData data;
   final ExternalLauncher externalLauncher;
 
   @override
   Widget build(BuildContext context) {
     return MaterialApp(
-      title: portfolioData.appTitle,
+      title: data.appTitle,
       color: const Color(0xFF121316),
       debugShowCheckedModeBanner: false,
       theme: AppleTheme.light(),
       darkTheme: AppleTheme.dark(),
       themeMode: ThemeMode.system,
       home: AdaptivePortfolioShell(
-        data: portfolioData,
+        data: data,
         externalLauncher: externalLauncher,
       ),
     );
