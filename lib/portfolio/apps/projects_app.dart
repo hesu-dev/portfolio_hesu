@@ -180,34 +180,41 @@ class _ProjectGrid extends StatelessWidget {
         const spacing = 10.0;
         const minimumTileWidth = 132.0;
         final itemCount = projects.length + 1;
+        final gridWidth = compact
+            ? constraints.maxWidth.clamp(0.0, minimumTileWidth * 2 + spacing)
+            : constraints.maxWidth;
         final columnCount = compact
             ? 2
-            : ((constraints.maxWidth + spacing) / (minimumTileWidth + spacing))
+            : ((gridWidth + spacing) / (minimumTileWidth + spacing))
                   .floor()
                   .clamp(1, itemCount);
         final tileWidth = compact
-            ? minimumTileWidth
-            : (constraints.maxWidth - spacing * (columnCount - 1)) /
-                  columnCount;
-        return Wrap(
-          alignment: compact ? WrapAlignment.center : WrapAlignment.start,
-          spacing: spacing,
-          runSpacing: 12,
-          children: <Widget>[
-            for (final entry in projects.indexed)
-              SizedBox(
-                width: tileWidth,
-                child: AppleFinderFolderTile(
-                  key: Key('project-selector-${entry.$1}'),
-                  label: entry.$2.title,
-                  semanticsLabel: 'Select project ${entry.$2.title}',
-                  selected: selectedIndex == entry.$1,
-                  compact: compact,
-                  onPressed: () => onSelected(entry.$1),
-                ),
-              ),
-            SizedBox(width: tileWidth, child: const _FinderReadmeFile()),
-          ],
+            ? ((gridWidth - spacing) / columnCount).clamp(0.0, minimumTileWidth)
+            : (gridWidth - spacing * (columnCount - 1)) / columnCount;
+        return Align(
+          alignment: compact ? Alignment.topCenter : Alignment.topLeft,
+          child: SizedBox(
+            width: gridWidth,
+            child: Wrap(
+              spacing: spacing,
+              runSpacing: 12,
+              children: <Widget>[
+                for (final entry in projects.indexed)
+                  SizedBox(
+                    width: tileWidth,
+                    child: AppleFinderFolderTile(
+                      key: Key('project-selector-${entry.$1}'),
+                      label: entry.$2.title,
+                      semanticsLabel: 'Select project ${entry.$2.title}',
+                      selected: selectedIndex == entry.$1,
+                      compact: compact,
+                      onPressed: () => onSelected(entry.$1),
+                    ),
+                  ),
+                SizedBox(width: tileWidth, child: const _FinderReadmeFile()),
+              ],
+            ),
+          ),
         );
       },
     );
@@ -366,7 +373,7 @@ class _FinderProjectCollection extends StatelessWidget {
               children: <Widget>[
                 Expanded(child: Text('프로젝트', style: AppleTheme.title(context))),
                 Text(
-                  '${projects.length}개 항목',
+                  '${projects.length + 1}개 항목',
                   style: AppleTheme.caption(context),
                 ),
               ],

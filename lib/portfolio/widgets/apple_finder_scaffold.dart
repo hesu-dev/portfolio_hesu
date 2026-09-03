@@ -93,7 +93,8 @@ class AppleFinderScaffold extends StatelessWidget {
           Expanded(
             child: LayoutBuilder(
               builder: (context, constraints) {
-                final wide = !compact && constraints.maxWidth >= 700;
+                final wide =
+                    !compact && (tablet || constraints.maxWidth >= 700);
                 if (wide) {
                   return Row(
                     children: <Widget>[

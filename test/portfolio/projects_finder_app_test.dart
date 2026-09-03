@@ -68,6 +68,7 @@ void main() {
         ),
         findsOneWidget,
       );
+      expect(find.text('7개 항목'), findsOneWidget);
 
       await tester.tap(find.byKey(const Key('project-selector-1')));
       await tester.pumpAndSettle();
@@ -119,34 +120,49 @@ void main() {
       );
     });
 
-    testWidgets('iPad는 좁은 사이드바 옆에 데스크톱형 전체 파일 목록을 표시한다', (tester) async {
-      await _pumpProjects(tester, size: const Size(834, 700), tablet: true);
+    testWidgets('iPad mini부터 좁은 사이드바 옆에 데스크톱형 전체 파일 목록을 표시한다', (tester) async {
+      for (final contentWidth in const <double>[552, 696, 786]) {
+        await tester.pumpWidget(const SizedBox.shrink());
+        await _pumpProjects(
+          tester,
+          size: Size(contentWidth, 700),
+          tablet: true,
+        );
 
-      final sidebar = find.byKey(const Key('projects-finder-sidebar'));
-      expect(sidebar, findsOneWidget);
-      expect(tester.getSize(sidebar).width, 176);
-      expect(find.byKey(const Key('projects-finder-locations')), findsNothing);
-      expect(find.byKey(const Key('projects-detail-scroll')), findsNothing);
+        final sidebar = find.byKey(const Key('projects-finder-sidebar'));
+        expect(sidebar, findsOneWidget, reason: '$contentWidth');
+        expect(tester.getSize(sidebar).width, 176, reason: '$contentWidth');
+        expect(
+          find.byKey(const Key('projects-finder-locations')),
+          findsNothing,
+          reason: '$contentWidth',
+        );
+        expect(
+          find.byKey(const Key('projects-detail-scroll')),
+          findsNothing,
+          reason: '$contentWidth',
+        );
 
-      final grid = find.byKey(const Key('projects-finder-grid'));
-      expect(grid, findsOneWidget);
-      for (var index = 0; index < portfolioData.projects.length; index++) {
+        final grid = find.byKey(const Key('projects-finder-grid'));
+        expect(grid, findsOneWidget, reason: '$contentWidth');
+        for (var index = 0; index < portfolioData.projects.length; index++) {
+          expect(
+            find.descendant(
+              of: grid,
+              matching: find.byKey(Key('project-selector-$index')),
+            ),
+            findsOneWidget,
+          );
+        }
         expect(
           find.descendant(
             of: grid,
-            matching: find.byKey(Key('project-selector-$index')),
+            matching: find.byKey(const Key('finder-file-portfolio-readme')),
           ),
           findsOneWidget,
         );
+        expect(tester.takeException(), isNull, reason: '$contentWidth');
       }
-      expect(
-        find.descendant(
-          of: grid,
-          matching: find.byKey(const Key('finder-file-portfolio-readme')),
-        ),
-        findsOneWidget,
-      );
-      expect(tester.takeException(), isNull);
     });
 
     testWidgets('Projects 내부에는 가짜 traffic light 원을 다시 그리지 않는다', (tester) async {
@@ -237,6 +253,32 @@ void main() {
       );
       await tester.pumpAndSettle();
       expect(tester.takeException(), isNull);
+    });
+
+    testWidgets('넓은 iPhone에서도 프로젝트 폴더를 132px 2열로 유지한다', (tester) async {
+      for (final width in const <double>[448, 590]) {
+        await tester.pumpWidget(const SizedBox.shrink());
+        await _pumpProjects(tester, size: Size(width, 700), compact: true);
+
+        final folders = <Finder>[
+          for (var index = 0; index < portfolioData.projects.length; index++)
+            find.byKey(Key('project-selector-$index')),
+        ];
+        for (final folder in folders) {
+          expect(tester.getSize(folder).width, 132, reason: '$width');
+        }
+        expect(
+          tester.getTopLeft(folders[0]).dy,
+          closeTo(tester.getTopLeft(folders[1]).dy, 0.01),
+          reason: '$width',
+        );
+        expect(
+          tester.getTopLeft(folders[2]).dy,
+          greaterThan(tester.getTopLeft(folders[0]).dy),
+          reason: '$width',
+        );
+        expect(tester.takeException(), isNull, reason: '$width');
+      }
     });
 
     testWidgets('desktop 창의 좁은 regular 본문에서도 폴더 폭을 유지하고 여러 행으로 배치한다', (
