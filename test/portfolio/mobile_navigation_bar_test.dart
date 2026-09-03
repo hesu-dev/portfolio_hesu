@@ -37,6 +37,16 @@ void main() {
               tester.widget<MacTrafficControls>(trafficControls).appId,
               appId,
             );
+            expect(
+              tester.widget<MacTrafficControls>(trafficControls).targetSize,
+              44,
+            );
+            expect(
+              tester
+                  .widget<MacTrafficControls>(trafficControls)
+                  .secondaryControlsInteractive,
+              isFalse,
+            );
             expect(find.byKey(const Key('mobile-close')), findsNothing);
             expect(
               find.descendant(
@@ -81,8 +91,7 @@ void main() {
 
       final closeButton = find.byKey(const Key('window-close-about'));
       expect(find.bySemanticsLabel('Close About window'), findsOneWidget);
-      expect(tester.getSize(closeButton).width, MacTrafficControls.targetSize);
-      expect(tester.getSize(closeButton).height, MacTrafficControls.targetSize);
+      expect(tester.getSize(closeButton), const Size.square(44));
       final semanticsData = tester.getSemantics(closeButton).getSemanticsData();
       expect(semanticsData.flagsCollection.isButton, isTrue);
       expect(semanticsData.hasAction(ui.SemanticsAction.tap), isTrue);
@@ -93,6 +102,40 @@ void main() {
       expect(find.byKey(const Key('mobile-app-surface')), findsNothing);
       semantics.dispose();
     });
+
+    testWidgets(
+      'yellow and green remain decorative 44px circles without actions or semantics',
+      (tester) async {
+        final semantics = tester.ensureSemantics();
+        await _pumpSurface(
+          tester,
+          size: const Size(390, 844),
+          appId: PortfolioAppId.about,
+        );
+
+        for (final control in const <String>['minimize', 'maximize']) {
+          final target = find.byKey(Key('window-$control-about'));
+          expect(target, findsOneWidget);
+          expect(tester.getSize(target), const Size.square(44));
+
+          final semanticsData = tester.getSemantics(target).getSemanticsData();
+          expect(semanticsData.flagsCollection.isButton, isFalse);
+          expect(semanticsData.hasAction(ui.SemanticsAction.tap), isFalse);
+        }
+        expect(find.bySemanticsLabel('Minimize About window'), findsNothing);
+        expect(find.bySemanticsLabel('Restore About window'), findsNothing);
+        expect(find.bySemanticsLabel('Maximize About window'), findsNothing);
+
+        await tester.tap(find.byKey(const Key('window-minimize-about')));
+        await tester.pumpAndSettle();
+        expect(find.byKey(const Key('mobile-app-surface')), findsOneWidget);
+
+        await tester.tap(find.byKey(const Key('window-maximize-about')));
+        await tester.pumpAndSettle();
+        expect(find.byKey(const Key('mobile-app-surface')), findsOneWidget);
+        semantics.dispose();
+      },
+    );
 
     testWidgets('keeps left titles and traffic lights overflow-free at 200%', (
       tester,
