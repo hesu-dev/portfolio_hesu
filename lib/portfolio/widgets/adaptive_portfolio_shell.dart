@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:portfolio_hesu/portfolio/data/portfolio_data.dart';
+import 'package:portfolio_hesu/portfolio/macos/mac_desktop.dart';
 import 'package:portfolio_hesu/portfolio/services/external_launcher.dart';
 
 class AdaptivePortfolioShell extends StatelessWidget {
@@ -22,12 +23,7 @@ class AdaptivePortfolioShell extends StatelessWidget {
         final width = constraints.maxWidth;
 
         if (width >= macBreakpoint) {
-          return _PortfolioShellPlaceholder(
-            key: const Key('mac-shell'),
-            deviceName: 'Mac',
-            data: data,
-            backgroundColor: const Color(0xFFE8EEF8),
-          );
+          return MacDesktop(data: data, externalLauncher: externalLauncher);
         }
         if (width >= iPadBreakpoint) {
           return _PortfolioShellPlaceholder(

@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:portfolio_hesu/portfolio/services/external_launcher.dart';
+import 'package:portfolio_hesu/portfolio/theme/apple_theme.dart';
 import 'package:portfolio_hesu/portfolio/widgets/adaptive_portfolio_shell.dart';
 
 class PortfolioApp extends StatelessWidget {
@@ -15,10 +16,9 @@ class PortfolioApp extends StatelessWidget {
     return MaterialApp(
       title: 'Min He-su Portfolio',
       debugShowCheckedModeBanner: false,
-      theme: ThemeData(
-        colorScheme: ColorScheme.fromSeed(seedColor: const Color(0xFF4677B8)),
-        useMaterial3: true,
-      ),
+      theme: AppleTheme.light(),
+      darkTheme: AppleTheme.dark(),
+      themeMode: ThemeMode.system,
       home: AdaptivePortfolioShell(externalLauncher: externalLauncher),
     );
   }
