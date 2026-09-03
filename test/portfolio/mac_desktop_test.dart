@@ -1,9 +1,12 @@
+import 'dart:ui' as ui;
+
 import 'package:flutter/material.dart';
 import 'package:flutter/gestures.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:portfolio_hesu/portfolio/apps/portfolio_app_content.dart';
 import 'package:portfolio_hesu/portfolio/data/portfolio_data.dart';
+import 'package:portfolio_hesu/portfolio/macos/mac_desktop.dart';
 import 'package:portfolio_hesu/portfolio/macos/mac_dock.dart';
 import 'package:portfolio_hesu/portfolio/models/portfolio_app_id.dart';
 import 'package:portfolio_hesu/portfolio/portfolio_app.dart';
@@ -11,6 +14,7 @@ import 'package:portfolio_hesu/portfolio/services/external_launcher.dart';
 import 'package:portfolio_hesu/portfolio/theme/apple_theme.dart';
 import 'package:portfolio_hesu/portfolio/theme/portfolio_theme_controller.dart';
 import 'package:portfolio_hesu/portfolio/widgets/adaptive_portfolio_shell.dart';
+import 'package:portfolio_hesu/portfolio/widgets/apple_app_artwork.dart';
 
 void main() {
   group('macOS adaptive shell', () {
@@ -90,12 +94,110 @@ void main() {
         find.byKey(const Key('desktop-app-selection-about')),
         findsOneWidget,
       );
+      final selection = tester.widget<AnimatedContainer>(
+        find.byKey(const Key('desktop-app-selection-about')),
+      );
+      expect(
+        (selection.decoration! as BoxDecoration).color,
+        Colors.white.withValues(alpha: 0.2),
+      );
+      expect(
+        find.byKey(const Key('desktop-app-artwork-selection-about')),
+        findsNothing,
+      );
+      expect(
+        find.byKey(const Key('desktop-app-label-selection-about')),
+        findsNothing,
+      );
       expect(find.byKey(const Key('mac-window-about')), findsNothing);
 
       await _doubleClick(tester, about);
 
       expect(find.byKey(const Key('mac-window-about')), findsOneWidget);
       expect(find.byKey(const Key('mac-window-active-about')), findsOneWidget);
+    });
+
+    testWidgets('Projects 선택은 artwork를 바꾸지 않고 아이콘 주변과 이름만 중립 회색으로 표시한다', (
+      tester,
+    ) async {
+      final previousHighlightStrategy = FocusManager.instance.highlightStrategy;
+      FocusManager.instance.highlightStrategy =
+          FocusHighlightStrategy.alwaysTraditional;
+      addTearDown(
+        () =>
+            FocusManager.instance.highlightStrategy = previousHighlightStrategy,
+      );
+
+      for (final scenario in const <({Brightness brightness, Size size})>[
+        (brightness: Brightness.light, size: Size(1280, 720)),
+        (brightness: Brightness.dark, size: Size(1440, 900)),
+      ]) {
+        await tester.pumpWidget(const SizedBox.shrink());
+        await _pumpThemedDesktop(
+          tester,
+          brightness: scenario.brightness,
+          size: scenario.size,
+        );
+
+        const appId = PortfolioAppId.projects;
+        final launcher = find.byKey(const Key('desktop-app-projects'));
+        final beforeArtwork = _desktopArtworkSignature(tester, appId);
+
+        await tester.tap(launcher);
+        await tester.pump(kDoubleTapTimeout + const Duration(milliseconds: 20));
+
+        expect(_desktopArtworkSignature(tester, appId), beforeArtwork);
+        expect(
+          find.byKey(const Key('desktop-app-selection-projects')),
+          findsOneWidget,
+        );
+
+        for (final key in const <Key>[
+          Key('desktop-app-artwork-selection-projects'),
+          Key('desktop-app-label-selection-projects'),
+          Key('desktop-app-focus-projects'),
+        ]) {
+          expect(find.byKey(key), findsOneWidget, reason: '$key $scenario');
+        }
+
+        final artworkSelection = _desktopSelectionDecoration(
+          tester,
+          const Key('desktop-app-artwork-selection-projects'),
+        );
+        final labelSelection = _desktopSelectionDecoration(
+          tester,
+          const Key('desktop-app-label-selection-projects'),
+        );
+        for (final decoration in <BoxDecoration>[
+          artworkSelection,
+          labelSelection,
+        ]) {
+          expect(decoration.color, isNotNull);
+          expect(decoration.color, isNot(Colors.transparent));
+          expect(_isNeutralGray(decoration.color!), isTrue);
+          expect(decoration.color, isNot(AppleTheme.blue));
+          expect(decoration.border, isNull);
+        }
+
+        final focusDecoration = _desktopSelectionDecoration(
+          tester,
+          const Key('desktop-app-focus-projects'),
+        );
+        expect(focusDecoration.border, isNotNull);
+        expect(
+          _isNeutralGray((focusDecoration.border! as Border).top.color),
+          isTrue,
+        );
+
+        final semantics = tester.getSemantics(launcher).getSemanticsData();
+        expect(semantics.flagsCollection.isSelected, ui.Tristate.isTrue);
+        expect(semantics.flagsCollection.isButton, isTrue);
+
+        await tester.sendKeyEvent(LogicalKeyboardKey.enter);
+        await tester.pumpAndSettle();
+        expect(find.byKey(const Key('mac-window-projects')), findsOneWidget);
+        expect(tester.takeException(), isNull, reason: '$scenario');
+      }
     });
 
     testWidgets('Enter and Space open the focused desktop icon', (
@@ -459,6 +561,21 @@ void main() {
       expect(find.byKey(const Key('mac-system-menu-panel')), findsNothing);
       expect(find.byKey(const Key('mac-window-about')), findsOneWidget);
       semantics.dispose();
+    });
+
+    testWidgets('프로젝트 시스템 메뉴는 영문 Projects 창과 Dock 항목 하나만 연다', (tester) async {
+      await _pumpPortfolio(tester);
+
+      await tester.tap(find.byKey(const Key('mac-system-menu-button')));
+      await tester.pumpAndSettle();
+      await tester.tap(find.byKey(const Key('system-menu-this-mac')));
+      await tester.pumpAndSettle();
+
+      expect(find.byKey(const Key('mac-window-projects')), findsOneWidget);
+      expect(find.byKey(const Key('dock-app-projects')), findsOneWidget);
+      expect(find.byKey(const Key('dock-running-projects')), findsOneWidget);
+      expect(find.byKey(const Key('mac-window-thisMac')), findsNothing);
+      expect(find.byKey(const Key('dock-app-thisMac')), findsNothing);
     });
 
     testWidgets('shows desktop chrome and only Trash in Dock initially', (
@@ -830,6 +947,72 @@ Future<void> _pumpPortfolio(
     ),
   );
   await tester.pump();
+}
+
+Future<void> _pumpThemedDesktop(
+  WidgetTester tester, {
+  required Brightness brightness,
+  required Size size,
+}) async {
+  final themeController = PortfolioThemeController(
+    initial: brightness == Brightness.light
+        ? PortfolioThemePreference.light
+        : PortfolioThemePreference.dark,
+  );
+  addTearDown(themeController.dispose);
+  tester.view.devicePixelRatio = 1;
+  tester.view.physicalSize = size;
+  addTearDown(tester.view.resetDevicePixelRatio);
+  addTearDown(tester.view.resetPhysicalSize);
+
+  await tester.pumpWidget(
+    MaterialApp(
+      theme: brightness == Brightness.light
+          ? AppleTheme.light()
+          : AppleTheme.dark(),
+      home: MacDesktop(
+        data: portfolioData,
+        externalLauncher: _FakeLauncher(),
+        themeController: themeController,
+      ),
+    ),
+  );
+  await tester.pump();
+}
+
+Map<String, Object?> _desktopArtworkSignature(
+  WidgetTester tester,
+  PortfolioAppId appId,
+) {
+  final frameContainer = find.byKey(
+    Key('desktop-app-artwork-frame-${appId.name}'),
+  );
+  final frame = tester.widget<AppleAppArtworkFrame>(
+    find.ancestor(
+      of: frameContainer,
+      matching: find.byType(AppleAppArtworkFrame),
+    ),
+  );
+  final artwork = tester.widget<AppleAppArtwork>(
+    find.descendant(of: frameContainer, matching: find.byType(AppleAppArtwork)),
+  );
+  return <String, Object?>{
+    'frameAppId': frame.appId,
+    'frameSize': frame.size,
+    'artworkAppId': artwork.appId,
+    'artworkSize': artwork.size,
+  };
+}
+
+BoxDecoration _desktopSelectionDecoration(WidgetTester tester, Key key) {
+  final widget = tester.widget<AnimatedContainer>(find.byKey(key));
+  return widget.decoration! as BoxDecoration;
+}
+
+bool _isNeutralGray(Color color) {
+  const tolerance = 0.001;
+  return (color.r - color.g).abs() <= tolerance &&
+      (color.g - color.b).abs() <= tolerance;
 }
 
 Future<void> _pumpDock(

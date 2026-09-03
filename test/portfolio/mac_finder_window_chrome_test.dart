@@ -7,7 +7,7 @@ import 'package:portfolio_hesu/portfolio/services/external_launcher.dart';
 
 void main() {
   testWidgets(
-    'desktop Finder windows merge traffic controls into unique toolbar rows',
+    'desktop Projects Finder merges traffic controls into one public toolbar',
     (tester) async {
       await _pumpPortfolio(
         tester,
@@ -15,59 +15,57 @@ void main() {
         textScaler: const TextScaler.linear(2),
       );
       await _openDesktopApp(tester, PortfolioAppId.projects);
-      await _openProjectHubFromSystemMenu(tester);
+      await _openProjectsFromSystemMenu(tester);
 
-      for (final entry in const <({PortfolioAppId appId, String prefix})>[
-        (appId: PortfolioAppId.projects, prefix: 'projects'),
-        (appId: PortfolioAppId.thisMac, prefix: 'project-hub'),
+      const prefix = 'projects';
+      final window = find.byKey(const Key('mac-window-projects'));
+      final toolbar = find.descendant(
+        of: window,
+        matching: find.byKey(const Key('projects-finder-toolbar')),
+      );
+
+      expect(find.byKey(const Key('mac-window-thisMac')), findsNothing);
+      expect(find.byKey(const Key('project-hub-finder-toolbar')), findsNothing);
+      expect(
+        find.byKey(const Key('mac-window-titlebar-projects')),
+        findsNothing,
+      );
+      expect(toolbar, findsOneWidget);
+      expect(
+        tester.getTopLeft(toolbar).dy,
+        closeTo(tester.getTopLeft(window).dy, 1),
+      );
+      final trafficControls = find.descendant(
+        of: toolbar,
+        matching: find.byKey(const Key('mac-traffic-controls-projects')),
+      );
+      expect(trafficControls, findsOneWidget);
+      for (final control in const <String>[
+        'back',
+        'forward',
+        'current-location',
+        'view-options',
       ]) {
-        final window = find.byKey(Key('mac-window-${entry.appId.name}'));
-        final toolbar = find.descendant(
-          of: window,
-          matching: find.byKey(Key('${entry.prefix}-finder-toolbar')),
-        );
-
         expect(
-          find.byKey(Key('mac-window-titlebar-${entry.appId.name}')),
-          findsNothing,
-        );
-        expect(toolbar, findsOneWidget);
-        expect(
-          tester.getTopLeft(toolbar).dy,
-          closeTo(tester.getTopLeft(window).dy, 1),
-        );
-        final trafficControls = find.descendant(
-          of: toolbar,
-          matching: find.byKey(Key('mac-traffic-controls-${entry.appId.name}')),
-        );
-        expect(trafficControls, findsOneWidget);
-        for (final control in const <String>[
-          'back',
-          'forward',
-          'current-location',
-          'view-options',
-        ]) {
-          expect(
-            find.descendant(
-              of: toolbar,
-              matching: find.byKey(Key('${entry.prefix}-finder-$control')),
-            ),
-            findsOneWidget,
-          );
-        }
-        final back = find.byKey(Key('${entry.prefix}-finder-back'));
-        final location = find.byKey(
-          Key('${entry.prefix}-finder-current-location'),
-        );
-        expect(
-          tester.getCenter(trafficControls).dy,
-          closeTo(tester.getCenter(back).dy, 1),
-        );
-        expect(
-          tester.getCenter(back).dy,
-          closeTo(tester.getCenter(location).dy, 1),
+          find.descendant(
+            of: toolbar,
+            matching: find.byKey(Key('$prefix-finder-$control')),
+          ),
+          findsOneWidget,
         );
       }
+      final back = find.byKey(const Key('projects-finder-back'));
+      final location = find.byKey(
+        const Key('projects-finder-current-location'),
+      );
+      expect(
+        tester.getCenter(trafficControls).dy,
+        closeTo(tester.getCenter(back).dy, 1),
+      );
+      expect(
+        tester.getCenter(back).dy,
+        closeTo(tester.getCenter(location).dy, 1),
+      );
 
       expect(find.byKey(const Key('finder-back')), findsNothing);
       expect(find.byKey(const Key('finder-forward')), findsNothing);
@@ -170,12 +168,13 @@ Future<void> _openDesktopApp(WidgetTester tester, PortfolioAppId appId) async {
   expect(find.byKey(Key('mac-window-${appId.name}')), findsOneWidget);
 }
 
-Future<void> _openProjectHubFromSystemMenu(WidgetTester tester) async {
+Future<void> _openProjectsFromSystemMenu(WidgetTester tester) async {
   await tester.tap(find.byKey(const Key('mac-system-menu-button')));
   await tester.pumpAndSettle();
   await tester.tap(find.byKey(const Key('system-menu-this-mac')));
   await tester.pumpAndSettle();
-  expect(find.byKey(const Key('mac-window-thisMac')), findsOneWidget);
+  expect(find.byKey(const Key('mac-window-projects')), findsOneWidget);
+  expect(find.byKey(const Key('mac-window-thisMac')), findsNothing);
 }
 
 final class _FakeLauncher implements ExternalLauncher {
