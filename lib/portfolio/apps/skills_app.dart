@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 
 import '../data/portfolio_data.dart';
 import '../theme/apple_theme.dart';
+import '../widgets/apple_selection_control.dart';
 
 class SkillsApp extends StatefulWidget {
   const SkillsApp({
@@ -226,76 +227,65 @@ class _CategoryButton extends StatelessWidget {
         ? (AppleTheme.isDark(context) ? Colors.white : const Color(0xFF153A70))
         : AppleTheme.primaryLabel(context);
 
-    return Semantics(
+    return AppleSelectionControl(
       key: Key('skills-category-${group.title}'),
-      container: true,
-      label: 'Select skill category ${group.title}',
+      semanticsLabel: 'Select skill category ${group.title}',
       selected: selected,
-      button: true,
-      onTap: onTap,
-      excludeSemantics: true,
-      child: Material(
-        color: Colors.transparent,
-        child: InkWell(
-          onTap: onTap,
+      onPressed: onTap,
+      borderRadius: BorderRadius.circular(compact ? 999 : 11),
+      child: AnimatedContainer(
+        duration: const Duration(milliseconds: 160),
+        constraints: const BoxConstraints(minHeight: 44),
+        padding: EdgeInsets.symmetric(
+          horizontal: compact ? 13 : 10,
+          vertical: compact ? 8 : 11,
+        ),
+        decoration: BoxDecoration(
+          color: selected
+              ? AppleTheme.blue.withValues(
+                  alpha: AppleTheme.isDark(context) ? 0.27 : 0.13,
+                )
+              : Colors.transparent,
           borderRadius: BorderRadius.circular(compact ? 999 : 11),
-          child: AnimatedContainer(
-            duration: const Duration(milliseconds: 160),
-            constraints: const BoxConstraints(minHeight: 44),
-            padding: EdgeInsets.symmetric(
-              horizontal: compact ? 13 : 10,
-              vertical: compact ? 8 : 11,
+          border: compact
+              ? Border.all(
+                  color: selected
+                      ? AppleTheme.blue.withValues(alpha: 0.3)
+                      : AppleTheme.separator(context),
+                )
+              : null,
+        ),
+        child: Row(
+          mainAxisSize: compact ? MainAxisSize.min : MainAxisSize.max,
+          children: <Widget>[
+            Icon(
+              _categoryIcon(index),
+              color: selected ? AppleTheme.blue : foreground,
+              size: 18,
             ),
-            decoration: BoxDecoration(
-              color: selected
-                  ? AppleTheme.blue.withValues(
-                      alpha: AppleTheme.isDark(context) ? 0.27 : 0.13,
-                    )
-                  : Colors.transparent,
-              borderRadius: BorderRadius.circular(compact ? 999 : 11),
-              border: compact
-                  ? Border.all(
-                      color: selected
-                          ? AppleTheme.blue.withValues(alpha: 0.3)
-                          : AppleTheme.separator(context),
-                    )
-                  : null,
-            ),
-            child: Row(
-              mainAxisSize: compact ? MainAxisSize.min : MainAxisSize.max,
-              children: <Widget>[
-                Icon(
-                  _categoryIcon(index),
-                  color: selected ? AppleTheme.blue : foreground,
-                  size: 18,
+            const SizedBox(width: 8),
+            if (compact)
+              Text(
+                group.title,
+                maxLines: 1,
+                style: Theme.of(context).textTheme.labelMedium?.copyWith(
+                  color: foreground,
+                  fontWeight: selected ? FontWeight.w700 : FontWeight.w500,
                 ),
-                const SizedBox(width: 8),
-                if (compact)
-                  Text(
-                    group.title,
-                    maxLines: 1,
-                    style: Theme.of(context).textTheme.labelMedium?.copyWith(
-                      color: foreground,
-                      fontWeight: selected ? FontWeight.w700 : FontWeight.w500,
-                    ),
-                  )
-                else
-                  Expanded(
-                    child: Text(
-                      group.title,
-                      maxLines: 1,
-                      overflow: TextOverflow.ellipsis,
-                      style: Theme.of(context).textTheme.labelMedium?.copyWith(
-                        color: foreground,
-                        fontWeight: selected
-                            ? FontWeight.w700
-                            : FontWeight.w500,
-                      ),
-                    ),
+              )
+            else
+              Expanded(
+                child: Text(
+                  group.title,
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
+                  style: Theme.of(context).textTheme.labelMedium?.copyWith(
+                    color: foreground,
+                    fontWeight: selected ? FontWeight.w700 : FontWeight.w500,
                   ),
-              ],
-            ),
-          ),
+                ),
+              ),
+          ],
         ),
       ),
     );

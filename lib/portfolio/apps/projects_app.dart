@@ -3,6 +3,7 @@ import 'package:flutter/material.dart';
 import '../data/portfolio_data.dart';
 import '../services/external_launcher.dart';
 import '../theme/apple_theme.dart';
+import '../widgets/apple_selection_control.dart';
 
 class ProjectsApp extends StatefulWidget {
   const ProjectsApp({
@@ -332,73 +333,60 @@ class _ProjectSelector extends StatelessWidget {
   Widget build(BuildContext context) {
     return Padding(
       padding: EdgeInsets.only(bottom: compact ? 0 : 5),
-      child: Semantics(
+      child: AppleSelectionControl(
         key: Key('project-selector-$index'),
-        container: true,
-        label: 'Select project ${project.title}',
+        semanticsLabel: 'Select project ${project.title}',
         selected: selected,
-        button: true,
-        onTap: onTap,
-        excludeSemantics: true,
-        child: Material(
-          color: Colors.transparent,
-          child: InkWell(
-            onTap: onTap,
+        onPressed: onTap,
+        borderRadius: BorderRadius.circular(compact ? 999 : 12),
+        child: AnimatedContainer(
+          duration: const Duration(milliseconds: 160),
+          constraints: BoxConstraints(
+            minHeight: 44,
+            maxWidth: compact ? 220 : double.infinity,
+          ),
+          padding: EdgeInsets.symmetric(
+            horizontal: compact ? 14 : 11,
+            vertical: compact ? 9 : 11,
+          ),
+          decoration: BoxDecoration(
+            color: selected
+                ? AppleTheme.selectionBackground(context, AppleTheme.blue)
+                : Colors.transparent,
             borderRadius: BorderRadius.circular(compact ? 999 : 12),
-            child: AnimatedContainer(
-              duration: const Duration(milliseconds: 160),
-              constraints: BoxConstraints(
-                minHeight: 44,
-                maxWidth: compact ? 220 : double.infinity,
-              ),
-              padding: EdgeInsets.symmetric(
-                horizontal: compact ? 14 : 11,
-                vertical: compact ? 9 : 11,
-              ),
-              decoration: BoxDecoration(
-                color: selected
-                    ? AppleTheme.selectionBackground(context, AppleTheme.blue)
-                    : Colors.transparent,
-                borderRadius: BorderRadius.circular(compact ? 999 : 12),
-                border: compact
-                    ? Border.all(
-                        color: selected
-                            ? AppleTheme.blue.withValues(alpha: 0.3)
-                            : AppleTheme.separator(context),
-                      )
-                    : null,
-              ),
-              child: Row(
-                mainAxisSize: compact ? MainAxisSize.min : MainAxisSize.max,
-                children: <Widget>[
-                  Icon(
-                    selected
-                        ? Icons.article_rounded
-                        : Icons.description_outlined,
-                    size: 18,
+            border: compact
+                ? Border.all(
                     color: selected
-                        ? AppleTheme.blue
-                        : AppleTheme.secondaryLabel(context),
-                  ),
-                  const SizedBox(width: 8),
-                  Flexible(
-                    child: Text(
-                      project.title,
-                      maxLines: 1,
-                      overflow: TextOverflow.ellipsis,
-                      style: Theme.of(context).textTheme.labelMedium?.copyWith(
-                        color: selected
-                            ? AppleTheme.selectionForeground(context)
-                            : AppleTheme.primaryLabel(context),
-                        fontWeight: selected
-                            ? FontWeight.w700
-                            : FontWeight.w500,
-                      ),
-                    ),
-                  ),
-                ],
+                        ? AppleTheme.blue.withValues(alpha: 0.3)
+                        : AppleTheme.separator(context),
+                  )
+                : null,
+          ),
+          child: Row(
+            mainAxisSize: compact ? MainAxisSize.min : MainAxisSize.max,
+            children: <Widget>[
+              Icon(
+                selected ? Icons.article_rounded : Icons.description_outlined,
+                size: 18,
+                color: selected
+                    ? AppleTheme.blue
+                    : AppleTheme.secondaryLabel(context),
               ),
-            ),
+              const SizedBox(width: 8),
+              Flexible(
+                child: Text(
+                  project.title,
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
+                  style: Theme.of(context).textTheme.labelMedium?.copyWith(
+                    color: selected
+                        ? AppleTheme.selectionForeground(context)
+                        : AppleTheme.primaryLabel(context),
+                    fontWeight: selected ? FontWeight.w700 : FontWeight.w500,
+                  ),
+                ),
+              ),
+            ],
           ),
         ),
       ),
