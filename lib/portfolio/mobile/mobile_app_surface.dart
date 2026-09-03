@@ -2,7 +2,6 @@ import 'package:flutter/material.dart';
 
 import '../apps/portfolio_app_content.dart';
 import '../data/portfolio_data.dart';
-import '../macos/mac_traffic_controls.dart';
 import '../models/portfolio_app_id.dart';
 import '../services/external_launcher.dart';
 import '../theme/apple_theme.dart';
@@ -95,7 +94,6 @@ class MobileAppSurface extends StatelessWidget {
                     appId: appId,
                     label: label,
                     title: windowTitle,
-                    tablet: tablet,
                     onClose: onClose,
                   ),
                 Expanded(
@@ -124,14 +122,12 @@ class _MobileAppNavigationBar extends StatelessWidget {
     required this.appId,
     required this.label,
     required this.title,
-    required this.tablet,
     required this.onClose,
   });
 
   final PortfolioAppId appId;
   final String label;
   final String title;
-  final bool tablet;
   final VoidCallback onClose;
 
   @override
@@ -142,21 +138,11 @@ class _MobileAppNavigationBar extends StatelessWidget {
       title: title,
       titleKey: const Key('mobile-app-title'),
       moreKey: Key('mobile-app-more-${appId.name}'),
-      titleInset: tablet ? 104 : 62,
-      leading: tablet
-          ? MacTrafficControls(
-              appId: appId,
-              windowLabel: label,
-              maximized: false,
-              onClose: onClose,
-              targetSize: 44,
-              secondaryControlsInteractive: false,
-            )
-          : MobileBackCloseButton(
-              appId: appId,
-              windowLabel: label,
-              onPressed: onClose,
-            ),
+      leading: MobileBackCloseButton(
+        appId: appId,
+        windowLabel: label,
+        onPressed: onClose,
+      ),
     );
   }
 }

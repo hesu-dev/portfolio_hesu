@@ -122,37 +122,35 @@ void main() {
       },
     );
 
-    testWidgets('every non-Projects iPad app keeps the shared traffic lights', (
-      tester,
-    ) async {
-      for (final appId in PortfolioAppId.values.where(
-        (appId) => appId != PortfolioAppId.projects,
-      )) {
-        await tester.pumpWidget(const SizedBox.shrink());
-        await _pumpSurface(tester, size: const Size(834, 1194), appId: appId);
+    testWidgets(
+      'every non-Projects iPad app uses the shared back close header',
+      (tester) async {
+        for (final appId in PortfolioAppId.values.where(
+          (appId) => appId != PortfolioAppId.projects,
+        )) {
+          await tester.pumpWidget(const SizedBox.shrink());
+          await _pumpSurface(tester, size: const Size(834, 1194), appId: appId);
 
-        final navigationBar = find.byKey(
-          const Key('mobile-app-navigation-bar'),
-        );
-        final trafficControls = find.descendant(
-          of: navigationBar,
-          matching: find.byType(MacTrafficControls),
-        );
-        expect(trafficControls, findsOneWidget);
-        expect(tester.widget<MacTrafficControls>(trafficControls).appId, appId);
-        expect(
-          tester
-              .widget<MacTrafficControls>(trafficControls)
-              .secondaryControlsInteractive,
-          isFalse,
-        );
-        expect(
-          find.byKey(Key('mobile-back-close-${appId.name}')),
-          findsNothing,
-        );
-        expect(tester.takeException(), isNull, reason: appId.name);
-      }
-    });
+          final navigationBar = find.byKey(
+            const Key('mobile-app-navigation-bar'),
+          );
+          final close = find.byKey(Key('mobile-back-close-${appId.name}'));
+
+          expect(find.byType(MacTrafficControls), findsNothing);
+          expect(close, findsOneWidget);
+          expect(tester.getSize(close), const Size(44, 44));
+          expect(
+            tester.getCenter(find.byKey(const Key('mobile-app-title'))).dx,
+            closeTo(834 / 2, 0.01),
+          );
+          expect(
+            find.byKey(Key('mobile-app-more-${appId.name}')),
+            findsOneWidget,
+          );
+          expect(tester.takeException(), isNull, reason: appId.name);
+        }
+      },
+    );
 
     testWidgets(
       'Projects uses one mobile Finder header without traffic lights',
@@ -406,103 +404,32 @@ void main() {
       },
     );
 
-    testWidgets(
-      'iPad traffic lights keep tight visuals inside taller targets',
-      (tester) async {
-        final semantics = tester.ensureSemantics();
+    testWidgets('keeps the shared back close header overflow-free at 200%', (
+      tester,
+    ) async {
+      for (final size in const <Size>[Size(320, 480), Size(600, 400)]) {
+        await tester.pumpWidget(const SizedBox.shrink());
         await _pumpSurface(
           tester,
-          size: const Size(834, 1194),
-          appId: PortfolioAppId.about,
+          size: size,
+          appId: PortfolioAppId.terminal,
+          textScaler: const TextScaler.linear(2),
         );
 
-        final visualCenters = <Offset>[];
-        for (final control in const <String>['close', 'minimize', 'maximize']) {
-          final target = find.byKey(Key('window-$control-about'));
-          final visual = find.byKey(Key('window-$control-about-visual'));
-          expect(target, findsOneWidget);
-          expect(tester.getSize(target), const Size(28, 44));
-          visualCenters.add(tester.getCenter(visual));
-
-          final semanticsData = tester.getSemantics(target).getSemanticsData();
-          if (control == 'close') {
-            expect(semanticsData.flagsCollection.isButton, isTrue);
-            expect(semanticsData.hasAction(ui.SemanticsAction.tap), isTrue);
-          } else {
-            expect(semanticsData.flagsCollection.isButton, isFalse);
-            expect(semanticsData.hasAction(ui.SemanticsAction.tap), isFalse);
-          }
-        }
-        expect(visualCenters[1].dx - visualCenters[0].dx, closeTo(24, 0.01));
-        expect(visualCenters[2].dx - visualCenters[1].dx, closeTo(24, 0.01));
-        expect(find.bySemanticsLabel('Minimize About window'), findsNothing);
-        expect(find.bySemanticsLabel('Restore About window'), findsNothing);
-        expect(find.bySemanticsLabel('Maximize About window'), findsNothing);
-
-        final closeGlyph = find.byKey(const Key('window-close-about-glyph'));
-        final minimizeGlyph = find.byKey(
-          const Key('window-minimize-about-glyph'),
-        );
-        expect(tester.widget<Icon>(closeGlyph).icon, Icons.close_rounded);
-        expect(tester.widget<Icon>(minimizeGlyph).icon, Icons.remove_rounded);
+        final title = find.byKey(const Key('mobile-app-title'));
+        final titleWidget = tester.widget<Text>(title);
+        expect(titleWidget.maxLines, 1);
+        expect(titleWidget.overflow, TextOverflow.ellipsis);
+        expect(titleWidget.textAlign, TextAlign.center);
+        expect(tester.getCenter(title).dx, closeTo(size.width / 2, 0.01));
+        expect(find.byType(MacTrafficControls), findsNothing);
         expect(
-          find.byKey(const Key('window-maximize-about-glyph')),
-          findsNothing,
+          find.byKey(const Key('mobile-back-close-terminal')),
+          findsOneWidget,
         );
-        expect(
-          find.descendant(
-            of: find.byKey(const Key('mac-traffic-controls-about')),
-            matching: find.byType(InkResponse),
-          ),
-          findsNothing,
-        );
-
-        await tester.tap(find.byKey(const Key('window-minimize-about')));
-        await tester.pumpAndSettle();
-        expect(find.byKey(const Key('mobile-app-surface')), findsOneWidget);
-
-        await tester.tap(find.byKey(const Key('window-maximize-about')));
-        await tester.pumpAndSettle();
-        expect(find.byKey(const Key('mobile-app-surface')), findsOneWidget);
-        semantics.dispose();
-      },
-    );
-
-    testWidgets(
-      'keeps device-specific leading controls overflow-free at 200%',
-      (tester) async {
-        for (final size in const <Size>[Size(320, 480), Size(600, 400)]) {
-          await tester.pumpWidget(const SizedBox.shrink());
-          await _pumpSurface(
-            tester,
-            size: size,
-            appId: PortfolioAppId.terminal,
-            textScaler: const TextScaler.linear(2),
-          );
-
-          final title = find.byKey(const Key('mobile-app-title'));
-          final titleWidget = tester.widget<Text>(title);
-          expect(titleWidget.maxLines, 1);
-          expect(titleWidget.overflow, TextOverflow.ellipsis);
-          expect(titleWidget.textAlign, TextAlign.center);
-          expect(tester.getCenter(title).dx, closeTo(size.width / 2, 0.01));
-          if (size.width < 600) {
-            expect(find.byType(MacTrafficControls), findsNothing);
-            expect(
-              find.byKey(const Key('mobile-back-close-terminal')),
-              findsOneWidget,
-            );
-          } else {
-            expect(find.byType(MacTrafficControls), findsOneWidget);
-            expect(
-              find.byKey(const Key('mobile-back-close-terminal')),
-              findsNothing,
-            );
-          }
-          expect(tester.takeException(), isNull, reason: '$size');
-        }
-      },
-    );
+        expect(tester.takeException(), isNull, reason: '$size');
+      }
+    });
   });
 }
 
