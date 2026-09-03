@@ -47,6 +47,7 @@
 | 설정 표시명은 `설정` | 충족 | 공용 앱 라벨 매핑과 desktop/mobile 테스트가 `설정`을 기대한다. |
 | 데스크톱·iPad·iPhone 아이콘 형태 공통화 | 충족 | 모든 launcher가 `AppleAppArtworkFrame`을 사용하며 폼팩터별 캡처를 비교했다. |
 | 데스크톱 Trash 아이콘이 잘리지 않음 | 충족 | 1280×720에서도 artwork와 `Trash` 라벨이 desktop grid 안에 완전히 포함된다. |
+| 중복 프로젝트 아이콘 제거, 영문 `Projects` 유지 | 충족 | 공용 런처 목록에서 한글 프로젝트 허브 아이콘을 제외하고 desktop/iPad/iPhone/Dock에서 `Projects`만 노출한다. |
 
 ## About와 메모
 
@@ -54,7 +55,8 @@
 |---|---|---|
 | 홈의 민희수 영역 자체가 About을 여는 메모 위젯 | 충족 | iPad와 iPhone 모두 노란 메모 위젯 전체를 탭/Enter/Space로 열 수 있다. |
 | About 내용은 하나의 연속된 메모 | 충족 | 소개·경력·교육·연락처가 별도 카드 없이 한 종이 안에서 이어진다. |
-| 홈과 About 메모 프레임은 공용 레이아웃 | 충족 | 두 화면 모두 `AppleNotesSurface`를 사용한다. |
+| 홈 위젯의 날짜·`MH` 상자·`메모` 텍스트 제거 | 충족 | 세 장식 요소가 렌더링되지 않고 민희수 이름과 소개만 남는지 테스트와 실화면으로 확인했다. |
+| 홈과 About 메모 본문은 공용 레이아웃 | 충족 | 홈의 `AppleNotesSurface`와 About 전체 화면이 같은 `AppleNotesPaper` 종이 레이어를 사용한다. |
 
 ## Finder와 프로젝트
 
@@ -62,9 +64,11 @@
 |---|---|---|
 | Projects 사이드바 순서: 최근 항목, 공유, 위치, iCloud Drive, 홈 | 충족 | 순서와 폴더 그리드를 공용 Finder 위젯 테스트로 검증한다. |
 | 프로젝트 선택·설명·링크 기능 보존 | 충족 | 공용 데이터의 6개 프로젝트 선택 및 최신 링크 결과 테스트가 통과한다. |
-| `This Mac`을 `프로젝트` 허브로 변경 | 충족 | 표시명·메뉴·아이콘을 바꾸고 실제 데이터 기반 프로젝트 폴더 목록을 제공한다. |
+| `This Mac` 경로를 `프로젝트` 허브로 변경 | 충족 | 내부 경로와 시스템 메뉴는 실제 데이터 기반 프로젝트 폴더 목록으로 연결하되 중복 launcher 아이콘은 숨긴다. |
 | 프로젝트 폴더 선택 시 기본 설명 연결 페이지 | 충족 | title/period/description/skills와 추후 기획 안내, 목록 복귀를 제공한다. |
 | Projects와 프로젝트 허브는 공용 Finder 레이아웃 | 충족 | toolbar/sidebar/folder tile을 복제하지 않고 공용 컴포넌트로 사용한다. |
+| 선택 폴더는 아이콘 변경 없이 주변과 이름만 회색 표시 | 충족 | light/dark 모두 닫힌 청색 폴더 artwork와 글자 스타일은 불변이고 외곽·라벨 배경만 불투명 중립 회색이다. |
+| 긴 폴더 이름은 정해진 폭 안에서 개행하고 정렬 유지 | 충족 | compact/regular 타일 높이를 고정하고 이름을 최대 두 줄 ellipsis로 제한해 320px·글자 200%에서도 아이콘과 라벨 시작선을 맞춘다. |
 
 ## iPad와 iPhone 앱 화면
 
@@ -72,8 +76,10 @@
 |---|---|---|
 | 아래 화살표 닫기 버튼 제거 | 충족 | `mobile-close`와 아래 화살표가 모든 모바일 앱에서 렌더링되지 않는다. |
 | 오른쪽 앱 아이콘 제거 | 충족 | 모바일 앱 navigation bar에 trailing artwork가 없다. |
-| 플랫폼에 맞는 홈 복귀 탐색 | 충족 | 44px 이상의 `‹ 홈` 버튼과 중앙 제목을 공용 mobile surface가 제공한다. |
-| iPad/iPhone에 macOS 신호등을 넣지 않음 | 충족 | 모바일 열린 화면에 `MacTrafficControls`가 없다. |
+| `< 홈` 뒤로가기 제거 | 충족 | iPad/iPhone 열린 화면에 별도 홈 버튼이 없고 빨간 신호등으로 닫는다. |
+| 모든 열린 화면의 신호등을 공용 컴포넌트로 통일 | 충족 | iPad/iPhone도 `MacTrafficControls` 한 컴포넌트의 빨강·노랑·초록 원을 사용한다. |
+| 신호등 옆 제목은 왼쪽 정렬 | 충족 | 공용 mobile navigation bar에서 제목이 신호등 다음에 한 줄 왼쪽 정렬된다. |
+| About의 중복 아이콘·제목 영역과 중첩 메모 제거 | 충족 | 앱 내부 toolbar와 두 번째 메모 카드를 없애고 navigation bar 아래 한 장의 종이 본문만 렌더링한다. |
 
 ## 설정과 테마
 
@@ -91,16 +97,16 @@
 | 공통 레이아웃으로 향후 일괄 수정 | 충족 | Mac window, Finder, Notes, mobile navigation, app artwork를 각각 공용 컴포넌트로 유지한다. |
 | 한국어 Conventional/Angular 커밋 제목 | 충족 | 이번 작업의 새 커밋 제목은 한국어 Conventional Commit 형식을 준수한다. |
 | 작업을 가능한 작은 커밋으로 분리 | 충족 | 테스트·자산·공용 컴포넌트·기능·수정을 독립 커밋으로 분리했다. |
-| 전체 정적 분석·테스트·Pages/Vercel 빌드 | 충족 | `flutter analyze`, 202개 테스트, 두 base-href release 빌드가 성공했다. |
-| 데스크톱·iPad·iPhone 실화면 검수 | 충족 | 1440×900, 1024×700, 834px iPad, 390×844, 320×480을 캡처로 확인하고 200%는 위젯 테스트로 검증했다. |
+| 전체 정적 분석·테스트·Pages/Vercel 빌드 | 충족 | `flutter analyze`, 206개 테스트, 두 base-href release 빌드가 성공했다. |
+| 데스크톱·iPad·iPhone 실화면 검수 | 충족 | 1440×900, 1024×700, 834px iPad, 390×844, 320×480을 캡처로 확인하고 최신 iPhone About/Projects 상태와 200% 반응형을 재검증했다. |
 
 ## 2026-09-03 최종 검증 기록
 
 - `flutter analyze`: 문제 없음
-- `flutter test --reporter compact`: 202개 전체 통과
+- `flutter test --reporter compact`: 206개 전체 통과
 - GitHub Pages 경로 `/portfolio_hesu/` release web build: 성공
 - Vercel 루트 경로 `/` release web build: 성공
 - 실제 렌더링: macOS 1440×900·1024×700, iPad 834px, iPhone 390×844·320×480 확인
-- 독립 코드 검토: Settings, 공용 아이콘, Trash 비클리핑 수정 승인
+- 독립 코드 검토: Settings, 공용 아이콘, Trash 비클리핑, 회색 폴더 선택·긴 이름 정렬 수정 승인
 - 외부 상태 변경: GitHub Pages 중단과 Vercel 배포는 아직 실행하지 않음
 - 공개 저장소 과거 이력/기존 `gh-pages` 정리는 별도 배포 단계에서 수행
