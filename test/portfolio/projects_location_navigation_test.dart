@@ -245,6 +245,77 @@ void main() {
       },
     );
 
+    testWidgets('iPhone and iPad Finder chrome follows light and dark themes', (
+      tester,
+    ) async {
+      for (final scenario in const <({Size size, bool compact, bool tablet})>[
+        (size: Size(390, 700), compact: true, tablet: false),
+        (size: Size(834, 700), compact: false, tablet: true),
+      ]) {
+        final toolbarColors = <Brightness, Color>{};
+        final dockColors = <Brightness, Color>{};
+
+        for (final brightness in Brightness.values) {
+          await tester.pumpWidget(const SizedBox.shrink());
+          await _pumpProjects(
+            tester,
+            size: scenario.size,
+            compact: scenario.compact,
+            tablet: scenario.tablet,
+            brightness: brightness,
+          );
+
+          final toolbar = find.byKey(const Key('projects-finder-toolbar'));
+          final toolbarDecoration =
+              tester
+                      .widgetList<DecoratedBox>(
+                        find.descendant(
+                          of: toolbar,
+                          matching: find.byType(DecoratedBox),
+                        ),
+                      )
+                      .first
+                      .decoration
+                  as BoxDecoration;
+          final dockDecoration =
+              tester
+                      .widget<Container>(
+                        find.byKey(const Key('projects-finder-mobile-dock')),
+                      )
+                      .decoration
+                  as BoxDecoration;
+          final title = tester.widget<Text>(
+            find.descendant(
+              of: find.byKey(const Key('projects-finder-current-location')),
+              matching: find.text('경력'),
+            ),
+          );
+
+          expect(Theme.of(tester.element(toolbar)).brightness, brightness);
+          expect(
+            _contrast(title.style!.color!, toolbarDecoration.color!),
+            greaterThanOrEqualTo(4.5),
+          );
+          toolbarColors[brightness] = toolbarDecoration.color!;
+          dockColors[brightness] = dockDecoration.color!;
+          expect(
+            tester.takeException(),
+            isNull,
+            reason: '$scenario $brightness',
+          );
+        }
+
+        expect(
+          toolbarColors[Brightness.light],
+          isNot(toolbarColors[Brightness.dark]),
+        );
+        expect(
+          dockColors[Brightness.light],
+          isNot(dockColors[Brightness.dark]),
+        );
+      }
+    });
+
     testWidgets('Finder back and forward traverse location history', (
       tester,
     ) async {
@@ -475,6 +546,7 @@ Future<void> _pumpProjects(
   PortfolioData data = portfolioData,
   bool compact = false,
   bool tablet = false,
+  Brightness brightness = Brightness.light,
   TextScaler textScaler = TextScaler.noScaling,
   ValueChanged<PortfolioAppId>? onOpenApp,
 }) async {
@@ -486,6 +558,10 @@ Future<void> _pumpProjects(
   await tester.pumpWidget(
     MaterialApp(
       theme: AppleTheme.light(),
+      darkTheme: AppleTheme.dark(),
+      themeMode: brightness == Brightness.dark
+          ? ThemeMode.dark
+          : ThemeMode.light,
       home: MediaQuery(
         data: MediaQueryData(size: size, textScaler: textScaler),
         child: SizedBox.expand(
@@ -501,6 +577,18 @@ Future<void> _pumpProjects(
     ),
   );
   await tester.pump();
+}
+
+double _contrast(Color foreground, Color background) {
+  final foregroundLuminance = foreground.computeLuminance();
+  final backgroundLuminance = background.computeLuminance();
+  final lighter = foregroundLuminance > backgroundLuminance
+      ? foregroundLuminance
+      : backgroundLuminance;
+  final darker = foregroundLuminance > backgroundLuminance
+      ? backgroundLuminance
+      : foregroundLuminance;
+  return (lighter + 0.05) / (darker + 0.05);
 }
 
 Future<void> _pumpPortfolio(WidgetTester tester, {required Size size}) async {
