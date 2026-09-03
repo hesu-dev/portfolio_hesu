@@ -187,6 +187,42 @@ void main() {
       expect(find.byKey(const Key('skills-channel-picker')), findsNothing);
       expect(tester.takeException(), isNull);
     });
+
+    testWidgets('resets the message list to the top when changing channels', (
+      tester,
+    ) async {
+      await _pumpSkills(
+        tester,
+        size: const Size(320, 480),
+        compact: true,
+        textScaler: const TextScaler.linear(2),
+      );
+
+      final list = find.byKey(const Key('skills-list'));
+      final scrollable = find.descendant(
+        of: list,
+        matching: find.byType(Scrollable),
+      );
+      await tester.drag(list, const Offset(0, -260));
+      await tester.pumpAndSettle();
+      expect(
+        tester.state<ScrollableState>(scrollable).position.pixels,
+        greaterThan(0),
+      );
+
+      final nextCategory = find.byKey(const Key('skills-category-Team Tools'));
+      await tester.ensureVisible(nextCategory);
+      await tester.tap(nextCategory);
+      await tester.pumpAndSettle();
+
+      expect(tester.state<ScrollableState>(scrollable).position.pixels, 0);
+      final listRect = tester.getRect(list);
+      final firstSkillRect = tester.getRect(
+        find.byKey(const Key('skills-message-row-Planning Board')),
+      );
+      expect(listRect.overlaps(firstSkillRect), isTrue);
+      expect(tester.takeException(), isNull);
+    });
   });
 }
 
@@ -208,7 +244,12 @@ const PortfolioData _data = PortfolioData.constant(
     ),
     PortfolioSkillGroup.constant(
       title: 'Team Tools',
-      skills: <String>['Planning Board', 'Async Review'],
+      skills: <String>[
+        'Planning Board',
+        'Async Review',
+        'Review Queue',
+        'Shared Notes',
+      ],
     ),
     PortfolioSkillGroup.constant(
       title: 'Visual Craft',
