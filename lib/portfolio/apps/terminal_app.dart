@@ -288,8 +288,11 @@ class _TerminalInput extends StatelessWidget {
         color: Color(0xFF18191C),
         border: Border(top: BorderSide(color: Color(0xFF34353A), width: 0.7)),
       ),
-      child: compact
-          ? Column(
+      child: LayoutBuilder(
+        builder: (context, constraints) {
+          final stacked = compact || constraints.maxWidth < 600;
+          if (stacked) {
+            return Column(
               mainAxisSize: MainAxisSize.min,
               crossAxisAlignment: CrossAxisAlignment.start,
               children: <Widget>[
@@ -302,15 +305,18 @@ class _TerminalInput extends StatelessWidget {
                   ],
                 ),
               ],
-            )
-          : Row(
-              children: <Widget>[
-                promptLabel,
-                const SizedBox(width: 9),
-                Expanded(child: input),
-                submit,
-              ],
-            ),
+            );
+          }
+          return Row(
+            children: <Widget>[
+              promptLabel,
+              const SizedBox(width: 9),
+              Expanded(child: input),
+              submit,
+            ],
+          );
+        },
+      ),
     );
   }
 }
