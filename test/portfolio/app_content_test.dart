@@ -307,7 +307,7 @@ void main() {
       },
     );
 
-    testWidgets('about derives its avatar monogram from injected identity', (
+    testWidgets('about omits avatar monograms for every injected identity', (
       tester,
     ) async {
       final englishIdentity = _dataWithIdentity(
@@ -324,7 +324,7 @@ void main() {
         compact: true,
       );
 
-      expect(find.text('AL'), findsOneWidget);
+      expect(find.text('AL'), findsNothing);
       expect(find.text('MH'), findsNothing);
 
       final localFallback = _dataWithIdentity(
@@ -341,7 +341,7 @@ void main() {
         compact: true,
       );
 
-      expect(find.text('김민'), findsOneWidget);
+      expect(find.text('김민'), findsNothing);
       expect(find.text('MH'), findsNothing);
     });
 
