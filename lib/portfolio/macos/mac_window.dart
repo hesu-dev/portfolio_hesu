@@ -9,6 +9,7 @@ import '../services/external_launcher.dart';
 import '../theme/portfolio_theme_controller.dart';
 import '../widgets/apple_app_artwork.dart';
 import '../widgets/apple_app_icon.dart';
+import 'mac_traffic_controls.dart';
 
 class MacWindow extends StatelessWidget {
   const MacWindow({
@@ -178,33 +179,13 @@ class _MacWindowTitleBar extends StatelessWidget {
           ),
           child: Row(
             children: <Widget>[
-              _TrafficButton(
-                controlKey: Key('window-close-${appId.name}'),
-                visualKey: Key('window-close-${appId.name}-visual'),
-                label: 'Close $label window',
-                color: const Color(0xFFFF5F57),
-                icon: Icons.close_rounded,
-                onPressed: onClose,
-              ),
-              _TrafficButton(
-                controlKey: Key('window-minimize-${appId.name}'),
-                visualKey: Key('window-minimize-${appId.name}-visual'),
-                label: 'Minimize $label window',
-                color: const Color(0xFFFFBD2E),
-                icon: Icons.remove_rounded,
-                onPressed: onMinimize,
-              ),
-              _TrafficButton(
-                controlKey: Key('window-maximize-${appId.name}'),
-                visualKey: Key('window-maximize-${appId.name}-visual'),
-                label: maximized
-                    ? 'Restore $label window'
-                    : 'Maximize $label window',
-                color: const Color(0xFF28C840),
-                icon: maximized
-                    ? Icons.close_fullscreen_rounded
-                    : Icons.open_in_full_rounded,
-                onPressed: onMaximize,
+              MacTrafficControls(
+                appId: appId,
+                windowLabel: label,
+                maximized: maximized,
+                onClose: onClose,
+                onMinimize: onMinimize,
+                onMaximize: onMaximize,
               ),
               const SizedBox(width: 13),
               AppleAppArtwork(appId: appId, size: 16),
@@ -225,67 +206,6 @@ class _MacWindowTitleBar extends StatelessWidget {
               ),
               const SizedBox(width: 60),
             ],
-          ),
-        ),
-      ),
-    );
-  }
-}
-
-class _TrafficButton extends StatelessWidget {
-  const _TrafficButton({
-    required this.controlKey,
-    required this.visualKey,
-    required this.label,
-    required this.color,
-    required this.icon,
-    required this.onPressed,
-  });
-
-  final Key controlKey;
-  final Key visualKey;
-  final String label;
-  final Color color;
-  final IconData icon;
-  final VoidCallback onPressed;
-
-  @override
-  Widget build(BuildContext context) {
-    return Semantics(
-      key: controlKey,
-      label: label,
-      button: true,
-      excludeSemantics: true,
-      onTap: onPressed,
-      child: Tooltip(
-        message: label,
-        child: InkResponse(
-          onTap: onPressed,
-          radius: 14,
-          containedInkWell: true,
-          highlightShape: BoxShape.circle,
-          excludeFromSemantics: true,
-          child: SizedBox.square(
-            dimension: 28,
-            child: Center(
-              child: Container(
-                key: visualKey,
-                width: 14,
-                height: 14,
-                decoration: BoxDecoration(
-                  color: color,
-                  shape: BoxShape.circle,
-                  border: Border.all(
-                    color: Colors.black.withValues(alpha: 0.12),
-                  ),
-                ),
-                child: Icon(
-                  icon,
-                  size: 8,
-                  color: const Color(0xFF353539).withValues(alpha: 0.68),
-                ),
-              ),
-            ),
           ),
         ),
       ),
