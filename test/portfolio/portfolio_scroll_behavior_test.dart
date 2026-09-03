@@ -28,7 +28,7 @@ void main() {
 
     testWidgets('About 메모는 터치와 마우스 드래그로 스크롤된다', (tester) async {
       await _pumpPortfolio(tester);
-      await tester.tap(find.byKey(const Key('home-app-about')));
+      await tester.tap(find.byKey(const Key('iphone-profile-card')));
       await tester.pumpAndSettle();
 
       final aboutScroll = find.byKey(const Key('about-scroll'));
@@ -121,6 +121,7 @@ const List<_AppScrollTarget> _publicAppScrollTargets = <_AppScrollTarget>[
     height: 180,
   ),
   _AppScrollTarget(PortfolioAppId.terminal, Key('terminal-transcript')),
+  _AppScrollTarget(PortfolioAppId.photos, Key('photos-scroll'), height: 180),
   _AppScrollTarget(PortfolioAppId.trash, Key('trash-scroll'), height: 180),
   _AppScrollTarget(PortfolioAppId.github, Key('github-app-scroll')),
   _AppScrollTarget(PortfolioAppId.mail, Key('mail-app-scroll')),

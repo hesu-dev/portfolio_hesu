@@ -3,6 +3,7 @@ enum PortfolioAppId {
   skills,
   projects,
   terminal,
+  photos,
   thisMac,
   trash,
   github,
@@ -20,10 +21,25 @@ const List<PortfolioAppId> portfolioLauncherAppIds = <PortfolioAppId>[
   PortfolioAppId.skills,
   PortfolioAppId.projects,
   PortfolioAppId.terminal,
-  PortfolioAppId.trash,
   PortfolioAppId.github,
   PortfolioAppId.mail,
   PortfolioAppId.settings,
+  PortfolioAppId.trash,
+];
+
+/// Apps shown as tiles on both the iPhone and iPad home surfaces.
+///
+/// About stays available through the Notes profile card, while Photos is a
+/// mobile-only placeholder for a future gallery experience.
+const List<PortfolioAppId> portfolioMobileLauncherAppIds = <PortfolioAppId>[
+  PortfolioAppId.skills,
+  PortfolioAppId.projects,
+  PortfolioAppId.terminal,
+  PortfolioAppId.photos,
+  PortfolioAppId.github,
+  PortfolioAppId.mail,
+  PortfolioAppId.settings,
+  PortfolioAppId.trash,
 ];
 
 const List<PortfolioAppId> portfolioDockAppIds = <PortfolioAppId>[
@@ -31,7 +47,7 @@ const List<PortfolioAppId> portfolioDockAppIds = <PortfolioAppId>[
   PortfolioAppId.skills,
   PortfolioAppId.projects,
   PortfolioAppId.terminal,
+  PortfolioAppId.github,
   PortfolioAppId.mail,
   PortfolioAppId.settings,
-  PortfolioAppId.github,
 ];

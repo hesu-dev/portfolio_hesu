@@ -34,23 +34,24 @@ void main() {
         ),
       );
 
-      const expectedLabels = <PortfolioAppId, String>{
-        PortfolioAppId.about: 'About',
-        PortfolioAppId.skills: 'Skills',
-        PortfolioAppId.projects: 'Projects',
-        PortfolioAppId.terminal: 'Terminal',
-        PortfolioAppId.settings: '설정',
-        PortfolioAppId.thisMac: '프로젝트',
-        PortfolioAppId.trash: 'Trash',
-        PortfolioAppId.github: 'GitHub',
-        PortfolioAppId.mail: 'Mail',
+      const expectedLabels = <String, String>{
+        'about': 'About',
+        'skills': 'Skills',
+        'projects': 'Projects',
+        'terminal': 'Terminal',
+        'photos': '사진',
+        'settings': '설정',
+        'thisMac': '프로젝트',
+        'trash': 'Trash',
+        'github': 'GitHub',
+        'mail': 'Mail',
       };
 
       for (final entry in expectedLabels.entries) {
-        expect(
-          find.byKey(Key('apple-app-icon-${entry.key.name}')),
-          findsOneWidget,
+        final appId = PortfolioAppId.values.singleWhere(
+          (candidate) => candidate.name == entry.key,
         );
+        expect(find.byKey(Key('apple-app-icon-${appId.name}')), findsOneWidget);
         expect(find.text(entry.value), findsOneWidget);
       }
 
@@ -240,22 +241,26 @@ void main() {
       tester,
     ) async {
       final launcher = _FakeExternalLauncher();
-      const expectedRootKeys = <PortfolioAppId, String>{
-        PortfolioAppId.about: 'about-app',
-        PortfolioAppId.skills: 'skills-app',
-        PortfolioAppId.projects: 'projects-app',
-        PortfolioAppId.terminal: 'terminal-app',
-        PortfolioAppId.settings: 'settings-app',
-        PortfolioAppId.thisMac: 'this-mac-app',
-        PortfolioAppId.trash: 'trash-app',
-        PortfolioAppId.github: 'github-app',
-        PortfolioAppId.mail: 'mail-app',
+      const expectedRootKeys = <String, String>{
+        'about': 'about-app',
+        'skills': 'skills-app',
+        'projects': 'projects-app',
+        'terminal': 'terminal-app',
+        'photos': 'photos-app',
+        'settings': 'settings-app',
+        'thisMac': 'this-mac-app',
+        'trash': 'trash-app',
+        'github': 'github-app',
+        'mail': 'mail-app',
       };
 
       for (final entry in expectedRootKeys.entries) {
+        final appId = PortfolioAppId.values.singleWhere(
+          (candidate) => candidate.name == entry.key,
+        );
         await _pumpApp(
           tester,
-          appId: entry.key,
+          appId: appId,
           launcher: launcher,
           size: const Size(900, 650),
         );
@@ -263,7 +268,38 @@ void main() {
         expect(find.byKey(Key(entry.value)), findsOneWidget);
         expect(_visibleText(tester), isNot(contains('천주아')));
         expect(_visibleText(tester).toLowerCase(), isNot(contains('juah')));
-        expect(tester.takeException(), isNull, reason: entry.key.name);
+        expect(tester.takeException(), isNull, reason: entry.key);
+      }
+    });
+
+    testWidgets('Photos placeholder is scrollable in light and dark modes', (
+      tester,
+    ) async {
+      final photos = PortfolioAppId.values.singleWhere(
+        (appId) => appId.name == 'photos',
+      );
+
+      for (final brightness in Brightness.values) {
+        await _pumpApp(
+          tester,
+          appId: photos,
+          launcher: _FakeExternalLauncher(),
+          size: const Size(390, 180),
+          compact: true,
+          brightness: brightness,
+        );
+
+        final scroll = find.byKey(const Key('photos-scroll'));
+        expect(find.byKey(const Key('photos-app')), findsOneWidget);
+        expect(scroll, findsOneWidget);
+        final scrollable = tester.state<ScrollableState>(
+          find.descendant(of: scroll, matching: find.byType(Scrollable)),
+        );
+        expect(scrollable.position.maxScrollExtent, greaterThan(0));
+        await tester.drag(scroll, const Offset(0, -80));
+        await tester.pumpAndSettle();
+        expect(scrollable.position.pixels, greaterThan(0));
+        expect(tester.takeException(), isNull, reason: '$brightness');
       }
     });
 
@@ -277,6 +313,7 @@ void main() {
         ]) {
           for (final appId in const <PortfolioAppId>[
             PortfolioAppId.skills,
+            PortfolioAppId.photos,
             PortfolioAppId.trash,
             PortfolioAppId.github,
             PortfolioAppId.mail,

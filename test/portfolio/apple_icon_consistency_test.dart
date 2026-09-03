@@ -18,7 +18,7 @@ void main() {
       ) async {
         await _pumpSurface(tester, surface);
 
-        for (final appId in portfolioLauncherAppIds) {
+        for (final appId in _appsFor(surface)) {
           final launcher = find.byKey(_launcherKey(surface, appId));
           expect(launcher, findsOneWidget, reason: appId.name);
 
@@ -147,6 +147,15 @@ void main() {
     });
   });
 }
+
+List<PortfolioAppId> _appsFor(_IconSurface surface) => switch (surface) {
+  _IconSurface.desktop => portfolioLauncherAppIds,
+  _IconSurface.iPad || _IconSurface.iPhone => AppleHomeGrid.apps,
+  _IconSurface.dock => <PortfolioAppId>[
+    ...MacDock.launchableApps,
+    ...MacDock.utilityApps,
+  ],
+};
 
 enum _IconSurface {
   desktop('Desktop'),

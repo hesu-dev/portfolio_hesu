@@ -9,27 +9,55 @@ import 'package:portfolio_hesu/portfolio/theme/portfolio_theme_controller.dart';
 import 'package:portfolio_hesu/portfolio/data/portfolio_data.dart';
 
 void main() {
-  const visibleApps = <PortfolioAppId>[
-    PortfolioAppId.about,
-    PortfolioAppId.skills,
-    PortfolioAppId.projects,
-    PortfolioAppId.terminal,
-    PortfolioAppId.trash,
-    PortfolioAppId.github,
-    PortfolioAppId.mail,
-    PortfolioAppId.settings,
-  ];
+  test('desktop and mobile expose distinct ordered launcher catalogs', () {
+    expect(portfolioLauncherAppIds.map((appId) => appId.name), <String>[
+      'about',
+      'skills',
+      'projects',
+      'terminal',
+      'github',
+      'mail',
+      'settings',
+      'trash',
+    ]);
+    expect(AppleHomeGrid.apps.map((appId) => appId.name), <String>[
+      'skills',
+      'projects',
+      'terminal',
+      'photos',
+      'github',
+      'mail',
+      'settings',
+      'trash',
+    ]);
+    expect(MacDock.launchableApps.map((appId) => appId.name), <String>[
+      'about',
+      'skills',
+      'projects',
+      'terminal',
+      'github',
+      'mail',
+      'settings',
+    ]);
+  });
 
-  test(
-    'home and Dock catalogs keep Projects and hide the duplicate project hub',
-    () {
-      expect(AppleHomeGrid.apps, visibleApps);
-      expect(AppleHomeGrid.apps, contains(PortfolioAppId.projects));
-      expect(AppleHomeGrid.apps, isNot(contains(PortfolioAppId.thisMac)));
-      expect(MacDock.launchableApps, contains(PortfolioAppId.projects));
-      expect(MacDock.launchableApps, isNot(contains(PortfolioAppId.thisMac)));
-    },
-  );
+  testWidgets('mobile home hides About and exposes the Photos placeholder', (
+    tester,
+  ) async {
+    tester.view.devicePixelRatio = 1;
+    tester.view.physicalSize = const Size(390, 844);
+    addTearDown(tester.view.resetDevicePixelRatio);
+    addTearDown(tester.view.resetPhysicalSize);
+
+    await tester.pumpWidget(
+      MaterialApp(
+        home: AppleHomeGrid(data: portfolioData, tablet: false, onOpen: (_) {}),
+      ),
+    );
+
+    expect(find.byKey(const Key('home-app-about')), findsNothing);
+    expect(find.byKey(const Key('home-app-photos')), findsOneWidget);
+  });
 
   testWidgets(
     'desktop shows the English Projects launcher without the Korean duplicate',

@@ -66,6 +66,7 @@ class AppleAppArtwork extends StatelessWidget {
     PortfolioAppId.skills ||
     PortfolioAppId.projects ||
     PortfolioAppId.terminal ||
+    PortfolioAppId.photos ||
     PortfolioAppId.mail ||
     PortfolioAppId.settings ||
     PortfolioAppId.trash => true,
@@ -90,6 +91,16 @@ class AppleAppArtwork extends StatelessWidget {
     PortfolioAppId.terminal => const <Color>[
       Color(0xFF42454D),
       Color(0xFF111216),
+    ],
+    PortfolioAppId.photos => const <Color>[
+      Color(0xFFFF3B30),
+      Color(0xFFFF9500),
+      Color(0xFFFFCC00),
+      Color(0xFF34C759),
+      Color(0xFF00C7BE),
+      Color(0xFF007AFF),
+      Color(0xFF5856D6),
+      Color(0xFFFF2D55),
     ],
     PortfolioAppId.settings => const <Color>[
       Color(0xFFD5DAE2),
@@ -169,7 +180,9 @@ class AppleAppArtwork extends StatelessWidget {
               gradient: LinearGradient(
                 begin: Alignment.topLeft,
                 end: Alignment.bottomRight,
-                colors: colorsFor(appId),
+                colors: appId == PortfolioAppId.photos
+                    ? const <Color>[Color(0xFFFFFFFF), Color(0xFFF4F4F6)]
+                    : colorsFor(appId),
               ),
               borderRadius: BorderRadius.circular(radius),
               border: Border.all(
@@ -213,6 +226,8 @@ class _AppleAppArtworkPainter extends CustomPainter {
         _drawProjects(canvas, size);
       case PortfolioAppId.terminal:
         _drawTerminal(canvas, size);
+      case PortfolioAppId.photos:
+        _drawPhotos(canvas, size);
       case PortfolioAppId.mail:
         _drawMail(canvas, size);
       case PortfolioAppId.settings:
@@ -425,6 +440,33 @@ class _AppleAppArtworkPainter extends CustomPainter {
     )..layout();
     prompt.paint(canvas, Offset(size.width * 0.17, size.height * 0.34));
     prompt.dispose();
+  }
+
+  void _drawPhotos(Canvas canvas, Size size) {
+    final center = Offset(size.width / 2, size.height / 2);
+    final palette = AppleAppArtwork.colorsFor(PortfolioAppId.photos);
+
+    for (var index = 0; index < palette.length; index++) {
+      final angle = (math.pi * 2 * index) / palette.length;
+      canvas.save();
+      canvas.translate(center.dx, center.dy);
+      canvas.rotate(angle);
+      canvas.drawOval(
+        Rect.fromCenter(
+          center: Offset(0, -size.height * 0.19),
+          width: size.width * 0.23,
+          height: size.height * 0.38,
+        ),
+        Paint()..color = palette[index].withValues(alpha: 0.92),
+      );
+      canvas.restore();
+    }
+
+    canvas.drawCircle(
+      center,
+      size.shortestSide * 0.105,
+      Paint()..color = const Color(0xF2FFFFFF),
+    );
   }
 
   void _drawTrash(Canvas canvas, Size size) {

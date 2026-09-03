@@ -75,7 +75,7 @@ void main() {
     ) async {
       await _pumpShell(tester, size: const Size(390, 844));
 
-      await tester.tap(find.byKey(const Key('home-app-about')));
+      await tester.tap(find.byKey(const Key('iphone-profile-card')));
       await tester.pumpAndSettle();
 
       expect(find.byKey(const Key('mobile-home')), findsNothing);
@@ -96,11 +96,11 @@ void main() {
       final semantics = tester.ensureSemantics();
       await _pumpShell(tester, size: const Size(390, 844));
 
-      expect(find.bySemanticsLabel('Open About'), findsAtLeastNWidgets(1));
+      expect(find.bySemanticsLabel('Open Skills'), findsOneWidget);
       await tester.sendKeyEvent(LogicalKeyboardKey.enter);
       await tester.pumpAndSettle();
 
-      expect(find.byKey(const Key('about-app')), findsOneWidget);
+      expect(find.byKey(const Key('skills-app')), findsOneWidget);
       semantics.dispose();
     });
 
@@ -112,7 +112,7 @@ void main() {
       await tester.sendKeyEvent(LogicalKeyboardKey.space);
       await tester.pumpAndSettle();
 
-      expect(find.byKey(const Key('about-app')), findsOneWidget);
+      expect(find.byKey(const Key('skills-app')), findsOneWidget);
     });
 
     testWidgets('does not add duplicate Dock focus targets', (tester) async {
@@ -120,7 +120,8 @@ void main() {
 
       expect(find.byKey(const Key('mobile-dock')), findsNothing);
       expect(find.byKey(const Key('mobile-dock-about')), findsNothing);
-      expect(find.bySemanticsLabel('Open About'), findsOneWidget);
+      expect(find.bySemanticsLabel('Open About'), findsNothing);
+      expect(find.bySemanticsLabel('Open Skills'), findsOneWidget);
     });
 
     testWidgets('opens GitHub externally only after its explicit action', (
@@ -185,7 +186,7 @@ void main() {
       await tester.pumpAndSettle();
       expect(tester.takeException(), isNull);
 
-      final about = find.byKey(const Key('home-app-about'));
+      final about = find.byKey(const Key('iphone-profile-card'));
       await tester.ensureVisible(about);
       await tester.tap(about);
       await tester.pumpAndSettle();
@@ -468,7 +469,8 @@ void main() {
         );
 
         final trashIcon = find.byKey(const Key('home-app-trash'));
-        await _scrollHomeIconIntoView(tester, trashIcon, reason: '$size');
+        await tester.ensureVisible(trashIcon);
+        await tester.pumpAndSettle();
         await tester.tap(trashIcon);
         await tester.pumpAndSettle();
 
@@ -491,11 +493,11 @@ void main() {
 
       expect(find.byKey(const Key('mobile-dock')), findsNothing);
 
-      for (final appId in _allApps) {
+      for (final appName in _allAppNames) {
         await _scrollHomeIconIntoView(
           tester,
-          find.byKey(Key('home-app-${appId.name}')),
-          reason: appId.name,
+          find.byKey(Key('home-app-$appName')),
+          reason: appName,
         );
       }
     });
@@ -509,12 +511,12 @@ Future<void> _scrollHomeIconIntoView(
 }) async {
   final homeScroll = find.byKey(const Key('mobile-home-scroll'));
 
-  for (var attempt = 0; attempt < 8; attempt += 1) {
+  for (var attempt = 0; attempt < 16; attempt += 1) {
     if (icon.evaluate().isNotEmpty &&
         tester.getRect(homeScroll).overlaps(tester.getRect(icon))) {
       break;
     }
-    await tester.drag(homeScroll, const Offset(0, -64));
+    await tester.drag(homeScroll, const Offset(0, -100));
     await tester.pumpAndSettle();
   }
 
@@ -526,18 +528,28 @@ Future<void> _scrollHomeIconIntoView(
   );
 }
 
-const List<PortfolioAppId> _allApps = portfolioLauncherAppIds;
+const List<String> _allAppNames = <String>[
+  'skills',
+  'projects',
+  'terminal',
+  'photos',
+  'github',
+  'mail',
+  'settings',
+  'trash',
+];
 
 void _expectAllHomeApps() {
-  for (final appId in _allApps) {
-    expect(find.byKey(Key('home-app-${appId.name}')), findsOneWidget);
+  for (final appName in _allAppNames) {
+    expect(find.byKey(Key('home-app-$appName')), findsOneWidget);
   }
+  expect(find.byKey(const Key('home-app-about')), findsNothing);
 }
 
 int _distinctHomeColumns(WidgetTester tester) {
   final xCoordinates = <int>{
-    for (final appId in _allApps)
-      tester.getCenter(find.byKey(Key('home-app-${appId.name}'))).dx.round(),
+    for (final appName in _allAppNames)
+      tester.getCenter(find.byKey(Key('home-app-$appName'))).dx.round(),
   };
   return xCoordinates.length;
 }

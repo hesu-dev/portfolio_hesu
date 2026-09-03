@@ -90,6 +90,35 @@ void main() {
       expect(decoration.border, isNotNull);
     });
 
+    testWidgets('draws Photos as code-native multicolor flower artwork', (
+      tester,
+    ) async {
+      final photos = PortfolioAppId.values.singleWhere(
+        (appId) => appId.name == 'photos',
+      );
+      await _pumpArtwork(tester, photos);
+
+      final artwork = find.byKey(const Key('apple-app-artwork-photos'));
+      expect(artwork, findsOneWidget);
+      expect(
+        find.descendant(of: artwork, matching: find.byType(CustomPaint)),
+        findsOneWidget,
+      );
+      expect(
+        find.descendant(of: artwork, matching: find.byType(Icon)),
+        findsNothing,
+      );
+      expect(
+        AppleAppArtwork.colorsFor(photos).map((color) => color.toARGB32()),
+        containsAll(<int>[
+          const Color(0xFFFF3B30).toARGB32(),
+          const Color(0xFFFFCC00).toARGB32(),
+          const Color(0xFF34C759).toARGB32(),
+          const Color(0xFF007AFF).toARGB32(),
+        ]),
+      );
+    });
+
     testWidgets(
       'draws Trash as a transparent code-native bin with colorful contents',
       (tester) async {
@@ -374,23 +403,23 @@ void main() {
         await tester.pump();
 
         expect(
-          find.byKey(const Key('apple-app-artwork-about')),
+          find.byKey(const Key('apple-app-artwork-skills')),
           findsOneWidget,
         );
 
-        await tester.tap(find.byKey(const Key('home-app-about')));
+        await tester.tap(find.byKey(const Key('home-app-skills')));
         await tester.pumpAndSettle();
 
         expect(find.byKey(const Key('mobile-app-surface')), findsOneWidget);
         expect(
-          find.byKey(const Key('mac-traffic-controls-about')),
+          find.byKey(const Key('mac-traffic-controls-skills')),
           findsNothing,
         );
         expect(
-          find.byKey(const Key('mobile-back-close-about')),
+          find.byKey(const Key('mobile-back-close-skills')),
           findsOneWidget,
         );
-        expect(find.byKey(const Key('apple-app-artwork-about')), findsNothing);
+        expect(find.byKey(const Key('apple-app-artwork-skills')), findsNothing);
       },
     );
   });
@@ -401,6 +430,7 @@ const List<PortfolioAppId> _bespokeApps = <PortfolioAppId>[
   PortfolioAppId.skills,
   PortfolioAppId.projects,
   PortfolioAppId.terminal,
+  PortfolioAppId.photos,
   PortfolioAppId.mail,
   PortfolioAppId.settings,
   PortfolioAppId.trash,

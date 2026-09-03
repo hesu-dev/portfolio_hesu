@@ -294,16 +294,17 @@ void main() {
   });
 
   test('PortfolioAppId exposes the shared app catalog', () {
-    expect(PortfolioAppId.values, <PortfolioAppId>[
-      PortfolioAppId.about,
-      PortfolioAppId.skills,
-      PortfolioAppId.projects,
-      PortfolioAppId.terminal,
-      PortfolioAppId.thisMac,
-      PortfolioAppId.trash,
-      PortfolioAppId.github,
-      PortfolioAppId.mail,
-      PortfolioAppId.settings,
+    expect(PortfolioAppId.values.map((appId) => appId.name), <String>[
+      'about',
+      'skills',
+      'projects',
+      'terminal',
+      'photos',
+      'thisMac',
+      'trash',
+      'github',
+      'mail',
+      'settings',
     ]);
   });
 }
