@@ -344,6 +344,7 @@ class _MacDesktopState extends State<MacDesktop> {
     final frame = window.frameFor(_viewport);
     final appId = window.appId;
     return Positioned(
+      key: ValueKey<PortfolioAppId>(appId),
       left: frame.left,
       top: frame.top,
       width: frame.width,
