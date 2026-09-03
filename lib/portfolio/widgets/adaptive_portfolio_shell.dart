@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:portfolio_hesu/portfolio/data/portfolio_data.dart';
 import 'package:portfolio_hesu/portfolio/macos/mac_desktop.dart';
+import 'package:portfolio_hesu/portfolio/mobile/apple_mobile_shell.dart';
 import 'package:portfolio_hesu/portfolio/services/external_launcher.dart';
 
 class AdaptivePortfolioShell extends StatelessWidget {
@@ -26,57 +27,20 @@ class AdaptivePortfolioShell extends StatelessWidget {
           return MacDesktop(data: data, externalLauncher: externalLauncher);
         }
         if (width >= iPadBreakpoint) {
-          return _PortfolioShellPlaceholder(
+          return AppleMobileShell(
             key: const Key('ipad-shell'),
-            deviceName: 'iPad',
             data: data,
-            backgroundColor: const Color(0xFFEAF2FF),
+            externalLauncher: externalLauncher,
+            tablet: true,
           );
         }
-        return _PortfolioShellPlaceholder(
+        return AppleMobileShell(
           key: const Key('iphone-shell'),
-          deviceName: 'iPhone',
           data: data,
-          backgroundColor: const Color(0xFFF2F5FA),
+          externalLauncher: externalLauncher,
+          tablet: false,
         );
       },
-    );
-  }
-}
-
-class _PortfolioShellPlaceholder extends StatelessWidget {
-  const _PortfolioShellPlaceholder({
-    required this.deviceName,
-    required this.data,
-    required this.backgroundColor,
-    super.key,
-  });
-
-  final String deviceName;
-  final PortfolioData data;
-  final Color backgroundColor;
-
-  @override
-  Widget build(BuildContext context) {
-    return Scaffold(
-      backgroundColor: backgroundColor,
-      body: SafeArea(
-        child: Center(
-          child: Column(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              Text(
-                '$deviceName portfolio shell',
-                style: Theme.of(context).textTheme.headlineSmall,
-              ),
-              const SizedBox(height: 8),
-              Text(data.name),
-              const SizedBox(height: 4),
-              const Text('Placeholder'),
-            ],
-          ),
-        ),
-      ),
     );
   }
 }
