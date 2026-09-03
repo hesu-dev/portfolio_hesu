@@ -54,27 +54,44 @@ void main() {
       semantics.dispose();
     });
 
-    testWidgets('Mac 화면 모드 선택 영역은 절반 폭으로 줄여 가운데 정렬한다', (tester) async {
-      final controller = PortfolioThemeController();
-      addTearDown(controller.dispose);
+    testWidgets('모든 기기의 화면 모드 선택 영역은 절반 폭으로 줄여 가운데 정렬한다', (tester) async {
+      for (final scenario in const <({Size size, bool compact, bool tablet})>[
+        (size: Size(820, 620), compact: false, tablet: false),
+        (size: Size(834, 1194), compact: false, tablet: true),
+        (size: Size(390, 844), compact: true, tablet: false),
+      ]) {
+        final controller = PortfolioThemeController();
 
-      await _pumpSettings(
-        tester,
-        controller: controller,
-        size: const Size(820, 620),
-      );
+        await _pumpSettings(
+          tester,
+          controller: controller,
+          size: scenario.size,
+          compact: scenario.compact,
+          tablet: scenario.tablet,
+        );
 
-      final content = tester.getRect(
-        find.byKey(const Key('settings-display-mode')),
-      );
-      final light = tester.getRect(find.byKey(const Key('theme-light')));
-      final dark = tester.getRect(find.byKey(const Key('theme-dark')));
-      final choicesWidth = dark.right - light.left;
-      final choicesCenter = (light.left + dark.right) / 2;
+        final content = tester.getRect(
+          find.byKey(const Key('settings-display-mode')),
+        );
+        final choices = find.byKey(const Key('settings-mode-choice-group'));
+        expect(choices, findsOneWidget);
 
-      expect(choicesWidth, closeTo(content.width * 0.5, 1));
-      expect(choicesCenter, closeTo(content.center.dx, 1));
-      expect(tester.takeException(), isNull);
+        final choicesRect = tester.getRect(choices);
+        expect(
+          choicesRect.width,
+          closeTo(content.width * 0.5, 1),
+          reason: '${scenario.size}',
+        );
+        expect(
+          choicesRect.center.dx,
+          closeTo(content.center.dx, 1),
+          reason: '${scenario.size}',
+        );
+        expect(tester.takeException(), isNull, reason: '${scenario.size}');
+
+        await tester.pumpWidget(const SizedBox.shrink());
+        controller.dispose();
+      }
     });
 
     testWidgets('iPhone과 iPad는 사이드바 없이 프로필과 화면 모드를 보여준다', (tester) async {
@@ -265,7 +282,7 @@ void main() {
         find.byKey(const Key('theme-preview-light')),
       );
       expect(tabletPreview.aspectRatio, closeTo(4 / 3, 0.01));
-      expect(tabletPreview.width, greaterThan(240));
+      expect(tabletPreview.width, lessThanOrEqualTo(180));
       expect(tabletPreview.width, greaterThan(phonePreview.width));
 
       await tester.pumpWidget(const SizedBox.shrink());
@@ -341,7 +358,7 @@ void main() {
           );
           if (scenario.tablet) {
             expect(preview.aspectRatio, closeTo(4 / 3, 0.01));
-            expect(preview.width, greaterThan(240));
+            expect(preview.width, lessThanOrEqualTo(180));
           } else {
             expect(preview.aspectRatio, closeTo(0.64, 0.01));
             expect(preview.width, lessThanOrEqualTo(160));
