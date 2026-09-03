@@ -218,6 +218,62 @@ void main() {
       expect(rect.right, lessThanOrEqualTo(1016));
       expect(rect.bottom, lessThanOrEqualTo(594));
     });
+
+    testWidgets(
+      'reordering windows preserves app state and the inactive drag gesture',
+      (tester) async {
+        await _pumpPortfolio(tester);
+        await _openDesktopApp(tester, PortfolioAppId.terminal);
+        await tester.enterText(
+          find.byKey(const Key('terminal-input')),
+          'skills',
+        );
+        await tester.tap(find.byKey(const Key('terminal-submit')));
+        await tester.pumpAndSettle();
+
+        await tester.drag(
+          find.byKey(const Key('mac-window-titlebar-terminal')),
+          const Offset(-220, 0),
+        );
+        await tester.pumpAndSettle();
+        await _openDesktopApp(tester, PortfolioAppId.projects);
+        await tester.tap(find.byKey(const Key('project-selector-1')));
+        await tester.pumpAndSettle();
+
+        expect(find.text('hesu@portfolio ~ % skills'), findsOneWidget);
+        expect(
+          tester
+              .widget<Text>(find.byKey(const Key('project-detail-title')))
+              .data,
+          'ReadingLog',
+        );
+
+        final terminal = find.byKey(const Key('mac-window-terminal'));
+        final beforeDrag = tester.getRect(terminal);
+        final gesture = await tester.startGesture(
+          beforeDrag.topLeft + const Offset(18, 12),
+        );
+        await gesture.moveBy(const Offset(24, 8));
+        await tester.pump();
+        await gesture.moveBy(const Offset(76, 24));
+        await gesture.up();
+        await tester.pumpAndSettle();
+
+        final afterDrag = tester.getRect(terminal);
+        expect(afterDrag.left, greaterThan(beforeDrag.left + 60));
+        expect(
+          find.byKey(const Key('mac-window-active-terminal')),
+          findsOneWidget,
+        );
+        expect(find.text('hesu@portfolio ~ % skills'), findsOneWidget);
+        expect(
+          tester
+              .widget<Text>(find.byKey(const Key('project-detail-title')))
+              .data,
+          'ReadingLog',
+        );
+      },
+    );
   });
 
   group('macOS menu bar and Dock', () {
