@@ -790,22 +790,12 @@ const Map<PortfolioAppId, String> _labels = <PortfolioAppId, String>{
   PortfolioAppId.projects: 'Projects',
   PortfolioAppId.terminal: 'Terminal',
   PortfolioAppId.settings: '설정',
-  PortfolioAppId.thisMac: '프로젝트',
   PortfolioAppId.github: 'GitHub',
   PortfolioAppId.mail: 'Mail',
   PortfolioAppId.trash: 'Trash',
 };
 
-const List<PortfolioAppId> _launchableDockApps = <PortfolioAppId>[
-  PortfolioAppId.about,
-  PortfolioAppId.skills,
-  PortfolioAppId.projects,
-  PortfolioAppId.terminal,
-  PortfolioAppId.mail,
-  PortfolioAppId.settings,
-  PortfolioAppId.thisMac,
-  PortfolioAppId.github,
-];
+const List<PortfolioAppId> _launchableDockApps = portfolioDockAppIds;
 
 const PortfolioData _customPortfolioData = PortfolioData.constant(
   identity: PortfolioIdentity(

@@ -108,16 +108,7 @@ void main() {
   });
 }
 
-const _launchableApps = <PortfolioAppId>[
-  PortfolioAppId.about,
-  PortfolioAppId.skills,
-  PortfolioAppId.projects,
-  PortfolioAppId.terminal,
-  PortfolioAppId.mail,
-  PortfolioAppId.settings,
-  PortfolioAppId.thisMac,
-  PortfolioAppId.github,
-];
+const _launchableApps = portfolioDockAppIds;
 
 Future<void> _pumpDock(
   WidgetTester tester, {
