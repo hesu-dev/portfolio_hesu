@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
+import 'package:portfolio_hesu/portfolio/data/portfolio_data.dart';
 import 'package:portfolio_hesu/portfolio/portfolio_app.dart';
 import 'package:portfolio_hesu/portfolio/services/external_launcher.dart';
 import 'package:portfolio_hesu/portfolio/widgets/adaptive_portfolio_shell.dart';
@@ -29,6 +30,39 @@ void main() {
       expect(find.text('민희수'), findsOneWidget);
       expect(find.textContaining('천주아'), findsNothing);
       expect(find.textContaining('juah'), findsNothing);
+    });
+
+    testWidgets('derives metadata and shell content from injected data', (
+      tester,
+    ) async {
+      final data = PortfolioData(
+        identity: const PortfolioIdentity(
+          name: '테스트 사용자',
+          englishName: 'Test User',
+          email: 'test@example.com',
+          githubUrl: 'https://example.com/test',
+          headline: 'Injected developer',
+          biography: 'Injected biography',
+        ),
+        experiences: portfolioData.experiences,
+        education: portfolioData.education,
+        skillGroups: portfolioData.skillGroups,
+        projects: portfolioData.projects,
+      );
+      final launcher = CallbackExternalLauncher((_) async => true);
+
+      await tester.pumpWidget(
+        PortfolioApp(data: data, externalLauncher: launcher),
+      );
+
+      final app = tester.widget<MaterialApp>(find.byType(MaterialApp));
+      expect(app.title, '테스트 사용자 포트폴리오');
+      expect(app.color, const Color(0xFF121316));
+      final shell = tester.widget<AdaptivePortfolioShell>(
+        find.byType(AdaptivePortfolioShell),
+      );
+      expect(shell.data, same(data));
+      expect(shell.externalLauncher, same(launcher));
     });
   });
 
