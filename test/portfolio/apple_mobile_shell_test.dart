@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_test/flutter_test.dart';
+import 'package:portfolio_hesu/portfolio/apps/portfolio_app_content.dart';
 import 'package:portfolio_hesu/portfolio/data/portfolio_data.dart';
 import 'package:portfolio_hesu/portfolio/models/portfolio_app_id.dart';
 import 'package:portfolio_hesu/portfolio/services/external_launcher.dart';
@@ -100,6 +101,21 @@ void main() {
       expect(find.byKey(const Key('about-app')), findsOneWidget);
     });
 
+    testWidgets('Dock icon supports focus traversal and keyboard activation', (
+      tester,
+    ) async {
+      await _pumpShell(tester, size: const Size(390, 844));
+
+      for (var index = 0; index < _allApps.length; index++) {
+        await tester.sendKeyEvent(LogicalKeyboardKey.tab);
+        await tester.pump();
+      }
+      await tester.sendKeyEvent(LogicalKeyboardKey.enter);
+      await tester.pumpAndSettle();
+
+      expect(find.byKey(const Key('about-app')), findsOneWidget);
+    });
+
     testWidgets('opens GitHub externally only after its explicit action', (
       tester,
     ) async {
@@ -117,6 +133,33 @@ void main() {
 
       expect(launcher.uris, <Uri>[Uri.parse(portfolioData.githubUrl)]);
     });
+
+    testWidgets(
+      'injects phone form-factor data and launcher into app content',
+      (tester) async {
+        final data = _profileData(name: '전화 사용자');
+        final launcher = _RecordingLauncher();
+        await _pumpShell(
+          tester,
+          size: const Size(390, 844),
+          data: data,
+          launcher: launcher,
+        );
+
+        await tester.tap(find.byKey(const Key('home-app-skills')));
+        await tester.pumpAndSettle();
+
+        expect(find.byType(PortfolioAppContent), findsOneWidget);
+        final content = tester.widget<PortfolioAppContent>(
+          find.byType(PortfolioAppContent),
+        );
+        expect(content.appId, PortfolioAppId.skills);
+        expect(content.data, same(data));
+        expect(content.launcher, same(launcher));
+        expect(content.compact, isTrue);
+        expect(content.tablet, isFalse);
+      },
+    );
 
     testWidgets('remains scrollable without overflow on a small 200% screen', (
       tester,
@@ -185,6 +228,33 @@ void main() {
           'ReadingLog',
         );
         expect(tester.takeException(), isNull);
+      },
+    );
+
+    testWidgets(
+      'injects tablet form-factor data and launcher into app content',
+      (tester) async {
+        final data = _profileData(name: '태블릿 사용자');
+        final launcher = _RecordingLauncher();
+        await _pumpShell(
+          tester,
+          size: const Size(834, 1194),
+          data: data,
+          launcher: launcher,
+        );
+
+        await tester.tap(find.byKey(const Key('home-app-terminal')));
+        await tester.pumpAndSettle();
+
+        expect(find.byType(PortfolioAppContent), findsOneWidget);
+        final content = tester.widget<PortfolioAppContent>(
+          find.byType(PortfolioAppContent),
+        );
+        expect(content.appId, PortfolioAppId.terminal);
+        expect(content.data, same(data));
+        expect(content.launcher, same(launcher));
+        expect(content.compact, isFalse);
+        expect(content.tablet, isTrue);
       },
     );
 
