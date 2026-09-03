@@ -4,8 +4,8 @@
 
 iPhone·iPad에서 앱별로 복제된 상단바를 `AppleMobileNavigationHeader` 한 개로
 통합한다. 헤더는 왼쪽 44px 제어 영역, 화면 정중앙의 자연 높이 제목, 오른쪽
-44px 비동작 `…` 영역을 소유한다. iPhone 일반 앱과 Projects에는 원형
-뒤로/닫기 버튼을, iPad 일반 앱에는 기존 공용 신호등을 leading 슬롯으로 넣는다.
+44px 비동작 `…` 영역을 소유한다. iPhone·iPad의 일반 앱과 Projects 모두 원형
+뒤로/닫기 버튼을 leading 슬롯으로 넣고 모바일 폼팩터에서는 신호등을 사용하지 않는다.
 제목은 좌우 제어의 실제 폭과 관계없이 화면 중앙에 두고, `Center` 안에서 자연
 높이로 레이아웃해 아래쪽 가짜 여백을 만들지 않는다. 헤더 자체에는 탭 동작이나
 접근성 action을 두지 않고, leading 제어만 독립된 semantics container로 만든다.

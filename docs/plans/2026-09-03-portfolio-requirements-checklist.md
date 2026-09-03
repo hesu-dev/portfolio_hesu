@@ -11,9 +11,9 @@
 | 기존 포트폴리오를 민희수용으로 전면 교체 | 충족 | 이름 `민희수`, 영문명, 이메일 `hs0647@naver.com`, GitHub `hesu-dev`를 공용 데이터에서 주입한다. |
 | 참조 페이지를 그대로 복제하지 않고 개인 콘텐츠 사용 | 충족 | 참조 인물/URL이 런타임과 웹 메타데이터에 없음을 테스트한다. |
 | 현재 Flutter 경력 소속과 업무 문구 갱신 | 충족 | `Junior Flutter Developer`의 소속은 `(주)상상력 집단`, 설명은 `node 웹사이트 서비스 기획 및 개발, 출시 후 유지보수`로 표시한다. |
-| GitHub Pages에서 Vercel로 이전 가능하게 구성 | 충족 | Pages용 `/portfolio_hesu/`와 Vercel용 `/` release 빌드가 모두 성공했다. |
-| GitHub Pages 중단 및 Vercel 외부 배포 | 보류 | 외부 서비스 변경은 사용자의 최종 배포 요청 전에는 실행하지 않는다. |
-| 공개 저장소의 과거 자산 재배포 위험 관리 | 진행 중 | 레거시 자산은 현재 트리에서 제거했다. Git 과거 이력과 기존 `gh-pages`는 별도 정리가 필요하다. |
+| GitHub Pages에서 Vercel로 이전 가능하게 구성 | 충족 | Vercel 도메인 루트용 `/` release 빌드 절차와 고정 Flutter SDK 설정을 문서화했다. |
+| GitHub Pages 중단 및 Vercel 외부 배포 | 진행 중 | Pages 자동 배포 workflow와 README의 공개 URL은 제거했다. `main` 반영 후 저장소 Pages 설정과 `gh-pages`를 제거한다. Vercel 외부 배포는 아직 수행하지 않는다. |
+| 공개 저장소의 과거 자산 재배포 위험 관리 | 진행 중 | 레거시 자산과 자동 재배포 경로는 현재 트리에서 제거했다. Pages 설정·브랜치 정리 후에도 공개 Git 과거 이력의 제3자 복제 위험은 남는다. |
 
 ## 반응형 셸
 
@@ -50,6 +50,8 @@
 | 데스크톱·iPad·iPhone 아이콘 형태 공통화 | 충족 | 모든 launcher가 `AppleAppArtworkFrame`을 사용하며 폼팩터별 캡처를 비교했다. |
 | 데스크톱 Trash 아이콘이 잘리지 않음 | 충족 | 1280×720에서도 artwork와 `Trash` 라벨이 desktop grid 안에 완전히 포함된다. |
 | 중복 프로젝트 아이콘 제거, 영문 `Projects` 유지 | 충족 | 공용 런처 목록에서 한글 프로젝트 허브 아이콘을 제외하고 desktop/iPad/iPhone/Dock에서 `Projects`만 노출한다. |
+| 폼팩터별 앱 순서 통일 | 충족 | desktop은 `About → Skills → Projects → Terminal → GitHub → Mail → 설정 → Trash`, iPhone·iPad는 About 중복을 제외한 `Skills → Projects → Terminal → 사진 → GitHub → Mail → 설정 → Trash` 순서를 사용한다. |
+| 모바일·태블릿 Photos 자리 추가 | 충족 | Terminal 다음에 공용 frame의 code-native Photos artwork를 배치하고 Light/Dark·스크롤 가능한 준비 화면에 연결한다. desktop에는 노출하지 않는다. |
 
 ## About와 메모
 
@@ -57,33 +59,35 @@
 |---|---|---|
 | 홈의 민희수 영역 자체가 About을 여는 메모 위젯 | 충족 | iPad와 iPhone 모두 노란 메모 위젯 전체를 탭/Enter/Space로 열 수 있다. |
 | About 내용은 하나의 연속된 메모 | 충족 | 소개·경력·교육·연락처가 별도 카드 없이 한 종이 안에서 이어진다. |
-| 홈 위젯의 날짜·`MH` 상자·`메모` 텍스트 제거 | 충족 | 세 장식 요소가 렌더링되지 않고 민희수 이름과 소개만 남는지 테스트와 실화면으로 확인했다. |
+| 홈 위젯의 날짜·`MH` 상자·`메모` 텍스트 제거 | 충족 | 세 장식 요소는 렌더링하지 않고 흰 폴더 아이콘과 민희수 프로필 내용만 유지한다. |
 | 홈과 About 메모 본문은 공용 레이아웃 | 충족 | 홈의 `AppleNotesSurface`와 About 전체 화면이 같은 `AppleNotesPaper` 종이 레이어를 사용한다. |
-| 홈 메모의 이름과 소개를 같은 크기·굵기의 두 줄로 통일 | 충족 | iPhone 17px, iPad 18px의 같은 굵기와 행간을 사용하며 각 문장을 한 줄로 고정한다. |
-| 짧은 가로 화면에서도 메모 두 줄 유지 | 충족 | iPhone 844×390과 iPad 600×400·글자 200%에서도 이름과 소개 본문을 숨기지 않고 두 줄을 유지한다. |
+| 홈 메모 헤더에 흰 폴더 아이콘과 `민희수` 표시 | 충족 | 기존 흰 폴더 아이콘을 유지하고 같은 헤더의 오른쪽 제목 슬롯에 주입된 이름을 표시한다. |
+| 홈 메모의 이름과 `자세히 보러가기`를 같은 타이포그래피로 표시 | 충족 | 기존 Flutter 소개 문구만 CTA로 교체하고 iPhone 17px, iPad 18px의 같은 굵기와 행간을 사용한다. |
+| 짧은 가로 화면에서도 메모 두 줄 유지 | 충족 | iPhone 844×390과 iPad 600×400·글자 200%에서도 이름과 CTA 본문을 숨기지 않고 두 줄을 유지한다. |
 
 ## Finder와 프로젝트
 
 | 요구사항 | 상태 | 완료 조건 또는 근거 |
 |---|---|---|
-| 데스크톱 Projects 위치 순서: 최근 항목, 공유, 위치, iCloud Drive, 데스크탑, 경력, 개인 프로젝트 | 충족 | 데스크톱 Finder 사이드바는 실제 Finder와 유사한 구획 순서를 사용하고 기존 `민희수` 위치는 `데스크탑`으로 교체했다. |
-| Projects 기본 선택은 `경력` | 충족 | Mac·iPad·iPhone에서 처음 열면 `경력`이 선택되고 상단 타이틀과 선택 의미 정보도 일치한다. |
+| 데스크톱 Projects 위치 순서: 최근 항목, 공유, 위치, iCloud Drive, 데스크탑, 회사, 개인 프로젝트 | 충족 | 데스크톱 Finder 사이드바는 실제 Finder와 유사한 구획 순서를 사용하고 기존 `민희수` 위치는 `데스크탑`으로 교체했다. |
+| Projects 기본 선택은 `회사` | 충족 | Mac·iPad·iPhone에서 처음 열면 `회사`가 선택되고 상단 타이틀과 선택 의미 정보도 일치한다. |
 | iCloud Drive는 빈 디렉토리 | 충족 | 별도 빈 상태만 표시하고 프로젝트나 앱 아이콘을 렌더링하지 않는다. |
 | macOS의 데스크탑 위치는 홈과 같은 앱 아이콘 목록 | 충족 | `portfolioLauncherAppIds`와 `AppleAppIcon`을 그대로 재사용하며 앱은 기존 Finder를 교체하지 않고 독립 창으로 연다. 최신 iPad/iPhone 하단 탐색에서는 데스크탑 위치를 의도적으로 노출하지 않는다. |
-| 기존 프로젝트를 경력 4개·개인 2개로 분류 | 충족 | Blue Mentor·IRIS·AI-Bver·HiddenTag는 경력, ReadingLog·PersonaChat은 개인 프로젝트로 표시하며 미분류 신규 데이터는 경력으로 안전하게 기본 처리한다. 개인 목록은 ReadingLog를 첫 번째로 둔다. |
-| 경력과 개인 프로젝트의 디자인 구성 통일 | 충족 | 데이터만 다르고 같은 프로젝트 폴더 그리드·선택·상세 연결 컴포넌트를 공유한다. |
+| 기존 프로젝트를 회사 4개·개인 2개로 분류 | 충족 | Blue Mentor·IRIS·AI-Bver·HiddenTag는 회사, ReadingLog·PersonaChat은 개인 프로젝트로 표시하며 미분류 신규 데이터는 내부 회사 분류로 안전하게 기본 처리한다. 개인 목록은 ReadingLog를 첫 번째로 둔다. |
+| 회사와 개인 프로젝트의 디자인 구성 통일 | 충족 | 데이터만 다르고 같은 프로젝트 폴더 그리드·선택·상세 연결 컴포넌트를 공유한다. |
 | 프로젝트 선택·설명·링크 기능 보존 | 충족 | 공용 데이터의 모든 프로젝트 선택 및 최신 링크 결과 테스트가 통과한다. |
 | `This Mac`/한글 프로젝트 중복 경로를 영문 `Projects`로 단일화 | 충족 | 시스템 메뉴와 launcher가 같은 `Projects` 창을 열며 `thisMac` 창·Dock 항목은 공개되지 않는다. |
-| 위치 목록에서는 프로젝트 폴더만 표시 | 충족 | 최신 분류 요구가 기존 6개 단일 목록을 대체한다. 기본 경력에는 4개, 개인 프로젝트에는 2개 폴더만 보이고 설명은 목록 높이를 차지하지 않는다. |
+| 위치 목록에서는 프로젝트 폴더만 표시 | 충족 | 최신 분류 요구가 기존 6개 단일 목록을 대체한다. 기본 회사에는 4개, 개인 프로젝트에는 2개 폴더만 보이고 설명은 목록 높이를 차지하지 않는다. |
 | 프로젝트 폴더를 한 번 누르면 별도 상세 뎁스로 이동 | 충족 | title/period/description/skills/링크를 별도 화면에 표시하고 Finder 뒤로/앞으로로 목록과 상세를 오간다. |
 | Projects의 화면 요소는 공용 Finder 레이아웃 | 충족 | toolbar/sidebar/folder tile을 복제하지 않고 공용 컴포넌트로 사용한다. |
 | 선택 폴더는 아이콘 주변만 회색 표시 | 충족 | light/dark 모두 청색 폴더 artwork·라벨·전체 타일은 불변이고 아이콘 바로 주변에만 중립 회색 배경을 둔다. |
 | 긴 폴더 이름은 정해진 폭 안에서 개행하고 정렬 유지 | 충족 | 항목 수와 무관하게 사용 가능한 열 수로 Finder 타일 폭을 고정하고 이름을 최대 두 줄 ellipsis로 제한한다. iPad 개인 프로젝트에서도 PersonaChat이 두 줄로 개행된다. |
-| 프로젝트 6개 이상을 누락 없이 표시하고 좁은 화면에서도 정렬 유지 | 충족 | 최근 항목은 6개 프로젝트를 모두 표시하고 경력·개인은 분류된 전체 항목을 다중 행 스크롤 그리드로 표시한다. 설명은 상세 뎁스로 분리돼 목록 높이를 잠식하지 않는다. |
+| 프로젝트 6개 이상을 누락 없이 표시하고 좁은 화면에서도 정렬 유지 | 충족 | 최근 항목은 6개 프로젝트를 모두 표시하고 회사·개인은 분류된 전체 항목을 다중 행 스크롤 그리드로 표시한다. 설명은 상세 뎁스로 분리돼 목록 높이를 잠식하지 않는다. |
 | 폴더 정렬 밀도를 desktop·iPad·iPhone에서 공통화 | 충족 | 모든 Finder가 112px 고정 셀과 8px 간격을 공유한다. 390px은 3열, 834px 최근 항목은 6개가 한 행에 배치되며 긴 이름은 기존 64px 두 줄 영역을 유지한다. |
 | iPad/iPhone Finder에서 사이드바·원형 위치 목록 제거 | 충족 | compact Finder는 파일 영역의 폭을 전부 사용하며 데스크톱 사이드바와 `최근 항목` 원형 목록을 렌더링하지 않는다. |
-| iPad/iPhone Finder 하단 탐색은 최근 항목·경력·개인만 제공 | 충족 | 내부 3탭 Finder 독이 각 위치 페이지에 연결되고 세 번째 탭 라벨은 compact한 `개인`으로 표시한다. 홈 화면의 앱 Dock과는 별개다. |
+| iPad/iPhone Finder 하단 탐색은 최근 항목·회사·개인만 제공 | 충족 | 내부 3탭 Finder 독이 각 위치 페이지에 연결되고 세 번째 탭 라벨은 compact한 `개인`으로 표시한다. 홈 화면의 앱 Dock과는 별개다. |
 | iPad/iPhone Finder 하단 탐색 아이콘·라벨 중앙 정렬 | 충족 | 세 항목이 같은 폭의 슬롯 전체를 사용하며 아이콘과 라벨 중심이 각각 내부 독 1/3 지점과 1px 이내로 일치한다. |
+| iPad/iPhone Finder 하단 노치 배경 투명 | 충족 | 바깥 영역과 pill 배경을 투명하게 유지하되 테두리·그림자·선택 탭 배경은 보존한다. 두 폼팩터와 양 테마에서 검증한다. |
 | 데스크톱 Finder의 최근 항목 탐색 연결 | 충족 | 사이드바 `최근 항목`을 누르면 ReadingLog부터 전체 6개 프로젝트가 표시되고 선택·뒤로/앞으로 기록도 유지된다. `공유`는 실제 데이터 연동 전 시각 자리표시자다. |
 
 ## iPad와 iPhone 앱 화면
@@ -92,16 +96,18 @@
 |---|---|---|
 | 아래 화살표 닫기 버튼 제거 | 충족 | `mobile-close`와 아래 화살표가 모든 모바일 앱에서 렌더링되지 않는다. |
 | 오른쪽 앱 아이콘 제거 | 충족 | 모바일 앱 navigation bar에 trailing artwork가 없다. |
-| `< 홈` 텍스트형 뒤로가기 제거 | 충족 | iPhone 일반 앱은 44px 원형 뒤로 화살표로 앱을 닫고, iPad 일반 앱은 공용 신호등을 사용한다. 텍스트형 홈 버튼은 없다. |
-| 일반 앱의 기기별 닫기 규칙 통일 | 충족 | 데스크톱·iPad 일반 앱은 공용 `MacTrafficControls`, iPhone 일반 앱은 공용 원형 뒤로 버튼을 사용한다. |
+| `< 홈` 텍스트형 뒤로가기 제거 | 충족 | iPhone·iPad 일반 앱은 모두 44px 원형 뒤로 화살표로 앱을 닫고 텍스트형 홈 버튼이나 신호등을 사용하지 않는다. |
+| 일반 앱의 기기별 닫기 규칙 통일 | 충족 | desktop은 공용 `MacTrafficControls`, iPhone·iPad는 공용 `MobileBackCloseButton`을 사용한다. |
 | iPad/iPhone Finder 전용 상단바 | 충족 | 두 기기 모두 신호등 없이 왼쪽 원형 뒤로 버튼, 실제 중앙 타이틀, 오른쪽 비동작 `…` 버튼을 사용한다. |
 | iPhone 앱 상단 타이틀을 화면 기준 중앙 정렬 | 충족 | 좌우 컨트롤 폭과 무관하게 공용 mobile navigation title의 중심이 viewport 중심과 일치하며 Finder도 같은 기준을 사용한다. |
+| 모바일·태블릿 상단 타이틀의 아래 가짜 여백 제거 | 충족 | 제목을 44px 전체로 늘리지 않고 자연 높이로 배치해 원형 leading과 세로 중심이 1px 이내로 맞는다. |
+| 모바일·태블릿 헤더의 `…`와 닫기 영역 분리 | 충족 | 모든 앱이 오른쪽 비동작 `…`를 공유하고 제목·빈 영역·`…` 탭은 화면을 닫지 않는다. 왼쪽 44×44 버튼만 독립 semantics action을 가진다. |
 | 상단바 제목을 한 번만 표시 | 충족 | 일반 앱은 기기별 공용 chrome에 제목을 한 번만 표시하고 Projects는 Finder 상단바 중앙에만 표시한다. |
 | 신호등 아래의 `앱 아이콘 + 왼쪽 타이틀` 중복 행 제거 | 충족 | Skills, Trash, GitHub, Mail의 공용 본문 toolbar를 제거하고 Mac/iPad/iPhone 상단 chrome만 제목을 소유한다. |
 | About의 중복 아이콘·제목 영역과 중첩 메모 제거 | 충족 | 앱 내부 toolbar와 두 번째 메모 카드를 없애고 navigation bar 아래 한 장의 종이 본문만 렌더링한다. |
 | macOS Finder 데스크탑의 앱은 기존 창을 교체하지 않고 새 창으로 열기 | 충족 | 데스크탑 위치의 앱을 열면 Projects Finder를 유지한 채 각 앱을 독립 창으로 연다. iPad/iPhone은 최신 3탭 요구에 따라 데스크탑 위치 자체를 노출하지 않는다. |
 | iPad/iPhone 홈 앱 Dock 숨김 | 충족 | viewport 크기와 실제 touch 기반 기기 판정을 함께 사용해 태블릿·모바일 홈에서는 macOS식 하단 앱 Dock을 렌더링하지 않는다. |
-| Projects 원형 뒤로 버튼은 상세만 내부 이동하고 폴더 루트에서는 닫기 | 충족 | iPhone/iPad 모두 프로젝트 상세에서는 해당 목록으로 돌아가고, 경력·최근 항목·개인 프로젝트의 루트에서는 홈으로 앱을 닫는다. Tooltip과 semantics도 상태에 맞게 바뀐다. |
+| Projects 원형 뒤로 버튼은 상세만 내부 이동하고 폴더 루트에서는 닫기 | 충족 | iPhone/iPad 모두 프로젝트 상세에서는 해당 목록으로 돌아가고, 회사·최근 항목·개인 프로젝트의 루트에서는 홈으로 앱을 닫는다. Tooltip과 semantics도 상태에 맞게 바뀐다. |
 
 ## 터미널
 
@@ -122,7 +128,7 @@
 | 화면 모드에 새 SVG 아이콘 사용 | 충족 | 원격 참조 없이 새로 그린 로컬 `settings-display-mode.svg`를 렌더링한다. |
 | 데스크톱 설정 화면 구성 유지 | 충족 | macOS 설정은 좌측 프로필·검색과 우측 화면 모드 구성을 유지한다. |
 | iPad/iPhone 설정은 기기 비율의 Light/Dark 미리보기 | 충족 | iPhone은 세로형 0.64 비율, iPad는 카드 폭을 사용하는 4:3 비율의 미리보기 두 개를 나란히 놓고 선택 상태를 즉시 반영한다. desktop 2.05 비율은 유지하며 옵션 아래의 불필요한 시스템 설정 항목은 모사하지 않는다. |
-| 모든 공개 화면의 Light/Dark 지원 | 충족 | 홈, 공용 창 chrome, Finder, About, Skills, Terminal, Settings, macOS 메뉴 막대와 세 시스템 패널을 양 테마로 렌더링하고 대비 계약을 검증한다. |
+| 모든 공개 화면의 Light/Dark 지원 | 충족 | 홈, 공용 창 chrome, Finder, About, Skills, Terminal, Photos, Settings, macOS 메뉴 막대와 세 시스템 패널을 양 테마로 렌더링하고 대비 계약을 검증한다. |
 | 웹/PWA 기본 chrome도 Light와 일치 | 충족 | `MaterialApp.color`, HTML `theme-color`, manifest 배경·테마 색을 기본 Light `#F4F4F7`로 통일했다. 앱 내부에서 선택한 Dark는 전역 Flutter 테마가 즉시 반영한다. |
 
 ## Skills
@@ -137,7 +143,7 @@
 
 | 요구사항 | 상태 | 완료 조건 또는 근거 |
 |---|---|---|
-| 모든 열린 화면에서 모바일 터치 스크롤 | 충족 | iPhone·iPad·데스크탑 크기에서 공개 앱 8개 본문, Projects 목록·상세, Terminal 누적 transcript를 touch 포인터로 실제 드래그한다. |
+| 모든 열린 화면에서 모바일 터치 스크롤 | 충족 | iPhone·iPad·데스크탑 크기에서 공개 앱 9개 본문, Projects 목록·상세, Terminal 누적 transcript를 touch 포인터로 실제 드래그한다. |
 | 데스크탑 마우스 드래그 스크롤 | 충족 | 앱 전역 `PortfolioScrollBehavior`가 mouse를 허용하고 같은 화면들을 mouse 포인터로 실제 드래그한다. |
 | 짧은 화면에서도 홈 아이콘 전체 접근 | 충족 | iPad/iPhone 홈 Dock을 제거하고 일반 하단 안전 여백을 적용해 600×400·글자 200%에서도 모든 앱까지 터치 스크롤한다. |
 
@@ -148,21 +154,21 @@
 | 공통 레이아웃으로 향후 일괄 수정 | 충족 | Mac window, Finder, Notes, mobile navigation, app artwork를 각각 공용 컴포넌트로 유지한다. |
 | 한국어 Conventional/Angular 커밋 제목 | 충족 | 이번 작업의 새 커밋 제목은 한국어 Conventional Commit 형식을 준수한다. |
 | 작업을 가능한 작은 커밋으로 분리 | 충족 | 테스트·자산·공용 컴포넌트·기능·수정을 독립 커밋으로 분리했다. |
-| 전체 정적 분석·테스트·Pages/Vercel 빌드 | 충족 | 최종 소스에서 정적 분석 0건, 전체 267개 테스트 통과, Pages·Vercel release web build 성공을 확인했다. |
+| 전체 정적 분석·테스트·Vercel 빌드 | 충족 | 최종 소스에서 정적 분석 0건, 전체 272개 테스트 통과, Vercel 루트 release web build 성공을 확인한다. |
 | 데스크톱·iPad·iPhone 실화면 검수 | 충족 | 로컬 인앱 브라우저에서 세 폼팩터의 핵심 화면과 Light/Dark 전환을 다시 확인하고 자동 양 테마 계약으로 나머지 조합을 보완했다. |
 
 ## 2026-09-04 최종 검증 기록
 
-- `flutter test --reporter compact`: 전체 267개 통과
+- `flutter test --reporter compact`: 전체 272개 통과
 - `flutter analyze`: 문제 없음
 - GitHub Pages 경로 `/portfolio_hesu/` release web build: 성공, 생성된 `<base href="/portfolio_hesu/">` 확인
 - Vercel 루트 경로 `/` release web build: 성공, 생성된 `<base href="/">` 확인
 - `git diff --check`: 통과
 - 실제 렌더링: macOS 1280×720 Light 홈·Finder와 Dark 설정·메뉴·제어 센터·알림·About·Terminal, iPad 834×1112의 홈·About·Finder 6열·4:3 설정, iPhone 390×844의 홈·Skills·Finder 3열·설정·About을 확인
 - Finder 재검수: macOS `최근 항목`이 전체 6개 프로젝트로 이동하고 ReadingLog가 첫 번째이며, 상세에서 돌아오면 폴더 아이콘 주변에만 중립 회색 선택 배경이 남는 것을 확인
-- 모바일 재검수: 홈 앱 Dock은 숨고, Projects 내부에만 `최근 항목`·`경력`·`개인` 3탭 탐색이 있으며 세 아이콘·라벨은 각 1/3 중심에 정렬된다. iPhone/iPad Finder는 신호등 없이 상태별 뒤로/닫기·중앙 타이틀·`…`를 사용한다.
+- 모바일 재검수: 홈 앱 Dock은 숨고, Projects 내부에만 `최근 항목`·`회사`·`개인` 3탭 탐색이 있으며 세 아이콘·라벨은 각 1/3 중심에 정렬된다. pill 배경은 투명하고 iPhone/iPad Finder는 신호등 없이 상태별 뒤로/닫기·중앙 자연 높이 타이틀·`…`를 사용한다.
 - 테마 재검수: 기본 Light, iPhone 설정의 즉시 Dark 전환, Dark About 메모·Terminal·macOS 창/메뉴/시스템 패널의 가독성을 확인
 - 독립 요구사항 감사: 핵심 런타임 미충족과 Critical 항목 없음. 감사에서 발견한 데스크톱 `최근 항목` 비동작과 웹 기본 dark chrome은 각각 수정하고 회귀 테스트를 추가함
-- 외부 상태 변경: GitHub Pages 중단과 Vercel 배포는 아직 실행하지 않음
-- `main` push 시 현재 Pages workflow가 다시 배포하므로 실제 이전 시점에 workflow와 Pages 설정을 함께 중단해야 함
+- 외부 상태 변경: 소스의 Pages workflow는 제거했으며 원격 Pages 설정·`gh-pages` 제거와 Vercel 배포는 아직 실행하지 않음
+- `main` 반영 전에 기존 Pages workflow를 비활성화하고, 반영 후 Pages 설정과 배포 브랜치를 제거해 자동 재배포를 차단한다.
 - 공개 저장소 과거 이력/기존 `gh-pages` 정리는 별도 배포 단계에서 수행
