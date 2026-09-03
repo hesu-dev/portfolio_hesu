@@ -376,6 +376,60 @@ void main() {
         expect(tester.takeException(), isNull, reason: '$size');
       }
     });
+
+    testWidgets('opens Terminal in short iPad layouts at 200 percent', (
+      tester,
+    ) async {
+      for (final size in const <Size>[Size(600, 400), Size(1023, 600)]) {
+        await tester.pumpWidget(const SizedBox.shrink());
+        await _pumpShell(
+          tester,
+          size: size,
+          textScaler: const TextScaler.linear(2),
+        );
+
+        final terminalIcon = find.byKey(const Key('mobile-dock-terminal'));
+        await tester.tap(terminalIcon);
+        await tester.pumpAndSettle();
+
+        expect(find.byKey(const Key('terminal-app')), findsOneWidget);
+        final submitSize = tester.getSize(
+          find.byKey(const Key('terminal-submit')),
+        );
+        expect(submitSize.width, greaterThanOrEqualTo(44));
+        expect(submitSize.height, greaterThanOrEqualTo(44));
+        expect(tester.takeException(), isNull, reason: '$size');
+      }
+    });
+
+    testWidgets('scrolls Trash in short iPad layouts at 200 percent', (
+      tester,
+    ) async {
+      for (final size in const <Size>[Size(600, 400), Size(1023, 600)]) {
+        await tester.pumpWidget(const SizedBox.shrink());
+        await _pumpShell(
+          tester,
+          size: size,
+          textScaler: const TextScaler.linear(2),
+        );
+
+        final trashIcon = find.byKey(const Key('home-app-trash'));
+        await tester.ensureVisible(trashIcon);
+        await tester.tap(trashIcon);
+        await tester.pumpAndSettle();
+
+        final trashScroll = find.byKey(const Key('trash-scroll'));
+        expect(trashScroll, findsOneWidget);
+        final scrollable = tester.state<ScrollableState>(
+          find.descendant(of: trashScroll, matching: find.byType(Scrollable)),
+        );
+        expect(scrollable.position.maxScrollExtent, greaterThan(0));
+        await tester.drag(trashScroll, const Offset(0, -80));
+        await tester.pumpAndSettle();
+        expect(scrollable.position.pixels, greaterThan(0));
+        expect(tester.takeException(), isNull, reason: '$size');
+      }
+    });
   });
 }
 
