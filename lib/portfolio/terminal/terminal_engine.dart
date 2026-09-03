@@ -127,9 +127,10 @@ class TerminalEngine {
       lines: <String>[
         'Launching ${data.appTitle} on Chrome in debug mode...',
         'Resolving dependencies... done',
-        '✓ Built build/web',
-        '🔥 Flutter hot reload is ready.',
-        '✨ Easter egg unlocked — ${data.identity.name}의 포트폴리오는 이미 실행 중입니다.',
+        '[OK] Built build/web',
+        '[HOT] Flutter hot reload is ready.',
+        '[EASTER EGG] Easter egg unlocked — '
+            '${data.identity.name}의 포트폴리오는 이미 실행 중입니다.',
       ],
     );
   }

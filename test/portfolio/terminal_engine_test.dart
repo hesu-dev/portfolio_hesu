@@ -89,8 +89,14 @@ void main() {
       expect(output, contains('Launching'));
       expect(output, contains('Flutter'));
       expect(output, contains(portfolioData.identity.name));
+      expect(output, contains('[OK] Built build/web'));
+      expect(output, contains('[HOT] Flutter hot reload is ready.'));
+      expect(output, contains('[EASTER EGG]'));
       expect(output, contains('Easter egg'));
       expect(output, contains('이미 실행 중'));
+      expect(output, isNot(contains('✓')));
+      expect(output, isNot(contains('🔥')));
+      expect(output, isNot(contains('✨')));
     });
 
     test('clear marks the transcript for clearing without output', () {
