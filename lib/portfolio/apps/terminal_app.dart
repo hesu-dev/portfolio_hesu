@@ -179,22 +179,31 @@ class _TerminalToolbar extends StatelessWidget {
             ),
             SizedBox(width: compact ? 6 : 8),
           ],
-          const Spacer(),
-          const Icon(
-            Icons.terminal_rounded,
-            size: 16,
-            color: Color(0xFFA8A8AD),
-          ),
-          const SizedBox(width: 7),
-          Text(
-            'portfolio — zsh',
-            style: TextStyle(
-              color: const Color(0xFFC9C9CD),
-              fontSize: compact ? 11.5 : 12.5,
-              fontWeight: FontWeight.w600,
+          Expanded(
+            child: Row(
+              mainAxisAlignment: MainAxisAlignment.center,
+              children: <Widget>[
+                const Icon(
+                  Icons.terminal_rounded,
+                  size: 16,
+                  color: Color(0xFFA8A8AD),
+                ),
+                const SizedBox(width: 7),
+                Flexible(
+                  child: Text(
+                    'portfolio — zsh',
+                    maxLines: 1,
+                    overflow: TextOverflow.ellipsis,
+                    style: TextStyle(
+                      color: const Color(0xFFC9C9CD),
+                      fontSize: compact ? 11.5 : 12.5,
+                      fontWeight: FontWeight.w600,
+                    ),
+                  ),
+                ),
+              ],
             ),
           ),
-          const Spacer(),
           SizedBox(width: compact ? 42 : 49),
         ],
       ),
@@ -253,15 +262,18 @@ class _TerminalInput extends StatelessWidget {
         contentPadding: EdgeInsets.symmetric(vertical: 8),
       ),
     );
-    final submit = IconButton(
-      key: const Key('terminal-submit'),
-      onPressed: () => onSubmitted(controller.text),
-      tooltip: 'Run command',
-      visualDensity: VisualDensity.compact,
-      icon: const Icon(
-        Icons.arrow_upward_rounded,
-        color: Color(0xFF71D98A),
-        size: 20,
+    final submit = SizedBox.square(
+      dimension: 44,
+      child: IconButton(
+        key: const Key('terminal-submit'),
+        onPressed: () => onSubmitted(controller.text),
+        tooltip: 'Run command',
+        visualDensity: VisualDensity.compact,
+        icon: const Icon(
+          Icons.arrow_upward_rounded,
+          color: Color(0xFF71D98A),
+          size: 20,
+        ),
       ),
     );
 
