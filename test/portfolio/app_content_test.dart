@@ -408,7 +408,7 @@ void main() {
       expect(tester.takeException(), isNull);
     });
 
-    testWidgets('skills category selection updates actual visible skills', (
+    testWidgets('compact skills exposes every skill as one channel list', (
       tester,
     ) async {
       await _pumpApp(
@@ -419,15 +419,15 @@ void main() {
         compact: true,
       );
 
-      expect(find.text('Flutter'), findsOneWidget);
-      expect(find.text('Notion'), findsNothing);
-
-      await tester.tap(find.byKey(const Key('skills-category-Collaboration')));
-      await tester.pumpAndSettle();
-
-      expect(find.text('Notion'), findsOneWidget);
-      expect(find.text('Slack'), findsOneWidget);
-      expect(find.text('Flutter'), findsNothing);
+      expect(
+        find.byKey(const Key('skills-mobile-channel-list')),
+        findsOneWidget,
+      );
+      expect(find.text('# Flutter'), findsOneWidget);
+      expect(find.text('# Notion'), findsOneWidget);
+      expect(find.text('# Slack'), findsOneWidget);
+      expect(find.byKey(const Key('skill-item-Flutter')), findsOneWidget);
+      expect(find.byKey(const Key('skill-item-Notion')), findsOneWidget);
       expect(tester.takeException(), isNull);
     });
 

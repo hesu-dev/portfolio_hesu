@@ -70,6 +70,10 @@ void main() {
             tester,
             find.byKey(target.scrollKey),
             reason: '${layout.name} ${target.appId.name}',
+            mouseDragStartBelow:
+                layout.compact && target.appId == PortfolioAppId.skills
+                ? find.byKey(const Key('skills-mobile-summary-strip'))
+                : null,
           );
           if (target.appId == PortfolioAppId.projects) {
             final collectionScrollable = tester.state<ScrollableState>(
@@ -198,11 +202,18 @@ Future<void> _expectTouchAndMouseScroll(
   WidgetTester tester,
   Finder scrollTarget, {
   required String reason,
+  Finder? mouseDragStartBelow,
 }) async {
   expect(scrollTarget, findsOneWidget, reason: reason);
   final scrollableFinder = find.descendant(
     of: scrollTarget,
-    matching: find.byType(Scrollable),
+    matching: find.byWidgetPredicate(
+      (widget) =>
+          widget is Scrollable &&
+          (widget.axisDirection == AxisDirection.down ||
+              widget.axisDirection == AxisDirection.up),
+      description: 'vertical Scrollable',
+    ),
   );
   expect(scrollableFinder, findsOneWidget, reason: reason);
   final position = tester.state<ScrollableState>(scrollableFinder).position;
@@ -215,8 +226,13 @@ Future<void> _expectTouchAndMouseScroll(
 
   position.jumpTo(0);
   await tester.pump();
-  final dragStart =
-      tester.getRect(scrollTarget).centerLeft + const Offset(8, 0);
+  final targetRect = tester.getRect(scrollTarget);
+  final dragStart = mouseDragStartBelow == null
+      ? targetRect.centerLeft + const Offset(8, 0)
+      : Offset(
+          targetRect.center.dx,
+          tester.getRect(mouseDragStartBelow).bottom + 8,
+        );
   final mouseGesture = await tester.startGesture(
     dragStart,
     kind: PointerDeviceKind.mouse,

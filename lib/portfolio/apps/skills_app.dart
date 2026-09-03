@@ -551,6 +551,7 @@ class _MobileSkillChannel extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Semantics(
+      key: Key('skill-item-$skill'),
       label: '$skill, ${group.title} skill channel',
       readOnly: true,
       child: ExcludeSemantics(
