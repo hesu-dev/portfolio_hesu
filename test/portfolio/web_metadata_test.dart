@@ -213,4 +213,82 @@ void main() {
     expect(readme, contains('Vercel'));
     expect(readme, contains('현재 배포는 GitHub Pages를 유지'));
   });
+
+  group('repository output hygiene', () {
+    test('keeps generated Flutter web bundles out of the repository root', () {
+      const staleRootPaths = <String>[
+        'index.html',
+        'manifest.json',
+        'version.json',
+        'favicon.png',
+        'flutter.js',
+        'flutter_bootstrap.js',
+        'flutter_service_worker.js',
+        'main.dart.js',
+        'icons',
+        'canvaskit',
+        'assets/AssetManifest.bin',
+        'assets/AssetManifest.bin.json',
+        'assets/AssetManifest.json',
+        'assets/FontManifest.json',
+        'assets/NOTICES',
+        'assets/assets',
+        'assets/fonts',
+        'assets/packages',
+        'assets/shaders',
+      ];
+
+      for (final relativePath in staleRootPaths) {
+        final entityPath = _projectRoot().uri
+            .resolve(relativePath)
+            .toFilePath();
+        expect(
+          FileSystemEntity.typeSync(entityPath),
+          FileSystemEntityType.notFound,
+          reason: relativePath,
+        );
+      }
+    });
+
+    test('anchors every generated root bundle path in gitignore', () {
+      final ignoreRules = _projectFile('.gitignore')
+          .readAsLinesSync()
+          .map((line) => line.trim())
+          .where((line) => line.isNotEmpty && !line.startsWith('#'))
+          .toSet();
+
+      expect(
+        ignoreRules,
+        containsAll(<String>[
+          '/index.html',
+          '/manifest.json',
+          '/version.json',
+          '/favicon.png',
+          '/flutter.js',
+          '/flutter_bootstrap.js',
+          '/flutter_service_worker.js',
+          '/main.dart.js',
+          '/icons/',
+          '/canvaskit/',
+          '/assets/AssetManifest*',
+          '/assets/FontManifest.json',
+          '/assets/NOTICES',
+          '/assets/assets/',
+          '/assets/fonts/',
+          '/assets/packages/',
+          '/assets/shaders/',
+        ]),
+      );
+      expect(ignoreRules, isNot(contains('/assets/')));
+    });
+
+    test('preserves source assets, web sources, and Pages workflows', () {
+      expect(_projectFile('assets/image/pixelphoto.png').existsSync(), isTrue);
+      expect(_projectFile('web/index.html').existsSync(), isTrue);
+      expect(
+        _projectFile('.github/workflows/flutter-web.yml').existsSync(),
+        isTrue,
+      );
+    });
+  });
 }
