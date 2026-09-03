@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:portfolio_hesu/portfolio/data/portfolio_data.dart';
+import 'package:portfolio_hesu/portfolio/macos/mac_menu_bar.dart';
 import 'package:portfolio_hesu/portfolio/macos/mac_window.dart';
 import 'package:portfolio_hesu/portfolio/models/portfolio_app_id.dart';
 import 'package:portfolio_hesu/portfolio/services/external_launcher.dart';
@@ -113,7 +114,190 @@ void main() {
       expect(tester.takeException(), isNull);
     });
   });
+
+  group('macOS menu and panel chrome theme', () {
+    testWidgets('preserves the light menu bar and themes dark controls', (
+      tester,
+    ) async {
+      await _pumpMenuBar(tester, brightness: Brightness.light);
+
+      final lightSurface = _decorationAt(
+        tester,
+        const Key('mac-menu-bar-surface'),
+      );
+      final lightFinder = tester.widget<Text>(find.text('Finder'));
+      final lightWifi = tester.widget<Icon>(
+        find.descendant(
+          of: find.byKey(const Key('mac-wifi-status')),
+          matching: find.byType(Icon),
+        ),
+      );
+
+      expect(lightSurface.color, Colors.white.withValues(alpha: 0.66));
+      expect(
+        (lightSurface.border! as Border).bottom.color,
+        Colors.white.withValues(alpha: 0.48),
+      );
+      expect(lightFinder.style?.color, const Color(0xFF17171B));
+      expect(lightWifi.color, const Color(0xFF17171B));
+
+      await tester.pumpWidget(const SizedBox.shrink());
+      await _pumpMenuBar(tester, brightness: Brightness.dark);
+
+      final darkSurface = _decorationAt(
+        tester,
+        const Key('mac-menu-bar-surface'),
+      );
+      final darkFinder = tester.widget<Text>(find.text('Finder'));
+      final darkWifi = tester.widget<Icon>(
+        find.descendant(
+          of: find.byKey(const Key('mac-wifi-status')),
+          matching: find.byType(Icon),
+        ),
+      );
+      final renderedSurface = Color.alphaBlend(
+        darkSurface.color!,
+        AppleTheme.dark().scaffoldBackgroundColor,
+      );
+
+      expect(darkSurface.color, isNot(lightSurface.color));
+      expect(darkSurface.color!.computeLuminance(), lessThan(0.08));
+      expect(
+        darkFinder.style?.color,
+        AppleTheme.primaryLabel(tester.element(find.text('Finder'))),
+      );
+      expect(darkWifi.color, darkFinder.style?.color);
+      expect(
+        _contrastRatio(darkFinder.style!.color!, renderedSurface),
+        greaterThanOrEqualTo(4.5),
+      );
+      expect(tester.takeException(), isNull);
+    });
+
+    testWidgets('themes every system panel and its nested glass cards', (
+      tester,
+    ) async {
+      for (final scenario in _panelScenarios) {
+        await _pumpPanel(
+          tester,
+          brightness: Brightness.light,
+          panel: scenario.panel,
+        );
+        final lightSurface = _decorationAt(tester, scenario.surfaceKey);
+        expect(
+          lightSurface.color,
+          const Color(0xFFF4F4F7).withValues(alpha: 0.83),
+          reason: scenario.name,
+        );
+
+        Color? lightCardColor;
+        if (scenario.cardKey case final cardKey?) {
+          final lightCard = _decorationAt(tester, cardKey);
+          lightCardColor = lightCard.color;
+          expect(lightCardColor?.r, closeTo(1, 0.001), reason: scenario.name);
+          expect(lightCardColor?.g, closeTo(1, 0.001), reason: scenario.name);
+          expect(lightCardColor?.b, closeTo(1, 0.001), reason: scenario.name);
+          expect(
+            lightCardColor?.a,
+            closeTo(scenario.lightCardAlpha!, 0.001),
+            reason: scenario.name,
+          );
+        }
+
+        await tester.pumpWidget(const SizedBox.shrink());
+        await _pumpPanel(
+          tester,
+          brightness: Brightness.dark,
+          panel: scenario.panel,
+        );
+        final darkSurface = _decorationAt(tester, scenario.surfaceKey);
+        final foreground = _foregroundFor(tester, scenario.foregroundKey);
+        final renderedSurface = Color.alphaBlend(
+          darkSurface.color!,
+          AppleTheme.dark().scaffoldBackgroundColor,
+        );
+
+        expect(darkSurface.color, isNot(lightSurface.color));
+        expect(darkSurface.color!.a, greaterThanOrEqualTo(0.8));
+        expect(darkSurface.color!.computeLuminance(), lessThan(0.08));
+        expect(
+          _contrastRatio(foreground, renderedSurface),
+          greaterThanOrEqualTo(4.5),
+          reason: scenario.name,
+        );
+
+        if (scenario.cardKey case final cardKey?) {
+          final darkCard = _decorationAt(tester, cardKey);
+          final renderedCard = Color.alphaBlend(
+            darkCard.color!,
+            renderedSurface,
+          );
+          final cardForeground = tester
+              .widget<Text>(find.text(scenario.cardText!))
+              .style!
+              .color!;
+          expect(darkCard.color, isNot(lightCardColor));
+          expect(darkCard.color!.computeLuminance(), lessThan(0.08));
+          expect(
+            _contrastRatio(cardForeground, renderedCard),
+            greaterThanOrEqualTo(4.5),
+            reason: '${scenario.name} nested card',
+          );
+        }
+        expect(tester.takeException(), isNull, reason: scenario.name);
+      }
+    });
+  });
 }
+
+enum _PanelKind { systemMenu, controlCenter, notifications }
+
+class _PanelScenario {
+  const _PanelScenario({
+    required this.name,
+    required this.panel,
+    required this.surfaceKey,
+    required this.foregroundKey,
+    this.cardKey,
+    this.cardText,
+    this.lightCardAlpha,
+  });
+
+  final String name;
+  final _PanelKind panel;
+  final Key surfaceKey;
+  final Key foregroundKey;
+  final Key? cardKey;
+  final String? cardText;
+  final double? lightCardAlpha;
+}
+
+const _panelScenarios = <_PanelScenario>[
+  _PanelScenario(
+    name: 'system menu',
+    panel: _PanelKind.systemMenu,
+    surfaceKey: Key('mac-system-menu-panel-surface'),
+    foregroundKey: Key('system-menu-about'),
+  ),
+  _PanelScenario(
+    name: 'control center',
+    panel: _PanelKind.controlCenter,
+    surfaceKey: Key('mac-control-center-panel-surface'),
+    foregroundKey: Key('mac-control-center-title'),
+    cardKey: Key('mac-control-center-wifi'),
+    cardText: 'Network controls',
+    lightCardAlpha: 0.58,
+  ),
+  _PanelScenario(
+    name: 'notifications',
+    panel: _PanelKind.notifications,
+    surfaceKey: Key('mac-notifications-panel-surface'),
+    foregroundKey: Key('mac-notifications-date'),
+    cardKey: Key('mac-notifications-empty-card'),
+    cardText: 'No new notifications',
+    lightCardAlpha: 0.5,
+  ),
+];
 
 Future<void> _pumpWindow(
   WidgetTester tester, {
@@ -155,7 +339,60 @@ Future<void> _pumpWindow(
       ),
     ),
   );
-  await tester.pump();
+  await tester.pumpAndSettle();
+}
+
+Future<void> _pumpMenuBar(
+  WidgetTester tester, {
+  required Brightness brightness,
+}) async {
+  await tester.pumpWidget(
+    MaterialApp(
+      theme: AppleTheme.light(),
+      darkTheme: AppleTheme.dark(),
+      themeMode: brightness == Brightness.dark
+          ? ThemeMode.dark
+          : ThemeMode.light,
+      home: Align(
+        alignment: Alignment.topCenter,
+        child: MacMenuBar(
+          activeApp: null,
+          openPanel: MacSystemPanel.none,
+          onSystemMenuPressed: () {},
+          onControlCenterPressed: () {},
+          onClockPressed: () {},
+        ),
+      ),
+    ),
+  );
+  await tester.pumpAndSettle();
+}
+
+Future<void> _pumpPanel(
+  WidgetTester tester, {
+  required Brightness brightness,
+  required _PanelKind panel,
+}) async {
+  final child = switch (panel) {
+    _PanelKind.systemMenu => MacSystemMenuPanel(
+      identityName: 'Test Developer',
+      onOpenAbout: () {},
+      onOpenThisMac: () {},
+    ),
+    _PanelKind.controlCenter => const MacControlCenterPanel(),
+    _PanelKind.notifications => const MacNotificationsPanel(),
+  };
+  await tester.pumpWidget(
+    MaterialApp(
+      theme: AppleTheme.light(),
+      darkTheme: AppleTheme.dark(),
+      themeMode: brightness == Brightness.dark
+          ? ThemeMode.dark
+          : ThemeMode.light,
+      home: Center(child: child),
+    ),
+  );
+  await tester.pumpAndSettle();
 }
 
 BoxDecoration _decorationAt(WidgetTester tester, Key key) {
@@ -176,6 +413,17 @@ Finder get _windowTitleFinder => find.descendant(
 
 Text _windowTitle(WidgetTester tester) =>
     tester.widget<Text>(_windowTitleFinder);
+
+Color _foregroundFor(WidgetTester tester, Key key) {
+  final target = find.byKey(key);
+  expect(target, findsOneWidget);
+  final widget = tester.widget(target);
+  return switch (widget) {
+    Text() => widget.style!.color!,
+    TextButton() => widget.style!.foregroundColor!.resolve(<WidgetState>{})!,
+    _ => throw TestFailure('Expected a text foreground at $key.'),
+  };
+}
 
 double _contrastRatio(Color first, Color second) {
   final firstLuminance = first.computeLuminance();

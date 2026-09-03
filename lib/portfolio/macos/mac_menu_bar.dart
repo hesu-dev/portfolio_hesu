@@ -5,10 +5,19 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 
 import '../models/portfolio_app_id.dart';
+import '../theme/apple_theme.dart';
 import '../widgets/apple_app_icon.dart';
 import 'mac_window_state.dart';
 
 enum MacSystemPanel { none, systemMenu, controlCenter, notifications }
+
+Color _menuForeground(BuildContext context) => AppleTheme.isDark(context)
+    ? AppleTheme.primaryLabel(context)
+    : const Color(0xFF17171B);
+
+Color _menuSelection(BuildContext context) => AppleTheme.isDark(context)
+    ? Colors.white.withValues(alpha: 0.14)
+    : Colors.black.withValues(alpha: 0.09);
 
 class MacMenuBar extends StatefulWidget {
   const MacMenuBar({
@@ -54,6 +63,7 @@ class _MacMenuBarState extends State<MacMenuBar> {
 
   @override
   Widget build(BuildContext context) {
+    final dark = AppleTheme.isDark(context);
     final activeName = widget.activeApp == null
         ? 'Finder'
         : AppleAppIcon.labelFor(widget.activeApp!);
@@ -64,11 +74,14 @@ class _MacMenuBarState extends State<MacMenuBar> {
       child: BackdropFilter(
         filter: ImageFilter.blur(sigmaX: 24, sigmaY: 24),
         child: DecoratedBox(
+          key: const Key('mac-menu-bar-surface'),
           decoration: BoxDecoration(
-            color: Colors.white.withValues(alpha: 0.66),
+            color: dark
+                ? const Color(0xFF17171B).withValues(alpha: 0.74)
+                : Colors.white.withValues(alpha: 0.66),
             border: Border(
               bottom: BorderSide(
-                color: Colors.white.withValues(alpha: 0.48),
+                color: Colors.white.withValues(alpha: dark ? 0.14 : 0.48),
                 width: 0.6,
               ),
             ),
@@ -94,6 +107,7 @@ class _MacMenuBarState extends State<MacMenuBar> {
                           key: const Key('mac-menu-left-region'),
                           width: sideWidth,
                           child: _buildLeftRegion(
+                            context,
                             activeName,
                             visibleMenuLabels: visibleMenuLabels,
                             largeText: textScale > 1.25,
@@ -103,7 +117,10 @@ class _MacMenuBarState extends State<MacMenuBar> {
                         SizedBox(
                           key: const Key('mac-menu-right-region'),
                           width: sideWidth,
-                          child: _buildRightRegion(compactClock: compactClock),
+                          child: _buildRightRegion(
+                            context,
+                            compactClock: compactClock,
+                          ),
                         ),
                       ],
                     ),
@@ -122,6 +139,7 @@ class _MacMenuBarState extends State<MacMenuBar> {
   }
 
   Widget _buildLeftRegion(
+    BuildContext context,
     String activeName, {
     required int visibleMenuLabels,
     required bool largeText,
@@ -142,8 +160,8 @@ class _MacMenuBarState extends State<MacMenuBar> {
               activeName,
               maxLines: 1,
               overflow: TextOverflow.ellipsis,
-              style: const TextStyle(
-                color: Color(0xFF17171B),
+              style: TextStyle(
+                color: _menuForeground(context),
                 fontSize: 13,
                 fontWeight: FontWeight.w700,
                 letterSpacing: -0.15,
@@ -158,8 +176,8 @@ class _MacMenuBarState extends State<MacMenuBar> {
     );
   }
 
-  Widget _buildRightRegion({required bool compactClock}) {
-    const foreground = Color(0xFF17171B);
+  Widget _buildRightRegion(BuildContext context, {required bool compactClock}) {
+    final foreground = _menuForeground(context);
     return Row(
       mainAxisAlignment: MainAxisAlignment.end,
       children: <Widget>[
@@ -167,9 +185,9 @@ class _MacMenuBarState extends State<MacMenuBar> {
           message: 'Wi-Fi status',
           child: Semantics(
             label: 'Wi-Fi status',
-            child: const Padding(
-              key: Key('mac-wifi-status'),
-              padding: EdgeInsets.symmetric(horizontal: 7),
+            child: Padding(
+              key: const Key('mac-wifi-status'),
+              padding: const EdgeInsets.symmetric(horizontal: 7),
               child: Icon(Icons.wifi_rounded, size: 16, color: foreground),
             ),
           ),
@@ -178,9 +196,9 @@ class _MacMenuBarState extends State<MacMenuBar> {
           message: 'Battery status',
           child: Semantics(
             label: 'Battery status',
-            child: const Padding(
-              key: Key('mac-battery-status'),
-              padding: EdgeInsets.symmetric(horizontal: 7),
+            child: Padding(
+              key: const Key('mac-battery-status'),
+              padding: const EdgeInsets.symmetric(horizontal: 7),
               child: Icon(
                 Icons.battery_5_bar_rounded,
                 size: 18,
@@ -301,7 +319,7 @@ class _SystemMenuButtonState extends State<_SystemMenuButton> {
                   height: 26,
                   decoration: BoxDecoration(
                     color: widget.selected
-                        ? Colors.black.withValues(alpha: 0.09)
+                        ? _menuSelection(context)
                         : Colors.transparent,
                     borderRadius: BorderRadius.circular(7),
                     border: _showFocus
@@ -309,10 +327,12 @@ class _SystemMenuButtonState extends State<_SystemMenuButton> {
                         : null,
                   ),
                   alignment: Alignment.center,
-                  child: const CustomPaint(
-                    key: Key('mac-system-icon'),
-                    size: Size(16, 16),
-                    painter: _SystemMarkPainter(),
+                  child: CustomPaint(
+                    key: const Key('mac-system-icon'),
+                    size: const Size(16, 16),
+                    painter: _SystemMarkPainter(
+                      color: _menuForeground(context),
+                    ),
                   ),
                 ),
               ),
@@ -325,11 +345,13 @@ class _SystemMenuButtonState extends State<_SystemMenuButton> {
 }
 
 class _SystemMarkPainter extends CustomPainter {
-  const _SystemMarkPainter();
+  const _SystemMarkPainter({required this.color});
+
+  final Color color;
 
   @override
   void paint(Canvas canvas, Size size) {
-    final paint = Paint()..color = const Color(0xFF17171B);
+    final paint = Paint()..color = color;
     final center = size.center(Offset.zero);
     canvas
       ..drawRRect(
@@ -362,7 +384,8 @@ class _SystemMarkPainter extends CustomPainter {
   }
 
   @override
-  bool shouldRepaint(covariant _SystemMarkPainter oldDelegate) => false;
+  bool shouldRepaint(covariant _SystemMarkPainter oldDelegate) =>
+      color != oldDelegate.color;
 }
 
 class _MenuLabel extends StatelessWidget {
@@ -376,8 +399,10 @@ class _MenuLabel extends StatelessWidget {
       padding: const EdgeInsets.symmetric(horizontal: 8),
       child: Text(
         label,
-        style: const TextStyle(
-          color: Color(0xFF202024),
+        style: TextStyle(
+          color: AppleTheme.isDark(context)
+              ? AppleTheme.primaryLabel(context)
+              : const Color(0xFF202024),
           fontSize: 12.5,
           fontWeight: FontWeight.w500,
         ),
@@ -412,11 +437,11 @@ class _MenuIconButton extends StatelessWidget {
       padding: EdgeInsets.zero,
       style: IconButton.styleFrom(
         backgroundColor: selected
-            ? Colors.black.withValues(alpha: 0.09)
+            ? _menuSelection(context)
             : Colors.transparent,
         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(7)),
       ),
-      icon: Icon(icon, size: 17, color: const Color(0xFF17171B)),
+      icon: Icon(icon, size: 17, color: _menuForeground(context)),
     );
   }
 }
@@ -440,9 +465,9 @@ class _ClockButton extends StatelessWidget {
       key: const Key('mac-clock-button'),
       onPressed: onPressed,
       style: TextButton.styleFrom(
-        foregroundColor: const Color(0xFF17171B),
+        foregroundColor: _menuForeground(context),
         backgroundColor: selected
-            ? Colors.black.withValues(alpha: 0.09)
+            ? _menuSelection(context)
             : Colors.transparent,
         minimumSize: Size(compact ? 74 : 118, 28),
         maximumSize: Size(compact ? 88 : 132, 28),
@@ -466,6 +491,7 @@ class MacControlCenterPanel extends StatelessWidget {
   Widget build(BuildContext context) {
     return _MacSystemPanelSurface(
       panelKey: const Key('mac-control-center-panel'),
+      surfaceKey: const Key('mac-control-center-panel-surface'),
       width: 316,
       child: Column(
         mainAxisSize: MainAxisSize.min,
@@ -473,15 +499,18 @@ class MacControlCenterPanel extends StatelessWidget {
         children: <Widget>[
           Text(
             'Control Center',
-            style: Theme.of(
-              context,
-            ).textTheme.titleMedium?.copyWith(fontWeight: FontWeight.w700),
+            key: const Key('mac-control-center-title'),
+            style: Theme.of(context).textTheme.titleMedium?.copyWith(
+              color: AppleTheme.primaryLabel(context),
+              fontWeight: FontWeight.w700,
+            ),
           ),
           const SizedBox(height: 14),
           const Row(
             children: <Widget>[
               Expanded(
                 child: _ControlTile(
+                  tileKey: Key('mac-control-center-wifi'),
                   icon: Icons.wifi_rounded,
                   title: 'Wi-Fi',
                   subtitle: 'Network controls',
@@ -491,6 +520,7 @@ class MacControlCenterPanel extends StatelessWidget {
               SizedBox(width: 10),
               Expanded(
                 child: _ControlTile(
+                  tileKey: Key('mac-control-center-bluetooth'),
                   icon: Icons.bluetooth_rounded,
                   title: 'Bluetooth',
                   subtitle: 'Device controls',
@@ -501,6 +531,7 @@ class MacControlCenterPanel extends StatelessWidget {
           ),
           const SizedBox(height: 10),
           const _ControlTile(
+            tileKey: Key('mac-control-center-display'),
             icon: Icons.dark_mode_rounded,
             title: 'Display',
             subtitle: 'Appearance follows your system',
@@ -528,6 +559,7 @@ class MacSystemMenuPanel extends StatelessWidget {
   Widget build(BuildContext context) {
     return _MacSystemPanelSurface(
       panelKey: const Key('mac-system-menu-panel'),
+      surfaceKey: const Key('mac-system-menu-panel-surface'),
       width: 252,
       child: Column(
         mainAxisSize: MainAxisSize.min,
@@ -551,7 +583,12 @@ class MacSystemMenuPanel extends StatelessWidget {
             padding: const EdgeInsets.symmetric(horizontal: 10),
             child: Text(
               '$identityName · Flutter portfolio',
-              style: const TextStyle(fontSize: 10.5, color: Color(0xFF77777D)),
+              style: TextStyle(
+                fontSize: 10.5,
+                color: AppleTheme.isDark(context)
+                    ? AppleTheme.secondaryLabel(context)
+                    : const Color(0xFF77777D),
+              ),
             ),
           ),
         ],
@@ -579,7 +616,9 @@ class _SystemMenuItem extends StatelessWidget {
       key: actionKey,
       onPressed: onPressed,
       style: TextButton.styleFrom(
-        foregroundColor: const Color(0xFF252529),
+        foregroundColor: AppleTheme.isDark(context)
+            ? AppleTheme.primaryLabel(context)
+            : const Color(0xFF252529),
         minimumSize: const Size.fromHeight(36),
         padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 8),
         alignment: Alignment.centerLeft,
@@ -612,6 +651,7 @@ class _MacNotificationsPanelState extends State<MacNotificationsPanel> {
   Widget build(BuildContext context) {
     return _MacSystemPanelSurface(
       panelKey: const Key('mac-notifications-panel'),
+      surfaceKey: const Key('mac-notifications-panel-surface'),
       width: 332,
       child: Column(
         mainAxisSize: MainAxisSize.min,
@@ -619,8 +659,11 @@ class _MacNotificationsPanelState extends State<MacNotificationsPanel> {
         children: <Widget>[
           Text(
             _longDate(_openedAt),
+            key: const Key('mac-notifications-date'),
             style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-              color: const Color(0xFF65656B),
+              color: AppleTheme.isDark(context)
+                  ? AppleTheme.secondaryLabel(context)
+                  : const Color(0xFF65656B),
               fontWeight: FontWeight.w600,
             ),
           ),
@@ -628,6 +671,7 @@ class _MacNotificationsPanelState extends State<MacNotificationsPanel> {
           Text(
             _largeTime(_openedAt),
             style: Theme.of(context).textTheme.headlineMedium?.copyWith(
+              color: AppleTheme.primaryLabel(context),
               fontSize: 34,
               fontWeight: FontWeight.w700,
               letterSpacing: -1,
@@ -635,23 +679,33 @@ class _MacNotificationsPanelState extends State<MacNotificationsPanel> {
           ),
           const SizedBox(height: 18),
           Container(
+            key: const Key('mac-notifications-empty-card'),
             padding: const EdgeInsets.all(16),
             decoration: BoxDecoration(
-              color: Colors.white.withValues(alpha: 0.5),
+              color: AppleTheme.isDark(context)
+                  ? const Color(0xFF292A2F).withValues(alpha: 0.82)
+                  : Colors.white.withValues(alpha: 0.5),
               borderRadius: BorderRadius.circular(18),
-              border: Border.all(color: Colors.white.withValues(alpha: 0.58)),
+              border: Border.all(
+                color: Colors.white.withValues(
+                  alpha: AppleTheme.isDark(context) ? 0.12 : 0.58,
+                ),
+              ),
             ),
-            child: const Row(
+            child: Row(
               children: <Widget>[
                 Icon(
                   Icons.notifications_none_rounded,
-                  color: Color(0xFF68686D),
+                  color: AppleTheme.isDark(context)
+                      ? AppleTheme.secondaryLabel(context)
+                      : const Color(0xFF68686D),
                 ),
-                SizedBox(width: 11),
+                const SizedBox(width: 11),
                 Expanded(
                   child: Text(
                     'No new notifications',
                     style: TextStyle(
+                      color: AppleTheme.primaryLabel(context),
                       fontSize: 13.5,
                       fontWeight: FontWeight.w600,
                     ),
@@ -669,11 +723,13 @@ class _MacNotificationsPanelState extends State<MacNotificationsPanel> {
 class _MacSystemPanelSurface extends StatelessWidget {
   const _MacSystemPanelSurface({
     required this.panelKey,
+    required this.surfaceKey,
     required this.width,
     required this.child,
   });
 
   final Key panelKey;
+  final Key surfaceKey;
   final double width;
   final Widget child;
 
@@ -685,15 +741,24 @@ class _MacSystemPanelSurface extends StatelessWidget {
       child: BackdropFilter(
         filter: ImageFilter.blur(sigmaX: 34, sigmaY: 34),
         child: Container(
+          key: surfaceKey,
           width: width,
           padding: const EdgeInsets.all(17),
           decoration: BoxDecoration(
-            color: const Color(0xFFF4F4F7).withValues(alpha: 0.83),
+            color: AppleTheme.isDark(context)
+                ? const Color(0xFF1C1D21).withValues(alpha: 0.88)
+                : const Color(0xFFF4F4F7).withValues(alpha: 0.83),
             borderRadius: BorderRadius.circular(22),
-            border: Border.all(color: Colors.white.withValues(alpha: 0.72)),
+            border: Border.all(
+              color: Colors.white.withValues(
+                alpha: AppleTheme.isDark(context) ? 0.18 : 0.72,
+              ),
+            ),
             boxShadow: <BoxShadow>[
               BoxShadow(
-                color: Colors.black.withValues(alpha: 0.2),
+                color: Colors.black.withValues(
+                  alpha: AppleTheme.isDark(context) ? 0.42 : 0.2,
+                ),
                 blurRadius: 38,
                 offset: const Offset(0, 16),
               ),
@@ -708,12 +773,14 @@ class _MacSystemPanelSurface extends StatelessWidget {
 
 class _ControlTile extends StatelessWidget {
   const _ControlTile({
+    required this.tileKey,
     required this.icon,
     required this.title,
     required this.subtitle,
     required this.color,
   });
 
+  final Key tileKey;
   final IconData icon;
   final String title;
   final String subtitle;
@@ -722,11 +789,18 @@ class _ControlTile extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Container(
+      key: tileKey,
       padding: const EdgeInsets.all(12),
       decoration: BoxDecoration(
-        color: Colors.white.withValues(alpha: 0.58),
+        color: AppleTheme.isDark(context)
+            ? const Color(0xFF2A2B30).withValues(alpha: 0.82)
+            : Colors.white.withValues(alpha: 0.58),
         borderRadius: BorderRadius.circular(17),
-        border: Border.all(color: Colors.white.withValues(alpha: 0.62)),
+        border: Border.all(
+          color: Colors.white.withValues(
+            alpha: AppleTheme.isDark(context) ? 0.12 : 0.62,
+          ),
+        ),
       ),
       child: Row(
         children: <Widget>[
@@ -745,7 +819,8 @@ class _ControlTile extends StatelessWidget {
                   title,
                   maxLines: 1,
                   overflow: TextOverflow.ellipsis,
-                  style: const TextStyle(
+                  style: TextStyle(
+                    color: AppleTheme.primaryLabel(context),
                     fontSize: 13,
                     fontWeight: FontWeight.w700,
                   ),
@@ -754,9 +829,11 @@ class _ControlTile extends StatelessWidget {
                   subtitle,
                   maxLines: 2,
                   overflow: TextOverflow.ellipsis,
-                  style: const TextStyle(
+                  style: TextStyle(
                     fontSize: 10.5,
-                    color: Color(0xFF6E6E73),
+                    color: AppleTheme.isDark(context)
+                        ? AppleTheme.secondaryLabel(context)
+                        : const Color(0xFF6E6E73),
                   ),
                 ),
               ],
