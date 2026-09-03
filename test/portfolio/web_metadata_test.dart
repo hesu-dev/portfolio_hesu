@@ -436,6 +436,10 @@ void main() {
     expect(readme, contains('Apple과 제휴하거나 보증받지 않았습니다'));
     expect(readme, contains('Slack과 제휴하거나 보증받지 않았습니다'));
     expect(readme, contains('원본 자산을 포함하지 않습니다'));
+    expect(readme, contains('저장소 설정과 토큰 권한'));
+    expect(readme, contains('contents: write'));
+    expect(readme, contains('Vercel로 이전할 때는'));
+    expect(readme, contains('비활성화하거나 삭제'));
   });
 
   test('uses one reproducible and serialized GitHub Pages workflow', () {
@@ -446,8 +450,7 @@ void main() {
     expect(workflow, contains('push:'));
     expect(workflow, contains('- main'));
     expect(workflow, contains('workflow_dispatch:'));
-    expect(workflow, contains('permissions:'));
-    expect(workflow, contains('contents: write'));
+    expect(workflow, isNot(contains('contents: write')));
     expect(workflow, contains('concurrency:'));
     expect(workflow, contains('cancel-in-progress: true'));
     expect(workflow, contains('flutter-version: 3.38.9'));
