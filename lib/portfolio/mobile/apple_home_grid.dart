@@ -127,7 +127,7 @@ class _MobileNotesProfileButton extends StatelessWidget {
           : AppleNotesSurfaceSize.compact,
       darkPaper: dark,
       showSeparator: !shortTablet,
-      headerTitle: null,
+      headerTitle: data.name,
       semanticLabel: '${data.name} 소개 열기',
       excludeSemantics: true,
       onTap: onPressed,
@@ -148,7 +148,7 @@ class _MobileNotesProfileButton extends StatelessWidget {
                 ),
                 const SizedBox(height: 3),
                 Text(
-                  data.identity.headline,
+                  '자세히 보러가기',
                   maxLines: 1,
                   overflow: TextOverflow.ellipsis,
                   style: profileLineStyle.copyWith(color: secondaryForeground),

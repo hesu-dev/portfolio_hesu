@@ -42,11 +42,37 @@ void main() {
           findsNothing,
         );
         expect(find.byKey(const Key('ipad-profile-date')), findsNothing);
+        final header = find.descendant(
+          of: profile,
+          matching: find.byKey(const Key('mobile-notes-profile-header')),
+        );
+        final body = find.descendant(
+          of: profile,
+          matching: find.byKey(const Key('mobile-notes-profile-body')),
+        );
         expect(
           find.descendant(
-            of: profile,
+            of: header,
+            matching: find.byIcon(Icons.folder_outlined),
+          ),
+          findsOneWidget,
+        );
+        expect(
+          find.descendant(
+            of: header,
             matching: find.text(portfolioData.identity.name),
           ),
+          findsOneWidget,
+        );
+        expect(
+          find.descendant(
+            of: body,
+            matching: find.text(portfolioData.identity.name),
+          ),
+          findsOneWidget,
+        );
+        expect(
+          find.descendant(of: body, matching: find.text('자세히 보러가기')),
           findsOneWidget,
         );
         expect(
@@ -54,22 +80,29 @@ void main() {
             of: profile,
             matching: find.text(portfolioData.identity.headline),
           ),
-          findsOneWidget,
+          findsNothing,
         );
         final semanticsData = tester.getSemantics(profile).getSemanticsData();
         expect(semanticsData.label, isNot(contains('메모')));
-        expect(semanticsData.label, contains(portfolioData.identity.name));
+        expect(semanticsData.label, '${portfolioData.identity.name} 소개 열기');
         expect(semanticsData.flagsCollection.isButton, isTrue);
         expect(semanticsData.hasAction(ui.SemanticsAction.tap), isTrue);
 
         await tester.tap(profile);
         await tester.pumpAndSettle();
         expect(find.byKey(const Key('about-app')), findsOneWidget);
+        expect(
+          find.descendant(
+            of: find.byKey(const Key('about-app')),
+            matching: find.text(portfolioData.identity.headline),
+          ),
+          findsOneWidget,
+        );
         semantics.dispose();
       });
 
       testWidgets(
-        '${scenario.$2 ? 'iPad' : 'iPhone'} 메모의 이름과 소개는 같은 스타일의 두 줄이다',
+        '${scenario.$2 ? 'iPad' : 'iPhone'} 메모의 이름과 안내는 같은 스타일의 두 줄이다',
         (tester) async {
           await _pumpMobileHome(tester, size: scenario.$1, tablet: scenario.$2);
 
@@ -82,7 +115,7 @@ void main() {
       (const Size(844, 390), false, 'iphone-notes-profile', 'iPhone 가로'),
       (const Size(600, 400), true, 'ipad-profile-widget', '짧은 iPad 가로'),
     ]) {
-      testWidgets('${scenario.$4}에서도 이름과 소개 두 줄을 유지한다', (tester) async {
+      testWidgets('${scenario.$4}에서도 이름과 안내 두 줄을 유지한다', (tester) async {
         await _pumpMobileHome(
           tester,
           size: scenario.$1,
@@ -206,18 +239,15 @@ void _expectProfileTwoLines(WidgetTester tester, {required String profileKey}) {
   final name = tester.widget<Text>(
     find.descendant(of: body, matching: find.text(portfolioData.identity.name)),
   );
-  final headline = tester.widget<Text>(
-    find.descendant(
-      of: body,
-      matching: find.text(portfolioData.identity.headline),
-    ),
+  final guidance = tester.widget<Text>(
+    find.descendant(of: body, matching: find.text('자세히 보러가기')),
   );
 
   expect(name.maxLines, 1);
-  expect(headline.maxLines, 1);
-  expect(name.style?.fontSize, headline.style?.fontSize);
-  expect(name.style?.fontWeight, headline.style?.fontWeight);
-  expect(name.style?.height, headline.style?.height);
+  expect(guidance.maxLines, 1);
+  expect(name.style?.fontSize, guidance.style?.fontSize);
+  expect(name.style?.fontWeight, guidance.style?.fontWeight);
+  expect(name.style?.height, guidance.style?.height);
   expect(name.style?.fontSize, inInclusiveRange(16, 18));
 }
 

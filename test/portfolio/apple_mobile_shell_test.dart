@@ -311,7 +311,22 @@ void main() {
 
       expect(find.byKey(const Key('ipad-shell')), findsOneWidget);
       expect(find.byKey(const Key('ipad-profile-widget')), findsOneWidget);
-      expect(find.text('테스트 사용자'), findsOneWidget);
+      expect(
+        find.descendant(
+          of: find.byKey(const Key('mobile-notes-profile-header')),
+          matching: find.text('테스트 사용자'),
+        ),
+        findsOneWidget,
+      );
+      expect(
+        find.descendant(
+          of: find.byKey(const Key('mobile-notes-profile-body')),
+          matching: find.text('테스트 사용자'),
+        ),
+        findsOneWidget,
+      );
+      expect(find.text('자세히 보러가기'), findsOneWidget);
+      expect(find.text('Injected headline'), findsNothing);
       expect(find.text(portfolioData.name), findsNothing);
       _expectAllHomeApps();
       expect(_distinctHomeColumns(tester), 6);
@@ -345,7 +360,12 @@ void main() {
       final gradient = decoration.gradient! as LinearGradient;
       expect(gradient.colors.first.computeLuminance(), lessThan(0.2));
 
-      final name = tester.widget<Text>(find.text('어두운 사용자'));
+      final name = tester.widget<Text>(
+        find.descendant(
+          of: find.byKey(const Key('mobile-notes-profile-body')),
+          matching: find.text('어두운 사용자'),
+        ),
+      );
       expect(name.style?.color?.computeLuminance(), greaterThan(0.7));
       expect(find.byKey(const Key('ipad-profile-date')), findsNothing);
       expect(tester.takeException(), isNull);
