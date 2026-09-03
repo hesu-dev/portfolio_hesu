@@ -353,6 +353,7 @@ class AppleFinderFolderTile extends StatelessWidget {
       onPressed: onPressed,
       borderRadius: BorderRadius.circular(14),
       child: AnimatedContainer(
+        key: const Key('apple-finder-folder-container'),
         duration: const Duration(milliseconds: 160),
         height: tileHeight,
         padding: EdgeInsets.symmetric(
@@ -390,6 +391,7 @@ class AppleFinderFolderTile extends StatelessWidget {
                     ),
                     child: Text(
                       label,
+                      key: const Key('apple-finder-folder-label'),
                       maxLines: 2,
                       overflow: TextOverflow.ellipsis,
                       textAlign: TextAlign.center,
