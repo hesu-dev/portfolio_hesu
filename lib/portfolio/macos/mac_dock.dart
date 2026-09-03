@@ -15,15 +15,12 @@ class MacDock extends StatelessWidget {
     super.key,
   });
 
-  static const List<PortfolioAppId> pinnedApps = <PortfolioAppId>[
+  static const List<PortfolioAppId> launchableApps = <PortfolioAppId>[
     PortfolioAppId.about,
     PortfolioAppId.skills,
     PortfolioAppId.projects,
     PortfolioAppId.terminal,
     PortfolioAppId.mail,
-  ];
-
-  static const List<PortfolioAppId> dynamicApps = <PortfolioAppId>[
     PortfolioAppId.settings,
     PortfolioAppId.thisMac,
     PortfolioAppId.github,
@@ -39,7 +36,7 @@ class MacDock extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final dynamicRunningApps = dynamicApps
+    final runningLaunchableApps = launchableApps
         .where(runningApps.contains)
         .toList(growable: false);
     final theme = Theme.of(context);
@@ -49,7 +46,7 @@ class MacDock extends StatelessWidget {
         key: const Key('mac-dock'),
         height: 82,
         decoration: BoxDecoration(
-          color: theme.colorScheme.surface.withValues(alpha: 0.78),
+          color: theme.colorScheme.surface.withValues(alpha: 0.48),
           borderRadius: BorderRadius.circular(24),
           boxShadow: <BoxShadow>[
             BoxShadow(
@@ -71,18 +68,12 @@ class MacDock extends StatelessWidget {
                 mainAxisSize: MainAxisSize.min,
                 crossAxisAlignment: CrossAxisAlignment.end,
                 children: <Widget>[
-                  for (final appId in pinnedApps) _buildDockItem(appId),
-                  if (dynamicRunningApps.isNotEmpty) ...<Widget>[
+                  for (final appId in runningLaunchableApps)
+                    _buildDockItem(appId),
+                  if (runningLaunchableApps.isNotEmpty)
                     const _DockSeparator(
-                      key: Key('mac-dock-dynamic-separator'),
+                      key: Key('mac-dock-utility-separator'),
                     ),
-                    for (final appId in dynamicRunningApps)
-                      KeyedSubtree(
-                        key: Key('mac-dock-dynamic-${appId.name}'),
-                        child: _buildDockItem(appId),
-                      ),
-                  ],
-                  const _DockSeparator(key: Key('mac-dock-utility-separator')),
                   for (final appId in utilityApps) _buildDockItem(appId),
                 ],
               ),
@@ -151,6 +142,7 @@ class _MacDockItemState extends State<_MacDockItem> {
     final label = AppleAppIcon.labelFor(appId);
     final lifted = _hovering || _showFocus;
     final colorScheme = Theme.of(context).colorScheme;
+    final transparentArtwork = AppleAppArtwork.usesTransparentFrame(appId);
 
     return Semantics(
       key: Key('dock-app-${appId.name}'),
@@ -207,6 +199,7 @@ class _MacDockItemState extends State<_MacDockItem> {
                           curve: Curves.easeOutCubic,
                           scale: lifted ? 1.13 : 1,
                           child: Container(
+                            key: Key('dock-app-artwork-frame-${appId.name}'),
                             width: 49,
                             height: 49,
                             decoration: BoxDecoration(
@@ -218,11 +211,12 @@ class _MacDockItemState extends State<_MacDockItem> {
                                     blurRadius: 0,
                                     spreadRadius: 2.5,
                                   ),
-                                BoxShadow(
-                                  color: Colors.black.withValues(alpha: 0.2),
-                                  blurRadius: 11,
-                                  offset: const Offset(0, 6),
-                                ),
+                                if (!transparentArtwork)
+                                  BoxShadow(
+                                    color: Colors.black.withValues(alpha: 0.2),
+                                    blurRadius: 11,
+                                    offset: const Offset(0, 6),
+                                  ),
                               ],
                             ),
                             child: AppleAppArtwork(appId: appId, size: 49),
