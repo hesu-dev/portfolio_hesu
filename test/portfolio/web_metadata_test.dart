@@ -452,6 +452,8 @@ void main() {
     expect(workflow, contains('workflow_dispatch:'));
     expect(workflow, isNot(contains('contents: write')));
     expect(workflow, contains('concurrency:'));
+    expect(workflow, contains('group: portfolio-hesu-pages'));
+    expect(workflow, isNot(contains(r'group: pages-${{ github.ref }}')));
     expect(workflow, contains('cancel-in-progress: true'));
     expect(workflow, contains('flutter-version: 3.38.9'));
     expect(
