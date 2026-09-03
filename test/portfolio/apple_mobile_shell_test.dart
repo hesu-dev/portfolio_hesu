@@ -35,11 +35,26 @@ void main() {
         );
       }
     });
+
+    testWidgets('wide mobile devices stay on the iPad shell without a Dock', (
+      tester,
+    ) async {
+      await _pumpShell(
+        tester,
+        size: const Size(1366, 1024),
+        mobilePlatformOverride: true,
+      );
+
+      expect(find.byKey(const Key('ipad-shell')), findsOneWidget);
+      expect(find.byKey(const Key('mac-shell')), findsNothing);
+      expect(find.byKey(const Key('mobile-dock')), findsNothing);
+      expect(find.byKey(const Key('mac-dock')), findsNothing);
+    });
   });
 
   group('iPhone home and navigation', () {
     testWidgets(
-      'uses a four-column app grid, translucent dock, and home chrome',
+      'uses a four-column app grid and home chrome without an app Dock',
       (tester) async {
         await _pumpShell(tester, size: const Size(390, 844));
 
@@ -47,11 +62,8 @@ void main() {
         expect(find.byKey(const Key('apple-status-bar')), findsOneWidget);
         expect(find.byKey(const Key('mobile-home-grid')), findsOneWidget);
         expect(find.byKey(const Key('mobile-home-indicator')), findsOneWidget);
-        expect(find.byKey(const Key('mobile-dock')), findsOneWidget);
+        expect(find.byKey(const Key('mobile-dock')), findsNothing);
         _expectAllHomeApps();
-        for (final id in _phoneDockApps) {
-          expect(find.byKey(Key('mobile-dock-${id.name}')), findsOneWidget);
-        }
 
         expect(_distinctHomeColumns(tester), 4);
         expect(tester.takeException(), isNull);
@@ -71,7 +83,7 @@ void main() {
       expect(find.byKey(const Key('about-app')), findsOneWidget);
       expect(find.bySemanticsLabel('Close About window'), findsOneWidget);
 
-      await tester.tap(find.byKey(const Key('window-close-about')));
+      await tester.tap(find.byKey(const Key('mobile-back-close-about')));
       await tester.pumpAndSettle();
 
       expect(find.byKey(const Key('mobile-home')), findsOneWidget);
@@ -103,19 +115,12 @@ void main() {
       expect(find.byKey(const Key('about-app')), findsOneWidget);
     });
 
-    testWidgets('Dock icon supports focus traversal and keyboard activation', (
-      tester,
-    ) async {
+    testWidgets('does not add duplicate Dock focus targets', (tester) async {
       await _pumpShell(tester, size: const Size(390, 844));
 
-      for (var index = 0; index < _allApps.length; index++) {
-        await tester.sendKeyEvent(LogicalKeyboardKey.tab);
-        await tester.pump();
-      }
-      await tester.sendKeyEvent(LogicalKeyboardKey.enter);
-      await tester.pumpAndSettle();
-
-      expect(find.byKey(const Key('about-app')), findsOneWidget);
+      expect(find.byKey(const Key('mobile-dock')), findsNothing);
+      expect(find.byKey(const Key('mobile-dock-about')), findsNothing);
+      expect(find.bySemanticsLabel('Open About'), findsOneWidget);
     });
 
     testWidgets('opens GitHub externally only after its explicit action', (
@@ -180,7 +185,9 @@ void main() {
       await tester.pumpAndSettle();
       expect(tester.takeException(), isNull);
 
-      await tester.tap(find.byKey(const Key('mobile-dock-about')));
+      final about = find.byKey(const Key('home-app-about'));
+      await tester.ensureVisible(about);
+      await tester.tap(about);
       await tester.pumpAndSettle();
       expect(find.byKey(const Key('about-scroll')), findsOneWidget);
       expect(tester.takeException(), isNull);
@@ -190,7 +197,7 @@ void main() {
       tester,
     ) async {
       for (final scenario in <(PortfolioAppId, String)>[
-        (PortfolioAppId.skills, 'skills-category-Development'),
+        (PortfolioAppId.skills, 'skills-mobile-summary-Development'),
         (PortfolioAppId.projects, 'project-selector-2'),
       ]) {
         await tester.pumpWidget(const SizedBox.shrink());
@@ -233,9 +240,9 @@ void main() {
         expect(find.byKey(const Key('terminal-app')), findsOneWidget);
         expect(find.bySemanticsLabel('Close Terminal window'), findsOneWidget);
         final closeSize = tester.getSize(
-          find.byKey(const Key('window-close-terminal')),
+          find.byKey(const Key('mobile-back-close-terminal')),
         );
-        expect(closeSize, const Size(24, 32));
+        expect(closeSize, const Size(44, 44));
         final submitSize = tester.getSize(
           find.byKey(const Key('terminal-submit')),
         );
@@ -434,7 +441,8 @@ void main() {
           textScaler: const TextScaler.linear(2),
         );
 
-        final terminalIcon = find.byKey(const Key('mobile-dock-terminal'));
+        final terminalIcon = find.byKey(const Key('home-app-terminal'));
+        await tester.ensureVisible(terminalIcon);
         await tester.tap(terminalIcon);
         await tester.pumpAndSettle();
 
@@ -460,7 +468,7 @@ void main() {
         );
 
         final trashIcon = find.byKey(const Key('home-app-trash'));
-        await _scrollHomeIconAboveDock(tester, trashIcon, reason: '$size');
+        await _scrollHomeIconIntoView(tester, trashIcon, reason: '$size');
         await tester.tap(trashIcon);
         await tester.pumpAndSettle();
 
@@ -474,22 +482,17 @@ void main() {
       }
     });
 
-    testWidgets('짧은 iPad에서도 모든 홈 앱을 Dock 위로 스크롤할 수 있다', (tester) async {
+    testWidgets('짧은 iPad에서도 Dock 없이 모든 홈 앱을 스크롤할 수 있다', (tester) async {
       await _pumpShell(
         tester,
         size: const Size(600, 400),
         textScaler: const TextScaler.linear(2),
       );
 
-      final homeScroll = find.byKey(const Key('mobile-home-scroll'));
-      final dock = find.byKey(const Key('mobile-dock'));
-      expect(
-        tester.getRect(homeScroll).bottom,
-        lessThanOrEqualTo(tester.getRect(dock).top),
-      );
+      expect(find.byKey(const Key('mobile-dock')), findsNothing);
 
       for (final appId in _allApps) {
-        await _scrollHomeIconAboveDock(
+        await _scrollHomeIconIntoView(
           tester,
           find.byKey(Key('home-app-${appId.name}')),
           reason: appId.name,
@@ -499,17 +502,16 @@ void main() {
   });
 }
 
-Future<void> _scrollHomeIconAboveDock(
+Future<void> _scrollHomeIconIntoView(
   WidgetTester tester,
   Finder icon, {
   required String reason,
 }) async {
   final homeScroll = find.byKey(const Key('mobile-home-scroll'));
-  final dock = find.byKey(const Key('mobile-dock'));
 
   for (var attempt = 0; attempt < 8; attempt += 1) {
     if (icon.evaluate().isNotEmpty &&
-        tester.getRect(icon).bottom <= tester.getRect(dock).top) {
+        tester.getRect(homeScroll).overlaps(tester.getRect(icon))) {
       break;
     }
     await tester.drag(homeScroll, const Offset(0, -64));
@@ -518,20 +520,13 @@ Future<void> _scrollHomeIconAboveDock(
 
   expect(icon, findsOneWidget, reason: reason);
   expect(
-    tester.getRect(icon).bottom,
-    lessThanOrEqualTo(tester.getRect(dock).top),
+    tester.getRect(homeScroll).overlaps(tester.getRect(icon)),
+    isTrue,
     reason: reason,
   );
 }
 
 const List<PortfolioAppId> _allApps = portfolioLauncherAppIds;
-
-const List<PortfolioAppId> _phoneDockApps = <PortfolioAppId>[
-  PortfolioAppId.about,
-  PortfolioAppId.projects,
-  PortfolioAppId.github,
-  PortfolioAppId.mail,
-];
 
 void _expectAllHomeApps() {
   for (final appId in _allApps) {
@@ -570,6 +565,7 @@ Future<void> _pumpShell(
   ExternalLauncher? launcher,
   TextScaler textScaler = TextScaler.noScaling,
   Brightness brightness = Brightness.light,
+  bool? mobilePlatformOverride,
 }) async {
   final themeController = PortfolioThemeController(
     initial: brightness == Brightness.dark
@@ -593,6 +589,7 @@ Future<void> _pumpShell(
           data: data,
           externalLauncher: launcher ?? _RecordingLauncher(),
           themeController: themeController,
+          mobilePlatformOverride: mobilePlatformOverride,
         ),
       ),
     ),

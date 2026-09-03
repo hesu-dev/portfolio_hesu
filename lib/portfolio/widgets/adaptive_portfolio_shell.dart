@@ -1,3 +1,4 @@
+import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:portfolio_hesu/portfolio/data/portfolio_data.dart';
 import 'package:portfolio_hesu/portfolio/macos/mac_desktop.dart';
@@ -10,6 +11,7 @@ class AdaptivePortfolioShell extends StatelessWidget {
     required this.externalLauncher,
     required this.themeController,
     this.data = portfolioData,
+    this.mobilePlatformOverride,
     super.key,
   });
 
@@ -19,6 +21,19 @@ class AdaptivePortfolioShell extends StatelessWidget {
   final ExternalLauncher externalLauncher;
   final PortfolioThemeController themeController;
   final PortfolioData data;
+  final bool? mobilePlatformOverride;
+
+  bool get _mobilePlatform {
+    final override = mobilePlatformOverride;
+    if (override != null) {
+      return override;
+    }
+    if (!kIsWeb) {
+      return false;
+    }
+    return defaultTargetPlatform == TargetPlatform.iOS ||
+        defaultTargetPlatform == TargetPlatform.android;
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -26,7 +41,7 @@ class AdaptivePortfolioShell extends StatelessWidget {
       builder: (context, constraints) {
         final width = constraints.maxWidth;
 
-        if (width >= macBreakpoint) {
+        if (width >= macBreakpoint && !_mobilePlatform) {
           return MacDesktop(
             data: data,
             externalLauncher: externalLauncher,
