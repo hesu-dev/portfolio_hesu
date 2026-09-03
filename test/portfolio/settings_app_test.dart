@@ -54,6 +54,29 @@ void main() {
       semantics.dispose();
     });
 
+    testWidgets('Mac 화면 모드 선택 영역은 절반 폭으로 줄여 가운데 정렬한다', (tester) async {
+      final controller = PortfolioThemeController();
+      addTearDown(controller.dispose);
+
+      await _pumpSettings(
+        tester,
+        controller: controller,
+        size: const Size(820, 620),
+      );
+
+      final content = tester.getRect(
+        find.byKey(const Key('settings-display-mode')),
+      );
+      final light = tester.getRect(find.byKey(const Key('theme-light')));
+      final dark = tester.getRect(find.byKey(const Key('theme-dark')));
+      final choicesWidth = dark.right - light.left;
+      final choicesCenter = (light.left + dark.right) / 2;
+
+      expect(choicesWidth, closeTo(content.width * 0.5, 1));
+      expect(choicesCenter, closeTo(content.center.dx, 1));
+      expect(tester.takeException(), isNull);
+    });
+
     testWidgets('iPhone과 iPad는 사이드바 없이 프로필과 화면 모드를 보여준다', (tester) async {
       for (final scenario in const <({Size size, bool compact, bool tablet})>[
         (size: Size(390, 844), compact: true, tablet: false),
