@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 
 import '../apps/portfolio_app_content.dart';
 import '../data/portfolio_data.dart';
+import '../macos/mac_traffic_controls.dart';
 import '../models/portfolio_app_id.dart';
 import '../services/external_launcher.dart';
 import '../theme/apple_theme.dart';
@@ -63,6 +64,7 @@ class MobileAppSurface extends StatelessWidget {
             child: Column(
               children: <Widget>[
                 _MobileAppNavigationBar(
+                  appId: appId,
                   label: label,
                   tablet: tablet,
                   onClose: onClose,
@@ -88,19 +90,19 @@ class MobileAppSurface extends StatelessWidget {
 
 class _MobileAppNavigationBar extends StatelessWidget {
   const _MobileAppNavigationBar({
+    required this.appId,
     required this.label,
     required this.tablet,
     required this.onClose,
   });
 
+  final PortfolioAppId appId;
   final String label;
   final bool tablet;
   final VoidCallback onClose;
 
   @override
   Widget build(BuildContext context) {
-    final backSlotWidth = tablet ? 88.0 : 80.0;
-
     return DecoratedBox(
       key: const Key('mobile-app-navigation-bar'),
       decoration: BoxDecoration(
@@ -118,50 +120,25 @@ class _MobileAppNavigationBar extends StatelessWidget {
           ),
           child: Row(
             children: <Widget>[
-              SizedBox(
-                width: backSlotWidth,
-                height: 44,
-                child: Semantics(
-                  key: const Key('mobile-home-back'),
-                  label: '홈으로 돌아가기',
-                  button: true,
-                  onTap: onClose,
-                  child: ExcludeSemantics(
-                    child: Tooltip(
-                      message: '홈으로 돌아가기',
-                      child: TextButton(
-                        onPressed: onClose,
-                        style: TextButton.styleFrom(
-                          foregroundColor: AppleTheme.blue,
-                          minimumSize: const Size(44, 44),
-                          padding: EdgeInsets.zero,
-                          tapTargetSize: MaterialTapTargetSize.shrinkWrap,
-                        ),
-                        child: const Row(
-                          mainAxisSize: MainAxisSize.min,
-                          children: <Widget>[
-                            Icon(Icons.chevron_left_rounded, size: 24),
-                            Text('홈', maxLines: 1, overflow: TextOverflow.clip),
-                          ],
-                        ),
-                      ),
-                    ),
-                  ),
-                ),
+              MacTrafficControls(
+                appId: appId,
+                windowLabel: label,
+                maximized: !tablet,
+                onClose: onClose,
+                onMinimize: onClose,
+                onMaximize: () {},
               ),
-              const SizedBox(width: 4),
+              SizedBox(width: tablet ? 10 : 6),
               Expanded(
                 child: Text(
                   label,
                   key: const Key('mobile-app-title'),
                   maxLines: 1,
                   overflow: TextOverflow.ellipsis,
-                  textAlign: TextAlign.center,
+                  textAlign: TextAlign.left,
                   style: Theme.of(context).textTheme.titleMedium,
                 ),
               ),
-              const SizedBox(width: 4),
-              SizedBox(width: backSlotWidth),
             ],
           ),
         ),
