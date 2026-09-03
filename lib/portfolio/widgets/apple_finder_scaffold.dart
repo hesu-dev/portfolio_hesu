@@ -6,6 +6,24 @@ import 'apple_selection_control.dart';
 typedef AppleFinderBodyBuilder =
     Widget Function(BuildContext context, bool compactLayout);
 
+/// Optional desktop-window chrome embedded into a Finder toolbar.
+///
+/// Mobile surfaces omit this value and retain their own navigation chrome.
+@immutable
+class AppleFinderWindowChrome {
+  const AppleFinderWindowChrome({
+    required this.leadingControls,
+    required this.onDragUpdate,
+    this.onDragStart,
+    this.cursor = SystemMouseCursors.move,
+  });
+
+  final Widget leadingControls;
+  final GestureDragStartCallback? onDragStart;
+  final GestureDragUpdateCallback onDragUpdate;
+  final MouseCursor cursor;
+}
+
 /// Shared Finder chrome for portfolio apps that browse folder-like content.
 ///
 /// App-specific selection, history, and detail state stay with each app. This
@@ -26,8 +44,7 @@ class AppleFinderScaffold extends StatelessWidget {
     required this.bodyBuilder,
     this.backTooltip = '뒤로',
     this.forwardTooltip = '앞으로',
-    this.leadingControls,
-    this.onToolbarDragUpdate,
+    this.windowChrome,
     this.onViewPressed,
     super.key,
   });
@@ -45,8 +62,7 @@ class AppleFinderScaffold extends StatelessWidget {
   final AppleFinderBodyBuilder bodyBuilder;
   final String backTooltip;
   final String forwardTooltip;
-  final Widget? leadingControls;
-  final GestureDragUpdateCallback? onToolbarDragUpdate;
+  final AppleFinderWindowChrome? windowChrome;
   final VoidCallback? onViewPressed;
 
   @override
@@ -65,8 +81,11 @@ class AppleFinderScaffold extends StatelessWidget {
             onForward: onForward,
             backTooltip: backTooltip,
             forwardTooltip: forwardTooltip,
-            leadingControls: leadingControls,
-            onDragUpdate: onToolbarDragUpdate,
+            controlKeyPrefix: '$keyPrefix-finder',
+            leadingControls: windowChrome?.leadingControls,
+            onDragStart: windowChrome?.onDragStart,
+            onDragUpdate: windowChrome?.onDragUpdate,
+            dragCursor: windowChrome?.cursor,
             onViewPressed: onViewPressed,
           ),
           Expanded(
@@ -118,8 +137,11 @@ class AppleFinderToolbar extends StatelessWidget {
     required this.onForward,
     this.backTooltip = '뒤로',
     this.forwardTooltip = '앞으로',
+    this.controlKeyPrefix = 'finder',
     this.leadingControls,
+    this.onDragStart,
     this.onDragUpdate,
+    this.dragCursor,
     this.onViewPressed,
     super.key,
   });
@@ -132,76 +154,83 @@ class AppleFinderToolbar extends StatelessWidget {
   final VoidCallback onForward;
   final String backTooltip;
   final String forwardTooltip;
+  final String controlKeyPrefix;
   final Widget? leadingControls;
+  final GestureDragStartCallback? onDragStart;
   final GestureDragUpdateCallback? onDragUpdate;
+  final MouseCursor? dragCursor;
   final VoidCallback? onViewPressed;
 
   @override
   Widget build(BuildContext context) {
-    return GestureDetector(
-      behavior: HitTestBehavior.translucent,
-      onPanUpdate: onDragUpdate,
-      child: DecoratedBox(
-        decoration: BoxDecoration(
-          color: AppleTheme.surface(context),
-          border: Border(
-            bottom: BorderSide(
-              color: AppleTheme.separator(context),
-              width: 0.7,
+    return MouseRegion(
+      cursor: dragCursor ?? MouseCursor.defer,
+      child: GestureDetector(
+        behavior: HitTestBehavior.translucent,
+        onPanStart: onDragStart,
+        onPanUpdate: onDragUpdate,
+        child: DecoratedBox(
+          decoration: BoxDecoration(
+            color: AppleTheme.surface(context),
+            border: Border(
+              bottom: BorderSide(
+                color: AppleTheme.separator(context),
+                width: 0.7,
+              ),
             ),
           ),
-        ),
-        child: ConstrainedBox(
-          constraints: BoxConstraints(minHeight: compact ? 56 : 62),
-          child: Padding(
-            padding: EdgeInsets.symmetric(
-              horizontal: compact ? 8 : 14,
-              vertical: 5,
-            ),
-            child: Row(
-              children: <Widget>[
-                if (leadingControls != null) ...<Widget>[
-                  leadingControls!,
-                  SizedBox(width: compact ? 4 : 10),
-                ],
-                IconButton(
-                  key: const Key('finder-back'),
-                  tooltip: backTooltip,
-                  onPressed: canGoBack ? onBack : null,
-                  icon: const Icon(Icons.chevron_left_rounded),
-                ),
-                IconButton(
-                  key: const Key('finder-forward'),
-                  tooltip: forwardTooltip,
-                  onPressed: canGoForward ? onForward : null,
-                  icon: const Icon(Icons.chevron_right_rounded),
-                ),
-                SizedBox(width: compact ? 3 : 10),
-                Expanded(
-                  child: Container(
-                    key: const Key('finder-current-location'),
-                    alignment: Alignment.center,
-                    constraints: const BoxConstraints(minHeight: 38),
-                    padding: const EdgeInsets.symmetric(horizontal: 10),
-                    child: Text(
-                      currentLocation,
-                      maxLines: 1,
-                      overflow: TextOverflow.ellipsis,
-                      style: Theme.of(context).textTheme.titleMedium,
+          child: ConstrainedBox(
+            constraints: BoxConstraints(minHeight: compact ? 56 : 62),
+            child: Padding(
+              padding: EdgeInsets.symmetric(
+                horizontal: compact ? 8 : 14,
+                vertical: 5,
+              ),
+              child: Row(
+                children: <Widget>[
+                  if (leadingControls != null) ...<Widget>[
+                    leadingControls!,
+                    SizedBox(width: compact ? 4 : 10),
+                  ],
+                  IconButton(
+                    key: Key('$controlKeyPrefix-back'),
+                    tooltip: backTooltip,
+                    onPressed: canGoBack ? onBack : null,
+                    icon: const Icon(Icons.chevron_left_rounded),
+                  ),
+                  IconButton(
+                    key: Key('$controlKeyPrefix-forward'),
+                    tooltip: forwardTooltip,
+                    onPressed: canGoForward ? onForward : null,
+                    icon: const Icon(Icons.chevron_right_rounded),
+                  ),
+                  SizedBox(width: compact ? 3 : 10),
+                  Expanded(
+                    child: Container(
+                      key: Key('$controlKeyPrefix-current-location'),
+                      alignment: Alignment.center,
+                      constraints: const BoxConstraints(minHeight: 38),
+                      padding: const EdgeInsets.symmetric(horizontal: 10),
+                      child: Text(
+                        currentLocation,
+                        maxLines: 1,
+                        overflow: TextOverflow.ellipsis,
+                        style: Theme.of(context).textTheme.titleMedium,
+                      ),
                     ),
                   ),
-                ),
-                SizedBox(width: compact ? 4 : 8),
-                IconButton(
-                  key: const Key('finder-view-options'),
-                  tooltip: '보기 방식',
-                  onPressed: onViewPressed,
-                  icon: Icon(
-                    Icons.grid_view_rounded,
-                    color: AppleTheme.secondaryLabel(context),
+                  SizedBox(width: compact ? 4 : 8),
+                  IconButton(
+                    key: Key('$controlKeyPrefix-view-options'),
+                    tooltip: '보기 방식',
+                    onPressed: onViewPressed,
+                    icon: Icon(
+                      Icons.grid_view_rounded,
+                      color: AppleTheme.secondaryLabel(context),
+                    ),
                   ),
-                ),
-              ],
+                ],
+              ),
             ),
           ),
         ),
