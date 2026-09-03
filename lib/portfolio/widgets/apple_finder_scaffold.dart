@@ -8,7 +8,8 @@ typedef AppleFinderBodyBuilder =
 
 /// Optional desktop-window chrome embedded into a Finder toolbar.
 ///
-/// Mobile surfaces omit this value and retain their own navigation chrome.
+/// Projects supplies this value on every form factor so one Finder toolbar owns
+/// the traffic controls, navigation, title, and view affordance.
 @immutable
 class AppleFinderWindowChrome {
   const AppleFinderWindowChrome({
