@@ -194,6 +194,37 @@ void main() {
       expect(find.byKey(const Key('dock-running-about')), findsNothing);
     });
 
+    testWidgets('traffic lights expose larger pointer and semantics targets', (
+      tester,
+    ) async {
+      final semantics = tester.ensureSemantics();
+      await _pumpPortfolio(tester);
+      await _openDesktopApp(tester, PortfolioAppId.about);
+
+      for (final control in const <String>['close', 'minimize', 'maximize']) {
+        final target = find.byKey(Key('window-$control-about'));
+        final visual = find.byKey(Key('window-$control-about-visual'));
+        final targetSize = tester.getSize(target);
+        final semanticsSize = tester.getSemantics(target).rect.size;
+
+        expect(targetSize.width, inInclusiveRange(28, 44));
+        expect(targetSize.height, inInclusiveRange(28, 44));
+        expect(semanticsSize.width, inInclusiveRange(28, 44));
+        expect(semanticsSize.height, inInclusiveRange(28, 44));
+        expect(tester.getSize(visual), const Size.square(14));
+      }
+
+      final minimizeTarget = tester.getRect(
+        find.byKey(const Key('window-minimize-about')),
+      );
+      await tester.tapAt(minimizeTarget.centerLeft + const Offset(1, 0));
+      await tester.pumpAndSettle();
+
+      expect(find.byKey(const Key('mac-window-about')), findsNothing);
+      expect(find.byKey(const Key('dock-running-about')), findsOneWidget);
+      semantics.dispose();
+    });
+
     testWidgets('title-bar drag clamps windows into the visible work area', (
       tester,
     ) async {
