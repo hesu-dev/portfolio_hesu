@@ -471,31 +471,34 @@ class _MobileFinderDestinationButton extends StatelessWidget {
       selected: selected,
       onPressed: onPressed,
       borderRadius: BorderRadius.circular(22),
-      child: Container(
-        constraints: const BoxConstraints(minHeight: 54),
-        padding: const EdgeInsets.symmetric(horizontal: 4, vertical: 6),
-        decoration: BoxDecoration(
-          color: selected
-              ? AppleTheme.selectionBackground(context, AppleTheme.blue)
-              : Colors.transparent,
-          borderRadius: BorderRadius.circular(22),
-        ),
-        child: Column(
-          mainAxisAlignment: MainAxisAlignment.center,
-          children: <Widget>[
-            Icon(destination.icon, color: foreground, size: 22),
-            const SizedBox(height: 3),
-            Text(
-              destination.label,
-              maxLines: 1,
-              overflow: TextOverflow.ellipsis,
-              style: Theme.of(context).textTheme.labelLarge?.copyWith(
-                color: foreground,
-                fontSize: 11,
-                fontWeight: selected ? FontWeight.w700 : FontWeight.w600,
+      child: SizedBox(
+        width: double.infinity,
+        child: Container(
+          constraints: const BoxConstraints(minHeight: 54),
+          padding: const EdgeInsets.symmetric(horizontal: 4, vertical: 6),
+          decoration: BoxDecoration(
+            color: selected
+                ? AppleTheme.selectionBackground(context, AppleTheme.blue)
+                : Colors.transparent,
+            borderRadius: BorderRadius.circular(22),
+          ),
+          child: Column(
+            mainAxisAlignment: MainAxisAlignment.center,
+            children: <Widget>[
+              Icon(destination.icon, color: foreground, size: 22),
+              const SizedBox(height: 3),
+              Text(
+                destination.label,
+                maxLines: 1,
+                overflow: TextOverflow.ellipsis,
+                style: Theme.of(context).textTheme.labelLarge?.copyWith(
+                  color: foreground,
+                  fontSize: 11,
+                  fontWeight: selected ? FontWeight.w700 : FontWeight.w600,
+                ),
               ),
-            ),
-          ],
+            ],
+          ),
         ),
       ),
     );
