@@ -5,6 +5,34 @@ import '../theme/apple_theme.dart';
 
 enum AppleNotesSurfaceSize { compact, regular }
 
+/// Shared paper layer used by the home Notes widget and the full About view.
+class AppleNotesPaper extends StatelessWidget {
+  const AppleNotesPaper({
+    required this.child,
+    this.paperKey,
+    this.padding,
+    this.darkPaper = false,
+    super.key,
+  });
+
+  final Widget child;
+  final Key? paperKey;
+  final EdgeInsetsGeometry? padding;
+  final bool darkPaper;
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      key: paperKey,
+      padding: padding,
+      decoration: BoxDecoration(
+        color: darkPaper ? const Color(0xFF1B2433) : const Color(0xFFFFFEFC),
+      ),
+      child: child,
+    );
+  }
+}
+
 class AppleNotesSurface extends StatefulWidget {
   const AppleNotesSurface({
     required this.body,
@@ -13,6 +41,7 @@ class AppleNotesSurface extends StatefulWidget {
     this.headerKey,
     this.bodyKey,
     this.separatorKey,
+    this.headerTitle = '메모',
     this.headerTrailing,
     this.bodyPadding,
     this.showSeparator = true,
@@ -30,6 +59,7 @@ class AppleNotesSurface extends StatefulWidget {
   final Key? headerKey;
   final Key? bodyKey;
   final Key? separatorKey;
+  final String? headerTitle;
   final Widget? headerTrailing;
   final EdgeInsetsGeometry? bodyPadding;
   final bool showSeparator;
@@ -58,9 +88,6 @@ class _AppleNotesSurfaceState extends State<AppleNotesSurface> {
   @override
   Widget build(BuildContext context) {
     final radius = _compact ? 22.0 : 28.0;
-    final paperColor = widget.darkPaper
-        ? const Color(0xFF1B2433)
-        : const Color(0xFFFFFEFC);
     final paperGradient = widget.darkPaper
         ? const <Color>[Color(0xFF292C36), Color(0xFF1B2433)]
         : const <Color>[Color(0xFFFFFEFC), Color(0xFFFFF8E7)];
@@ -121,20 +148,24 @@ class _AppleNotesSurfaceState extends State<AppleNotesSurface> {
                         color: Colors.white,
                         size: _compact ? 24 : 30,
                       ),
-                      SizedBox(width: _compact ? 9 : 13),
-                      Expanded(
-                        child: Text(
-                          '메모',
-                          maxLines: 1,
-                          overflow: TextOverflow.ellipsis,
-                          style: Theme.of(context).textTheme.titleLarge
-                              ?.copyWith(
-                                color: const Color(0xFF3A2700),
-                                fontSize: _compact ? 20 : 25,
-                                fontWeight: FontWeight.w800,
-                              ),
-                        ),
-                      ),
+                      if (widget.headerTitle != null)
+                        SizedBox(width: _compact ? 9 : 13),
+                      if (widget.headerTitle != null)
+                        Expanded(
+                          child: Text(
+                            widget.headerTitle!,
+                            maxLines: 1,
+                            overflow: TextOverflow.ellipsis,
+                            style: Theme.of(context).textTheme.titleLarge
+                                ?.copyWith(
+                                  color: const Color(0xFF3A2700),
+                                  fontSize: _compact ? 20 : 25,
+                                  fontWeight: FontWeight.w800,
+                                ),
+                          ),
+                        )
+                      else
+                        const Spacer(),
                       if (widget.headerTrailing
                           case final trailing?) ...<Widget>[
                         const SizedBox(width: 8),
@@ -156,8 +187,8 @@ class _AppleNotesSurfaceState extends State<AppleNotesSurface> {
               ),
             ),
             if (widget.showBody)
-              Container(
-                key: widget.bodyKey,
+              AppleNotesPaper(
+                paperKey: widget.bodyKey,
                 padding:
                     widget.bodyPadding ??
                     EdgeInsets.fromLTRB(
@@ -166,7 +197,7 @@ class _AppleNotesSurfaceState extends State<AppleNotesSurface> {
                       _compact ? 18 : 26,
                       _compact ? 22 : 28,
                     ),
-                decoration: BoxDecoration(color: paperColor),
+                darkPaper: widget.darkPaper,
                 child: widget.body,
               ),
           ],
