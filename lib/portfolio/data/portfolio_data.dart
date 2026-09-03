@@ -149,6 +149,7 @@ class PortfolioData {
   String get email => identity.email;
   String get githubUrl => identity.githubUrl;
   String get mailUrl => 'mailto:${identity.email}';
+  String get monogram => _deriveMonogram(identity);
 
   String get allSearchableText => <String>[
     identity.name,
@@ -187,6 +188,62 @@ class PortfolioData {
     for (final project in projects)
       for (final link in project.links) link.url,
   ]);
+}
+
+String _deriveMonogram(PortfolioIdentity identity) {
+  final englishTokens = RegExp(
+    r'[A-Za-z0-9]+',
+  ).allMatches(identity.englishName).map((match) => match.group(0)!);
+  final englishMonogram = _monogramFromTokens(englishTokens);
+  if (englishMonogram.isNotEmpty) {
+    return englishMonogram;
+  }
+
+  final localTokens = RegExp(
+    r'[A-Za-z0-9\u3131-\u318E\uAC00-\uD7A3]+',
+    unicode: true,
+  ).allMatches(identity.name).map((match) => match.group(0)!);
+  final localMonogram = _monogramFromTokens(localTokens);
+  if (localMonogram.isNotEmpty) {
+    return localMonogram;
+  }
+
+  final emailLocalPart = _safeEmailLocalPart(identity.email);
+  if (emailLocalPart != null) {
+    return String.fromCharCodes(emailLocalPart.runes.take(2)).toUpperCase();
+  }
+  return 'ME';
+}
+
+String _monogramFromTokens(Iterable<String> tokens) {
+  final values = tokens.where((token) => token.isNotEmpty).take(2).toList();
+  if (values.length >= 2) {
+    return String.fromCharCodes(<int>[
+      values.first.runes.first,
+      values[1].runes.first,
+    ]).toUpperCase();
+  }
+  if (values case <String>[final value]) {
+    return String.fromCharCodes(value.runes.take(2)).toUpperCase();
+  }
+  return '';
+}
+
+String? _safeEmailLocalPart(String email) {
+  final normalized = email.trim();
+  final separator = normalized.indexOf('@');
+  if (separator <= 0 ||
+      separator != normalized.lastIndexOf('@') ||
+      separator == normalized.length - 1 ||
+      normalized.contains(RegExp(r'\s'))) {
+    return null;
+  }
+
+  final localPart = normalized.substring(0, separator);
+  if (!RegExp(r'^[A-Za-z0-9._-]+$').hasMatch(localPart)) {
+    return null;
+  }
+  return localPart.toLowerCase();
 }
 
 const portfolioData = PortfolioData.constant(
