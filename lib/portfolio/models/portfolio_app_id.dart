@@ -20,10 +20,10 @@ const List<PortfolioAppId> portfolioLauncherAppIds = <PortfolioAppId>[
   PortfolioAppId.skills,
   PortfolioAppId.projects,
   PortfolioAppId.terminal,
+  PortfolioAppId.trash,
   PortfolioAppId.github,
   PortfolioAppId.mail,
   PortfolioAppId.settings,
-  PortfolioAppId.trash,
 ];
 
 const List<PortfolioAppId> portfolioDockAppIds = <PortfolioAppId>[
@@ -31,7 +31,7 @@ const List<PortfolioAppId> portfolioDockAppIds = <PortfolioAppId>[
   PortfolioAppId.skills,
   PortfolioAppId.projects,
   PortfolioAppId.terminal,
-  PortfolioAppId.github,
   PortfolioAppId.mail,
   PortfolioAppId.settings,
+  PortfolioAppId.github,
 ];
