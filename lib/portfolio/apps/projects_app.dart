@@ -333,7 +333,7 @@ class _ProjectsAppState extends State<ProjectsApp> {
       onLocationSelected: _selectLocationById,
       compact: widget.compact,
       tablet: widget.tablet,
-      canGoBack: _historyCursor > 0,
+      canGoBack: mobileLayout ? projectIndex != null : _historyCursor > 0,
       canGoForward: _historyCursor < _history.length - 1,
       onBack: () => _moveThroughHistory(-1),
       onForward: () => _moveThroughHistory(1),

@@ -221,6 +221,40 @@ void main() {
       },
     );
 
+    testWidgets('Projects Finder circular control closes every location root', (
+      tester,
+    ) async {
+      final semantics = tester.ensureSemantics();
+
+      for (final size in const <Size>[Size(390, 844), Size(834, 1194)]) {
+        await tester.pumpWidget(const SizedBox.shrink());
+        await _pumpSurface(tester, size: size, appId: PortfolioAppId.projects);
+
+        await tester.tap(
+          find.byKey(const Key('projects-finder-location-recent')),
+        );
+        await tester.pumpAndSettle();
+
+        final circularControl = find.byKey(
+          const Key('mobile-back-close-projects'),
+        );
+        expect(find.text('최근 항목'), findsWidgets);
+        expect(
+          tester.getSemantics(circularControl).getSemanticsData().label,
+          startsWith('Close Projects window'),
+          reason: '$size location root semantics',
+        );
+
+        await tester.tap(circularControl);
+        await tester.pumpAndSettle();
+
+        expect(find.byKey(const Key('mobile-home')), findsOneWidget);
+        expect(find.byKey(const Key('mobile-app-surface')), findsNothing);
+      }
+
+      semantics.dispose();
+    });
+
     testWidgets('iPhone back button closes the surface and returns home', (
       tester,
     ) async {
