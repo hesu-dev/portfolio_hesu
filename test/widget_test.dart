@@ -18,7 +18,7 @@ void main() {
       expect(find.byType(MaterialApp), findsOneWidget);
       final app = tester.widget<MaterialApp>(find.byType(MaterialApp));
       expect(app.title, '민희수 포트폴리오');
-      expect(app.color, const Color(0xFF121316));
+      expect(app.color, const Color(0xFFF4F4F7));
       final shell = tester.widget<AdaptivePortfolioShell>(
         find.byType(AdaptivePortfolioShell),
       );
@@ -58,7 +58,7 @@ void main() {
 
       final app = tester.widget<MaterialApp>(find.byType(MaterialApp));
       expect(app.title, '테스트 사용자 포트폴리오');
-      expect(app.color, const Color(0xFF121316));
+      expect(app.color, const Color(0xFFF4F4F7));
       final shell = tester.widget<AdaptivePortfolioShell>(
         find.byType(AdaptivePortfolioShell),
       );
@@ -86,7 +86,7 @@ void main() {
       expect(app.themeMode, ThemeMode.light);
       expect(Theme.of(shellContext).brightness, Brightness.light);
       expect(app.title, portfolioData.appTitle);
-      expect(app.color, const Color(0xFF121316));
+      expect(app.color, const Color(0xFFF4F4F7));
     });
 
     testWidgets('reacts immediately to an injected theme controller', (

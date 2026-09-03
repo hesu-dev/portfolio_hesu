@@ -165,7 +165,7 @@ void main() {
       expect(htmlAttributes['lang'], 'ko');
       expect(_elementText(indexHtml, 'title'), '민희수 포트폴리오');
       expect(_metaContent(indexHtml, 'description'), _portfolioDescription);
-      expect(_metaContent(indexHtml, 'theme-color'), '#121316');
+      expect(_metaContent(indexHtml, 'theme-color'), '#F4F4F7');
       expect(
         _metaContent(indexHtml, 'viewport'),
         isNull,
@@ -198,8 +198,8 @@ void main() {
       expect(manifest['start_url'], '.');
       expect(manifest['scope'], '.');
       expect(manifest['display'], 'standalone');
-      expect(manifest['theme_color'], '#121316');
-      expect(manifest['background_color'], '#121316');
+      expect(manifest['theme_color'], '#F4F4F7');
+      expect(manifest['background_color'], '#F4F4F7');
 
       final icons = (manifest['icons'] as List<dynamic>)
           .cast<Map<String, dynamic>>();

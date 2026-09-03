@@ -81,7 +81,7 @@ class _PortfolioAppState extends State<PortfolioApp> {
       ),
       builder: (context, child) => MaterialApp(
         title: widget.data.appTitle,
-        color: const Color(0xFF121316),
+        color: const Color(0xFFF4F4F7),
         debugShowCheckedModeBanner: false,
         theme: AppleTheme.light(),
         darkTheme: AppleTheme.dark(),
