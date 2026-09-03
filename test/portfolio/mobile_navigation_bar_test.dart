@@ -14,75 +14,82 @@ import 'package:portfolio_hesu/portfolio/widgets/apple_app_artwork.dart';
 void main() {
   group('mobile app navigation bar', () {
     testWidgets(
-      'every non-Projects iPhone and iPad app uses shared traffic lights and a left title',
+      'every non-Projects iPhone app uses one circular back close button',
       (tester) async {
-        for (final size in const <Size>[Size(390, 844), Size(834, 1194)]) {
-          for (final appId in PortfolioAppId.values.where(
-            (appId) => appId != PortfolioAppId.projects,
-          )) {
-            await tester.pumpWidget(const SizedBox.shrink());
-            await _pumpSurface(tester, size: size, appId: appId);
+        for (final appId in PortfolioAppId.values.where(
+          (appId) => appId != PortfolioAppId.projects,
+        )) {
+          await tester.pumpWidget(const SizedBox.shrink());
+          await _pumpSurface(tester, size: const Size(390, 844), appId: appId);
 
-            final navigationBar = find.byKey(
-              const Key('mobile-app-navigation-bar'),
-            );
-            final title = find.byKey(const Key('mobile-app-title'));
-            final trafficControls = find.descendant(
+          final navigationBar = find.byKey(
+            const Key('mobile-app-navigation-bar'),
+          );
+          final title = find.byKey(const Key('mobile-app-title'));
+          final close = find.byKey(Key('mobile-back-close-${appId.name}'));
+
+          expect(navigationBar, findsOneWidget);
+          expect(find.byType(MacTrafficControls), findsNothing);
+          expect(close, findsOneWidget);
+          expect(tester.getSize(close), const Size(44, 44));
+          expect(
+            find.descendant(
+              of: close,
+              matching: find.byIcon(Icons.arrow_back_ios_new_rounded),
+            ),
+            findsOneWidget,
+          );
+          expect(
+            find.descendant(
               of: navigationBar,
-              matching: find.byType(MacTrafficControls),
-            );
-
-            expect(navigationBar, findsOneWidget);
-            expect(find.byKey(const Key('mobile-home-back')), findsNothing);
-            expect(trafficControls, findsOneWidget);
-            expect(
-              tester.widget<MacTrafficControls>(trafficControls).appId,
-              appId,
-            );
-            expect(
-              tester.widget<MacTrafficControls>(trafficControls).targetSize,
-              32,
-            );
-            expect(
-              tester
-                  .widget<MacTrafficControls>(trafficControls)
-                  .secondaryControlsInteractive,
-              isFalse,
-            );
-            expect(find.byKey(const Key('mobile-close')), findsNothing);
-            expect(
-              find.descendant(
-                of: navigationBar,
-                matching: find.byIcon(Icons.keyboard_arrow_down_rounded),
-              ),
-              findsNothing,
-            );
-            expect(
-              find.descendant(
-                of: navigationBar,
-                matching: find.byType(AppleAppArtwork),
-              ),
-              findsNothing,
-              reason: 'The trailing app artwork was removed from mobile bars.',
-            );
-            final titleWidget = tester.widget<Text>(title);
-            expect(titleWidget.textAlign, TextAlign.left);
-            expect(
-              tester.getRect(title).left,
-              greaterThanOrEqualTo(tester.getRect(trafficControls).right),
-            );
-            expect(
-              tester.takeException(),
-              isNull,
-              reason: '$size ${appId.name}',
-            );
-          }
+              matching: find.byType(AppleAppArtwork),
+            ),
+            findsNothing,
+          );
+          expect(tester.widget<Text>(title).textAlign, TextAlign.left);
+          expect(
+            tester.getRect(title).left,
+            greaterThanOrEqualTo(tester.getRect(close).right),
+          );
+          expect(tester.takeException(), isNull, reason: appId.name);
         }
       },
     );
 
+    testWidgets('every non-Projects iPad app keeps the shared traffic lights', (
+      tester,
+    ) async {
+      for (final appId in PortfolioAppId.values.where(
+        (appId) => appId != PortfolioAppId.projects,
+      )) {
+        await tester.pumpWidget(const SizedBox.shrink());
+        await _pumpSurface(tester, size: const Size(834, 1194), appId: appId);
+
+        final navigationBar = find.byKey(
+          const Key('mobile-app-navigation-bar'),
+        );
+        final trafficControls = find.descendant(
+          of: navigationBar,
+          matching: find.byType(MacTrafficControls),
+        );
+        expect(trafficControls, findsOneWidget);
+        expect(tester.widget<MacTrafficControls>(trafficControls).appId, appId);
+        expect(
+          tester
+              .widget<MacTrafficControls>(trafficControls)
+              .secondaryControlsInteractive,
+          isFalse,
+        );
+        expect(
+          find.byKey(Key('mobile-back-close-${appId.name}')),
+          findsNothing,
+        );
+        expect(tester.takeException(), isNull, reason: appId.name);
+      }
+    });
+
     testWidgets(
-      'Projects integrates mobile traffic lights into one Finder toolbar',
+      'Projects uses one mobile Finder header without traffic lights',
       (tester) async {
         for (final size in const <Size>[Size(390, 844), Size(834, 1194)]) {
           await tester.pumpWidget(const SizedBox.shrink());
@@ -95,10 +102,6 @@ void main() {
           final finderToolbar = find.byKey(
             const Key('projects-finder-toolbar'),
           );
-          final trafficControls = find.descendant(
-            of: finderToolbar,
-            matching: find.byType(MacTrafficControls),
-          );
           final currentLocation = find.descendant(
             of: finderToolbar,
             matching: find.byKey(const Key('projects-finder-current-location')),
@@ -110,64 +113,49 @@ void main() {
           );
           expect(find.byKey(const Key('mobile-app-title')), findsNothing);
           expect(finderToolbar, findsOneWidget);
-          expect(trafficControls, findsOneWidget);
-          expect(currentLocation, findsOneWidget);
-
-          final controlsWidget = tester.widget<MacTrafficControls>(
-            trafficControls,
+          expect(find.byType(MacTrafficControls), findsNothing);
+          expect(
+            find.byKey(const Key('mobile-back-close-projects')),
+            findsOneWidget,
           );
-          expect(controlsWidget.appId, PortfolioAppId.projects);
-          expect(controlsWidget.targetSize, 32);
-          expect(controlsWidget.secondaryControlsInteractive, isFalse);
-          final centers = <double>[
-            for (final control in const <String>[
-              'close',
-              'minimize',
-              'maximize',
-            ])
-              tester
-                  .getCenter(
-                    find.descendant(
-                      of: finderToolbar,
-                      matching: find.byKey(
-                        Key('window-$control-projects-visual'),
-                      ),
-                    ),
-                  )
-                  .dx,
-          ];
-          expect(centers[1] - centers[0], closeTo(24, 0.01));
-          expect(centers[2] - centers[1], closeTo(24, 0.01));
+          expect(find.byKey(const Key('projects-finder-more')), findsOneWidget);
+          expect(
+            find.byKey(const Key('projects-finder-forward')),
+            findsNothing,
+          );
+          expect(
+            find.byKey(const Key('projects-finder-view-options')),
+            findsNothing,
+          );
+          expect(currentLocation, findsOneWidget);
+          expect(
+            tester.getCenter(currentLocation).dx,
+            closeTo(size.width / 2, 1),
+          );
           expect(tester.takeException(), isNull, reason: '$size');
         }
       },
     );
 
-    testWidgets('Projects Finder red traffic light closes the surface', (
+    testWidgets('Projects Finder back button closes the surface', (
       tester,
     ) async {
-      await _pumpSurface(
-        tester,
-        size: const Size(390, 844),
-        appId: PortfolioAppId.projects,
-      );
+      for (final size in const <Size>[Size(390, 844), Size(834, 1194)]) {
+        await tester.pumpWidget(const SizedBox.shrink());
+        await _pumpSurface(tester, size: size, appId: PortfolioAppId.projects);
 
-      final finderToolbar = find.byKey(const Key('projects-finder-toolbar'));
-      final closeButton = find.descendant(
-        of: finderToolbar,
-        matching: find.byKey(const Key('window-close-projects')),
-      );
+        final closeButton = find.byKey(const Key('mobile-back-close-projects'));
+        expect(closeButton, findsOneWidget);
+        expect(tester.getSize(closeButton), const Size(44, 44));
+        await tester.tap(closeButton);
+        await tester.pumpAndSettle();
 
-      expect(closeButton, findsOneWidget);
-      expect(tester.getSize(closeButton), const Size(24, 32));
-      await tester.tap(closeButton);
-      await tester.pumpAndSettle();
-
-      expect(find.byKey(const Key('mobile-home')), findsOneWidget);
-      expect(find.byKey(const Key('mobile-app-surface')), findsNothing);
+        expect(find.byKey(const Key('mobile-home')), findsOneWidget);
+        expect(find.byKey(const Key('mobile-app-surface')), findsNothing);
+      }
     });
 
-    testWidgets('red traffic light closes the surface and returns home', (
+    testWidgets('iPhone back button closes the surface and returns home', (
       tester,
     ) async {
       final semantics = tester.ensureSemantics();
@@ -177,9 +165,9 @@ void main() {
         appId: PortfolioAppId.about,
       );
 
-      final closeButton = find.byKey(const Key('window-close-about'));
+      final closeButton = find.byKey(const Key('mobile-back-close-about'));
       expect(find.bySemanticsLabel('Close About window'), findsOneWidget);
-      expect(tester.getSize(closeButton), const Size(24, 32));
+      expect(tester.getSize(closeButton), const Size(44, 44));
       final semanticsData = tester.getSemantics(closeButton).getSemanticsData();
       expect(semanticsData.flagsCollection.isButton, isTrue);
       expect(semanticsData.hasAction(ui.SemanticsAction.tap), isTrue);
@@ -219,12 +207,12 @@ void main() {
     );
 
     testWidgets(
-      'yellow and green keep compact decorative slots without actions or semantics',
+      'iPad traffic lights show static red X and yellow minus glyphs',
       (tester) async {
         final semantics = tester.ensureSemantics();
         await _pumpSurface(
           tester,
-          size: const Size(390, 844),
+          size: const Size(834, 1194),
           appId: PortfolioAppId.about,
         );
 
@@ -241,6 +229,24 @@ void main() {
         expect(find.bySemanticsLabel('Restore About window'), findsNothing);
         expect(find.bySemanticsLabel('Maximize About window'), findsNothing);
 
+        final closeGlyph = find.byKey(const Key('window-close-about-glyph'));
+        final minimizeGlyph = find.byKey(
+          const Key('window-minimize-about-glyph'),
+        );
+        expect(tester.widget<Icon>(closeGlyph).icon, Icons.close_rounded);
+        expect(tester.widget<Icon>(minimizeGlyph).icon, Icons.remove_rounded);
+        expect(
+          find.byKey(const Key('window-maximize-about-glyph')),
+          findsNothing,
+        );
+        expect(
+          find.descendant(
+            of: find.byKey(const Key('mac-traffic-controls-about')),
+            matching: find.byType(InkResponse),
+          ),
+          findsNothing,
+        );
+
         await tester.tap(find.byKey(const Key('window-minimize-about')));
         await tester.pumpAndSettle();
         expect(find.byKey(const Key('mobile-app-surface')), findsOneWidget);
@@ -252,27 +258,40 @@ void main() {
       },
     );
 
-    testWidgets('keeps left titles and traffic lights overflow-free at 200%', (
-      tester,
-    ) async {
-      for (final size in const <Size>[Size(320, 480), Size(600, 400)]) {
-        await tester.pumpWidget(const SizedBox.shrink());
-        await _pumpSurface(
-          tester,
-          size: size,
-          appId: PortfolioAppId.terminal,
-          textScaler: const TextScaler.linear(2),
-        );
+    testWidgets(
+      'keeps device-specific leading controls overflow-free at 200%',
+      (tester) async {
+        for (final size in const <Size>[Size(320, 480), Size(600, 400)]) {
+          await tester.pumpWidget(const SizedBox.shrink());
+          await _pumpSurface(
+            tester,
+            size: size,
+            appId: PortfolioAppId.terminal,
+            textScaler: const TextScaler.linear(2),
+          );
 
-        final title = find.byKey(const Key('mobile-app-title'));
-        final titleWidget = tester.widget<Text>(title);
-        expect(titleWidget.maxLines, 1);
-        expect(titleWidget.overflow, TextOverflow.ellipsis);
-        expect(titleWidget.textAlign, TextAlign.left);
-        expect(find.byType(MacTrafficControls), findsOneWidget);
-        expect(tester.takeException(), isNull, reason: '$size');
-      }
-    });
+          final title = find.byKey(const Key('mobile-app-title'));
+          final titleWidget = tester.widget<Text>(title);
+          expect(titleWidget.maxLines, 1);
+          expect(titleWidget.overflow, TextOverflow.ellipsis);
+          expect(titleWidget.textAlign, TextAlign.left);
+          if (size.width < 600) {
+            expect(find.byType(MacTrafficControls), findsNothing);
+            expect(
+              find.byKey(const Key('mobile-back-close-terminal')),
+              findsOneWidget,
+            );
+          } else {
+            expect(find.byType(MacTrafficControls), findsOneWidget);
+            expect(
+              find.byKey(const Key('mobile-back-close-terminal')),
+              findsNothing,
+            );
+          }
+          expect(tester.takeException(), isNull, reason: '$size');
+        }
+      },
+    );
   });
 }
 

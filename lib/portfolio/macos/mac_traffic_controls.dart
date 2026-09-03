@@ -41,9 +41,11 @@ class MacTrafficControls extends StatelessWidget {
       _MacTrafficButton(
         controlKey: Key('window-close-${appId.name}'),
         visualKey: Key('window-close-${appId.name}-visual'),
+        glyphKey: Key('window-close-${appId.name}-glyph'),
         focusKey: Key('window-close-${appId.name}-focus'),
         label: 'Close $windowLabel window',
         color: closeColor,
+        glyph: Icons.close_rounded,
         onPressed: onClose,
         targetSize: targetSize,
       ),
@@ -51,20 +53,24 @@ class MacTrafficControls extends StatelessWidget {
         _MacTrafficButton(
           controlKey: Key('window-minimize-${appId.name}'),
           visualKey: Key('window-minimize-${appId.name}-visual'),
+          glyphKey: Key('window-minimize-${appId.name}-glyph'),
           focusKey: Key('window-minimize-${appId.name}-focus'),
           label: 'Minimize $windowLabel window',
           color: minimizeColor,
+          glyph: Icons.remove_rounded,
           onPressed: onMinimize!,
           targetSize: targetSize,
         ),
         _MacTrafficButton(
           controlKey: Key('window-maximize-${appId.name}'),
           visualKey: Key('window-maximize-${appId.name}-visual'),
+          glyphKey: Key('window-maximize-${appId.name}-glyph'),
           focusKey: Key('window-maximize-${appId.name}-focus'),
           label: maximized
               ? 'Restore $windowLabel window'
               : 'Maximize $windowLabel window',
           color: maximizeColor,
+          glyph: null,
           onPressed: onMaximize!,
           targetSize: targetSize,
         ),
@@ -72,13 +78,17 @@ class MacTrafficControls extends StatelessWidget {
         _MacTrafficDecoration(
           controlKey: Key('window-minimize-${appId.name}'),
           visualKey: Key('window-minimize-${appId.name}-visual'),
+          glyphKey: Key('window-minimize-${appId.name}-glyph'),
           color: minimizeColor,
+          glyph: Icons.remove_rounded,
           targetSize: targetSize,
         ),
         _MacTrafficDecoration(
           controlKey: Key('window-maximize-${appId.name}'),
           visualKey: Key('window-maximize-${appId.name}-visual'),
+          glyphKey: Key('window-maximize-${appId.name}-glyph'),
           color: maximizeColor,
+          glyph: null,
           targetSize: targetSize,
         ),
       ],
@@ -96,18 +106,22 @@ class _MacTrafficButton extends StatefulWidget {
   const _MacTrafficButton({
     required this.controlKey,
     required this.visualKey,
+    required this.glyphKey,
     required this.focusKey,
     required this.label,
     required this.color,
+    required this.glyph,
     required this.onPressed,
     required this.targetSize,
   });
 
   final Key controlKey;
   final Key visualKey;
+  final Key glyphKey;
   final Key focusKey;
   final String label;
   final Color color;
+  final IconData? glyph;
   final VoidCallback onPressed;
   final double targetSize;
 
@@ -197,6 +211,14 @@ class _MacTrafficButtonState extends State<_MacTrafficButton> {
                         color: widget.color,
                         shape: BoxShape.circle,
                       ),
+                      child: widget.glyph == null
+                          ? null
+                          : Icon(
+                              widget.glyph,
+                              key: widget.glyphKey,
+                              size: 9,
+                              color: const Color(0xA6000000),
+                            ),
                     ),
                   ],
                 ),
@@ -213,13 +235,17 @@ class _MacTrafficDecoration extends StatelessWidget {
   const _MacTrafficDecoration({
     required this.controlKey,
     required this.visualKey,
+    required this.glyphKey,
     required this.color,
+    required this.glyph,
     required this.targetSize,
   });
 
   final Key controlKey;
   final Key visualKey;
+  final Key glyphKey;
   final Color color;
+  final IconData? glyph;
   final double targetSize;
 
   @override
@@ -235,6 +261,14 @@ class _MacTrafficDecoration extends StatelessWidget {
             width: MacTrafficControls.visualDiameter,
             height: MacTrafficControls.visualDiameter,
             decoration: BoxDecoration(color: color, shape: BoxShape.circle),
+            child: glyph == null
+                ? null
+                : Icon(
+                    glyph,
+                    key: glyphKey,
+                    size: 9,
+                    color: const Color(0xA6000000),
+                  ),
           ),
         ),
       ),

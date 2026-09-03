@@ -330,11 +330,20 @@ void main() {
         expect(tester.getSize(visual).width, inInclusiveRange(13, 14));
         expect(tester.getSize(visual).height, inInclusiveRange(13, 14));
         expect(decoration.color, colors[control]);
-        expect(circle.child, isNull, reason: '$control must not show a mark');
-        expect(
-          find.descendant(of: visual, matching: find.byType(Icon)),
-          findsNothing,
+        final glyph = find.descendant(
+          of: visual,
+          matching: find.byKey(Key('window-$control-about-glyph')),
         );
+        if (control == 'close') {
+          expect(glyph, findsOneWidget);
+          expect(tester.widget<Icon>(glyph).icon, Icons.close_rounded);
+        } else if (control == 'minimize') {
+          expect(glyph, findsOneWidget);
+          expect(tester.widget<Icon>(glyph).icon, Icons.remove_rounded);
+        } else {
+          expect(glyph, findsNothing);
+          expect(circle.child, isNull);
+        }
         expect(
           find.byTooltip(
             '${control == 'close'
@@ -349,6 +358,13 @@ void main() {
 
       expect(visualCenters[1].dx - visualCenters[0].dx, closeTo(24, 0.01));
       expect(visualCenters[2].dx - visualCenters[1].dx, closeTo(24, 0.01));
+      expect(
+        find.descendant(
+          of: find.byKey(const Key('mac-traffic-controls-about')),
+          matching: find.byType(InkResponse),
+        ),
+        findsNothing,
+      );
 
       final minimizeTarget = tester.getRect(
         find.byKey(const Key('window-minimize-about')),
