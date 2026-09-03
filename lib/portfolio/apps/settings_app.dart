@@ -27,7 +27,7 @@ class SettingsApp extends StatelessWidget {
       key: const Key('settings-app'),
       child: LayoutBuilder(
         builder: (context, constraints) {
-          final wide = !compact && constraints.maxWidth >= 600;
+          final wide = !compact && !tablet && constraints.maxWidth >= 600;
           if (!wide) {
             return _DisplayModePane(
               data: data,
@@ -273,13 +273,13 @@ class _DisplayModeContent extends StatelessWidget {
         SizedBox(height: compact ? 18 : 26),
         LayoutBuilder(
           builder: (context, constraints) {
-            final stackChoices = compact || constraints.maxWidth < 430;
             final light = _ThemeChoice(
               preference: PortfolioThemePreference.light,
               label: '라이트',
               description: '밝고 선명한 화면',
               selected: controller.preference == PortfolioThemePreference.light,
               onSelected: controller.select,
+              compact: compact,
             );
             final dark = _ThemeChoice(
               preference: PortfolioThemePreference.dark,
@@ -287,7 +287,33 @@ class _DisplayModeContent extends StatelessWidget {
               description: '눈이 편안한 어두운 화면',
               selected: controller.preference == PortfolioThemePreference.dark,
               onSelected: controller.select,
+              compact: compact,
             );
+
+            if (compact) {
+              return Container(
+                key: const Key('settings-mobile-mode-panel'),
+                padding: const EdgeInsets.all(10),
+                decoration: BoxDecoration(
+                  color: AppleTheme.panel(context),
+                  borderRadius: BorderRadius.circular(20),
+                  border: Border.all(
+                    color: AppleTheme.separator(context),
+                    width: 0.7,
+                  ),
+                ),
+                child: Row(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: <Widget>[
+                    Expanded(child: light),
+                    const SizedBox(width: 8),
+                    Expanded(child: dark),
+                  ],
+                ),
+              );
+            }
+
+            final stackChoices = constraints.maxWidth < 430;
             return stackChoices
                 ? Column(
                     crossAxisAlignment: CrossAxisAlignment.stretch,
@@ -335,6 +361,7 @@ class _ThemeChoice extends StatefulWidget {
     required this.description,
     required this.selected,
     required this.onSelected,
+    required this.compact,
   });
 
   final PortfolioThemePreference preference;
@@ -342,6 +369,7 @@ class _ThemeChoice extends StatefulWidget {
   final String description;
   final bool selected;
   final ValueChanged<PortfolioThemePreference> onSelected;
+  final bool compact;
 
   @override
   State<_ThemeChoice> createState() => _ThemeChoiceState();
@@ -383,6 +411,25 @@ class _ThemeChoiceState extends State<_ThemeChoice> {
     final descriptionColor = selected
         ? AppleTheme.primaryLabel(context)
         : AppleTheme.secondaryLabel(context);
+    final selectionIndicator = AnimatedContainer(
+      key: selected ? Key('theme-selected-$_modeName') : null,
+      duration: const Duration(milliseconds: 160),
+      width: 22,
+      height: 22,
+      decoration: BoxDecoration(
+        shape: BoxShape.circle,
+        color: selected ? AppleTheme.buttonBlue : Colors.transparent,
+        border: Border.all(
+          color: selected
+              ? AppleTheme.buttonBlue
+              : AppleTheme.secondaryLabel(context),
+          width: 1.5,
+        ),
+      ),
+      child: selected
+          ? const Icon(Icons.check_rounded, color: Colors.white, size: 15)
+          : null,
+    );
     return Semantics(
       key: Key('theme-$_modeName'),
       label: '${widget.label} 화면 모드',
@@ -412,10 +459,12 @@ class _ThemeChoiceState extends State<_ThemeChoice> {
             duration: const Duration(milliseconds: 160),
             curve: Curves.easeOutCubic,
             constraints: const BoxConstraints(minHeight: 168),
-            padding: const EdgeInsets.all(12),
+            padding: EdgeInsets.all(widget.compact ? 8 : 12),
             decoration: BoxDecoration(
               color: selected
                   ? AppleTheme.selectionBackground(context, AppleTheme.blue)
+                  : widget.compact
+                  ? Colors.transparent
                   : AppleTheme.surface(context),
               borderRadius: BorderRadius.circular(16),
               border: Border.all(
@@ -423,78 +472,84 @@ class _ThemeChoiceState extends State<_ThemeChoice> {
                     ? emphasisColor
                     : selected
                     ? emphasisColor
+                    : widget.compact
+                    ? Colors.transparent
                     : AppleTheme.separator(context),
                 width: _showFocus ? 3 : (selected ? 2 : 0.8),
               ),
-              boxShadow: <BoxShadow>[
-                BoxShadow(
-                  color: AppleTheme.subtleShadow(context),
-                  blurRadius: 20,
-                  offset: const Offset(0, 8),
-                ),
-              ],
+              boxShadow: widget.compact
+                  ? const <BoxShadow>[]
+                  : <BoxShadow>[
+                      BoxShadow(
+                        color: AppleTheme.subtleShadow(context),
+                        blurRadius: 20,
+                        offset: const Offset(0, 8),
+                      ),
+                    ],
             ),
-            child: Column(
-              mainAxisSize: MainAxisSize.min,
-              crossAxisAlignment: CrossAxisAlignment.stretch,
-              children: <Widget>[
-                _AppearancePreview(
-                  dark: widget.preference == PortfolioThemePreference.dark,
-                ),
-                const SizedBox(height: 12),
-                Row(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: <Widget>[
-                    Expanded(
-                      child: Column(
+            child: widget.compact
+                ? Column(
+                    mainAxisSize: MainAxisSize.min,
+                    children: <Widget>[
+                      _AppearancePreview(
+                        key: Key('theme-preview-$_modeName'),
+                        dark:
+                            widget.preference == PortfolioThemePreference.dark,
+                        portrait: true,
+                      ),
+                      const SizedBox(height: 10),
+                      Text(
+                        widget.label,
+                        textAlign: TextAlign.center,
+                        maxLines: 2,
+                        overflow: TextOverflow.ellipsis,
+                        style: Theme.of(context).textTheme.labelLarge,
+                      ),
+                      const SizedBox(height: 8),
+                      selectionIndicator,
+                      if (_showFocus)
+                        SizedBox(key: Key('theme-focus-$_modeName'), height: 0),
+                    ],
+                  )
+                : Column(
+                    mainAxisSize: MainAxisSize.min,
+                    crossAxisAlignment: CrossAxisAlignment.stretch,
+                    children: <Widget>[
+                      _AppearancePreview(
+                        key: Key('theme-preview-$_modeName'),
+                        dark:
+                            widget.preference == PortfolioThemePreference.dark,
+                      ),
+                      const SizedBox(height: 12),
+                      Row(
                         crossAxisAlignment: CrossAxisAlignment.start,
                         children: <Widget>[
-                          Text(
-                            widget.label,
-                            style: Theme.of(context).textTheme.labelLarge,
+                          Expanded(
+                            child: Column(
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              children: <Widget>[
+                                Text(
+                                  widget.label,
+                                  style: Theme.of(context).textTheme.labelLarge,
+                                ),
+                                const SizedBox(height: 2),
+                                Text(
+                                  widget.description,
+                                  style: AppleTheme.caption(
+                                    context,
+                                  ).copyWith(color: descriptionColor),
+                                ),
+                              ],
+                            ),
                           ),
-                          const SizedBox(height: 2),
-                          Text(
-                            widget.description,
-                            style: AppleTheme.caption(
-                              context,
-                            ).copyWith(color: descriptionColor),
-                          ),
+                          const SizedBox(width: 8),
+                          selectionIndicator,
                         ],
                       ),
-                    ),
-                    const SizedBox(width: 8),
-                    AnimatedContainer(
-                      key: selected ? Key('theme-selected-$_modeName') : null,
-                      duration: const Duration(milliseconds: 160),
-                      width: 22,
-                      height: 22,
-                      decoration: BoxDecoration(
-                        shape: BoxShape.circle,
-                        color: selected
-                            ? AppleTheme.buttonBlue
-                            : Colors.transparent,
-                        border: Border.all(
-                          color: selected
-                              ? AppleTheme.buttonBlue
-                              : AppleTheme.secondaryLabel(context),
-                          width: 1.5,
-                        ),
-                      ),
-                      child: selected
-                          ? const Icon(
-                              Icons.check_rounded,
-                              color: Colors.white,
-                              size: 15,
-                            )
-                          : null,
-                    ),
-                  ],
-                ),
-                if (_showFocus)
-                  SizedBox(key: Key('theme-focus-$_modeName'), height: 0),
-              ],
-            ),
+                      if (_showFocus)
+                        SizedBox(key: Key('theme-focus-$_modeName'), height: 0),
+                    ],
+                  ),
           ),
         ),
       ),
@@ -503,9 +558,14 @@ class _ThemeChoiceState extends State<_ThemeChoice> {
 }
 
 class _AppearancePreview extends StatelessWidget {
-  const _AppearancePreview({required this.dark});
+  const _AppearancePreview({
+    required this.dark,
+    this.portrait = false,
+    super.key,
+  });
 
   final bool dark;
+  final bool portrait;
 
   @override
   Widget build(BuildContext context) {
@@ -514,8 +574,8 @@ class _AppearancePreview extends StatelessWidget {
     final side = dark ? const Color(0xFF303137) : const Color(0xFFE4E5E8);
     final line = dark ? const Color(0xFF6D6E74) : const Color(0xFFB5B6BB);
 
-    return AspectRatio(
-      aspectRatio: 2.05,
+    final preview = AspectRatio(
+      aspectRatio: portrait ? 0.64 : 2.05,
       child: DecoratedBox(
         decoration: BoxDecoration(
           color: canvas,
@@ -585,6 +645,16 @@ class _AppearancePreview extends StatelessWidget {
             ],
           ),
         ),
+      ),
+    );
+    if (!portrait) {
+      return preview;
+    }
+    return Center(
+      widthFactor: 1,
+      child: ConstrainedBox(
+        constraints: const BoxConstraints(maxWidth: 160),
+        child: preview,
       ),
     );
   }

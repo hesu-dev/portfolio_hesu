@@ -54,6 +54,37 @@ void main() {
       semantics.dispose();
     });
 
+    testWidgets('iPhone과 iPad는 사이드바 없이 프로필과 화면 모드를 보여준다', (tester) async {
+      for (final scenario in const <({Size size, bool compact, bool tablet})>[
+        (size: Size(390, 844), compact: true, tablet: false),
+        (size: Size(834, 1194), compact: false, tablet: true),
+      ]) {
+        final controller = PortfolioThemeController();
+
+        await _pumpSettings(
+          tester,
+          controller: controller,
+          size: scenario.size,
+          compact: scenario.compact,
+          tablet: scenario.tablet,
+        );
+
+        expect(find.byKey(const Key('settings-sidebar')), findsNothing);
+        final profile = find.byKey(const Key('settings-profile'));
+        final displayMode = find.byKey(const Key('settings-display-mode'));
+        expect(profile, findsOneWidget);
+        expect(displayMode, findsOneWidget);
+        expect(
+          tester.getTopLeft(profile).dy,
+          lessThan(tester.getTopLeft(displayMode).dy),
+        );
+        expect(tester.takeException(), isNull, reason: '${scenario.size}');
+
+        await tester.pumpWidget(const SizedBox.shrink());
+        controller.dispose();
+      }
+    });
+
     testWidgets('선택하면 앱 전체 테마와 선택 상태를 즉시 바꾼다', (tester) async {
       final controller = PortfolioThemeController();
       addTearDown(controller.dispose);
@@ -181,30 +212,94 @@ void main() {
       }
     });
 
-    testWidgets('좁은 화면과 200% 글자 크기에서 한 열로 스크롤된다', (tester) async {
-      final controller = PortfolioThemeController();
-      addTearDown(controller.dispose);
-      await _pumpSettings(
-        tester,
-        controller: controller,
-        size: const Size(320, 480),
-        compact: true,
-        textScaler: const TextScaler.linear(2),
-      );
+    testWidgets('iPhone과 iPad는 화면 비율 미리보기를 두 열로 맞춘다', (tester) async {
+      for (final scenario
+          in const <
+            ({
+              Size size,
+              bool compact,
+              bool tablet,
+              TextScaler textScaler,
+              PortfolioThemePreference preference,
+            })
+          >[
+            (
+              size: Size(320, 480),
+              compact: true,
+              tablet: false,
+              textScaler: TextScaler.linear(2),
+              preference: PortfolioThemePreference.light,
+            ),
+            (
+              size: Size(320, 480),
+              compact: true,
+              tablet: false,
+              textScaler: TextScaler.linear(2),
+              preference: PortfolioThemePreference.dark,
+            ),
+            (
+              size: Size(834, 700),
+              compact: false,
+              tablet: true,
+              textScaler: TextScaler.noScaling,
+              preference: PortfolioThemePreference.light,
+            ),
+            (
+              size: Size(834, 700),
+              compact: false,
+              tablet: true,
+              textScaler: TextScaler.noScaling,
+              preference: PortfolioThemePreference.dark,
+            ),
+          ]) {
+        final controller = PortfolioThemeController(
+          initial: scenario.preference,
+        );
 
-      expect(find.byKey(const Key('settings-sidebar')), findsNothing);
-      expect(find.byKey(const Key('settings-display-mode')), findsOneWidget);
-      expect(find.byKey(const Key('settings-scroll')), findsOneWidget);
-      expect(find.text('라이트'), findsOneWidget);
-      expect(find.text('다크'), findsOneWidget);
-      expect(tester.takeException(), isNull);
+        await _pumpSettings(
+          tester,
+          controller: controller,
+          size: scenario.size,
+          compact: scenario.compact,
+          tablet: scenario.tablet,
+          textScaler: scenario.textScaler,
+        );
 
-      await tester.drag(
-        find.byKey(const Key('settings-scroll')),
-        const Offset(0, -180),
-      );
-      await tester.pumpAndSettle();
-      expect(tester.takeException(), isNull);
+        expect(
+          find.byKey(const Key('settings-mobile-mode-panel')),
+          findsOneWidget,
+        );
+        final light = tester.getRect(find.byKey(const Key('theme-light')));
+        final dark = tester.getRect(find.byKey(const Key('theme-dark')));
+        expect(light.left, lessThan(dark.left));
+        expect((light.top - dark.top).abs(), lessThan(1));
+        expect(light.right, lessThanOrEqualTo(dark.left));
+
+        for (final mode in const <String>['light', 'dark']) {
+          final preview = tester.getSize(
+            find.byKey(Key('theme-preview-$mode')),
+          );
+          expect(preview.height, greaterThan(preview.width));
+          expect(preview.width, lessThanOrEqualTo(160));
+        }
+
+        expect(
+          find.byKey(Key('theme-selected-${scenario.preference.name}')),
+          findsOneWidget,
+        );
+        expect(find.byKey(const Key('settings-scroll')), findsOneWidget);
+        expect(tester.takeException(), isNull, reason: '${scenario.size}');
+
+        await tester.drag(
+          find.byKey(const Key('settings-scroll')),
+          const Offset(0, -180),
+        );
+        await tester.pumpAndSettle();
+        expect(tester.takeException(), isNull, reason: '${scenario.size}');
+
+        await tester.pumpWidget(const SizedBox.shrink());
+        controller.dispose();
+      }
     });
   });
 
@@ -231,6 +326,19 @@ void main() {
 
         expect(find.byKey(const Key('settings-app')), findsOneWidget);
         expect(find.byKey(Key(scenario.$3)), findsOneWidget);
+        if (scenario.$1.width >= 1024) {
+          expect(find.byKey(const Key('settings-sidebar')), findsOneWidget);
+          expect(
+            find.byKey(const Key('settings-mobile-mode-panel')),
+            findsNothing,
+          );
+        } else {
+          expect(find.byKey(const Key('settings-sidebar')), findsNothing);
+          expect(
+            find.byKey(const Key('settings-mobile-mode-panel')),
+            findsOneWidget,
+          );
+        }
         await tester.tap(find.byKey(const Key('theme-dark')));
         await tester.pumpAndSettle();
 
@@ -297,6 +405,7 @@ Future<void> _pumpSettings(
   required PortfolioThemeController controller,
   required Size size,
   bool compact = false,
+  bool tablet = false,
   TextScaler textScaler = TextScaler.noScaling,
 }) async {
   tester.view.devicePixelRatio = 1;
@@ -317,6 +426,7 @@ Future<void> _pumpSettings(
             data: portfolioData,
             themeController: controller,
             compact: compact,
+            tablet: tablet,
           ),
         ),
       ),
