@@ -54,6 +54,19 @@ void main() {
               .isSelected,
           ui.Tristate.isTrue,
         );
+
+        final recent = find.byKey(const Key('projects-finder-location-recent'));
+        expect(recent, findsOneWidget);
+        await tester.tap(recent);
+        await tester.pumpAndSettle();
+
+        expect(_toolbarTitle(tester), '최근 항목');
+        for (var index = 0; index < portfolioData.projects.length; index++) {
+          expect(
+            find.byKey(Key('projects-recent-folder-$index')),
+            findsOneWidget,
+          );
+        }
       },
     );
 

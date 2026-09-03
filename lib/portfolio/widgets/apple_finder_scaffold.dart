@@ -70,6 +70,7 @@ class AppleFinderScaffold extends StatelessWidget {
     required this.onForward,
     required this.bodyBuilder,
     this.locations,
+    this.recentLocation,
     this.selectedLocationId,
     this.onLocationSelected,
     this.toolbarTitle,
@@ -93,6 +94,7 @@ class AppleFinderScaffold extends StatelessWidget {
   final VoidCallback onForward;
   final AppleFinderBodyBuilder bodyBuilder;
   final List<AppleFinderLocation>? locations;
+  final AppleFinderLocation? recentLocation;
   final String? selectedLocationId;
   final ValueChanged<String>? onLocationSelected;
   final String? toolbarTitle;
@@ -144,6 +146,7 @@ class AppleFinderScaffold extends StatelessWidget {
                                 ownerName: ownerName,
                                 selectedLocation: currentLocation,
                                 locations: locations,
+                                recentLocation: recentLocation,
                                 selectedLocationId: selectedLocationId,
                                 onLocationSelected: onLocationSelected,
                                 controlKeyPrefix: '$keyPrefix-finder',
@@ -161,6 +164,7 @@ class AppleFinderScaffold extends StatelessWidget {
                             ownerName: ownerName,
                             selectedLocation: currentLocation,
                             locations: locations,
+                            recentLocation: recentLocation,
                             selectedLocationId: selectedLocationId,
                             onLocationSelected: onLocationSelected,
                             controlKeyPrefix: '$keyPrefix-finder',
@@ -495,6 +499,7 @@ class AppleFinderSidebar extends StatelessWidget {
     required this.ownerName,
     required this.selectedLocation,
     this.locations,
+    this.recentLocation,
     this.selectedLocationId,
     this.onLocationSelected,
     this.controlKeyPrefix = 'finder',
@@ -504,6 +509,7 @@ class AppleFinderSidebar extends StatelessWidget {
   final String ownerName;
   final String selectedLocation;
   final List<AppleFinderLocation>? locations;
+  final AppleFinderLocation? recentLocation;
   final String? selectedLocationId;
   final ValueChanged<String>? onLocationSelected;
   final String controlKeyPrefix;
@@ -511,6 +517,17 @@ class AppleFinderSidebar extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final configuredLocations = locations;
+    final recentItem = _AppleFinderSidebarItem(
+      controlKey: recentLocation == null
+          ? null
+          : Key('$controlKeyPrefix-location-${recentLocation!.id}'),
+      label: recentLocation?.label ?? '최근 항목',
+      icon: recentLocation?.icon ?? Icons.access_time_filled_rounded,
+      selected: recentLocation?.id == selectedLocationId,
+      onPressed: recentLocation == null || onLocationSelected == null
+          ? null
+          : () => onLocationSelected!(recentLocation!.id),
+    );
     return DecoratedBox(
       decoration: BoxDecoration(
         color: AppleTheme.panel(context),
@@ -522,10 +539,7 @@ class AppleFinderSidebar extends StatelessWidget {
         padding: const EdgeInsets.fromLTRB(10, 12, 10, 18),
         children: configuredLocations == null
             ? <Widget>[
-                const _AppleFinderSidebarItem(
-                  label: '최근 항목',
-                  icon: Icons.access_time_filled_rounded,
-                ),
+                recentItem,
                 const _AppleFinderSidebarItem(
                   label: '공유',
                   icon: Icons.people_alt_rounded,
@@ -545,10 +559,7 @@ class AppleFinderSidebar extends StatelessWidget {
                 ),
               ]
             : <Widget>[
-                const _AppleFinderSidebarItem(
-                  label: '최근 항목',
-                  icon: Icons.access_time_filled_rounded,
-                ),
+                recentItem,
                 const _AppleFinderSidebarItem(
                   label: '공유',
                   icon: Icons.people_alt_rounded,
@@ -578,6 +589,7 @@ class AppleFinderLocationStrip extends StatefulWidget {
     required this.ownerName,
     required this.selectedLocation,
     this.locations,
+    this.recentLocation,
     this.selectedLocationId,
     this.onLocationSelected,
     this.controlKeyPrefix = 'finder',
@@ -587,6 +599,7 @@ class AppleFinderLocationStrip extends StatefulWidget {
   final String ownerName;
   final String selectedLocation;
   final List<AppleFinderLocation>? locations;
+  final AppleFinderLocation? recentLocation;
   final String? selectedLocationId;
   final ValueChanged<String>? onLocationSelected;
   final String controlKeyPrefix;
@@ -647,6 +660,19 @@ class _AppleFinderLocationStripState extends State<AppleFinderLocationStrip> {
   @override
   Widget build(BuildContext context) {
     final configuredLocations = widget.locations;
+    final recentItem = _AppleFinderLocationChip(
+      controlKey: widget.recentLocation == null
+          ? null
+          : Key(
+              '${widget.controlKeyPrefix}-location-${widget.recentLocation!.id}',
+            ),
+      label: widget.recentLocation?.label ?? '최근 항목',
+      selected: widget.recentLocation?.id == widget.selectedLocationId,
+      onPressed:
+          widget.recentLocation == null || widget.onLocationSelected == null
+          ? null
+          : () => widget.onLocationSelected!(widget.recentLocation!.id),
+    );
     return DecoratedBox(
       decoration: BoxDecoration(
         color: AppleTheme.panel(context),
@@ -660,7 +686,7 @@ class _AppleFinderLocationStripState extends State<AppleFinderLocationStrip> {
         child: Row(
           children: configuredLocations == null
               ? <Widget>[
-                  const _AppleFinderLocationChip(label: '최근 항목'),
+                  recentItem,
                   const _AppleFinderLocationChip(label: '공유'),
                   _AppleFinderLocationChip(
                     label: widget.selectedLocation,
@@ -669,7 +695,7 @@ class _AppleFinderLocationStripState extends State<AppleFinderLocationStrip> {
                   _AppleFinderLocationChip(label: widget.ownerName),
                 ]
               : <Widget>[
-                  const _AppleFinderLocationChip(label: '최근 항목'),
+                  recentItem,
                   const _AppleFinderLocationChip(label: '공유'),
                   for (final location in configuredLocations)
                     _AppleFinderLocationChip(

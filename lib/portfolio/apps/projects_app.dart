@@ -119,6 +119,12 @@ class _ProjectsAppState extends State<ProjectsApp> {
     ),
   );
 
+  static const AppleFinderLocation _finderRecentLocation = AppleFinderLocation(
+    id: 'recent',
+    label: '최근 항목',
+    icon: Icons.access_time_filled_rounded,
+  );
+
   static final List<AppleFinderMobileDestination> _mobileDestinations =
       List.unmodifiable(
         _mobileLocationValues.map(
@@ -322,6 +328,7 @@ class _ProjectsAppState extends State<ProjectsApp> {
           : widget.data.projects[projectIndex].title,
       ownerName: widget.data.identity.name,
       locations: mobileLayout ? null : _finderLocations,
+      recentLocation: mobileLayout ? null : _finderRecentLocation,
       selectedLocationId: location.id,
       onLocationSelected: _selectLocationById,
       compact: widget.compact,
