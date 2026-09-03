@@ -121,6 +121,27 @@ void main() {
           of: finderToolbar,
           matching: find.byType(MacTrafficControls),
         ),
+        findsNothing,
+        reason: '$size',
+      );
+      expect(
+        find.descendant(
+          of: finderToolbar,
+          matching: find.byKey(const Key('mobile-back-close-projects')),
+        ),
+        findsOneWidget,
+        reason: '$size',
+      );
+      expect(
+        find.descendant(
+          of: finderToolbar,
+          matching: find.byKey(const Key('projects-finder-more')),
+        ),
+        findsOneWidget,
+        reason: '$size',
+      );
+      expect(
+        find.byKey(const Key('projects-finder-mobile-dock')),
         findsOneWidget,
         reason: '$size',
       );

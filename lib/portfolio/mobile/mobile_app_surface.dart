@@ -9,6 +9,7 @@ import '../theme/apple_theme.dart';
 import '../theme/portfolio_theme_controller.dart';
 import '../widgets/apple_app_icon.dart';
 import '../widgets/apple_finder_scaffold.dart';
+import 'mobile_back_close_button.dart';
 
 class MobileAppSurface extends StatelessWidget {
   const MobileAppSurface({
@@ -38,13 +39,10 @@ class MobileAppSurface extends StatelessWidget {
     final integratesFinderToolbar = appId == PortfolioAppId.projects;
     final finderWindowChrome = integratesFinderToolbar
         ? AppleFinderWindowChrome(
-            leadingControls: MacTrafficControls(
+            leadingControls: MobileBackCloseButton(
               appId: appId,
               windowLabel: label,
-              maximized: !tablet,
-              onClose: onClose,
-              targetSize: 32,
-              secondaryControlsInteractive: false,
+              onPressed: onClose,
             ),
             onDragUpdate: (_) {},
             cursor: MouseCursor.defer,
@@ -145,14 +143,21 @@ class _MobileAppNavigationBar extends StatelessWidget {
           ),
           child: Row(
             children: <Widget>[
-              MacTrafficControls(
-                appId: appId,
-                windowLabel: label,
-                maximized: !tablet,
-                onClose: onClose,
-                targetSize: 32,
-                secondaryControlsInteractive: false,
-              ),
+              if (tablet)
+                MacTrafficControls(
+                  appId: appId,
+                  windowLabel: label,
+                  maximized: false,
+                  onClose: onClose,
+                  targetSize: 32,
+                  secondaryControlsInteractive: false,
+                )
+              else
+                MobileBackCloseButton(
+                  appId: appId,
+                  windowLabel: label,
+                  onPressed: onClose,
+                ),
               SizedBox(width: tablet ? 10 : 6),
               Expanded(
                 child: Text(

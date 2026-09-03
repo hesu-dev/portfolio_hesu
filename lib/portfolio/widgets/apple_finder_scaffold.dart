@@ -19,6 +19,19 @@ class AppleFinderLocation {
   final IconData icon;
 }
 
+@immutable
+class AppleFinderMobileDestination {
+  const AppleFinderMobileDestination({
+    required this.id,
+    required this.label,
+    required this.icon,
+  });
+
+  final String id;
+  final String label;
+  final IconData icon;
+}
+
 /// Optional desktop-window chrome embedded into a Finder toolbar.
 ///
 /// Projects supplies this value on every form factor so one Finder toolbar owns
@@ -63,6 +76,7 @@ class AppleFinderScaffold extends StatelessWidget {
     this.backTooltip = '뒤로',
     this.forwardTooltip = '앞으로',
     this.windowChrome,
+    this.mobileBottomNavigation,
     this.onViewPressed,
     super.key,
   }) : assert(locations == null || selectedLocationId != null);
@@ -85,10 +99,12 @@ class AppleFinderScaffold extends StatelessWidget {
   final String backTooltip;
   final String forwardTooltip;
   final AppleFinderWindowChrome? windowChrome;
+  final Widget? mobileBottomNavigation;
   final VoidCallback? onViewPressed;
 
   @override
   Widget build(BuildContext context) {
+    final mobileLayout = mobileBottomNavigation != null;
     return AppleAppSurface(
       key: surfaceKey,
       child: Column(
@@ -109,49 +125,53 @@ class AppleFinderScaffold extends StatelessWidget {
             onDragUpdate: windowChrome?.onDragUpdate,
             dragCursor: windowChrome?.cursor,
             onViewPressed: onViewPressed,
+            mobile: mobileLayout,
           ),
           Expanded(
-            child: LayoutBuilder(
-              builder: (context, constraints) {
-                final wide =
-                    !compact && (tablet || constraints.maxWidth >= 700);
-                if (wide) {
-                  return Row(
-                    children: <Widget>[
-                      SizedBox(
-                        width: tablet ? 176 : 252,
-                        child: AppleFinderSidebar(
-                          key: Key('$keyPrefix-finder-sidebar'),
-                          ownerName: ownerName,
-                          selectedLocation: currentLocation,
-                          locations: locations,
-                          selectedLocationId: selectedLocationId,
-                          onLocationSelected: onLocationSelected,
-                          controlKeyPrefix: '$keyPrefix-finder',
-                        ),
-                      ),
-                      Expanded(child: bodyBuilder(context, false)),
-                    ],
-                  );
-                }
+            child: mobileLayout
+                ? bodyBuilder(context, compact)
+                : LayoutBuilder(
+                    builder: (context, constraints) {
+                      final wide =
+                          !compact && (tablet || constraints.maxWidth >= 700);
+                      if (wide) {
+                        return Row(
+                          children: <Widget>[
+                            SizedBox(
+                              width: tablet ? 176 : 252,
+                              child: AppleFinderSidebar(
+                                key: Key('$keyPrefix-finder-sidebar'),
+                                ownerName: ownerName,
+                                selectedLocation: currentLocation,
+                                locations: locations,
+                                selectedLocationId: selectedLocationId,
+                                onLocationSelected: onLocationSelected,
+                                controlKeyPrefix: '$keyPrefix-finder',
+                              ),
+                            ),
+                            Expanded(child: bodyBuilder(context, false)),
+                          ],
+                        );
+                      }
 
-                return Column(
-                  children: <Widget>[
-                    AppleFinderLocationStrip(
-                      key: Key('$keyPrefix-finder-locations'),
-                      ownerName: ownerName,
-                      selectedLocation: currentLocation,
-                      locations: locations,
-                      selectedLocationId: selectedLocationId,
-                      onLocationSelected: onLocationSelected,
-                      controlKeyPrefix: '$keyPrefix-finder',
-                    ),
-                    Expanded(child: bodyBuilder(context, true)),
-                  ],
-                );
-              },
-            ),
+                      return Column(
+                        children: <Widget>[
+                          AppleFinderLocationStrip(
+                            key: Key('$keyPrefix-finder-locations'),
+                            ownerName: ownerName,
+                            selectedLocation: currentLocation,
+                            locations: locations,
+                            selectedLocationId: selectedLocationId,
+                            onLocationSelected: onLocationSelected,
+                            controlKeyPrefix: '$keyPrefix-finder',
+                          ),
+                          Expanded(child: bodyBuilder(context, true)),
+                        ],
+                      );
+                    },
+                  ),
           ),
+          if (mobileBottomNavigation case final navigation?) navigation,
         ],
       ),
     );
@@ -174,6 +194,7 @@ class AppleFinderToolbar extends StatelessWidget {
     this.onDragUpdate,
     this.dragCursor,
     this.onViewPressed,
+    this.mobile = false,
     super.key,
   });
 
@@ -191,6 +212,7 @@ class AppleFinderToolbar extends StatelessWidget {
   final GestureDragUpdateCallback? onDragUpdate;
   final MouseCursor? dragCursor;
   final VoidCallback? onViewPressed;
+  final bool mobile;
 
   @override
   Widget build(BuildContext context) {
@@ -210,60 +232,258 @@ class AppleFinderToolbar extends StatelessWidget {
               ),
             ),
           ),
-          child: ConstrainedBox(
-            constraints: BoxConstraints(minHeight: compact ? 56 : 62),
-            child: Padding(
-              padding: EdgeInsets.symmetric(
-                horizontal: compact ? 8 : 14,
-                vertical: 5,
-              ),
-              child: Row(
-                children: <Widget>[
-                  if (leadingControls != null) ...<Widget>[
-                    leadingControls!,
-                    SizedBox(width: compact ? 4 : 10),
-                  ],
-                  IconButton(
-                    key: Key('$controlKeyPrefix-back'),
-                    tooltip: backTooltip,
-                    onPressed: canGoBack ? onBack : null,
-                    icon: const Icon(Icons.chevron_left_rounded),
-                  ),
-                  IconButton(
-                    key: Key('$controlKeyPrefix-forward'),
-                    tooltip: forwardTooltip,
-                    onPressed: canGoForward ? onForward : null,
-                    icon: const Icon(Icons.chevron_right_rounded),
-                  ),
-                  SizedBox(width: compact ? 3 : 10),
-                  Expanded(
-                    child: Container(
-                      key: Key('$controlKeyPrefix-current-location'),
-                      alignment: Alignment.center,
-                      constraints: const BoxConstraints(minHeight: 38),
-                      padding: const EdgeInsets.symmetric(horizontal: 10),
-                      child: Text(
-                        currentLocation,
-                        maxLines: 1,
-                        overflow: TextOverflow.ellipsis,
-                        style: Theme.of(context).textTheme.titleMedium,
-                      ),
+          child: mobile
+              ? _MobileFinderToolbarContent(
+                  currentLocation: currentLocation,
+                  controlKeyPrefix: controlKeyPrefix,
+                  leadingControls: leadingControls,
+                )
+              : ConstrainedBox(
+                  constraints: BoxConstraints(minHeight: compact ? 56 : 62),
+                  child: Padding(
+                    padding: EdgeInsets.symmetric(
+                      horizontal: compact ? 8 : 14,
+                      vertical: 5,
+                    ),
+                    child: Row(
+                      children: <Widget>[
+                        if (leadingControls != null) ...<Widget>[
+                          leadingControls!,
+                          SizedBox(width: compact ? 4 : 10),
+                        ],
+                        IconButton(
+                          key: Key('$controlKeyPrefix-back'),
+                          tooltip: backTooltip,
+                          onPressed: canGoBack ? onBack : null,
+                          icon: const Icon(Icons.chevron_left_rounded),
+                        ),
+                        IconButton(
+                          key: Key('$controlKeyPrefix-forward'),
+                          tooltip: forwardTooltip,
+                          onPressed: canGoForward ? onForward : null,
+                          icon: const Icon(Icons.chevron_right_rounded),
+                        ),
+                        SizedBox(width: compact ? 3 : 10),
+                        Expanded(
+                          child: Container(
+                            key: Key('$controlKeyPrefix-current-location'),
+                            alignment: Alignment.center,
+                            constraints: const BoxConstraints(minHeight: 38),
+                            padding: const EdgeInsets.symmetric(horizontal: 10),
+                            child: Text(
+                              currentLocation,
+                              maxLines: 1,
+                              overflow: TextOverflow.ellipsis,
+                              style: Theme.of(context).textTheme.titleMedium,
+                            ),
+                          ),
+                        ),
+                        SizedBox(width: compact ? 4 : 8),
+                        IconButton(
+                          key: Key('$controlKeyPrefix-view-options'),
+                          tooltip: '보기 방식',
+                          onPressed: onViewPressed,
+                          icon: Icon(
+                            Icons.grid_view_rounded,
+                            color: AppleTheme.secondaryLabel(context),
+                          ),
+                        ),
+                      ],
                     ),
                   ),
-                  SizedBox(width: compact ? 4 : 8),
-                  IconButton(
-                    key: Key('$controlKeyPrefix-view-options'),
-                    tooltip: '보기 방식',
-                    onPressed: onViewPressed,
-                    icon: Icon(
-                      Icons.grid_view_rounded,
-                      color: AppleTheme.secondaryLabel(context),
-                    ),
-                  ),
-                ],
+                ),
+        ),
+      ),
+    );
+  }
+}
+
+class _MobileFinderToolbarContent extends StatelessWidget {
+  const _MobileFinderToolbarContent({
+    required this.currentLocation,
+    required this.controlKeyPrefix,
+    required this.leadingControls,
+  });
+
+  final String currentLocation;
+  final String controlKeyPrefix;
+  final Widget? leadingControls;
+
+  @override
+  Widget build(BuildContext context) {
+    return SizedBox(
+      height: 64,
+      child: Stack(
+        alignment: Alignment.center,
+        children: <Widget>[
+          PositionedDirectional(
+            start: 8,
+            child: leadingControls ?? const SizedBox.square(dimension: 44),
+          ),
+          Positioned.fill(
+            left: 62,
+            right: 62,
+            child: Container(
+              key: Key('$controlKeyPrefix-current-location'),
+              alignment: Alignment.center,
+              child: Text(
+                currentLocation,
+                maxLines: 1,
+                overflow: TextOverflow.ellipsis,
+                textAlign: TextAlign.center,
+                style: Theme.of(context).textTheme.titleMedium?.copyWith(
+                  fontSize: 18,
+                  fontWeight: FontWeight.w700,
+                ),
               ),
             ),
           ),
+          PositionedDirectional(
+            end: 8,
+            child: IgnorePointer(
+              child: ExcludeSemantics(
+                child: SizedBox.square(
+                  key: Key('$controlKeyPrefix-more'),
+                  dimension: 44,
+                  child: Center(
+                    child: Container(
+                      width: 40,
+                      height: 40,
+                      alignment: Alignment.center,
+                      decoration: BoxDecoration(
+                        color: AppleTheme.panel(context),
+                        shape: BoxShape.circle,
+                        border: Border.all(
+                          color: AppleTheme.separator(context),
+                          width: 0.8,
+                        ),
+                      ),
+                      child: Icon(
+                        Icons.more_horiz_rounded,
+                        color: AppleTheme.primaryLabel(context),
+                        size: 23,
+                      ),
+                    ),
+                  ),
+                ),
+              ),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+class AppleFinderMobileNavigationBar extends StatelessWidget {
+  const AppleFinderMobileNavigationBar({
+    required this.keyPrefix,
+    required this.destinations,
+    required this.selectedId,
+    required this.onSelected,
+    super.key,
+  });
+
+  final String keyPrefix;
+  final List<AppleFinderMobileDestination> destinations;
+  final String selectedId;
+  final ValueChanged<String> onSelected;
+
+  @override
+  Widget build(BuildContext context) {
+    return Padding(
+      padding: const EdgeInsets.fromLTRB(12, 6, 12, 8),
+      child: Center(
+        child: ConstrainedBox(
+          constraints: const BoxConstraints(maxWidth: 520),
+          child: Container(
+            key: Key('$keyPrefix-mobile-dock'),
+            constraints: const BoxConstraints(minHeight: 66),
+            padding: const EdgeInsets.all(5),
+            decoration: BoxDecoration(
+              color: AppleTheme.surface(context).withValues(alpha: 0.94),
+              borderRadius: BorderRadius.circular(28),
+              border: Border.all(
+                color: AppleTheme.separator(context),
+                width: 0.8,
+              ),
+              boxShadow: <BoxShadow>[
+                BoxShadow(
+                  color: AppleTheme.subtleShadow(context),
+                  blurRadius: 18,
+                  offset: const Offset(0, 7),
+                ),
+              ],
+            ),
+            child: Row(
+              children: <Widget>[
+                for (final destination in destinations)
+                  Expanded(
+                    child: _MobileFinderDestinationButton(
+                      controlKey: Key('$keyPrefix-location-${destination.id}'),
+                      destination: destination,
+                      selected: destination.id == selectedId,
+                      onPressed: () => onSelected(destination.id),
+                    ),
+                  ),
+              ],
+            ),
+          ),
+        ),
+      ),
+    );
+  }
+}
+
+class _MobileFinderDestinationButton extends StatelessWidget {
+  const _MobileFinderDestinationButton({
+    required this.controlKey,
+    required this.destination,
+    required this.selected,
+    required this.onPressed,
+  });
+
+  final Key controlKey;
+  final AppleFinderMobileDestination destination;
+  final bool selected;
+  final VoidCallback onPressed;
+
+  @override
+  Widget build(BuildContext context) {
+    final foreground = selected
+        ? AppleTheme.blue
+        : AppleTheme.secondaryLabel(context);
+    return AppleSelectionControl(
+      key: controlKey,
+      semanticsLabel: 'Open ${destination.label}',
+      selected: selected,
+      onPressed: onPressed,
+      borderRadius: BorderRadius.circular(22),
+      child: Container(
+        constraints: const BoxConstraints(minHeight: 54),
+        padding: const EdgeInsets.symmetric(horizontal: 4, vertical: 6),
+        decoration: BoxDecoration(
+          color: selected
+              ? AppleTheme.selectionBackground(context, AppleTheme.blue)
+              : Colors.transparent,
+          borderRadius: BorderRadius.circular(22),
+        ),
+        child: Column(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: <Widget>[
+            Icon(destination.icon, color: foreground, size: 22),
+            const SizedBox(height: 3),
+            Text(
+              destination.label,
+              maxLines: 1,
+              overflow: TextOverflow.ellipsis,
+              style: Theme.of(context).textTheme.labelLarge?.copyWith(
+                color: foreground,
+                fontSize: 11,
+                fontWeight: selected ? FontWeight.w700 : FontWeight.w600,
+              ),
+            ),
+          ],
         ),
       ),
     );

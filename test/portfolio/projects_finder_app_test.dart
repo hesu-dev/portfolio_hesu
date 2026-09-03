@@ -98,7 +98,7 @@ void main() {
       );
     });
 
-    testWidgets('iPad mini부터 좁은 사이드바 옆에 데스크톱형 전체 파일 목록을 표시한다', (tester) async {
+    testWidgets('iPad는 사이드바 없이 하단 탐색과 데스크톱형 전체 파일 목록을 표시한다', (tester) async {
       for (final contentWidth in const <double>[552, 696, 786]) {
         await tester.pumpWidget(const SizedBox.shrink());
         await _pumpProjects(
@@ -107,12 +107,19 @@ void main() {
           tablet: true,
         );
 
-        final sidebar = find.byKey(const Key('projects-finder-sidebar'));
-        expect(sidebar, findsOneWidget, reason: '$contentWidth');
-        expect(tester.getSize(sidebar).width, 176, reason: '$contentWidth');
+        expect(
+          find.byKey(const Key('projects-finder-sidebar')),
+          findsNothing,
+          reason: '$contentWidth',
+        );
         expect(
           find.byKey(const Key('projects-finder-locations')),
           findsNothing,
+          reason: '$contentWidth',
+        );
+        expect(
+          find.byKey(const Key('projects-finder-mobile-dock')),
+          findsOneWidget,
           reason: '$contentWidth',
         );
         expect(
@@ -173,11 +180,12 @@ void main() {
       );
 
       expect(find.byKey(const Key('projects-finder-toolbar')), findsOneWidget);
+      expect(find.byKey(const Key('projects-finder-locations')), findsNothing);
+      expect(find.byKey(const Key('projects-finder-sidebar')), findsNothing);
       expect(
-        find.byKey(const Key('projects-finder-locations')),
+        find.byKey(const Key('projects-finder-mobile-dock')),
         findsOneWidget,
       );
-      expect(find.byKey(const Key('projects-finder-sidebar')), findsNothing);
       expect(
         find.byKey(const Key('projects-collection-scroll')),
         findsOneWidget,

@@ -1,7 +1,6 @@
 import 'dart:ui' as ui;
 
 import 'package:flutter/material.dart';
-import 'package:flutter/services.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:portfolio_hesu/portfolio/apps/projects_app.dart';
 import 'package:portfolio_hesu/portfolio/data/portfolio_data.dart';
@@ -10,7 +9,6 @@ import 'package:portfolio_hesu/portfolio/portfolio_app.dart';
 import 'package:portfolio_hesu/portfolio/services/external_launcher.dart';
 import 'package:portfolio_hesu/portfolio/theme/apple_theme.dart';
 import 'package:portfolio_hesu/portfolio/widgets/apple_finder_scaffold.dart';
-import 'package:portfolio_hesu/portfolio/widgets/apple_selection_control.dart';
 
 void main() {
   group('Projects Finder locations', () {
@@ -171,7 +169,7 @@ void main() {
     });
 
     testWidgets(
-      'iPhone and iPad use the same location set and selection flow',
+      'iPhone and iPad share recent, career, and personal bottom navigation',
       (tester) async {
         for (final scenario in const <({Size size, bool compact, bool tablet})>[
           (size: Size(390, 700), compact: true, tablet: false),
@@ -185,43 +183,63 @@ void main() {
             tablet: scenario.tablet,
           );
 
-          final locationSurface = scenario.compact
-              ? find.byKey(const Key('projects-finder-locations'))
-              : find.byKey(const Key('projects-finder-sidebar'));
-          expect(locationSurface, findsOneWidget, reason: '${scenario.size}');
-          for (final shortcut in const <String>['최근 항목', '공유']) {
+          final dock = find.byKey(const Key('projects-finder-mobile-dock'));
+          expect(dock, findsOneWidget, reason: '${scenario.size}');
+          expect(
+            find.byKey(const Key('projects-finder-sidebar')),
+            findsNothing,
+          );
+          expect(
+            find.byKey(const Key('projects-finder-locations')),
+            findsNothing,
+          );
+          for (final label in const <String>['최근 항목', '경력', '개인']) {
             expect(
-              find.descendant(
-                of: locationSurface,
-                matching: find.text(shortcut),
-              ),
-              findsOneWidget,
-              reason: '${scenario.size} $shortcut',
-            );
-          }
-          for (final label in const <String>[
-            'iCloud Drive',
-            '데스크탑',
-            '경력',
-            '개인 프로젝트',
-          ]) {
-            expect(
-              find.descendant(of: locationSurface, matching: find.text(label)),
+              find.descendant(of: dock, matching: find.text(label)),
               findsOneWidget,
               reason: '${scenario.size} $label',
             );
           }
-
-          final desktopLocation = find.byKey(
-            const Key('projects-finder-location-desktop'),
-          );
-          await tester.ensureVisible(desktopLocation);
-          await tester.tap(desktopLocation);
-          await tester.pumpAndSettle();
           expect(
-            find.byKey(const Key('projects-desktop-app-grid')),
+            find.descendant(of: dock, matching: find.text('공유')),
+            findsNothing,
+          );
+          expect(
+            find.descendant(of: dock, matching: find.text('iCloud Drive')),
+            findsNothing,
+          );
+          expect(
+            find.descendant(of: dock, matching: find.text('데스크탑')),
+            findsNothing,
+          );
+
+          expect(
+            _isSelected(tester, const Key('projects-finder-location-career')),
+            isTrue,
+          );
+
+          await tester.tap(
+            find.byKey(const Key('projects-finder-location-recent')),
+          );
+          await tester.pumpAndSettle();
+          expect(_toolbarTitle(tester), '최근 항목');
+          for (var index = 0; index < portfolioData.projects.length; index++) {
+            expect(
+              find.byKey(Key('projects-recent-folder-$index')),
+              findsOneWidget,
+            );
+          }
+
+          await tester.tap(
+            find.byKey(const Key('projects-finder-location-personal-projects')),
+          );
+          await tester.pumpAndSettle();
+          expect(_toolbarTitle(tester), '개인 프로젝트');
+          expect(
+            find.byKey(const Key('projects-personal-projects-folder-0')),
             findsOneWidget,
           );
+          expect(find.text('ReadingLog'), findsOneWidget);
           expect(tester.takeException(), isNull, reason: '${scenario.size}');
         }
       },
@@ -253,7 +271,7 @@ void main() {
       expect(_toolbarTitle(tester), '데스크탑');
     });
 
-    testWidgets('compact iCloud empty state remains usable at 200% text', (
+    testWidgets('compact recent projects remain usable at 200% text', (
       tester,
     ) async {
       await _pumpProjects(
@@ -263,38 +281,40 @@ void main() {
         textScaler: const TextScaler.linear(2),
       );
 
-      final iCloudLocation = find.byKey(
-        const Key('projects-finder-location-icloud-drive'),
-      );
-      await tester.ensureVisible(iCloudLocation);
-      await tester.tap(iCloudLocation);
+      final recent = find.byKey(const Key('projects-finder-location-recent'));
+      await tester.tap(recent);
       await tester.pumpAndSettle();
 
-      expect(find.byKey(const Key('projects-icloud-empty')), findsOneWidget);
+      expect(
+        find.byKey(const Key('projects-finder-mobile-dock')),
+        findsOneWidget,
+      );
+      expect(find.byKey(const Key('projects-recent-folder-0')), findsOneWidget);
       expect(tester.takeException(), isNull);
     });
 
-    testWidgets('compact strip reveals initial and changed selections', (
+    testWidgets('mobile bottom navigation exposes stable selected semantics', (
       tester,
     ) async {
       await _pumpProjects(tester, size: const Size(320, 700), compact: true);
       await tester.pumpAndSettle();
 
-      final strip = find.byKey(const Key('projects-finder-locations'));
-      final career = find.byKey(const Key('projects-finder-location-career'));
-      _expectHorizontallyVisible(tester, item: career, viewport: strip);
-
-      tester
-          .widget<AppleSelectionControl>(
-            find.byKey(const Key('projects-finder-location-icloud-drive')),
-          )
-          .onPressed();
+      expect(
+        _isSelected(tester, const Key('projects-finder-location-career')),
+        isTrue,
+      );
+      await tester.tap(
+        find.byKey(const Key('projects-finder-location-recent')),
+      );
       await tester.pumpAndSettle();
 
-      _expectHorizontallyVisible(
-        tester,
-        item: find.byKey(const Key('projects-finder-location-icloud-drive')),
-        viewport: strip,
+      expect(
+        _isSelected(tester, const Key('projects-finder-location-recent')),
+        isTrue,
+      );
+      expect(
+        _isSelected(tester, const Key('projects-finder-location-career')),
+        isFalse,
       );
     });
 
@@ -384,77 +404,6 @@ void main() {
       },
     );
 
-    testWidgets('데스크탑 app shortcuts open a new iPhone and iPad window', (
-      tester,
-    ) async {
-      for (final size in const <Size>[Size(390, 700), Size(834, 700)]) {
-        await tester.pumpWidget(const SizedBox.shrink());
-        await _pumpPortfolio(tester, size: size);
-
-        await tester.tap(find.byKey(const Key('home-app-projects')));
-        await tester.pumpAndSettle();
-        final desktopLocation = find.byKey(
-          const Key('projects-finder-location-desktop'),
-        );
-        await tester.ensureVisible(desktopLocation);
-        await tester.tap(desktopLocation);
-        await tester.pumpAndSettle();
-        await tester.tap(
-          find.byKey(Key('projects-desktop-app-${PortfolioAppId.mail.name}')),
-        );
-        await tester.pumpAndSettle();
-
-        expect(find.byKey(const Key('mail-app')), findsOneWidget);
-        expect(find.byKey(const Key('projects-app')), findsOneWidget);
-        expect(find.byKey(const Key('mobile-app-surface')), findsNWidgets(2));
-
-        await tester.tap(find.byKey(const Key('window-close-mail')));
-        await tester.pumpAndSettle();
-
-        expect(find.byKey(const Key('mail-app')), findsNothing);
-        expect(find.byKey(const Key('projects-app')), findsOneWidget);
-        expect(_toolbarTitle(tester), '데스크탑');
-        expect(tester.takeException(), isNull, reason: '$size');
-      }
-    });
-
-    testWidgets('새 창 뒤의 Projects는 키보드 입력에서도 비활성화된다', (tester) async {
-      final semantics = tester.ensureSemantics();
-      await _pumpPortfolio(tester, size: const Size(834, 700));
-
-      await tester.tap(find.byKey(const Key('home-app-projects')));
-      await tester.pumpAndSettle();
-      await tester.tap(
-        find.byKey(const Key('projects-finder-location-desktop')),
-      );
-      await tester.pumpAndSettle();
-
-      final mailShortcut = find.bySemanticsLabel('Open Mail');
-      var mailIsFocused = false;
-      for (var index = 0; index < 32 && !mailIsFocused; index++) {
-        await tester.sendKeyEvent(LogicalKeyboardKey.tab);
-        await tester.pump();
-        mailIsFocused =
-            tester
-                .getSemantics(mailShortcut)
-                .getSemanticsData()
-                .flagsCollection
-                .isFocused ==
-            ui.Tristate.isTrue;
-      }
-      expect(mailIsFocused, isTrue);
-
-      await tester.sendKeyEvent(LogicalKeyboardKey.enter);
-      await tester.pumpAndSettle();
-      expect(find.byKey(const Key('mobile-app-surface')), findsNWidgets(2));
-
-      await tester.sendKeyEvent(LogicalKeyboardKey.enter);
-      await tester.pumpAndSettle();
-      expect(find.byKey(const Key('mobile-app-surface')), findsNWidgets(2));
-      expect(find.byKey(const Key('mail-app')), findsOneWidget);
-      semantics.dispose();
-    });
-
     testWidgets('데스크탑 app shortcuts open another macOS window', (tester) async {
       await _pumpPortfolio(tester, size: const Size(1280, 720));
 
@@ -485,17 +434,6 @@ String _toolbarTitle(WidgetTester tester) {
     matching: find.byType(Text),
   );
   return tester.widget<Text>(title).data!;
-}
-
-void _expectHorizontallyVisible(
-  WidgetTester tester, {
-  required Finder item,
-  required Finder viewport,
-}) {
-  final itemRect = tester.getRect(item);
-  final viewportRect = tester.getRect(viewport);
-  expect(itemRect.left, greaterThanOrEqualTo(viewportRect.left));
-  expect(itemRect.right, lessThanOrEqualTo(viewportRect.right));
 }
 
 bool _isSelected(WidgetTester tester, Key key) {

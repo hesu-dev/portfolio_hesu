@@ -7,10 +7,17 @@ import '../theme/apple_theme.dart';
 import '../widgets/apple_app_icon.dart';
 import '../widgets/apple_finder_scaffold.dart';
 
-enum _ProjectsLocation { iCloudDrive, desktop, career, personalProjects }
+enum _ProjectsLocation {
+  recent,
+  iCloudDrive,
+  desktop,
+  career,
+  personalProjects,
+}
 
 extension on _ProjectsLocation {
   String get id => switch (this) {
+    _ProjectsLocation.recent => 'recent',
     _ProjectsLocation.iCloudDrive => 'icloud-drive',
     _ProjectsLocation.desktop => 'desktop',
     _ProjectsLocation.career => 'career',
@@ -18,6 +25,7 @@ extension on _ProjectsLocation {
   };
 
   String get label => switch (this) {
+    _ProjectsLocation.recent => '최근 항목',
     _ProjectsLocation.iCloudDrive => 'iCloud Drive',
     _ProjectsLocation.desktop => '데스크탑',
     _ProjectsLocation.career => '경력',
@@ -25,6 +33,7 @@ extension on _ProjectsLocation {
   };
 
   IconData get icon => switch (this) {
+    _ProjectsLocation.recent => Icons.access_time_filled_rounded,
     _ProjectsLocation.iCloudDrive => Icons.cloud_rounded,
     _ProjectsLocation.desktop => Icons.desktop_mac_rounded,
     _ProjectsLocation.career => Icons.business_center_rounded,
@@ -77,15 +86,31 @@ class ProjectsApp extends StatefulWidget {
 }
 
 class _ProjectsAppState extends State<ProjectsApp> {
-  static const List<_ProjectsLocation> _locationValues = <_ProjectsLocation>[
+  static const List<_ProjectsLocation> _allLocationValues = <_ProjectsLocation>[
+    _ProjectsLocation.recent,
     _ProjectsLocation.iCloudDrive,
     _ProjectsLocation.desktop,
     _ProjectsLocation.career,
     _ProjectsLocation.personalProjects,
   ];
 
+  static const List<_ProjectsLocation> _desktopLocationValues =
+      <_ProjectsLocation>[
+        _ProjectsLocation.iCloudDrive,
+        _ProjectsLocation.desktop,
+        _ProjectsLocation.career,
+        _ProjectsLocation.personalProjects,
+      ];
+
+  static const List<_ProjectsLocation> _mobileLocationValues =
+      <_ProjectsLocation>[
+        _ProjectsLocation.recent,
+        _ProjectsLocation.career,
+        _ProjectsLocation.personalProjects,
+      ];
+
   static final List<AppleFinderLocation> _finderLocations = List.unmodifiable(
-    _locationValues.map(
+    _desktopLocationValues.map(
       (location) => AppleFinderLocation(
         id: location.id,
         label: location.label,
@@ -94,11 +119,24 @@ class _ProjectsAppState extends State<ProjectsApp> {
     ),
   );
 
+  static final List<AppleFinderMobileDestination> _mobileDestinations =
+      List.unmodifiable(
+        _mobileLocationValues.map(
+          (location) => AppleFinderMobileDestination(
+            id: location.id,
+            label: location == _ProjectsLocation.personalProjects
+                ? '개인'
+                : location.label,
+            icon: location.icon,
+          ),
+        ),
+      );
+
   final List<_ProjectsDestination> _history = <_ProjectsDestination>[
     _ProjectsDestination(_ProjectsLocation.career),
   ];
-  final Map<PortfolioProjectCategory, int?> _selectedProject =
-      <PortfolioProjectCategory, int?>{};
+  final Map<_ProjectsLocation, int?> _selectedProject =
+      <_ProjectsLocation, int?>{};
   int _historyCursor = 0;
   int _launchRequestGeneration = 0;
   String? _launchFeedback;
@@ -112,6 +150,20 @@ class _ProjectsAppState extends State<ProjectsApp> {
         .where((entry) => entry.$2.category == category)
         .map((entry) => _ProjectEntry(index: entry.$1, project: entry.$2))
         .toList(growable: false);
+  }
+
+  List<_ProjectEntry> _projectsForLocation(_ProjectsLocation location) {
+    final category = location.category;
+    if (category == null) {
+      return location == _ProjectsLocation.recent
+          ? widget.data.projects.indexed
+                .map(
+                  (entry) => _ProjectEntry(index: entry.$1, project: entry.$2),
+                )
+                .toList(growable: false)
+          : const <_ProjectEntry>[];
+    }
+    return _projectsFor(category);
   }
 
   @override
@@ -140,8 +192,12 @@ class _ProjectsAppState extends State<ProjectsApp> {
       if (index == null) {
         return false;
       }
-      return index >= widget.data.projects.length ||
-          widget.data.projects[index].category != destination.location.category;
+      if (index >= widget.data.projects.length) {
+        return true;
+      }
+      final category = destination.location.category;
+      return category != null &&
+          widget.data.projects[index].category != category;
     });
     if (historyIsInvalid) {
       _history
@@ -154,12 +210,14 @@ class _ProjectsAppState extends State<ProjectsApp> {
       return;
     }
 
-    for (final category in PortfolioProjectCategory.values) {
-      final selection = _selectedProject[category];
+    for (final location in _allLocationValues) {
+      final selection = _selectedProject[location];
+      final category = location.category;
       if (selection != null &&
           (selection >= widget.data.projects.length ||
-              widget.data.projects[selection].category != category)) {
-        _selectedProject[category] = null;
+              (category != null &&
+                  widget.data.projects[selection].category != category))) {
+        _selectedProject[location] = null;
       }
     }
   }
@@ -186,7 +244,7 @@ class _ProjectsAppState extends State<ProjectsApp> {
   }
 
   void _selectLocationById(String id) {
-    for (final location in _locationValues) {
+    for (final location in _allLocationValues) {
       if (location.id == id) {
         _selectLocation(location);
         return;
@@ -210,7 +268,7 @@ class _ProjectsAppState extends State<ProjectsApp> {
   void _selectProject(_ProjectsLocation location, int index) {
     _launchRequestGeneration++;
     setState(() {
-      _selectedProject[location.category!] = index;
+      _selectedProject[location] = index;
       _pushDestination(_ProjectsDestination(location, projectIndex: index));
       _launchFeedback = null;
       _pendingLaunches.clear();
@@ -254,6 +312,7 @@ class _ProjectsAppState extends State<ProjectsApp> {
     final destination = _currentDestination;
     final location = destination.location;
     final projectIndex = destination.projectIndex;
+    final mobileLayout = widget.compact || widget.tablet;
     return AppleFinderScaffold(
       surfaceKey: const Key('projects-app'),
       keyPrefix: 'projects',
@@ -262,7 +321,7 @@ class _ProjectsAppState extends State<ProjectsApp> {
           ? location.label
           : widget.data.projects[projectIndex].title,
       ownerName: widget.data.identity.name,
-      locations: _finderLocations,
+      locations: mobileLayout ? null : _finderLocations,
       selectedLocationId: location.id,
       onLocationSelected: _selectLocationById,
       compact: widget.compact,
@@ -272,6 +331,14 @@ class _ProjectsAppState extends State<ProjectsApp> {
       onBack: () => _moveThroughHistory(-1),
       onForward: () => _moveThroughHistory(1),
       windowChrome: widget.finderWindowChrome,
+      mobileBottomNavigation: mobileLayout
+          ? AppleFinderMobileNavigationBar(
+              keyPrefix: 'projects-finder',
+              destinations: _mobileDestinations,
+              selectedId: location.id,
+              onSelected: _selectLocationById,
+            )
+          : null,
       bodyBuilder: (context, compactLayout) =>
           _buildLocation(destination, compact: compactLayout),
     );
@@ -296,6 +363,15 @@ class _ProjectsAppState extends State<ProjectsApp> {
     }
 
     return switch (location) {
+      _ProjectsLocation.recent => _ProjectConnectionDirectory(
+        key: const Key('projects-connection-directory'),
+        locationId: location.id,
+        locationLabel: location.label,
+        projects: _projectsForLocation(location),
+        selectedIndex: _selectedProject[location],
+        compact: compact,
+        onSelected: (index) => _selectProject(location, index),
+      ),
       _ProjectsLocation.iCloudDrive => const _ScrollableEmptyDirectory(
         contentKey: Key('projects-icloud-empty'),
         icon: Icons.cloud_outlined,
@@ -311,8 +387,8 @@ class _ProjectsAppState extends State<ProjectsApp> {
         key: const Key('projects-connection-directory'),
         locationId: location.id,
         locationLabel: location.label,
-        projects: _projectsFor(location.category!),
-        selectedIndex: _selectedProject[location.category!],
+        projects: _projectsForLocation(location),
+        selectedIndex: _selectedProject[location],
         compact: compact,
         onSelected: (index) => _selectProject(location, index),
       ),
