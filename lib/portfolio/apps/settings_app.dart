@@ -308,6 +308,8 @@ class _DisplayModeContent extends StatelessWidget {
             late final Widget choices;
 
             if (compact) {
+              final stackForLargeText =
+                  MediaQuery.textScalerOf(context).scale(14) >= 20;
               choices = Container(
                 key: const Key('settings-mobile-mode-panel'),
                 padding: const EdgeInsets.all(10),
@@ -319,14 +321,23 @@ class _DisplayModeContent extends StatelessWidget {
                     width: 0.7,
                   ),
                 ),
-                child: Row(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: <Widget>[
-                    Expanded(child: light),
-                    const SizedBox(width: 8),
-                    Expanded(child: dark),
-                  ],
-                ),
+                child: stackForLargeText
+                    ? Column(
+                        crossAxisAlignment: CrossAxisAlignment.stretch,
+                        children: <Widget>[
+                          light,
+                          const SizedBox(height: 8),
+                          dark,
+                        ],
+                      )
+                    : Row(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: <Widget>[
+                          Expanded(child: light),
+                          const SizedBox(width: 8),
+                          Expanded(child: dark),
+                        ],
+                      ),
               );
             } else {
               final stackChoices = constraints.maxWidth < 430;
