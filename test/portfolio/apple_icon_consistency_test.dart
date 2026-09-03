@@ -121,6 +121,30 @@ void main() {
         expect(stack.clipBehavior, Clip.none);
       }
     });
+
+    testWidgets('720px 높이에서도 desktop Trash 아이콘과 라벨이 그리드에 잘리지 않는다', (
+      tester,
+    ) async {
+      await _pumpSurface(
+        tester,
+        _IconSurface.desktop,
+        overrideSize: const Size(1280, 720),
+      );
+
+      final grid = find.byKey(const Key('mac-desktop-icons'));
+      final trash = find.byKey(const Key('desktop-app-trash'));
+      final artwork = find.byKey(const Key('desktop-app-artwork-frame-trash'));
+      final label = find.descendant(of: trash, matching: find.text('Trash'));
+
+      expect(grid, findsOneWidget);
+      expect(trash, findsOneWidget);
+      expect(artwork, findsOneWidget);
+      expect(label, findsOneWidget);
+      final gridRect = tester.getRect(grid);
+      expect(gridRect.contains(tester.getRect(artwork).topLeft), isTrue);
+      expect(gridRect.contains(tester.getRect(artwork).bottomRight), isTrue);
+      expect(gridRect.contains(tester.getRect(label).bottomRight), isTrue);
+    });
   });
 }
 
@@ -142,13 +166,19 @@ Key _launcherKey(_IconSurface surface, PortfolioAppId appId) =>
       _IconSurface.dock => Key('dock-app-${appId.name}'),
     };
 
-Future<void> _pumpSurface(WidgetTester tester, _IconSurface surface) async {
-  final size = switch (surface) {
-    _IconSurface.desktop => const Size(1440, 900),
-    _IconSurface.iPad => const Size(834, 1194),
-    _IconSurface.iPhone => const Size(390, 844),
-    _IconSurface.dock => const Size(900, 140),
-  };
+Future<void> _pumpSurface(
+  WidgetTester tester,
+  _IconSurface surface, {
+  Size? overrideSize,
+}) async {
+  final size =
+      overrideSize ??
+      switch (surface) {
+        _IconSurface.desktop => const Size(1440, 900),
+        _IconSurface.iPad => const Size(834, 1194),
+        _IconSurface.iPhone => const Size(390, 844),
+        _IconSurface.dock => const Size(900, 140),
+      };
   tester.view.devicePixelRatio = 1;
   tester.view.physicalSize = size;
   addTearDown(tester.view.resetDevicePixelRatio);
