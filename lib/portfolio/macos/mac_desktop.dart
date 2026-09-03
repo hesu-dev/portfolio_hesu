@@ -245,7 +245,8 @@ class _MacDesktopState extends State<MacDesktop> {
                         child: MacSystemMenuPanel(
                           identityName: widget.data.identity.englishName,
                           onOpenAbout: () => _openApp(PortfolioAppId.about),
-                          onOpenThisMac: () => _openApp(PortfolioAppId.thisMac),
+                          onOpenThisMac: () =>
+                              _openApp(PortfolioAppId.projects),
                         ),
                       ),
                     if (_openPanel == MacSystemPanel.notifications)
@@ -397,6 +398,30 @@ class _MacDesktopIconState extends State<_MacDesktopIcon> {
   Widget build(BuildContext context) {
     final appId = widget.appId;
     final label = AppleAppIcon.labelFor(appId);
+    final folderLauncher = appId == PortfolioAppId.projects;
+    final artwork = AppleAppArtworkFrame(
+      appId: appId,
+      size: 50,
+      frameKey: Key('desktop-app-artwork-frame-${appId.name}'),
+    );
+    final labelText = Text(
+      label,
+      maxLines: 1,
+      overflow: TextOverflow.ellipsis,
+      textAlign: TextAlign.center,
+      style: const TextStyle(
+        color: Colors.white,
+        fontSize: 11.5,
+        fontWeight: FontWeight.w600,
+        shadows: <Shadow>[
+          Shadow(
+            color: Color(0xB3000000),
+            blurRadius: 4,
+            offset: Offset(0, 1),
+          ),
+        ],
+      ),
+    );
 
     return Semantics(
       key: Key('desktop-app-${appId.name}'),
@@ -442,41 +467,90 @@ class _MacDesktopIconState extends State<_MacDesktopIcon> {
                 width: 83,
                 padding: const EdgeInsets.fromLTRB(6, 7, 6, 5),
                 decoration: BoxDecoration(
-                  color: widget.selected
+                  color: widget.selected && !folderLauncher
                       ? Colors.white.withValues(alpha: 0.2)
                       : Colors.transparent,
                   borderRadius: BorderRadius.circular(13),
-                  border: _showFocus
-                      ? Border.all(color: const Color(0xFFB8E2FF), width: 2)
+                  border: _showFocus && !folderLauncher
+                      ? Border.all(
+                          color: const Color(0xFFB8E2FF),
+                          width: 2,
+                        )
                       : null,
                 ),
                 child: Column(
                   mainAxisSize: MainAxisSize.min,
                   children: <Widget>[
-                    AppleAppArtworkFrame(
-                      appId: appId,
-                      size: 50,
-                      frameKey: Key('desktop-app-artwork-frame-${appId.name}'),
-                    ),
+                    if (folderLauncher)
+                      SizedBox.square(
+                        dimension: 50,
+                        child: Stack(
+                          clipBehavior: Clip.none,
+                          children: <Widget>[
+                            Positioned(
+                              left: -5,
+                              top: -5,
+                              right: -5,
+                              bottom: -5,
+                              child: AnimatedContainer(
+                                key: Key(
+                                  'desktop-app-artwork-selection-${appId.name}',
+                                ),
+                                duration: const Duration(milliseconds: 140),
+                                curve: Curves.easeOutCubic,
+                                decoration: BoxDecoration(
+                                  color: widget.selected
+                                      ? Colors.black.withValues(alpha: 0.2)
+                                      : Colors.transparent,
+                                  borderRadius: BorderRadius.circular(11),
+                                ),
+                              ),
+                            ),
+                            Positioned.fill(child: artwork),
+                            Positioned(
+                              left: -5,
+                              top: -5,
+                              right: -5,
+                              bottom: -5,
+                              child: AnimatedContainer(
+                                key: Key('desktop-app-focus-${appId.name}'),
+                                duration: const Duration(milliseconds: 140),
+                                curve: Curves.easeOutCubic,
+                                decoration: BoxDecoration(
+                                  borderRadius: BorderRadius.circular(12),
+                                  border: _showFocus
+                                      ? Border.all(
+                                          color: Colors.white.withValues(
+                                            alpha: 0.82,
+                                          ),
+                                          width: 2,
+                                        )
+                                      : null,
+                                ),
+                              ),
+                            ),
+                          ],
+                        ),
+                      )
+                    else
+                      artwork,
                     const SizedBox(height: 6),
-                    Text(
-                      label,
-                      maxLines: 1,
-                      overflow: TextOverflow.ellipsis,
-                      textAlign: TextAlign.center,
-                      style: const TextStyle(
-                        color: Colors.white,
-                        fontSize: 11.5,
-                        fontWeight: FontWeight.w600,
-                        shadows: <Shadow>[
-                          Shadow(
-                            color: Color(0xB3000000),
-                            blurRadius: 4,
-                            offset: Offset(0, 1),
-                          ),
-                        ],
-                      ),
-                    ),
+                    if (folderLauncher)
+                      AnimatedContainer(
+                        key: Key('desktop-app-label-selection-${appId.name}'),
+                        duration: const Duration(milliseconds: 140),
+                        curve: Curves.easeOutCubic,
+                        padding: const EdgeInsets.symmetric(horizontal: 4),
+                        decoration: BoxDecoration(
+                          color: widget.selected
+                              ? Colors.black.withValues(alpha: 0.46)
+                              : Colors.transparent,
+                          borderRadius: BorderRadius.circular(5),
+                        ),
+                        child: labelText,
+                      )
+                    else
+                      labelText,
                   ],
                 ),
               ),
