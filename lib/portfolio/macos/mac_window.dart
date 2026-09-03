@@ -6,6 +6,7 @@ import '../apps/portfolio_app_content.dart';
 import '../data/portfolio_data.dart';
 import '../models/portfolio_app_id.dart';
 import '../services/external_launcher.dart';
+import '../theme/apple_theme.dart';
 import '../theme/portfolio_theme_controller.dart';
 import '../widgets/apple_app_icon.dart';
 import '../widgets/apple_finder_scaffold.dart';
@@ -43,6 +44,21 @@ class MacWindow extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final dark = AppleTheme.isDark(context);
+    final shadowAlpha = active
+        ? dark
+              ? 0.5
+              : 0.33
+        : dark
+        ? 0.34
+        : 0.2;
+    final borderAlpha = active
+        ? dark
+              ? 0.22
+              : 0.76
+        : dark
+        ? 0.12
+        : 0.48;
     final label = AppleAppIcon.labelFor(appId);
     final windowTitle = AppleAppIcon.windowTitleFor(appId);
     final radius = maximized ? 14.0 : 19.0;
@@ -75,7 +91,7 @@ class MacWindow extends StatelessWidget {
           borderRadius: BorderRadius.circular(radius),
           boxShadow: <BoxShadow>[
             BoxShadow(
-              color: Colors.black.withValues(alpha: active ? 0.33 : 0.2),
+              color: Colors.black.withValues(alpha: shadowAlpha),
               blurRadius: active ? 38 : 24,
               spreadRadius: active ? 1 : 0,
               offset: const Offset(0, 18),
@@ -89,12 +105,13 @@ class MacWindow extends StatelessWidget {
             child: Stack(
               children: <Widget>[
                 DecoratedBox(
+                  key: Key('mac-window-surface-${appId.name}'),
                   decoration: BoxDecoration(
-                    color: const Color(0xFFF4F4F7).withValues(alpha: 0.93),
+                    color: dark
+                        ? const Color(0xFF1C1D21).withValues(alpha: 0.94)
+                        : const Color(0xFFF4F4F7).withValues(alpha: 0.93),
                     border: Border.all(
-                      color: active
-                          ? Colors.white.withValues(alpha: 0.76)
-                          : Colors.white.withValues(alpha: 0.48),
+                      color: Colors.white.withValues(alpha: borderAlpha),
                       width: active ? 1 : 0.7,
                     ),
                   ),
@@ -191,6 +208,21 @@ class _MacWindowTitleBar extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final dark = AppleTheme.isDark(context);
+    final background = active
+        ? dark
+              ? const Color(0xFF2C2D32).withValues(alpha: 0.9)
+              : Colors.white.withValues(alpha: 0.7)
+        : dark
+        ? const Color(0xFF1F2024).withValues(alpha: 0.84)
+        : const Color(0xFFE8E8EB).withValues(alpha: 0.72);
+    final titleColor = active
+        ? dark
+              ? AppleTheme.primaryLabel(context)
+              : const Color(0xFF252529)
+        : dark
+        ? AppleTheme.secondaryLabel(context)
+        : const Color(0xFF747479);
     return GestureDetector(
       key: Key('mac-window-titlebar-${appId.name}'),
       behavior: HitTestBehavior.opaque,
@@ -199,14 +231,18 @@ class _MacWindowTitleBar extends StatelessWidget {
       child: MouseRegion(
         cursor: maximized ? SystemMouseCursors.basic : SystemMouseCursors.move,
         child: Container(
+          key: Key('mac-window-titlebar-surface-${appId.name}'),
           height: 42,
           padding: const EdgeInsets.symmetric(horizontal: 13),
           decoration: BoxDecoration(
-            color: active
-                ? Colors.white.withValues(alpha: 0.7)
-                : const Color(0xFFE8E8EB).withValues(alpha: 0.72),
-            border: const Border(
-              bottom: BorderSide(color: Color(0x1F3C3C43), width: 0.7),
+            color: background,
+            border: Border(
+              bottom: BorderSide(
+                color: dark
+                    ? Colors.white.withValues(alpha: 0.12)
+                    : const Color(0x1F3C3C43),
+                width: 0.7,
+              ),
             ),
           ),
           child: Row(
@@ -226,9 +262,7 @@ class _MacWindowTitleBar extends StatelessWidget {
                   maxLines: 1,
                   overflow: TextOverflow.ellipsis,
                   style: TextStyle(
-                    color: active
-                        ? const Color(0xFF252529)
-                        : const Color(0xFF747479),
+                    color: titleColor,
                     fontSize: 12.5,
                     fontWeight: FontWeight.w600,
                   ),
