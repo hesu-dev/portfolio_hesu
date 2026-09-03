@@ -787,6 +787,49 @@ void main() {
     });
 
     testWidgets(
+      'pending project link clears stale feedback and blocks duplicate requests',
+      (tester) async {
+        final launcher = _ControlledExternalLauncher();
+        await _pumpApp(
+          tester,
+          appId: PortfolioAppId.projects,
+          launcher: launcher,
+          size: const Size(900, 650),
+        );
+
+        await tester.tap(find.byKey(const Key('project-selector-1')));
+        await tester.pumpAndSettle();
+        final link = find.byKey(const Key('project-link-1-0'));
+        await tester.ensureVisible(link);
+        await tester.tap(link);
+        await tester.pump();
+
+        expect(launcher.requests, hasLength(1));
+        expect(tester.widget<OutlinedButton>(link).onPressed, isNull);
+        await tester.tap(link);
+        await tester.pump();
+        expect(launcher.requests, hasLength(1));
+
+        launcher.complete(0, false);
+        await tester.pumpAndSettle();
+        expect(
+          find.byKey(const Key('project-launch-feedback')),
+          findsOneWidget,
+        );
+        expect(tester.widget<OutlinedButton>(link).onPressed, isNotNull);
+
+        await tester.tap(link);
+        await tester.pump();
+        expect(launcher.requests, hasLength(2));
+        expect(find.byKey(const Key('project-launch-feedback')), findsNothing);
+
+        launcher.complete(1, true);
+        await tester.pumpAndSettle();
+        expect(tester.takeException(), isNull);
+      },
+    );
+
+    testWidgets(
       'project launch feedback keeps only the latest request result',
       (tester) async {
         final launcher = _ControlledExternalLauncher();

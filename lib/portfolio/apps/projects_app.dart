@@ -32,6 +32,7 @@ class _ProjectsAppState extends State<ProjectsApp> {
   int _launchRequestGeneration = 0;
   String? _launchFeedback;
   bool _launchSucceeded = false;
+  final Set<Uri> _pendingLaunches = <Uri>{};
 
   int? get _activeProjectIndex => _history[_historyCursor];
 
@@ -42,6 +43,7 @@ class _ProjectsAppState extends State<ProjectsApp> {
         !identical(oldWidget.launcher, widget.launcher)) {
       _launchRequestGeneration++;
       _launchFeedback = null;
+      _pendingLaunches.clear();
     }
     final hasUnavailableProject = _history.any(
       (index) => index != null && index >= widget.data.projects.length,
@@ -53,6 +55,7 @@ class _ProjectsAppState extends State<ProjectsApp> {
         ..add(null);
       _historyCursor = 0;
       _launchFeedback = null;
+      _pendingLaunches.clear();
     } else if (_selectedIndex != null &&
         _selectedIndex! >= widget.data.projects.length) {
       _selectedIndex = null;
@@ -69,6 +72,7 @@ class _ProjectsAppState extends State<ProjectsApp> {
       _history.add(index);
       _historyCursor = _history.length - 1;
       _launchFeedback = null;
+      _pendingLaunches.clear();
     });
   }
 
@@ -81,21 +85,33 @@ class _ProjectsAppState extends State<ProjectsApp> {
     setState(() {
       _historyCursor = nextCursor;
       _launchFeedback = null;
+      _pendingLaunches.clear();
     });
   }
 
   Future<void> _openLink(PortfolioProjectLink link) async {
+    if (_pendingLaunches.contains(link.uri)) {
+      return;
+    }
     final requestGeneration = ++_launchRequestGeneration;
+    setState(() {
+      _pendingLaunches.add(link.uri);
+      _launchFeedback = null;
+    });
     var succeeded = false;
     try {
       succeeded = await widget.launcher.launch(link.uri);
     } catch (_) {
       succeeded = false;
     }
-    if (!mounted || requestGeneration != _launchRequestGeneration) {
+    if (!mounted) {
       return;
     }
     setState(() {
+      _pendingLaunches.remove(link.uri);
+      if (requestGeneration != _launchRequestGeneration) {
+        return;
+      }
       _launchSucceeded = succeeded;
       _launchFeedback = succeeded
           ? '${link.label} 링크를 열었습니다.'
@@ -154,6 +170,7 @@ class _ProjectsAppState extends State<ProjectsApp> {
       compact: compact,
       feedback: _launchFeedback,
       launchSucceeded: _launchSucceeded,
+      pendingLaunches: _pendingLaunches,
       onOpenLink: _openLink,
     );
   }
@@ -282,6 +299,7 @@ class _ProjectDetail extends StatelessWidget {
     required this.compact,
     required this.feedback,
     required this.launchSucceeded,
+    required this.pendingLaunches,
     required this.onOpenLink,
   });
 
@@ -290,6 +308,7 @@ class _ProjectDetail extends StatelessWidget {
   final bool compact;
   final String? feedback;
   final bool launchSucceeded;
+  final Set<Uri> pendingLaunches;
   final ValueChanged<PortfolioProjectLink> onOpenLink;
 
   @override
@@ -300,6 +319,7 @@ class _ProjectDetail extends StatelessWidget {
       compact: compact,
       feedback: feedback,
       launchSucceeded: launchSucceeded,
+      pendingLaunches: pendingLaunches,
       onOpenLink: onOpenLink,
     );
 
@@ -399,6 +419,7 @@ class _SelectedProjectDetail extends StatelessWidget {
     required this.compact,
     required this.feedback,
     required this.launchSucceeded,
+    required this.pendingLaunches,
     required this.onOpenLink,
   });
 
@@ -407,6 +428,7 @@ class _SelectedProjectDetail extends StatelessWidget {
   final bool compact;
   final String? feedback;
   final bool launchSucceeded;
+  final Set<Uri> pendingLaunches;
   final ValueChanged<PortfolioProjectLink> onOpenLink;
 
   @override
@@ -470,6 +492,7 @@ class _SelectedProjectDetail extends StatelessWidget {
             _ProjectActions(
               project: project,
               projectIndex: projectIndex,
+              pendingLaunches: pendingLaunches,
               onOpenLink: onOpenLink,
             ),
             SizedBox(height: compact ? 16 : 20),
@@ -525,11 +548,13 @@ class _ProjectActions extends StatelessWidget {
   const _ProjectActions({
     required this.project,
     required this.projectIndex,
+    required this.pendingLaunches,
     required this.onOpenLink,
   });
 
   final PortfolioProject project;
   final int projectIndex;
+  final Set<Uri> pendingLaunches;
   final ValueChanged<PortfolioProjectLink> onOpenLink;
 
   @override
@@ -558,7 +583,9 @@ class _ProjectActions extends StatelessWidget {
                 for (final entry in project.links.indexed)
                   OutlinedButton.icon(
                     key: Key('project-link-$projectIndex-${entry.$1}'),
-                    onPressed: () => onOpenLink(entry.$2),
+                    onPressed: pendingLaunches.contains(entry.$2.uri)
+                        ? null
+                        : () => onOpenLink(entry.$2),
                     icon: const Icon(Icons.open_in_new_rounded, size: 17),
                     label: Text(entry.$2.label),
                   ),
