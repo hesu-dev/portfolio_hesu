@@ -3,6 +3,7 @@ import 'package:flutter/material.dart';
 /// Shared visual language for the adaptive portfolio surfaces.
 abstract final class AppleTheme {
   static const Color blue = Color(0xFF0A84FF);
+  static const Color buttonBlue = Color(0xFF0066CC);
   static const Color indigo = Color(0xFF5E5CE6);
   static const Color green = Color(0xFF30D158);
   static const Color orange = Color(0xFFFF9F0A);
@@ -120,7 +121,7 @@ abstract final class AppleTheme {
       ),
       filledButtonTheme: FilledButtonThemeData(
         style: FilledButton.styleFrom(
-          backgroundColor: blue,
+          backgroundColor: buttonBlue,
           foregroundColor: Colors.white,
           shape: RoundedRectangleBorder(
             borderRadius: BorderRadius.circular(12),
@@ -218,10 +219,13 @@ class AppleToolbar extends StatelessWidget {
           bottom: BorderSide(color: AppleTheme.separator(context), width: 0.6),
         ),
       ),
-      child: SizedBox(
-        height: compact ? 54 : 62,
+      child: ConstrainedBox(
+        constraints: BoxConstraints(minHeight: compact ? 54 : 62),
         child: Padding(
-          padding: EdgeInsets.symmetric(horizontal: compact ? 14 : 20),
+          padding: EdgeInsets.symmetric(
+            horizontal: compact ? 14 : 20,
+            vertical: compact ? 8 : 10,
+          ),
           child: Row(
             children: <Widget>[
               if (leading case final icon?) ...<Widget>[
@@ -230,7 +234,7 @@ class AppleToolbar extends StatelessWidget {
               ],
               Expanded(
                 child: Column(
-                  mainAxisAlignment: MainAxisAlignment.center,
+                  mainAxisSize: MainAxisSize.min,
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: <Widget>[
                     Text(

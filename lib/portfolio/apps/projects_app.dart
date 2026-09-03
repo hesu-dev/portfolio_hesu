@@ -24,12 +24,18 @@ class ProjectsApp extends StatefulWidget {
 
 class _ProjectsAppState extends State<ProjectsApp> {
   int _selectedIndex = 0;
+  int _launchRequestGeneration = 0;
   String? _launchFeedback;
   bool _launchSucceeded = false;
 
   @override
   void didUpdateWidget(covariant ProjectsApp oldWidget) {
     super.didUpdateWidget(oldWidget);
+    if (!identical(oldWidget.data, widget.data) ||
+        !identical(oldWidget.launcher, widget.launcher)) {
+      _launchRequestGeneration++;
+      _launchFeedback = null;
+    }
     if (_selectedIndex >= widget.data.projects.length) {
       _selectedIndex = 0;
       _launchFeedback = null;
@@ -40,6 +46,7 @@ class _ProjectsAppState extends State<ProjectsApp> {
     if (index == _selectedIndex) {
       return;
     }
+    _launchRequestGeneration++;
     setState(() {
       _selectedIndex = index;
       _launchFeedback = null;
@@ -47,13 +54,14 @@ class _ProjectsAppState extends State<ProjectsApp> {
   }
 
   Future<void> _openLink(PortfolioProjectLink link) async {
+    final requestGeneration = ++_launchRequestGeneration;
     var succeeded = false;
     try {
       succeeded = await widget.launcher.launch(link.uri);
     } catch (_) {
       succeeded = false;
     }
-    if (!mounted) {
+    if (!mounted || requestGeneration != _launchRequestGeneration) {
       return;
     }
     setState(() {

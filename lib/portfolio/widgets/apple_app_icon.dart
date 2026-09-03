@@ -1,9 +1,10 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 
 import '../models/portfolio_app_id.dart';
 import '../theme/apple_theme.dart';
 
-class AppleAppIcon extends StatelessWidget {
+class AppleAppIcon extends StatefulWidget {
   const AppleAppIcon({
     required this.appId,
     this.onTap,
@@ -12,6 +13,8 @@ class AppleAppIcon extends StatelessWidget {
     this.running = false,
     this.showLabel = true,
     this.size,
+    this.focusNode,
+    this.autofocus = false,
     super.key,
   });
 
@@ -22,6 +25,11 @@ class AppleAppIcon extends StatelessWidget {
   final bool running;
   final bool showLabel;
   final double? size;
+  final FocusNode? focusNode;
+  final bool autofocus;
+
+  @override
+  State<AppleAppIcon> createState() => _AppleAppIconState();
 
   static String labelFor(PortfolioAppId appId) => switch (appId) {
     PortfolioAppId.about => 'About',
@@ -70,11 +78,21 @@ class AppleAppIcon extends StatelessWidget {
     ],
     PortfolioAppId.mail => const <Color>[Color(0xFF57C7FF), Color(0xFF126BFF)],
   };
+}
+
+class _AppleAppIconState extends State<AppleAppIcon> {
+  bool _showFocusHighlight = false;
 
   @override
   Widget build(BuildContext context) {
+    final appId = widget.appId;
+    final compact = widget.compact;
+    final selected = widget.selected;
+    final running = widget.running;
+    final showLabel = widget.showLabel;
+    final onTap = widget.onTap;
     final label = labelFor(appId);
-    final tileSize = size ?? (compact ? 48.0 : 58.0);
+    final tileSize = widget.size ?? (compact ? 48.0 : 58.0);
     final cornerRadius = compact ? 13.0 : 16.0;
     final foreground = appId == PortfolioAppId.trash
         ? const Color(0xFF555860)
@@ -87,127 +105,194 @@ class AppleAppIcon extends StatelessWidget {
       enabled: onTap != null,
       selected: selected,
       onTap: onTap,
-      excludeSemantics: true,
-      child: Tooltip(
-        message: label,
-        child: GestureDetector(
-          behavior: HitTestBehavior.opaque,
-          onTap: onTap,
-          child: Padding(
-            padding: EdgeInsets.symmetric(
-              horizontal: compact ? 5 : 7,
-              vertical: compact ? 4 : 6,
-            ),
-            child: Column(
-              mainAxisSize: MainAxisSize.min,
-              children: <Widget>[
-                SizedBox(
-                  key: Key('apple-app-icon-tile-${appId.name}'),
-                  width: tileSize,
-                  height: tileSize,
-                  child: Stack(
-                    clipBehavior: Clip.none,
-                    children: <Widget>[
-                      Positioned.fill(
-                        child: AnimatedContainer(
-                          duration: const Duration(milliseconds: 160),
-                          curve: Curves.easeOutCubic,
-                          decoration: BoxDecoration(
-                            gradient: LinearGradient(
-                              begin: Alignment.topLeft,
-                              end: Alignment.bottomRight,
-                              colors: colorsFor(appId),
-                            ),
-                            borderRadius: BorderRadius.circular(cornerRadius),
-                            border: Border.all(
-                              color: Colors.white.withValues(
-                                alpha: selected ? 0.9 : 0.34,
-                              ),
-                              width: selected ? 1.8 : 0.7,
-                            ),
-                            boxShadow: <BoxShadow>[
-                              BoxShadow(
-                                color: colorsFor(
-                                  appId,
-                                ).last.withValues(alpha: 0.24),
-                                blurRadius: selected ? 18 : 12,
-                                offset: const Offset(0, 6),
-                              ),
-                            ],
-                          ),
-                          child: Icon(
-                            iconFor(appId),
-                            color: foreground,
-                            size: tileSize * 0.5,
-                          ),
-                        ),
-                      ),
-                      if (selected)
-                        Positioned.fill(
-                          key: Key('apple-app-icon-selection-${appId.name}'),
-                          child: IgnorePointer(
-                            child: DecoratedBox(
+      child: FocusableActionDetector(
+        enabled: onTap != null,
+        focusNode: widget.focusNode,
+        autofocus: widget.autofocus,
+        mouseCursor: onTap == null
+            ? SystemMouseCursors.basic
+            : SystemMouseCursors.click,
+        onShowFocusHighlight: (showHighlight) {
+          if (_showFocusHighlight != showHighlight) {
+            setState(() => _showFocusHighlight = showHighlight);
+          }
+        },
+        shortcuts: const <ShortcutActivator, Intent>{
+          SingleActivator(LogicalKeyboardKey.enter): ActivateIntent(),
+          SingleActivator(LogicalKeyboardKey.space): ActivateIntent(),
+        },
+        actions: <Type, Action<Intent>>{
+          ActivateIntent: CallbackAction<ActivateIntent>(
+            onInvoke: (_) {
+              onTap?.call();
+              return null;
+            },
+          ),
+        },
+        child: ExcludeSemantics(
+          child: Tooltip(
+            message: label,
+            child: GestureDetector(
+              behavior: HitTestBehavior.opaque,
+              onTap: onTap,
+              child: Padding(
+                padding: EdgeInsets.symmetric(
+                  horizontal: compact ? 5 : 7,
+                  vertical: compact ? 4 : 6,
+                ),
+                child: Column(
+                  mainAxisSize: MainAxisSize.min,
+                  children: <Widget>[
+                    SizedBox(
+                      key: Key('apple-app-icon-tile-${appId.name}'),
+                      width: tileSize,
+                      height: tileSize,
+                      child: Stack(
+                        clipBehavior: Clip.none,
+                        children: <Widget>[
+                          Positioned.fill(
+                            child: AnimatedContainer(
+                              duration: const Duration(milliseconds: 160),
+                              curve: Curves.easeOutCubic,
                               decoration: BoxDecoration(
+                                gradient: LinearGradient(
+                                  begin: Alignment.topLeft,
+                                  end: Alignment.bottomRight,
+                                  colors: colorsFor(appId),
+                                ),
                                 borderRadius: BorderRadius.circular(
-                                  cornerRadius + 2,
+                                  cornerRadius,
                                 ),
                                 border: Border.all(
-                                  color: AppleTheme.blue.withValues(alpha: 0.9),
-                                  width: 2.4,
+                                  color: Colors.white.withValues(
+                                    alpha: selected ? 0.9 : 0.34,
+                                  ),
+                                  width: selected ? 1.8 : 0.7,
                                 ),
+                                boxShadow: <BoxShadow>[
+                                  BoxShadow(
+                                    color: colorsFor(
+                                      appId,
+                                    ).last.withValues(alpha: 0.24),
+                                    blurRadius: selected ? 18 : 12,
+                                    offset: const Offset(0, 6),
+                                  ),
+                                ],
+                              ),
+                              child: Icon(
+                                iconFor(appId),
+                                color: foreground,
+                                size: tileSize * 0.5,
                               ),
                             ),
                           ),
-                        ),
-                    ],
-                  ),
-                ),
-                if (showLabel) ...<Widget>[
-                  const SizedBox(height: 6),
-                  ConstrainedBox(
-                    constraints: BoxConstraints(maxWidth: compact ? 70 : 84),
-                    child: Text(
-                      label,
-                      maxLines: 1,
-                      overflow: TextOverflow.ellipsis,
-                      textAlign: TextAlign.center,
-                      style: Theme.of(context).textTheme.labelSmall?.copyWith(
-                        color: AppleTheme.primaryLabel(context),
-                        fontSize: compact ? 10.5 : 11.5,
-                        fontWeight: selected
-                            ? FontWeight.w700
-                            : FontWeight.w500,
-                        shadows: <Shadow>[
-                          Shadow(
-                            color: AppleTheme.canvas(
-                              context,
-                            ).withValues(alpha: 0.5),
-                            blurRadius: 2,
-                          ),
+                          if (selected)
+                            Positioned.fill(
+                              key: Key(
+                                'apple-app-icon-selection-${appId.name}',
+                              ),
+                              child: IgnorePointer(
+                                child: DecoratedBox(
+                                  decoration: BoxDecoration(
+                                    borderRadius: BorderRadius.circular(
+                                      cornerRadius + 2,
+                                    ),
+                                    border: Border.all(
+                                      color: AppleTheme.blue.withValues(
+                                        alpha: 0.9,
+                                      ),
+                                      width: 2.4,
+                                    ),
+                                  ),
+                                ),
+                              ),
+                            ),
+                          if (_showFocusHighlight)
+                            Positioned.fill(
+                              key: Key('apple-app-icon-focus-${appId.name}'),
+                              child: IgnorePointer(
+                                child: DecoratedBox(
+                                  decoration: BoxDecoration(
+                                    borderRadius: BorderRadius.circular(
+                                      cornerRadius + 3,
+                                    ),
+                                    border: Border.all(
+                                      color: AppleTheme.blue,
+                                      width: 3,
+                                    ),
+                                    boxShadow: <BoxShadow>[
+                                      BoxShadow(
+                                        color: AppleTheme.blue.withValues(
+                                          alpha: 0.28,
+                                        ),
+                                        blurRadius: 9,
+                                        spreadRadius: 1,
+                                      ),
+                                    ],
+                                  ),
+                                ),
+                              ),
+                            ),
                         ],
                       ),
                     ),
-                  ),
-                ],
-                SizedBox(
-                  height: 7,
-                  child: running
-                      ? Container(
-                          key: Key('apple-app-icon-running-${appId.name}'),
-                          width: 4.5,
-                          height: 4.5,
-                          decoration: BoxDecoration(
-                            color: AppleTheme.primaryLabel(context),
-                            shape: BoxShape.circle,
-                          ),
-                        )
-                      : null,
+                    if (showLabel) ...<Widget>[
+                      const SizedBox(height: 6),
+                      ConstrainedBox(
+                        constraints: BoxConstraints(
+                          maxWidth: compact ? 70 : 84,
+                        ),
+                        child: Text(
+                          label,
+                          maxLines: 1,
+                          overflow: TextOverflow.ellipsis,
+                          textAlign: TextAlign.center,
+                          style: Theme.of(context).textTheme.labelSmall
+                              ?.copyWith(
+                                color: AppleTheme.primaryLabel(context),
+                                fontSize: compact ? 10.5 : 11.5,
+                                fontWeight: selected
+                                    ? FontWeight.w700
+                                    : FontWeight.w500,
+                                shadows: <Shadow>[
+                                  Shadow(
+                                    color: AppleTheme.canvas(
+                                      context,
+                                    ).withValues(alpha: 0.5),
+                                    blurRadius: 2,
+                                  ),
+                                ],
+                              ),
+                        ),
+                      ),
+                    ],
+                    SizedBox(
+                      height: 7,
+                      child: running
+                          ? Container(
+                              key: Key('apple-app-icon-running-${appId.name}'),
+                              width: 4.5,
+                              height: 4.5,
+                              decoration: BoxDecoration(
+                                color: AppleTheme.primaryLabel(context),
+                                shape: BoxShape.circle,
+                              ),
+                            )
+                          : null,
+                    ),
+                  ],
                 ),
-              ],
+              ),
             ),
           ),
         ),
       ),
     );
   }
+
+  String labelFor(PortfolioAppId appId) => AppleAppIcon.labelFor(appId);
+
+  IconData iconFor(PortfolioAppId appId) => AppleAppIcon.iconFor(appId);
+
+  List<Color> colorsFor(PortfolioAppId appId) => AppleAppIcon.colorsFor(appId);
 }

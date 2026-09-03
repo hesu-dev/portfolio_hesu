@@ -1,4 +1,9 @@
+import 'dart:async';
+import 'dart:ui' as ui;
+
 import 'package:flutter/material.dart';
+import 'package:flutter/semantics.dart';
+import 'package:flutter/services.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:portfolio_hesu/portfolio/apps/portfolio_app_content.dart';
 import 'package:portfolio_hesu/portfolio/data/portfolio_data.dart';
@@ -89,6 +94,86 @@ void main() {
       );
       semantics.dispose();
     });
+
+    testWidgets('shows focus and activates with Enter and Space', (
+      tester,
+    ) async {
+      var activations = 0;
+      final semantics = tester.ensureSemantics();
+      await tester.pumpWidget(
+        MaterialApp(
+          theme: AppleTheme.light(),
+          home: Material(
+            child: Center(
+              child: AppleAppIcon(
+                appId: PortfolioAppId.about,
+                onTap: () => activations++,
+              ),
+            ),
+          ),
+        ),
+      );
+
+      await tester.sendKeyEvent(LogicalKeyboardKey.tab);
+      await tester.pump();
+      expect(
+        find.byKey(const Key('apple-app-icon-focus-about')),
+        findsOneWidget,
+      );
+      expect(find.bySemanticsLabel('Open About'), findsOneWidget);
+      final node = tester.getSemantics(
+        find.byKey(const Key('apple-app-icon-about')),
+      );
+      final semanticsData = node.getSemanticsData();
+      expect(semanticsData.flagsCollection.isFocused, ui.Tristate.isTrue);
+      expect(semanticsData.hasAction(SemanticsAction.tap), isTrue);
+      expect(semanticsData.hasAction(SemanticsAction.focus), isTrue);
+
+      await tester.sendKeyEvent(LogicalKeyboardKey.enter);
+      await tester.pump();
+      await tester.sendKeyEvent(LogicalKeyboardKey.space);
+      await tester.pump();
+      expect(activations, 2);
+      semantics.dispose();
+    });
+  });
+
+  group('AppleTheme', () {
+    test('light filled buttons meet AA contrast with white labels', () {
+      final style = AppleTheme.light().filledButtonTheme.style!;
+      final background = style.backgroundColor!.resolve(<WidgetState>{})!;
+      final foreground = style.foregroundColor!.resolve(<WidgetState>{})!;
+
+      expect(foreground, Colors.white);
+      expect(_contrastRatio(background, foreground), greaterThanOrEqualTo(4.5));
+    });
+
+    testWidgets('toolbar grows without overflow at 200 percent text scale', (
+      tester,
+    ) async {
+      await tester.pumpWidget(
+        MaterialApp(
+          theme: AppleTheme.light(),
+          home: MediaQuery(
+            data: const MediaQueryData(textScaler: TextScaler.linear(2)),
+            child: const Align(
+              alignment: Alignment.topCenter,
+              child: SizedBox(
+                width: 360,
+                child: AppleToolbar(
+                  title: 'Portfolio application',
+                  subtitle: 'Adaptive shared content',
+                  leading: Icon(Icons.folder_rounded),
+                ),
+              ),
+            ),
+          ),
+        ),
+      );
+
+      expect(tester.takeException(), isNull);
+      expect(tester.getSize(find.byType(AppleToolbar)).height, greaterThan(62));
+    });
   });
 
   group('PortfolioAppContent', () {
@@ -161,6 +246,35 @@ void main() {
         expect(tester.takeException(), isNull);
       },
     );
+
+    testWidgets('about education action reports external launch failure', (
+      tester,
+    ) async {
+      final launcher = _FakeExternalLauncher(succeeds: false);
+      await _pumpApp(
+        tester,
+        appId: PortfolioAppId.about,
+        launcher: launcher,
+        size: const Size(360, 600),
+        compact: true,
+      );
+
+      final action = find.byKey(const Key('about-education-link-0'));
+      expect(action, findsOneWidget);
+      await tester.drag(
+        find.byKey(const Key('about-scroll')),
+        const Offset(0, -1100),
+      );
+      await tester.pumpAndSettle();
+      await tester.tap(action);
+      await tester.pumpAndSettle();
+
+      final educationLink = portfolioData.education.first.link!;
+      expect(launcher.launched, <Uri>[educationLink.uri]);
+      expect(find.byKey(const Key('about-link-feedback')), findsOneWidget);
+      expect(find.textContaining('열 수 없습니다'), findsOneWidget);
+      expect(tester.takeException(), isNull);
+    });
 
     testWidgets('skills category selection updates actual visible skills', (
       tester,
@@ -245,6 +359,71 @@ void main() {
       expect(tester.takeException(), isNull);
     });
 
+    testWidgets(
+      'project launch feedback keeps only the latest request result',
+      (tester) async {
+        final launcher = _ControlledExternalLauncher();
+        await _pumpApp(
+          tester,
+          appId: PortfolioAppId.projects,
+          launcher: launcher,
+          size: const Size(900, 650),
+        );
+
+        await tester.tap(find.byKey(const Key('project-selector-1')));
+        await tester.pumpAndSettle();
+        await tester.ensureVisible(find.byKey(const Key('project-link-1-0')));
+        await tester.tap(find.byKey(const Key('project-link-1-0')));
+        await tester.pump();
+        await tester.ensureVisible(find.byKey(const Key('project-link-1-1')));
+        await tester.tap(find.byKey(const Key('project-link-1-1')));
+        await tester.pump();
+
+        expect(launcher.requests, hasLength(2));
+        launcher.complete(1, true);
+        await tester.pumpAndSettle();
+        expect(find.text('App Store 링크를 열었습니다.'), findsOneWidget);
+
+        launcher.complete(0, false);
+        await tester.pumpAndSettle();
+        expect(find.text('App Store 링크를 열었습니다.'), findsOneWidget);
+        expect(find.textContaining('Google Play 링크를 열 수 없습니다'), findsNothing);
+        expect(tester.takeException(), isNull);
+      },
+    );
+
+    testWidgets('changing projects invalidates a pending launch result', (
+      tester,
+    ) async {
+      final launcher = _ControlledExternalLauncher();
+      await _pumpApp(
+        tester,
+        appId: PortfolioAppId.projects,
+        launcher: launcher,
+        size: const Size(900, 650),
+      );
+
+      await tester.tap(find.byKey(const Key('project-selector-1')));
+      await tester.pumpAndSettle();
+      await tester.ensureVisible(find.byKey(const Key('project-link-1-0')));
+      await tester.tap(find.byKey(const Key('project-link-1-0')));
+      await tester.pump();
+      expect(launcher.requests, hasLength(1));
+
+      await tester.tap(find.byKey(const Key('project-selector-2')));
+      await tester.pumpAndSettle();
+      launcher.complete(0, false);
+      await tester.pumpAndSettle();
+
+      expect(
+        _textAtKey(tester, const Key('project-detail-title')),
+        portfolioData.projects[2].title,
+      );
+      expect(find.byKey(const Key('project-launch-feedback')), findsNothing);
+      expect(find.textContaining('열 수 없습니다'), findsNothing);
+      expect(tester.takeException(), isNull);
+    });
+
     testWidgets('terminal executes whoami, unknown commands, and clear', (
       tester,
     ) async {
@@ -297,6 +476,69 @@ void main() {
       expect(tester.takeException(), isNull);
     });
 
+    testWidgets('system launch feedback keeps only the latest request result', (
+      tester,
+    ) async {
+      final launcher = _ControlledExternalLauncher();
+      await _pumpApp(
+        tester,
+        appId: PortfolioAppId.github,
+        launcher: launcher,
+        size: const Size(360, 600),
+        compact: true,
+      );
+
+      await tester.tap(find.byKey(const Key('github-external-action')));
+      await tester.pump();
+      await tester.tap(find.byKey(const Key('github-external-action')));
+      await tester.pump();
+      expect(launcher.requests, hasLength(2));
+
+      launcher.complete(1, true);
+      await tester.pumpAndSettle();
+      expect(find.text('GitHub 앱을 열었습니다.'), findsOneWidget);
+
+      launcher.complete(0, false);
+      await tester.pumpAndSettle();
+      expect(find.text('GitHub 앱을 열었습니다.'), findsOneWidget);
+      expect(find.textContaining('GitHub 링크를 열 수 없습니다'), findsNothing);
+      expect(tester.takeException(), isNull);
+    });
+
+    testWidgets(
+      'changing a system target invalidates a pending launch result',
+      (tester) async {
+        final launcher = _ControlledExternalLauncher();
+        await _pumpApp(
+          tester,
+          appId: PortfolioAppId.github,
+          launcher: launcher,
+          size: const Size(360, 600),
+        );
+
+        await tester.tap(find.byKey(const Key('github-external-action')));
+        await tester.pump();
+        expect(launcher.requests, <Uri>[Uri.parse(portfolioData.githubUrl)]);
+
+        final updatedData = _dataWithGithubUrl(
+          'https://github.com/hesu-updated/',
+        );
+        await _pumpApp(
+          tester,
+          appId: PortfolioAppId.github,
+          launcher: launcher,
+          data: updatedData,
+          size: const Size(360, 600),
+        );
+        launcher.complete(0, false);
+        await tester.pumpAndSettle();
+
+        expect(find.byKey(const Key('github-launch-feedback')), findsNothing);
+        expect(find.textContaining('열 수 없습니다'), findsNothing);
+        expect(tester.takeException(), isNull);
+      },
+    );
+
     testWidgets(
       'all apps avoid RenderFlex overflow in compact and wide bounds',
       (tester) async {
@@ -341,11 +583,29 @@ class _FakeExternalLauncher implements ExternalLauncher {
   }
 }
 
+class _ControlledExternalLauncher implements ExternalLauncher {
+  final List<Uri> requests = <Uri>[];
+  final List<Completer<bool>> _completers = <Completer<bool>>[];
+
+  @override
+  Future<bool> launch(Uri uri) {
+    requests.add(uri);
+    final completer = Completer<bool>();
+    _completers.add(completer);
+    return completer.future;
+  }
+
+  void complete(int index, bool result) {
+    _completers[index].complete(result);
+  }
+}
+
 Future<void> _pumpApp(
   WidgetTester tester, {
   required PortfolioAppId appId,
   required ExternalLauncher launcher,
   required Size size,
+  PortfolioData data = portfolioData,
   bool compact = false,
   bool tablet = false,
 }) async {
@@ -362,7 +622,7 @@ Future<void> _pumpApp(
         child: PortfolioAppContent(
           key: ValueKey<PortfolioAppId>(appId),
           appId: appId,
-          data: portfolioData,
+          data: data,
           launcher: launcher,
           compact: compact,
           tablet: tablet,
@@ -389,5 +649,35 @@ Finder _scrollableInside(Key key) {
   return find.descendant(
     of: find.byKey(key),
     matching: find.byType(Scrollable),
+  );
+}
+
+double _contrastRatio(Color first, Color second) {
+  final firstLuminance = first.computeLuminance();
+  final secondLuminance = second.computeLuminance();
+  final lighter = firstLuminance > secondLuminance
+      ? firstLuminance
+      : secondLuminance;
+  final darker = firstLuminance > secondLuminance
+      ? secondLuminance
+      : firstLuminance;
+  return (lighter + 0.05) / (darker + 0.05);
+}
+
+PortfolioData _dataWithGithubUrl(String githubUrl) {
+  final identity = portfolioData.identity;
+  return PortfolioData(
+    identity: PortfolioIdentity(
+      name: identity.name,
+      englishName: identity.englishName,
+      email: identity.email,
+      githubUrl: githubUrl,
+      headline: identity.headline,
+      biography: identity.biography,
+    ),
+    experiences: portfolioData.experiences,
+    education: portfolioData.education,
+    skillGroups: portfolioData.skillGroups,
+    projects: portfolioData.projects,
   );
 }

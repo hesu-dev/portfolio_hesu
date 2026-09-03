@@ -31,6 +31,7 @@ class PortfolioAppContent extends StatelessWidget {
     return switch (appId) {
       PortfolioAppId.about => AboutApp(
         data: data,
+        launcher: launcher,
         compact: compact,
         tablet: tablet,
       ),

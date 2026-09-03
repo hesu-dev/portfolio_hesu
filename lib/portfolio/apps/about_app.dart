@@ -1,17 +1,20 @@
 import 'package:flutter/material.dart';
 
 import '../data/portfolio_data.dart';
+import '../services/external_launcher.dart';
 import '../theme/apple_theme.dart';
 
 class AboutApp extends StatelessWidget {
   const AboutApp({
     required this.data,
+    required this.launcher,
     this.compact = false,
     this.tablet = false,
     super.key,
   });
 
   final PortfolioData data;
+  final ExternalLauncher launcher;
   final bool compact;
   final bool tablet;
 
@@ -69,8 +72,12 @@ class AboutApp extends StatelessWidget {
                           icon: Icons.school_rounded,
                         ),
                         const SizedBox(height: 12),
-                        for (final education in data.education) ...<Widget>[
-                          _EducationCard(education: education),
+                        for (final entry in data.education.indexed) ...<Widget>[
+                          _EducationCard(
+                            education: entry.$2,
+                            index: entry.$1,
+                            launcher: launcher,
+                          ),
                           const SizedBox(height: 11),
                         ],
                         SizedBox(height: compact ? 14 : 20),
@@ -264,13 +271,58 @@ class _ExperienceCard extends StatelessWidget {
   }
 }
 
-class _EducationCard extends StatelessWidget {
-  const _EducationCard({required this.education});
+class _EducationCard extends StatefulWidget {
+  const _EducationCard({
+    required this.education,
+    required this.index,
+    required this.launcher,
+  });
 
   final PortfolioEducation education;
+  final int index;
+  final ExternalLauncher launcher;
+
+  @override
+  State<_EducationCard> createState() => _EducationCardState();
+}
+
+class _EducationCardState extends State<_EducationCard> {
+  int _launchRequestGeneration = 0;
+  String? _feedback;
+  bool _launchSucceeded = false;
+
+  @override
+  void didUpdateWidget(covariant _EducationCard oldWidget) {
+    super.didUpdateWidget(oldWidget);
+    if (oldWidget.education.link?.url != widget.education.link?.url ||
+        !identical(oldWidget.launcher, widget.launcher)) {
+      _launchRequestGeneration++;
+      _feedback = null;
+    }
+  }
+
+  Future<void> _openLink(PortfolioProjectLink link) async {
+    final requestGeneration = ++_launchRequestGeneration;
+    var succeeded = false;
+    try {
+      succeeded = await widget.launcher.launch(link.uri);
+    } catch (_) {
+      succeeded = false;
+    }
+    if (!mounted || requestGeneration != _launchRequestGeneration) {
+      return;
+    }
+    setState(() {
+      _launchSucceeded = succeeded;
+      _feedback = succeeded
+          ? '${link.label} 링크를 열었습니다.'
+          : '${link.label} 링크를 열 수 없습니다.';
+    });
+  }
 
   @override
   Widget build(BuildContext context) {
+    final education = widget.education;
     return AppleSurfaceCard(
       radius: 16,
       padding: const EdgeInsets.all(17),
@@ -299,13 +351,22 @@ class _EducationCard extends StatelessWidget {
                 color: AppleTheme.indigo,
               ),
               if (education.link case final link?)
-                ApplePill(
-                  label: link.label,
-                  icon: Icons.link_rounded,
-                  color: AppleTheme.blue,
+                OutlinedButton.icon(
+                  key: Key('about-education-link-${widget.index}'),
+                  onPressed: () => _openLink(link),
+                  icon: const Icon(Icons.open_in_new_rounded, size: 17),
+                  label: Text('Open ${link.label}'),
                 ),
             ],
           ),
+          if (_feedback case final message?) ...<Widget>[
+            const SizedBox(height: 12),
+            AppleFeedbackBanner(
+              key: const Key('about-link-feedback'),
+              message: message,
+              success: _launchSucceeded,
+            ),
+          ],
         ],
       ),
     );

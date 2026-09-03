@@ -268,17 +268,29 @@ class _ExternalProfilePage extends StatefulWidget {
 }
 
 class _ExternalProfilePageState extends State<_ExternalProfilePage> {
+  int _launchRequestGeneration = 0;
   String? _feedback;
   bool _succeeded = false;
 
+  @override
+  void didUpdateWidget(covariant _ExternalProfilePage oldWidget) {
+    super.didUpdateWidget(oldWidget);
+    if (oldWidget.uri != widget.uri ||
+        !identical(oldWidget.launcher, widget.launcher)) {
+      _launchRequestGeneration++;
+      _feedback = null;
+    }
+  }
+
   Future<void> _launch() async {
+    final requestGeneration = ++_launchRequestGeneration;
     var succeeded = false;
     try {
       succeeded = await widget.launcher.launch(widget.uri);
     } catch (_) {
       succeeded = false;
     }
-    if (!mounted) {
+    if (!mounted || requestGeneration != _launchRequestGeneration) {
       return;
     }
     setState(() {
