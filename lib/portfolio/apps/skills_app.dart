@@ -93,6 +93,9 @@ class _SkillsAppState extends State<SkillsApp> {
             key: const Key('skills-channel-detail'),
             color: AppleTheme.canvas(context),
             child: _SkillDetail(
+              key: ValueKey<String>(
+                'skills-detail-$_selectedIndex-${widget.data.skillGroups[_selectedIndex].title}',
+              ),
               group: widget.data.skillGroups[_selectedIndex],
               compact: false,
             ),
@@ -112,6 +115,9 @@ class _SkillsAppState extends State<SkillsApp> {
         ),
         Expanded(
           child: _SkillDetail(
+            key: ValueKey<String>(
+              'skills-detail-$_selectedIndex-${widget.data.skillGroups[_selectedIndex].title}',
+            ),
             group: widget.data.skillGroups[_selectedIndex],
             compact: true,
           ),
@@ -426,7 +432,7 @@ class _CategoryButton extends StatelessWidget {
 }
 
 class _SkillDetail extends StatelessWidget {
-  const _SkillDetail({required this.group, required this.compact});
+  const _SkillDetail({required this.group, required this.compact, super.key});
 
   final PortfolioSkillGroup group;
   final bool compact;
