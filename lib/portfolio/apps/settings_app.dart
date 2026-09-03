@@ -229,7 +229,20 @@ class _ThemeChoiceState extends State<_ThemeChoice> {
   void _select() => widget.onSelected(widget.preference);
 
   @override
+  void initState() {
+    super.initState();
+    _focusNode.addListener(_handleFocusChange);
+  }
+
+  void _handleFocusChange() {
+    if (mounted && _showFocus != _focusNode.hasFocus) {
+      setState(() => _showFocus = _focusNode.hasFocus);
+    }
+  }
+
+  @override
   void dispose() {
+    _focusNode.removeListener(_handleFocusChange);
     _focusNode.dispose();
     super.dispose();
   }
@@ -258,11 +271,6 @@ class _ThemeChoiceState extends State<_ThemeChoice> {
               return null;
             },
           ),
-        },
-        onShowFocusHighlight: (value) {
-          if (_showFocus != value) {
-            setState(() => _showFocus = value);
-          }
         },
         child: GestureDetector(
           behavior: HitTestBehavior.opaque,
