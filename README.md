@@ -40,10 +40,38 @@ flutter analyze
 flutter build web --release --base-href /portfolio_hesu/ --pwa-strategy=none
 ```
 
-향후 Vercel로 이전할 때는 루트 경로를 기준으로 빌드합니다.
+Flutter SDK가 PATH에 있는 로컬 또는 CI 환경에서 Vercel용 결과물을 확인할 때는 루트 경로를 기준으로 빌드합니다.
 
 ```bash
 flutter build web --release --base-href / --pwa-strategy=none
 ```
 
-두 빌드 모두 결과물 디렉터리는 `build/web`입니다. Vercel에서는 위 루트 경로 빌드 명령과 `build/web` 출력 디렉터리를 사용하면 됩니다. 현재 작업에서는 Vercel 배포나 도메인 연결 등 외부 설정을 변경하지 않습니다.
+두 빌드 모두 결과물 디렉터리는 `build/web`입니다.
+
+### 향후 Vercel 설정
+
+Vercel 기본 빌드 이미지에는 Flutter SDK가 준비되어 있지 않다고 전제합니다. 따라서 저장소를 Vercel에 연결할 때는 [Build 설정](https://vercel.com/docs/builds/configure-a-build)에서 `Framework Preset`을 `Other`로 지정하고, 프로젝트 내부의 `.flutter` 디렉터리에 SDK를 먼저 설치합니다.
+
+`Install Command`:
+
+```bash
+git clone --depth 1 --branch stable https://github.com/flutter/flutter.git .flutter && ./.flutter/bin/flutter config --enable-web && ./.flutter/bin/flutter pub get
+```
+
+`Build Command`:
+
+```bash
+./.flutter/bin/flutter build web --release --base-href / --pwa-strategy=none
+```
+
+`Output Directory`:
+
+```text
+build/web
+```
+
+`stable` 브랜치는 시간이 지나면 갱신됩니다. 동일한 Flutter 버전으로 반복 빌드해야 한다면 검증된 Flutter 태그 또는 커밋으로 SDK checkout을 고정합니다.
+
+사전 빌드 정적 배포 대안도 있습니다. Flutter가 설치된 로컬 환경이나 별도 CI에서 위 루트 경로 명령으로 사전 빌드하고, 생성된 `build/web`을 별도의 Vercel 정적 프로젝트에 배포합니다. 이 경우 Vercel 안에서 Flutter SDK를 내려받을 필요가 없으며 소스 저장소 루트에는 생성물을 커밋하지 않습니다.
+
+현재 작업에서는 GitHub Pages 배포를 유지하며 Vercel 프로젝트 생성, 배포, 도메인 연결 등 외부 설정을 변경하지 않습니다.
