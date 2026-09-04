@@ -135,7 +135,7 @@ class _MobileNotesProfileButton extends StatelessWidget {
         children: <Widget>[
           Expanded(
             child: Text(
-              '자세히 보러가기',
+              '프로필 보러가기',
               maxLines: 1,
               overflow: TextOverflow.ellipsis,
               style: profileLineStyle.copyWith(color: secondaryForeground),
