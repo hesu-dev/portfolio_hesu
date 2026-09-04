@@ -136,6 +136,10 @@ void main() {
           for (final experience in data.experiences) experience.period,
           for (final education in data.education) education.period,
         ];
+        final subtitles = <String>[
+          for (final experience in data.experiences) experience.organization,
+          for (final education in data.education) education.institution,
+        ];
         final grid = find.byKey(const Key('profile-history-grid'));
         expect(grid, findsOneWidget, reason: scenario.$1);
 
@@ -189,6 +193,17 @@ void main() {
             find.descendant(of: card, matching: find.text(periods[index])),
             findsOneWidget,
             reason: '${scenario.$1} ${periods[index]}',
+          );
+          expect(
+            find.descendant(
+              of: card,
+              matching: find.textContaining(
+                subtitles[index],
+                findRichText: true,
+              ),
+            ),
+            findsNothing,
+            reason: '${scenario.$1} 상세 전용 정보 ${subtitles[index]}',
           );
         }
         await _expectThreeColumnSquareGrid(tester, cards);
@@ -493,6 +508,25 @@ void main() {
               .color;
           expect(find.byKey(const Key('profile-scroll')), findsOneWidget);
           expect(find.byKey(const Key('profile-history-grid')), findsOneWidget);
+          final firstCard = find.byKey(
+            const Key('profile-history-card-experience-0'),
+          );
+          await _ensureCardBuilt(tester, firstCard);
+          await tester.ensureVisible(firstCard);
+          await tester.pumpAndSettle();
+          final metadata = find.byKey(
+            const Key('profile-history-card-meta-experience-0'),
+          );
+          final title = find.byKey(
+            const Key('profile-history-card-title-experience-0'),
+          );
+          expect(metadata, findsOneWidget);
+          expect(title, findsOneWidget);
+          expect(
+            tester.getRect(metadata).bottom,
+            lessThanOrEqualTo(tester.getRect(title).top + 0.5),
+            reason: '${formFactor.$1} $brightness card text overlap',
+          );
           expect(
             Theme.of(tester.element(profile)).brightness,
             brightness,
