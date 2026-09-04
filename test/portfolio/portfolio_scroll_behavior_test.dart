@@ -26,36 +26,6 @@ void main() {
       );
     });
 
-    testWidgets('About 메모는 터치와 마우스 드래그로 스크롤된다', (tester) async {
-      await _pumpPortfolio(tester);
-      await tester.tap(find.byKey(const Key('iphone-profile-card')));
-      await tester.pumpAndSettle();
-
-      final aboutScroll = find.byKey(const Key('about-scroll'));
-      final scrollable = tester.state<ScrollableState>(
-        find.descendant(of: aboutScroll, matching: find.byType(Scrollable)),
-      );
-      expect(scrollable.position.maxScrollExtent, greaterThan(0));
-
-      await tester.drag(aboutScroll, const Offset(0, -180));
-      await tester.pumpAndSettle();
-      expect(scrollable.position.pixels, greaterThan(0));
-
-      scrollable.position.jumpTo(0);
-      await tester.pump();
-
-      final mouseGesture = await tester.startGesture(
-        tester.getCenter(aboutScroll),
-        kind: PointerDeviceKind.mouse,
-      );
-      await mouseGesture.moveBy(const Offset(0, -180));
-      await mouseGesture.up();
-      await tester.pumpAndSettle();
-
-      expect(scrollable.position.pixels, greaterThan(0));
-      expect(tester.takeException(), isNull);
-    });
-
     for (final layout in _adaptiveLayouts) {
       testWidgets('${layout.name}의 모든 공개 앱 본문은 터치와 마우스로 스크롤된다', (tester) async {
         for (final target in _publicAppScrollTargets) {
