@@ -1,8 +1,47 @@
+import 'dart:convert';
+
 class TerminalGitCommit {
   const TerminalGitCommit({required this.hash, required this.subject});
 
   final String hash;
   final String subject;
+}
+
+const terminalGitHistoryDefine = 'PORTFOLIO_GIT_HISTORY';
+
+const _encodedBuildGitHistory = String.fromEnvironment(
+  terminalGitHistoryDefine,
+);
+
+List<TerminalGitCommit> resolveTerminalGitHistory({
+  String encodedSnapshot = _encodedBuildGitHistory,
+}) {
+  if (encodedSnapshot.isEmpty) {
+    return portfolioGitHistory;
+  }
+
+  try {
+    final decoded = jsonDecode(
+      utf8.decode(base64Url.decode(base64Url.normalize(encodedSnapshot))),
+    );
+    if (decoded is! List || decoded.isEmpty) {
+      return portfolioGitHistory;
+    }
+
+    final commits = <TerminalGitCommit>[
+      for (final item in decoded)
+        if (item case <String, dynamic>{
+          'hash': final String hash,
+          'subject': final String subject,
+        } when hash.isNotEmpty && subject.isNotEmpty)
+          TerminalGitCommit(hash: hash, subject: subject)
+        else
+          throw const FormatException('Invalid terminal Git history entry.'),
+    ];
+    return List<TerminalGitCommit>.unmodifiable(commits);
+  } on FormatException {
+    return portfolioGitHistory;
+  }
 }
 
 /// Recent commits captured when this portfolio release was prepared.

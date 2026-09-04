@@ -35,11 +35,13 @@ class TerminalResult {
 class TerminalEngine {
   factory TerminalEngine(
     PortfolioData data, {
-    Iterable<TerminalGitCommit> gitHistory = portfolioGitHistory,
+    Iterable<TerminalGitCommit>? gitHistory,
   }) {
     return TerminalEngine._(
       data,
-      List<TerminalGitCommit>.unmodifiable(gitHistory),
+      List<TerminalGitCommit>.unmodifiable(
+        gitHistory ?? resolveTerminalGitHistory(),
+      ),
     );
   }
 
@@ -78,6 +80,7 @@ class TerminalEngine {
       TerminalHelpEntry(command: 'ls', description: '개인 프로젝트 목록'),
       TerminalHelpEntry(command: 'whoami', description: '개발자 소개'),
       TerminalHelpEntry(command: 'clear', description: '화면 지우기'),
+      TerminalHelpEntry(command: 'help', description: '명령어 안내'),
     ];
     return TerminalResult(
       helpEntries: entries,
