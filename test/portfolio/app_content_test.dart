@@ -1134,6 +1134,28 @@ void main() {
       },
     );
 
+    testWidgets('terminal exposes one named and editable accessibility field', (
+      tester,
+    ) async {
+      final semantics = tester.ensureSemantics();
+      addTearDown(semantics.dispose);
+      await _pumpApp(
+        tester,
+        appId: PortfolioAppId.terminal,
+        launcher: _FakeExternalLauncher(),
+        size: const Size(900, 650),
+      );
+
+      final textFields = find.semantics.byPredicate(
+        (node) => node.getSemanticsData().flagsCollection.isTextField,
+      );
+      expect(textFields, findsOne);
+      final inputSemantics = textFields.evaluate().single.getSemanticsData();
+      expect(inputSemantics.label, '터미널 명령 입력');
+      expect(inputSemantics.flagsCollection.isEnabled, ui.Tristate.isTrue);
+      expect(inputSemantics.hasAction(SemanticsAction.setText), isTrue);
+    });
+
     testWidgets('terminal keeps the fixed Korean prompt for injected data', (
       tester,
     ) async {
