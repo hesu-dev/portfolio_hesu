@@ -434,7 +434,8 @@ void main() {
         ),
         findsNothing,
       );
-      expect(find.text('자세히 보러가기'), findsOneWidget);
+      expect(find.text('프로필 보러가기'), findsOneWidget);
+      expect(find.text('자세히 보러가기'), findsNothing);
       expect(find.text('Injected headline'), findsNothing);
       expect(find.text(portfolioData.name), findsNothing);
       _expectAllHomeApps();

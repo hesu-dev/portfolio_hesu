@@ -255,7 +255,7 @@ void main() {
           );
           expect(
             tester.getSemantics(circularControl).getSemanticsData().label,
-            'Close Projects window',
+            'Close 포트폴리오 window',
             reason: '$size root semantics',
           );
           expect(
@@ -263,7 +263,7 @@ void main() {
             const Size(44, 44),
             reason: '$size root semantics target',
           );
-          expect(find.byTooltip('Close Projects window'), findsOneWidget);
+          expect(find.byTooltip('Close 포트폴리오 window'), findsOneWidget);
 
           await tester.tap(find.byKey(const Key('projects-career-folder-0')));
           await tester.pumpAndSettle();
@@ -271,10 +271,10 @@ void main() {
           expect(find.byKey(const Key('project-detail-title')), findsOneWidget);
           expect(
             tester.getSemantics(circularControl).getSemanticsData().label,
-            'Back in Projects',
+            'Back in 포트폴리오',
             reason: '$size detail semantics',
           );
-          expect(find.byTooltip('Back in Projects'), findsOneWidget);
+          expect(find.byTooltip('Back in 포트폴리오'), findsOneWidget);
 
           await tester.tap(circularControl);
           await tester.pumpAndSettle();
@@ -287,10 +287,10 @@ void main() {
           expect(find.byKey(const Key('mobile-app-surface')), findsOneWidget);
           expect(
             tester.getSemantics(circularControl).getSemanticsData().label,
-            'Close Projects window',
+            'Close 포트폴리오 window',
             reason: '$size returned root semantics',
           );
-          expect(find.byTooltip('Close Projects window'), findsOneWidget);
+          expect(find.byTooltip('Close 포트폴리오 window'), findsOneWidget);
 
           await tester.tap(circularControl);
           await tester.pumpAndSettle();
@@ -323,7 +323,7 @@ void main() {
         expect(find.text('최근 항목'), findsWidgets);
         expect(
           tester.getSemantics(circularControl).getSemanticsData().label,
-          startsWith('Close Projects window'),
+          startsWith('Close 포트폴리오 window'),
           reason: '$size location root semantics',
         );
 

@@ -662,7 +662,7 @@ void main() {
       semantics.dispose();
     });
 
-    testWidgets('프로젝트 시스템 메뉴는 영문 Projects 창과 Dock 항목 하나만 연다', (tester) async {
+    testWidgets('포트폴리오 시스템 메뉴는 단일 창과 Dock 항목만 연다', (tester) async {
       await _pumpPortfolio(tester);
 
       await tester.tap(find.byKey(const Key('mac-system-menu-button')));
@@ -1003,7 +1003,7 @@ void main() {
 const Map<PortfolioAppId, String> _labels = <PortfolioAppId, String>{
   PortfolioAppId.about: 'About',
   PortfolioAppId.skills: 'Skills',
-  PortfolioAppId.projects: 'Projects',
+  PortfolioAppId.projects: '포트폴리오',
   PortfolioAppId.terminal: 'Terminal',
   PortfolioAppId.settings: '설정',
   PortfolioAppId.github: 'GitHub',

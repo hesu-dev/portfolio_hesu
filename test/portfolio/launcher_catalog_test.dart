@@ -60,7 +60,7 @@ void main() {
   });
 
   testWidgets(
-    'desktop shows the English Projects launcher without the Korean duplicate',
+    'desktop shows the 포트폴리오 launcher without the duplicate project app',
     (tester) async {
       tester.view.devicePixelRatio = 1;
       tester.view.physicalSize = const Size(1440, 900);
@@ -82,7 +82,8 @@ void main() {
 
       expect(find.byKey(const Key('desktop-app-projects')), findsOneWidget);
       expect(find.byKey(const Key('desktop-app-thisMac')), findsNothing);
-      expect(find.text('Projects'), findsOneWidget);
+      expect(find.text('포트폴리오'), findsOneWidget);
+      expect(find.text('Projects'), findsNothing);
       expect(find.text('프로젝트'), findsNothing);
     },
   );

@@ -37,7 +37,7 @@ void main() {
       const expectedLabels = <String, String>{
         'about': 'About',
         'skills': 'Skills',
-        'projects': 'Projects',
+        'projects': '포트폴리오',
         'terminal': 'Terminal',
         'photos': '사진',
         'settings': '설정',
@@ -80,7 +80,7 @@ void main() {
         ),
       );
 
-      expect(find.bySemanticsLabel('Open Projects'), findsOneWidget);
+      expect(find.bySemanticsLabel('Open 포트폴리오'), findsOneWidget);
       expect(
         find.byKey(const Key('apple-app-icon-selection-projects')),
         findsOneWidget,

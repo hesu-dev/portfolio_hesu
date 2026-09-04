@@ -71,8 +71,12 @@ void main() {
           findsNothing,
         );
         expect(
-          find.descendant(of: body, matching: find.text('자세히 보러가기')),
+          find.descendant(of: body, matching: find.text('프로필 보러가기')),
           findsOneWidget,
+        );
+        expect(
+          find.descendant(of: body, matching: find.text('자세히 보러가기')),
+          findsNothing,
         );
         expect(
           find.descendant(
@@ -251,7 +255,11 @@ void _expectProfileContent(WidgetTester tester, {required String profileKey}) {
     findsNothing,
   );
   final guidance = tester.widget<Text>(
+    find.descendant(of: body, matching: find.text('프로필 보러가기')),
+  );
+  expect(
     find.descendant(of: body, matching: find.text('자세히 보러가기')),
+    findsNothing,
   );
 
   expect(guidance.maxLines, 1);
