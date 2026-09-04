@@ -54,6 +54,42 @@ void main() {
     );
 
     testWidgets(
+      'draws Profile as bespoke Instagram-inspired code-native artwork',
+      (tester) async {
+        final profile = PortfolioAppId.values.singleWhere(
+          (appId) => appId.name == 'profile',
+        );
+        await _pumpArtwork(tester, profile);
+
+        final artwork = find.byKey(const Key('apple-app-artwork-profile'));
+        expect(artwork, findsOneWidget);
+        expect(
+          find.descendant(of: artwork, matching: find.byType(CustomPaint)),
+          findsOneWidget,
+        );
+        expect(
+          find.descendant(of: artwork, matching: find.byType(Icon)),
+          findsNothing,
+        );
+        expect(
+          find.descendant(of: artwork, matching: find.byType(Image)),
+          findsNothing,
+        );
+
+        final palette = AppleAppArtwork.colorsFor(profile);
+        expect(palette.length, greaterThanOrEqualTo(3));
+        expect(
+          palette.map((color) => color.toARGB32()),
+          containsAll(<int>[
+            const Color(0xFF833AB4).toARGB32(),
+            const Color(0xFFE1306C).toARGB32(),
+            const Color(0xFFFCAF45).toARGB32(),
+          ]),
+        );
+      },
+    );
+
+    testWidgets(
       'renders Projects as a large folder silhouette on a transparent canvas',
       (tester) async {
         await _pumpArtwork(tester, PortfolioAppId.projects);

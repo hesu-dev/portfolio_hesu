@@ -35,6 +35,7 @@ void main() {
       );
 
       const expectedLabels = <String, String>{
+        'profile': '프로필',
         'about': 'About',
         'skills': 'Skills',
         'projects': '포트폴리오',
@@ -242,6 +243,7 @@ void main() {
     ) async {
       final launcher = _FakeExternalLauncher();
       const expectedRootKeys = <String, String>{
+        'profile': 'profile-app',
         'about': 'about-app',
         'skills': 'skills-app',
         'projects': 'projects-app',
