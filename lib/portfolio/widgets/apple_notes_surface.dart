@@ -158,7 +158,7 @@ class _AppleNotesSurfaceState extends State<AppleNotesSurface> {
                             overflow: TextOverflow.ellipsis,
                             style: Theme.of(context).textTheme.titleLarge
                                 ?.copyWith(
-                                  color: const Color(0xFF3A2700),
+                                  color: Colors.white,
                                   fontSize: _compact ? 20 : 25,
                                   fontWeight: FontWeight.w800,
                                 ),

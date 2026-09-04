@@ -102,9 +102,6 @@ class _MobileNotesProfileButton extends StatelessWidget {
     final cardKey = tablet
         ? const Key('ipad-profile-card')
         : const Key('iphone-profile-card');
-    final bodyForeground = dark
-        ? const Color(0xFFF8F8FA)
-        : const Color(0xFF242426);
     final secondaryForeground = dark
         ? const Color(0xFFC8C8CE)
         : const Color(0xFF515158);
@@ -137,23 +134,11 @@ class _MobileNotesProfileButton extends StatelessWidget {
       body: Row(
         children: <Widget>[
           Expanded(
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: <Widget>[
-                Text(
-                  data.name,
-                  maxLines: 1,
-                  overflow: TextOverflow.ellipsis,
-                  style: profileLineStyle.copyWith(color: bodyForeground),
-                ),
-                const SizedBox(height: 3),
-                Text(
-                  '자세히 보러가기',
-                  maxLines: 1,
-                  overflow: TextOverflow.ellipsis,
-                  style: profileLineStyle.copyWith(color: secondaryForeground),
-                ),
-              ],
+            child: Text(
+              '자세히 보러가기',
+              maxLines: 1,
+              overflow: TextOverflow.ellipsis,
+              style: profileLineStyle.copyWith(color: secondaryForeground),
             ),
           ),
           if (!largeText) ...<Widget>[
