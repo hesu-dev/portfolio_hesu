@@ -1,6 +1,6 @@
 # 민희수 포트폴리오 요구사항 체크리스트
 
-이 문서는 2026-09-03 대화에서 확정된 요구사항과 검증 근거를 한곳에서 추적한다.
+이 문서는 2026-09-03~04 대화에서 확정된 요구사항과 검증 근거를 한곳에서 추적한다.
 상태 표시는 `충족`, `진행 중`, `보류`, `미충족`만 사용하며, 최종 완료 전에는
 테스트 통과만으로 시각 요구를 `충족`으로 올리지 않는다.
 
@@ -43,7 +43,8 @@
 |---|---|---|
 | 포트폴리오 폴더는 외부 파란 타일 없이 투명 배경 | 충족 | 폴더 실루엣이 아이콘 영역을 채우며 desktop/home/Dock 모두 사각 배경·그림자가 없다. |
 | Mail은 macOS 메일 아이콘과 유사 | 충족 | 공용 code-native 봉투 artwork를 세 폼팩터 실화면에서 비교했다. |
-| About은 Finder 아이콘과 유사 | 충족 | 공용 Finder 얼굴 artwork를 세 폼팩터 실화면에서 비교했다. |
+| macOS About은 Finder 아이콘과 유사 | 충족 | 데스크톱 launcher와 Dock의 기존 About은 공용 Finder 얼굴 artwork를 그대로 사용한다. |
+| iPad/iPhone 프로필은 독립된 Instagram형 아이콘 | 충족 | 비트맵·범용 Material 아이콘 없이 원형 그라데이션과 프로필 실루엣을 code-native artwork로 그린다. |
 | Terminal 내부 화면이 아이콘 전체를 채움 | 충족 | 검은 화면이 둥근 타일 가장자리까지 이어지는 것을 테스트와 실화면으로 확인했다. |
 | Skills는 흰 타일의 Slack 유사 4색 아이콘 | 충족 | 독자적으로 그린 흰 타일 4색 마크를 세 폼팩터 실화면에서 비교했다. |
 | Trash는 반투명 통과 다채로운 내용물 표현 | 충족 | 범용 glyph 대신 code-native 투명 통과 다채로운 내용물을 사용한다. |
@@ -52,20 +53,21 @@
 | 데스크톱 Trash 아이콘이 잘리지 않음 | 충족 | 1280×720에서도 artwork와 `Trash` 라벨이 desktop grid 안에 완전히 포함된다. |
 | 중복 프로젝트 아이콘 제거, 표시명 `포트폴리오`로 단일화 | 충족 | 공용 런처 목록에서 레거시 프로젝트 허브 아이콘을 제외하고 desktop/iPad/iPhone/Dock과 시스템 메뉴에서 `포트폴리오`만 노출한다. |
 | 데스크톱 런처 선택 효과를 포트폴리오 폴더 방식으로 통일 | 충족 | 8개 앱 모두 artwork는 바꾸지 않고 아이콘 바로 주변과 이름에만 중립 회색 배경을 표시한다. iPad/iPhone 선택 표현에는 적용하지 않는다. |
-| 폼팩터별 앱 순서 통일 | 충족 | desktop은 `About → Skills → 포트폴리오 → Terminal → GitHub → Mail → 설정 → Trash`, iPhone·iPad는 About 중복을 제외한 `Skills → 포트폴리오 → Terminal → 사진 → GitHub → Mail → 설정 → Trash` 순서를 사용한다. |
+| 폼팩터별 앱 순서 통일 | 충족 | desktop은 `About → Skills → 포트폴리오 → Terminal → GitHub → Mail → 설정 → Trash`, iPhone·iPad는 `프로필 → Skills → 포트폴리오 → Terminal → 사진 → GitHub → Mail → 설정 → Trash` 순서를 사용한다. |
 | 모바일·태블릿 Photos 자리 추가 | 충족 | Terminal 다음에 공용 frame의 code-native Photos artwork를 배치하고 Light/Dark·스크롤 가능한 준비 화면에 연결한다. desktop에는 노출하지 않는다. |
 
-## About와 메모
+## 모바일 프로필, About와 메모
 
 | 요구사항 | 상태 | 완료 조건 또는 근거 |
 |---|---|---|
-| 홈의 민희수 영역 자체가 About을 여는 메모 위젯 | 충족 | iPad와 iPhone 모두 노란 메모 위젯 전체를 탭/Enter/Space로 열 수 있다. |
-| About 내용은 하나의 연속된 메모 | 충족 | 소개·경력·교육·연락처가 별도 카드 없이 한 종이 안에서 이어진다. |
-| 홈 위젯의 날짜·`MH` 상자·`메모` 텍스트 제거 | 충족 | 세 장식 요소는 렌더링하지 않고 헤더의 흰 폴더 아이콘·이름과 본문의 CTA만 유지한다. |
-| 홈과 About 메모 본문은 공용 레이아웃 | 충족 | 홈의 `AppleNotesSurface`와 About 전체 화면이 같은 `AppleNotesPaper` 종이 레이어를 사용한다. |
-| 홈 메모 헤더에 흰 폴더 아이콘과 흰색 `민희수` 표시 | 충족 | 폴더 아이콘은 삭제하지 않고 같은 노란 헤더의 오른쪽 제목 슬롯에 흰색 이름을 표시한다. |
-| 홈 메모 본문에서 중복 이름 제거 | 충족 | 두 번째 `민희수`를 제거하고 본문에는 `프로필 보러가기` CTA만 한 번 표시한다. |
-| 짧은 가로 화면에서도 메모 CTA 유지 | 충족 | iPhone 844×390과 iPad 600×400·글자 200%에서도 헤더 이름과 단일 CTA가 잘리지 않는다. |
+| iPad/iPhone 홈은 기존 Notes 프로필 위젯 없이 Profile을 첫 칸에 배치 | 충족 | 모바일 카탈로그의 독립 `profile` 항목이 index 0·좌상단·초기 포커스이며 iPhone 4열·iPad 6열 스크롤 그리드를 유지한다. |
+| 기존 macOS About과 연속 Notes UI 보존 | 충족 | desktop launcher·Dock은 `about`을 유지하고 `AboutApp`·`AppleNotesPaper`의 소개·경력·교육·연락처가 한 종이 안에 이어진다. |
+| 모바일 Profile은 About와 분리된 독립 앱 | 충족 | 별도 `PortfolioAppId.profile`과 `ProfileApp`을 사용하며 Profile을 열어도 `about-app`은 렌더링하지 않는다. |
+| Profile은 공용 모바일 앱 헤더만 사용 | 충족 | `AppleMobileNavigationHeader`의 원형 뒤로가기·중앙 제목·비동작 `…`를 한 번만 사용한다. 피드 루트에서는 앱을 닫고 상세에서는 피드로 돌아가며, 본문 안에는 중복 toolbar가 없다. |
+| Profile 콘텐츠와 외부 액션은 공용 데이터에서 주입 | 충족 | 이름·영문명·headline·bio와 `게시물 = 경력 + 교육` 파생 수치, 정확한 GitHub·메일 URI를 `PortfolioData`에서 가져온다. |
+| Profile 피드는 경력과 교육만 Instagram형 3열로 표시 | 충족 | 모든 경력을 먼저, 모든 교육을 다음에 같은 3열 정사각형 카드로 표시한다. 전용 앱에 이미 있는 스킬 하이라이트와 프로젝트 갤러리는 중복 렌더링하지 않는다. |
+| 경력·교육 카드는 Reels형 긴 소개 상세로 연결 | 충족 | 같은 Profile 앱 안에서 `Reels` 문맥·큰 세로형 code-native 비주얼·실제 계정 행·생략 없는 경력/교육 캡션을 표시한다. 교육 링크가 있으면 해당 URI만 열고 가짜 social metric은 만들지 않는다. |
+| Profile의 반응형·테마·입력·자산 정책 | 충족 | 피드와 상세 모두 iPhone·iPad, Light·Dark, 글자 200%, touch·mouse 스크롤을 지원하고 복제 사진 없이 code-native avatar와 artwork를 사용한다. |
 
 ## Finder와 프로젝트
 
@@ -134,7 +136,7 @@
 | iPad/iPhone 설정은 기기 비율의 Light/Dark 미리보기 | 충족 | 외곽 화면 모드 카드는 본문 전체 폭으로 유지하고, iPhone은 72px 세로형 0.64 비율, iPad는 최대 176px의 4:3 미리보기를 가운데 배치한다. 두 미리보기 사이에는 24px 여백을 두고 `라이트 모드`·`다크 모드`를 한 줄로 표시한다. |
 | 모바일 화면 모드 선택 효과는 하단 체크만 표시 | 충족 | iPhone·iPad의 개별 선택지는 선택 배경과 stroke를 제거하고 하단 원형 체크만 상태를 표시한다. 외곽 Light/Dark 공용 카드는 유지하며 키보드 포커스 링은 접근성을 위해 별도로 보존한다. |
 | 데스크톱 화면 모드 간격과 체크 배치 통일 | 충족 | 데스크톱 Light/Dark 카드도 모바일과 같은 24px 간격 상수를 사용한다. 기존 카드·설명·선택·포커스 효과를 유지하면서 제목 바로 아래 중앙에 체크를 두고 설명을 그 아래에 배치한다. |
-| 모든 공개 화면의 Light/Dark 지원 | 충족 | 홈, 공용 창 chrome, Finder, About, Skills, Terminal, Photos, Settings, macOS 메뉴 막대와 세 시스템 패널을 양 테마로 렌더링하고 대비 계약을 검증한다. |
+| 모든 공개 화면의 Light/Dark 지원 | 충족 | 홈, 공용 창 chrome, Finder, About, Profile, Skills, Terminal, Photos, Settings, macOS 메뉴 막대와 세 시스템 패널을 양 테마로 렌더링하고 대비 계약을 검증한다. |
 | 웹/PWA 기본 chrome도 Light와 일치 | 충족 | `MaterialApp.color`, HTML `theme-color`, manifest 배경·테마 색을 기본 Light `#F4F4F7`로 통일했다. 앱 내부에서 선택한 Dark는 전역 Flutter 테마가 즉시 반영한다. |
 
 ## Skills
@@ -149,7 +151,7 @@
 
 | 요구사항 | 상태 | 완료 조건 또는 근거 |
 |---|---|---|
-| 모든 열린 화면에서 모바일 터치 스크롤 | 충족 | iPhone·iPad·데스크탑 크기에서 공개 앱 9개 본문, 포트폴리오 목록·상세, Terminal 누적 transcript를 touch 포인터로 실제 드래그한다. |
+| 모든 열린 화면에서 모바일 터치 스크롤 | 충족 | iPhone·iPad Profile을 포함한 공개 앱 본문, 포트폴리오 목록·상세, Terminal 누적 transcript를 touch 포인터로 실제 드래그한다. |
 | 데스크탑 마우스 드래그 스크롤 | 충족 | 앱 전역 `PortfolioScrollBehavior`가 mouse를 허용하고 같은 화면들을 mouse 포인터로 실제 드래그한다. |
 | 짧은 화면에서도 홈 아이콘 전체 접근 | 충족 | iPad/iPhone 홈 Dock을 제거하고 일반 하단 안전 여백을 적용해 600×400·글자 200%에서도 모든 앱까지 터치 스크롤한다. |
 
@@ -157,23 +159,23 @@
 
 | 요구사항 | 상태 | 완료 조건 또는 근거 |
 |---|---|---|
-| 공통 레이아웃으로 향후 일괄 수정 | 충족 | Mac window, Finder, Notes, mobile navigation, app artwork를 각각 공용 컴포넌트로 유지한다. |
+| 공통 레이아웃으로 향후 일괄 수정 | 충족 | Mac window, Finder, mobile navigation, app artwork를 각각 공용 컴포넌트로 유지한다. 기존 About Notes는 보존하고 별도 Profile은 공용 navigation·artwork·`PortfolioData`를 재사용한다. |
 | 한국어 Conventional/Angular 커밋 제목 | 충족 | 이번 작업의 새 커밋 제목은 한국어 Conventional Commit 형식을 준수한다. |
 | 작업을 가능한 작은 커밋으로 분리 | 충족 | 테스트·자산·공용 컴포넌트·기능·수정을 독립 커밋으로 분리했다. |
-| 전체 정적 분석·테스트·Vercel 빌드 | 충족 | 최종 소스에서 정적 분석 0건, 전체 279개 테스트 통과, Vercel 루트 release web build 성공을 확인한다. |
-| 데스크톱·iPad·iPhone 실화면 검수 | 충족 | 로컬 인앱 브라우저에서 세 폼팩터의 핵심 화면과 Light/Dark 전환을 다시 확인하고 자동 양 테마 계약으로 나머지 조합을 보완했다. |
+| 전체 정적 분석·테스트·Vercel 빌드 | 충족 | 최종 소스에서 정적 분석 0건, 전체 283개 테스트 통과, Vercel 루트 release web build 성공을 확인한다. |
+| 데스크톱·iPad·iPhone 실화면 검수 | 충족 | 로컬 인앱 브라우저에서 최신 iPhone 홈의 첫 Profile 아이콘과 Notes 위젯 비노출을 확인했다. iPhone·iPad Light/Dark 피드·Reels 상세는 PNG 렌더링으로, 공용 헤더·3열 geometry·200%·스크롤 조합은 Flutter widget 렌더링 계약으로 검수했다. 기존 macOS About은 회귀 테스트로 보존을 확인했다. |
 
 ## 2026-09-04 최종 검증 기록
 
-- `flutter test --reporter compact`: 전체 279개 통과
+- `flutter test --reporter compact`: 전체 283개 통과
 - `flutter analyze`: 문제 없음
 - Vercel 루트 경로 `/` release web build: 성공, 생성된 `<base href="/">` 확인
 - `git diff --check`: 통과
-- 실제 렌더링: macOS 1280×720 Light 홈·Finder와 Dark 설정·메뉴·제어 센터·알림·About·Terminal, iPad 834×1112의 홈·About·Finder 6열·4:3 설정, iPhone 390×844의 홈·Skills·Finder 3열·설정·About을 확인
+- 실제 렌더링: macOS 1280×720 Light 홈·Finder와 Dark 설정·메뉴·제어 센터·알림·About·Terminal, iPad 834px의 홈·Profile Light/Dark 피드·Reels 상세·Finder 6열·4:3 설정, iPhone 390×844의 홈·Profile Light/Dark 피드·Reels 상세·Skills·Finder 3열·설정을 확인
 - Finder 재검수: macOS `최근 항목`이 전체 6개 프로젝트로 이동하고 ReadingLog가 첫 번째이며, 상세에서 돌아오면 폴더 아이콘 주변에만 중립 회색 선택 배경이 남는 것을 확인했다. desktop·iPad·iPhone의 폴더 행은 112px 셀과 8px 간격을 유지하면서 좌우 여백이 대칭이고, 마지막 불완전 행도 중앙 정렬된다.
 - 모바일 재검수: 홈 앱 Dock은 숨고, `포트폴리오` 내부에만 `최근 항목`·`회사`·`개인` 3탭 탐색이 있으며 세 아이콘·라벨은 각 1/3 중심에 정렬된다. pill 배경은 투명하고 iPhone/iPad Finder는 신호등 없이 상태별 뒤로/닫기·중앙 자연 높이 타이틀·`…`를 사용한다.
-- 테마 재검수: 기본 Light, iPhone 설정의 즉시 Dark 전환, Dark About 메모·Terminal·macOS 창/메뉴/시스템 패널의 가독성을 확인
-- 최신 UI 회귀 검수: 홈 메모 헤더의 흰색 이름과 본문 `프로필 보러가기` 단일 CTA, 세 폼팩터의 `포트폴리오` 공용 표시명, desktop 8개 런처의 국소 회색 선택 효과, iPad/iPhone 공통 툴팁 비노출을 확인했다. 설정은 전체 폭 외곽 카드·축소된 내부 미리보기·한 줄 이름·체크 전용 선택 표시를 Light/Dark 실화면과 자동 테스트로 확인하고, 데스크톱도 24px 카드 간격과 제목 아래 중앙 체크 배치를 자동 검증했다. 열린 앱의 홈 인디케이터는 iPhone 실화면 및 iPhone/iPad 안전영역 회귀 테스트로 하단 wallpaper 색 띠와 위치 이동이 없음을 확인했다.
+- 테마 재검수: 기본 Light, iPhone 설정의 즉시 Dark 전환, iPhone Profile 피드·Reels 상세의 Light/Dark 렌더링과 iPad Profile 양 테마 계약, Dark About 메모·Terminal·macOS 창/메뉴/시스템 패널의 가독성을 확인
+- 최신 UI 회귀 검수: 모바일 홈의 기존 Notes 키·CTA가 사라지고 첫 칸에 독립 Profile 아이콘이 표시되는 것을 확인했다. Profile은 주입된 identity·게시물/경력/교육 통계·정확한 링크를 사용하고, 경력→교육 순서의 3열 피드와 같은 앱 안의 Reels형 전체 캡션 상세를 제공한다. 스킬·프로젝트 중복과 가짜 social metric은 없으며 desktop About은 그대로다. 세 폼팩터의 `포트폴리오` 공용 표시명, desktop 8개 런처의 국소 회색 선택 효과, iPad/iPhone 공통 툴팁 비노출도 유지된다. 설정은 전체 폭 외곽 카드·축소된 내부 미리보기·한 줄 이름·체크 전용 선택 표시를 Light/Dark 실화면과 자동 테스트로 확인하고, 데스크톱도 24px 카드 간격과 제목 아래 중앙 체크 배치를 자동 검증했다. 열린 앱의 홈 인디케이터는 iPhone 실화면 및 iPhone/iPad 안전영역 회귀 테스트로 하단 wallpaper 색 띠와 위치 이동이 없음을 확인했다.
 - 독립 요구사항 감사: 핵심 런타임 미충족과 Critical 항목 없음. 감사에서 발견한 데스크톱 `최근 항목` 비동작과 웹 기본 dark chrome은 각각 수정하고 회귀 테스트를 추가함
 - 외부 상태 변경: 기존 Pages workflow 2개를 비활성화하고, Pages 게시 해제와 배포 소스 `None` 저장을 완료했다. Pages API는 404를 반환한다.
 - 원격 `gh-pages` 브랜치를 삭제해 기존 저장소에서 자동 재게시될 경로를 제거했다.
