@@ -389,10 +389,7 @@ void main() {
     expect(readme, contains('flutter run -d chrome'));
     expect(readme, contains('flutter test'));
     expect(readme, contains('flutter analyze'));
-    expect(
-      readme,
-      contains('flutter build web --release --base-href / --pwa-strategy=none'),
-    );
+    expect(readme, contains('dart run tool/build_web.dart'));
     expect(readme, contains('build/web'));
     expect(readme, contains('GitHub Pages'));
     expect(readme, contains('Vercel'));
@@ -420,8 +417,8 @@ void main() {
     expect(
       readme,
       contains(
-        './.flutter/bin/flutter build web --release --base-href / '
-        '--pwa-strategy=none',
+        './.flutter/bin/dart run tool/build_web.dart '
+        '--flutter-bin ./.flutter/bin/flutter',
       ),
     );
     expect(readme, contains('Output Directory'));
