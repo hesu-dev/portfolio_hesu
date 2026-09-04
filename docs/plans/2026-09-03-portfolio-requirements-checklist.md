@@ -85,7 +85,7 @@
 | 선택 폴더는 아이콘 주변만 회색 표시 | 충족 | light/dark 모두 청색 폴더 artwork·라벨·전체 타일은 불변이고 아이콘 바로 주변에만 중립 회색 배경을 둔다. |
 | 긴 폴더 이름은 정해진 폭 안에서 개행하고 정렬 유지 | 충족 | 항목 수와 무관하게 사용 가능한 열 수로 Finder 타일 폭을 고정하고 이름을 최대 두 줄 ellipsis로 제한한다. iPad 개인 프로젝트에서도 PersonaChat이 두 줄로 개행된다. |
 | 프로젝트 6개 이상을 누락 없이 표시하고 좁은 화면에서도 정렬 유지 | 충족 | 최근 항목은 6개 프로젝트를 모두 표시하고 회사·개인은 분류된 전체 항목을 다중 행 스크롤 그리드로 표시한다. 설명은 상세 뎁스로 분리돼 목록 높이를 잠식하지 않는다. |
-| 폴더 정렬 밀도를 desktop·iPad·iPhone에서 공통화 | 충족 | 모든 Finder가 112px 고정 셀과 8px 간격을 공유한다. 390px은 3열, 834px 최근 항목은 6개가 한 행에 배치되며 긴 이름은 기존 64px 두 줄 영역을 유지한다. |
+| 폴더 정렬 밀도와 행 중앙 정렬을 desktop·iPad·iPhone에서 공통화 | 충족 | 모든 Finder가 112px 고정 셀과 8px 간격을 공유한다. 각 행의 남는 폭은 좌우에 동일하게 분배하며 마지막 불완전 행도 가운데 정렬한다. 390px은 3열, 834px 최근 항목은 6개가 한 행에 배치되고 긴 이름은 기존 64px 두 줄 영역을 유지한다. |
 | iPad/iPhone Finder에서 사이드바·원형 위치 목록 제거 | 충족 | compact Finder는 파일 영역의 폭을 전부 사용하며 데스크톱 사이드바와 `최근 항목` 원형 목록을 렌더링하지 않는다. |
 | iPad/iPhone Finder 하단 탐색은 최근 항목·회사·개인만 제공 | 충족 | 내부 3탭 Finder 독이 각 위치 페이지에 연결되고 세 번째 탭 라벨은 compact한 `개인`으로 표시한다. 홈 화면의 앱 Dock과는 별개다. |
 | iPad/iPhone Finder 하단 탐색 아이콘·라벨 중앙 정렬 | 충족 | 세 항목이 같은 폭의 슬롯 전체를 사용하며 아이콘과 라벨 중심이 각각 내부 독 1/3 지점과 1px 이내로 일치한다. |
@@ -160,17 +160,17 @@
 | 공통 레이아웃으로 향후 일괄 수정 | 충족 | Mac window, Finder, Notes, mobile navigation, app artwork를 각각 공용 컴포넌트로 유지한다. |
 | 한국어 Conventional/Angular 커밋 제목 | 충족 | 이번 작업의 새 커밋 제목은 한국어 Conventional Commit 형식을 준수한다. |
 | 작업을 가능한 작은 커밋으로 분리 | 충족 | 테스트·자산·공용 컴포넌트·기능·수정을 독립 커밋으로 분리했다. |
-| 전체 정적 분석·테스트·Vercel 빌드 | 충족 | 최종 소스에서 정적 분석 0건, 전체 278개 테스트 통과, Vercel 루트 release web build 성공을 확인한다. |
+| 전체 정적 분석·테스트·Vercel 빌드 | 충족 | 최종 소스에서 정적 분석 0건, 전체 279개 테스트 통과, Vercel 루트 release web build 성공을 확인한다. |
 | 데스크톱·iPad·iPhone 실화면 검수 | 충족 | 로컬 인앱 브라우저에서 세 폼팩터의 핵심 화면과 Light/Dark 전환을 다시 확인하고 자동 양 테마 계약으로 나머지 조합을 보완했다. |
 
 ## 2026-09-04 최종 검증 기록
 
-- `flutter test --reporter compact`: 전체 278개 통과
+- `flutter test --reporter compact`: 전체 279개 통과
 - `flutter analyze`: 문제 없음
 - Vercel 루트 경로 `/` release web build: 성공, 생성된 `<base href="/">` 확인
 - `git diff --check`: 통과
 - 실제 렌더링: macOS 1280×720 Light 홈·Finder와 Dark 설정·메뉴·제어 센터·알림·About·Terminal, iPad 834×1112의 홈·About·Finder 6열·4:3 설정, iPhone 390×844의 홈·Skills·Finder 3열·설정·About을 확인
-- Finder 재검수: macOS `최근 항목`이 전체 6개 프로젝트로 이동하고 ReadingLog가 첫 번째이며, 상세에서 돌아오면 폴더 아이콘 주변에만 중립 회색 선택 배경이 남는 것을 확인
+- Finder 재검수: macOS `최근 항목`이 전체 6개 프로젝트로 이동하고 ReadingLog가 첫 번째이며, 상세에서 돌아오면 폴더 아이콘 주변에만 중립 회색 선택 배경이 남는 것을 확인했다. desktop·iPad·iPhone의 폴더 행은 112px 셀과 8px 간격을 유지하면서 좌우 여백이 대칭이고, 마지막 불완전 행도 중앙 정렬된다.
 - 모바일 재검수: 홈 앱 Dock은 숨고, Projects 내부에만 `최근 항목`·`회사`·`개인` 3탭 탐색이 있으며 세 아이콘·라벨은 각 1/3 중심에 정렬된다. pill 배경은 투명하고 iPhone/iPad Finder는 신호등 없이 상태별 뒤로/닫기·중앙 자연 높이 타이틀·`…`를 사용한다.
 - 테마 재검수: 기본 Light, iPhone 설정의 즉시 Dark 전환, Dark About 메모·Terminal·macOS 창/메뉴/시스템 패널의 가독성을 확인
 - 최신 UI 회귀 검수: 홈 메모 헤더의 흰색 이름과 본문 단일 CTA, desktop 8개 런처의 국소 회색 선택 효과, iPad/iPhone 공통 툴팁 비노출을 확인했다. 설정은 전체 폭 외곽 카드·축소된 내부 미리보기·한 줄 이름·체크 전용 선택 표시를 Light/Dark 실화면과 자동 테스트로 확인하고, 데스크톱도 24px 카드 간격과 제목 아래 중앙 체크 배치를 자동 검증했다. 열린 앱의 홈 인디케이터는 iPhone 실화면 및 iPhone/iPad 안전영역 회귀 테스트로 하단 wallpaper 색 띠와 위치 이동이 없음을 확인했다.
