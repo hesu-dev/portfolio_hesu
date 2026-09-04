@@ -1044,9 +1044,10 @@ void main() {
       expect(find.textContaining('Min He-su'), findsNothing);
       expect(find.textContaining('command not found'), findsNothing);
       expect(find.text(r'포트폴리오: ~$ help'), findsNothing);
+      expect(find.byKey(const Key('terminal-output')), findsOneWidget);
       expect(
         find.descendant(
-          of: find.byKey(const Key('terminal-transcript')),
+          of: find.byKey(const Key('terminal-output')),
           matching: find.byType(Text),
         ),
         findsNothing,
