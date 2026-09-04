@@ -112,56 +112,65 @@ class _TerminalAppState extends State<TerminalApp> {
     return AppleAppSurface(
       key: const Key('terminal-app'),
       color: background,
-      child: Column(
-        children: <Widget>[
-          _TerminalInput(
-            key: const Key('terminal-input-area'),
-            controller: _controller,
-            focusNode: _focusNode,
-            compact: widget.compact,
-            prompt: _prompt,
-            background: background,
-            onSubmitted: _submit,
-          ),
-          Expanded(
-            child: Scrollbar(
-              controller: _scrollController,
-              thumbVisibility: !widget.compact,
-              child: ListView(
-                key: const Key('terminal-transcript'),
-                controller: _scrollController,
-                padding: EdgeInsets.fromLTRB(
-                  widget.compact ? 14 : 22,
-                  18,
-                  widget.compact ? 14 : 22,
-                  24,
-                ),
-                children: <Widget>[
-                  for (final entry in _transcript.indexed)
-                    Padding(
-                      key: ValueKey<String>(
-                        'terminal-transcript-entry-${entry.$1}',
-                      ),
-                      padding: const EdgeInsets.only(bottom: 5),
-                      child: entry.$2.helpEntry != null
-                          ? _TerminalHelpRow(
-                              entry: entry.$2.helpEntry!,
-                              compact: widget.compact,
-                              color: primary,
-                            )
-                          : Text(
-                              entry.$2.text,
-                              style: _terminalTextStyle(
-                                color: entry.$2.isCommand ? accent : primary,
-                                compact: widget.compact,
-                              ),
-                            ),
+      child: TextFieldTapRegion(
+        child: GestureDetector(
+          behavior: HitTestBehavior.opaque,
+          excludeFromSemantics: true,
+          onTap: _focusNode.requestFocus,
+          child: Column(
+            children: <Widget>[
+              Expanded(
+                child: Scrollbar(
+                  controller: _scrollController,
+                  thumbVisibility: !widget.compact,
+                  child: ListView(
+                    key: const Key('terminal-transcript'),
+                    controller: _scrollController,
+                    padding: EdgeInsets.fromLTRB(
+                      widget.compact ? 14 : 22,
+                      18,
+                      widget.compact ? 14 : 22,
+                      24,
                     ),
-                ],
+                    children: <Widget>[
+                      for (final entry in _transcript.indexed)
+                        Padding(
+                          key: ValueKey<String>(
+                            'terminal-transcript-entry-${entry.$1}',
+                          ),
+                          padding: const EdgeInsets.only(bottom: 5),
+                          child: entry.$2.helpEntry != null
+                              ? _TerminalHelpRow(
+                                  entry: entry.$2.helpEntry!,
+                                  compact: widget.compact,
+                                  color: primary,
+                                )
+                              : Text(
+                                  entry.$2.text,
+                                  style: _terminalTextStyle(
+                                    color: entry.$2.isCommand
+                                        ? accent
+                                        : primary,
+                                    compact: widget.compact,
+                                  ),
+                                ),
+                        ),
+                    ],
+                  ),
+                ),
               ),
-            ),
+              _TerminalInput(
+                key: const Key('terminal-input-area'),
+                controller: _controller,
+                focusNode: _focusNode,
+                compact: widget.compact,
+                prompt: _prompt,
+                background: background,
+                onSubmitted: _submit,
+              ),
+            ],
           ),
-        ],
+        ),
       ),
     );
   }
