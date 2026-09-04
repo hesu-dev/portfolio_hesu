@@ -211,10 +211,9 @@ void main() {
       semantics.dispose();
     });
 
-    testWidgets('경력 카드는 실제 계정과 긴 소개를 담은 Reels형 상세를 연다', (tester) async {
+    testWidgets('상세는 이미지 없이 Instagram Reels 오버레이 구조만 제공한다', (tester) async {
       final semantics = tester.ensureSemantics();
       final data = _injectedProfileData();
-      final experience = data.experiences.first;
       await _pumpProfileShell(
         tester,
         size: const Size(390, 844),
@@ -227,37 +226,171 @@ void main() {
         const Key('profile-history-card-experience-0'),
       );
 
-      final caption = find.byKey(const Key('profile-reel-caption'));
-      _expectReelTemplate(
-        tester,
-        data: data,
-        expectedCaption: experience.description,
-        expectedKind: '경력',
-        expectedTitle: experience.role,
-        expectedPeriod: experience.period,
-      );
-      for (final text in <String>[
-        experience.role,
-        experience.organization,
-        experience.period,
-        experience.description,
-      ]) {
-        expect(
-          find.descendant(of: caption, matching: find.text(text)),
-          findsOneWidget,
-          reason: text,
-        );
-      }
+      _expectReelTemplate(tester, data: data);
       expect(tester.takeException(), isNull);
       semantics.dispose();
     });
 
-    testWidgets('교육 상세는 실제 내용과 선택적 링크의 정확한 URI를 사용한다', (tester) async {
+    testWidgets('하트는 카운트 없이 outline과 빨간 filled 상태를 두 번 토글한다', (tester) async {
+      final semantics = tester.ensureSemantics();
+      await _pumpProfileShell(
+        tester,
+        size: const Size(390, 844),
+        tablet: false,
+        data: _injectedProfileData(),
+      );
+      await _openProfile(tester);
+      await _openHistoryCard(
+        tester,
+        const Key('profile-history-card-experience-0'),
+      );
+
+      final detail = find.byKey(const Key('profile-history-detail'));
+      final actionRail = find.byKey(const Key('profile-reel-action-rail'));
+      final likeAction = find.byKey(const Key('profile-reel-like-action'));
+      expect(
+        find.descendant(of: actionRail, matching: likeAction),
+        findsOneWidget,
+      );
+      _expectButtonSemantics(tester, likeAction, label: '좋아요');
+      expect(
+        find.descendant(
+          of: likeAction,
+          matching: find.byIcon(Icons.favorite_border_rounded),
+        ),
+        findsOneWidget,
+      );
+      expect(
+        find.descendant(
+          of: likeAction,
+          matching: find.byIcon(Icons.favorite_rounded),
+        ),
+        findsNothing,
+      );
+
+      await tester.tap(likeAction);
+      await tester.pump();
+
+      _expectButtonSemantics(tester, likeAction, label: '좋아요 취소');
+      final filledHeart = find.descendant(
+        of: likeAction,
+        matching: find.byIcon(Icons.favorite_rounded),
+      );
+      expect(filledHeart, findsOneWidget);
+      expect(tester.widget<Icon>(filledHeart).color, AppleTheme.red);
+      expect(
+        find.descendant(
+          of: likeAction,
+          matching: find.byIcon(Icons.favorite_border_rounded),
+        ),
+        findsNothing,
+      );
+
+      await tester.tap(likeAction);
+      await tester.pump();
+
+      _expectButtonSemantics(tester, likeAction, label: '좋아요');
+      expect(
+        find.descendant(
+          of: likeAction,
+          matching: find.byIcon(Icons.favorite_border_rounded),
+        ),
+        findsOneWidget,
+      );
+      expect(
+        find.descendant(
+          of: likeAction,
+          matching: find.byIcon(Icons.favorite_rounded),
+        ),
+        findsNothing,
+      );
+      expect(
+        find.descendant(of: actionRail, matching: find.byType(Text)),
+        findsNothing,
+        reason: '행동 레일에 임의의 좋아요·댓글 수를 만들지 않는다.',
+      );
+      expect(find.byKey(const Key('profile-reel-like-count')), findsNothing);
+      expect(find.byKey(const Key('profile-reel-comment-count')), findsNothing);
+      expect(_fakeSocialMetricTextInside(detail), findsNothing);
+      expect(_fakeSocialMetricSemanticsInside(detail), findsNothing);
+      semantics.dispose();
+    });
+
+    testWidgets('댓글 버튼은 같은 상세 스크롤을 답글 스레드까지 이동시킨다', (tester) async {
+      final semantics = tester.ensureSemantics();
+      await _pumpProfileShell(
+        tester,
+        size: const Size(390, 560),
+        tablet: false,
+        data: _injectedProfileData(),
+      );
+      await _openProfile(tester);
+      await _openHistoryCard(
+        tester,
+        const Key('profile-history-card-experience-0'),
+      );
+
+      final detail = find.byKey(const Key('profile-history-detail'));
+      final detailScroll = find.byKey(
+        const Key('profile-history-detail-scroll'),
+      );
+      final scrollable = _scrollableInside(
+        const Key('profile-history-detail-scroll'),
+      );
+      final commentAction = find.byKey(
+        const Key('profile-reel-comment-action'),
+      );
+      final replyThread = find.byKey(const Key('profile-reel-reply-thread'));
+      expect(scrollable, findsOneWidget);
+      expect(commentAction, findsOneWidget);
+      _expectButtonSemantics(tester, commentAction, label: '댓글 보기');
+      expect(
+        find.descendant(of: detailScroll, matching: replyThread),
+        findsOneWidget,
+      );
+
+      final scrollableState = tester.state<ScrollableState>(scrollable);
+      final position = scrollableState.position;
+      final offsetBeforeTap = position.pixels;
+      final bottomSheetCountBefore = find.byType(BottomSheet).evaluate().length;
+      final dialogCountBefore = find.byType(Dialog).evaluate().length;
+      final modalBarrierCountBefore = find
+          .byType(ModalBarrier)
+          .evaluate()
+          .length;
+
+      await tester.tap(commentAction);
+      await tester.pumpAndSettle();
+
+      expect(find.byKey(const Key('profile-history-detail')), findsOneWidget);
+      expect(
+        find.byKey(const Key('profile-reel-comments-sheet')),
+        findsNothing,
+      );
+      expect(find.byType(BottomSheet), findsNWidgets(bottomSheetCountBefore));
+      expect(find.byType(Dialog), findsNWidgets(dialogCountBefore));
+      expect(find.byType(ModalBarrier), findsNWidgets(modalBarrierCountBefore));
+      expect(_verticalScrollablesInside(detail), findsOneWidget);
+      expect(
+        identical(tester.state<ScrollableState>(scrollable), scrollableState),
+        isTrue,
+      );
+      expect(identical(scrollableState.position, position), isTrue);
+      expect(position.pixels, greaterThan(offsetBeforeTap));
+      expect(
+        tester.getRect(replyThread).top,
+        inInclusiveRange(
+          tester.getRect(detail).top,
+          tester.getRect(detail).bottom,
+        ),
+      );
+      semantics.dispose();
+    });
+
+    testWidgets('답글은 실제 경력 다음 교육을 연속 서술하고 링크를 해당 교육에만 둔다', (tester) async {
       final semantics = tester.ensureSemantics();
       final data = _injectedProfileData();
       final launcher = _RecordingLauncher();
-      final linkedEducation = data.education.first;
-      final link = linkedEducation.link!;
       await _pumpProfileShell(
         tester,
         size: const Size(390, 844),
@@ -271,79 +404,152 @@ void main() {
         const Key('profile-history-card-education-0'),
       );
 
-      final caption = find.byKey(const Key('profile-reel-caption'));
-      _expectReelTemplate(
-        tester,
-        data: data,
-        expectedCaption: linkedEducation.program,
-        expectedKind: '교육',
-        expectedTitle: linkedEducation.program,
-        expectedPeriod: linkedEducation.period,
+      final detail = find.byKey(const Key('profile-history-detail'));
+      final overlay = find.byKey(const Key('profile-reel-overlay'));
+      final thread = find.byKey(const Key('profile-reel-reply-thread'));
+      expect(thread, findsOneWidget);
+      expect(
+        tester.getRect(overlay).bottom,
+        lessThanOrEqualTo(tester.getRect(thread).top),
       );
-      for (final text in <String>[
-        linkedEducation.program,
-        linkedEducation.institution,
-        linkedEducation.period,
+
+      final expectedItemKeys = <String>[
+        for (var index = 0; index < data.experiences.length; index++)
+          'profile-reel-reply-item-experience-$index',
+        for (var index = 0; index < data.education.length; index++)
+          'profile-reel-reply-item-education-$index',
+      ];
+      final replyItems = _widgetsWithKeyPrefixInside(
+        thread,
+        'profile-reel-reply-item-',
+      );
+      expect(replyItems, findsNWidgets(expectedItemKeys.length));
+      expect(
+        replyItems.evaluate().map((element) {
+          return (element.widget.key! as ValueKey<String>).value;
+        }).toList(),
+        expectedItemKeys,
+        reason: '경력 전체 다음에 교육 전체가 연속해야 한다.',
+      );
+      expect(
+        _widgetsWithKeyPrefixInside(thread, 'profile-reel-reply-author-'),
+        findsNWidgets(expectedItemKeys.length),
+      );
+      for (final forbidden in <String>[
+        _sentinelSkillGroup,
+        _sentinelSkill,
+        _sentinelProjectTitle,
+        _sentinelProjectDescription,
       ]) {
         expect(
-          find.descendant(of: caption, matching: find.text(text)),
-          findsOneWidget,
-          reason: text,
+          find.descendant(
+            of: thread,
+            matching: find.textContaining(forbidden, findRichText: true),
+          ),
+          findsNothing,
+          reason: '실제 경력·교육 외 콘텐츠를 reply로 섞지 않는다.',
         );
       }
-      final linkButton = find.bySemanticsLabel('Open ${link.label}');
-      expect(linkButton, findsOneWidget);
-      final linkSemantics = tester.getSemantics(linkButton).getSemanticsData();
-      expect(linkSemantics.flagsCollection.isButton, isTrue);
-      expect(linkSemantics.hasAction(ui.SemanticsAction.tap), isTrue);
+
+      for (var index = 0; index < data.experiences.length; index++) {
+        final experience = data.experiences[index];
+        _expectReplyItem(
+          tester,
+          thread: thread,
+          identityName: data.identity.name,
+          kind: 'experience',
+          index: index,
+          expectedText: <String>[
+            experience.role,
+            experience.organization,
+            experience.period,
+            experience.description,
+          ],
+        );
+      }
+
+      for (var index = 0; index < data.education.length; index++) {
+        final education = data.education[index];
+        _expectReplyItem(
+          tester,
+          thread: thread,
+          identityName: data.identity.name,
+          kind: 'education',
+          index: index,
+          expectedText: <String>[
+            education.program,
+            education.institution,
+            education.period,
+            if (education.link case final link?) link.label,
+          ],
+        );
+      }
+
+      final linkedEducation = data.education.first;
+      final link = linkedEducation.link!;
+      final linkedItem = find.byKey(
+        const Key('profile-reel-reply-item-education-0'),
+      );
+      final unlinkedItem = find.byKey(
+        const Key('profile-reel-reply-item-education-1'),
+      );
+      final linkAction = find.byKey(
+        const Key('profile-reel-reply-link-education-0'),
+      );
       expect(
-        tester.getRect(caption).top,
-        lessThan(tester.getRect(linkButton).top),
+        find.descendant(of: linkedItem, matching: linkAction),
+        findsOneWidget,
       );
-      final tappableLink = find.descendant(
-        of: linkButton,
-        matching: find.byType(OutlinedButton),
+      expect(
+        find.descendant(
+          of: linkedItem,
+          matching: find.bySemanticsLabel('Open ${link.label}'),
+        ),
+        findsOneWidget,
       );
-      expect(tappableLink, findsOneWidget);
-      await tester.ensureVisible(tappableLink);
+      _expectButtonSemantics(tester, linkAction, label: 'Open ${link.label}');
+      expect(
+        find.descendant(
+          of: unlinkedItem,
+          matching: find.byWidgetPredicate(
+            (widget) =>
+                widget.key == const Key('profile-reel-reply-link-education-1'),
+          ),
+        ),
+        findsNothing,
+      );
+      expect(
+        find.descendant(
+          of: detail,
+          matching: find.bySemanticsLabel('Open ${link.label}'),
+        ),
+        findsOneWidget,
+      );
+
+      expect(
+        find.byKey(const Key('profile-reel-comment-composer')),
+        findsNothing,
+      );
+      expect(
+        find.descendant(of: detail, matching: find.byType(TextField)),
+        findsNothing,
+      );
+      expect(
+        find.descendant(of: detail, matching: find.byType(EditableText)),
+        findsNothing,
+      );
+
+      await tester.ensureVisible(linkAction);
       await tester.pumpAndSettle();
-      await tester.tap(tappableLink);
+      await tester.tap(linkAction);
       await tester.pumpAndSettle();
       expect(launcher.uris, <Uri>[link.uri]);
-
-      await tester.pumpWidget(const SizedBox.shrink());
-      await _pumpProfileShell(
-        tester,
-        size: const Size(390, 844),
-        tablet: false,
-        data: data,
-        launcher: launcher,
-      );
-      await _openProfile(tester);
-      await _openHistoryCard(
-        tester,
-        const Key('profile-history-card-education-1'),
-      );
-      final unlinkedEducation = data.education[1];
-      final unlinkedCaption = find.byKey(const Key('profile-reel-caption'));
-      for (final text in <String>[
-        unlinkedEducation.program,
-        unlinkedEducation.institution,
-        unlinkedEducation.period,
-      ]) {
-        expect(
-          find.descendant(of: unlinkedCaption, matching: find.text(text)),
-          findsOneWidget,
-        );
-      }
-      expect(find.bySemanticsLabel('Open ${link.label}'), findsNothing);
       semantics.dispose();
     });
 
     testWidgets('공용 헤더는 상세에서 뒤로 가고 피드 루트에서 앱을 닫는다', (tester) async {
       final semantics = tester.ensureSemantics();
       final data = _injectedProfileData();
-      final experience = data.experiences.first;
       for (final scenario in const <(String, Size, bool)>[
         ('iPhone', Size(390, 844), false),
         ('iPad', Size(834, 1194), true),
@@ -390,14 +596,6 @@ void main() {
         expect(find.byKey(const Key('profile-history-grid')), findsNothing);
         expect(find.byKey(const Key('profile-app')), findsOneWidget);
         expect(find.byKey(const Key('mobile-app-surface')), findsOneWidget);
-        _expectReelTemplate(
-          tester,
-          data: data,
-          expectedCaption: experience.description,
-          expectedKind: '경력',
-          expectedTitle: experience.role,
-          expectedPeriod: experience.period,
-        );
         expect(_fakeSocialMetricTextInside(detail), findsNothing);
         expect(_fakeSocialMetricSemanticsInside(detail), findsNothing);
 
@@ -570,13 +768,6 @@ void main() {
           );
           expect(
             find.byKey(const Key('profile-history-detail')),
-            findsOneWidget,
-          );
-          expect(
-            find.descendant(
-              of: find.byKey(const Key('profile-reel-caption')),
-              matching: find.text(data.education.first.program),
-            ),
             findsOneWidget,
           );
           expect(
@@ -866,55 +1057,186 @@ Finder _fakeSocialMetricSemanticsInside(Finder scope) {
   );
 }
 
-void _expectReelTemplate(
-  WidgetTester tester, {
-  required PortfolioData data,
-  required String expectedCaption,
-  required String expectedKind,
-  required String expectedTitle,
-  required String expectedPeriod,
+void _expectButtonSemantics(
+  WidgetTester tester,
+  Finder finder, {
+  required String label,
 }) {
-  final detail = find.byKey(const Key('profile-history-detail'));
-  final context = find.byKey(const Key('profile-reel-context'));
-  final visual = find.byKey(const Key('profile-reel-visual'));
-  final account = find.byKey(const Key('profile-reel-account-row'));
-  final caption = find.byKey(const Key('profile-reel-caption'));
+  expect(finder, findsOneWidget);
+  final semantics = tester.getSemantics(finder).getSemanticsData();
+  expect(semantics.label, label);
+  expect(semantics.flagsCollection.isButton, isTrue);
+  expect(semantics.hasAction(ui.SemanticsAction.tap), isTrue);
+}
 
-  expect(detail, findsOneWidget);
-  expect(context, findsOneWidget);
+Finder _widgetsWithKeyPrefixInside(Finder scope, String prefix) {
+  return find.descendant(
+    of: scope,
+    matching: find.byWidgetPredicate((widget) {
+      final key = widget.key;
+      return key is ValueKey<String> && key.value.startsWith(prefix);
+    }, description: 'widget with a key beginning with $prefix'),
+  );
+}
+
+Finder _verticalScrollablesInside(Finder scope) {
+  return find.descendant(
+    of: scope,
+    matching: find.byWidgetPredicate(
+      (widget) =>
+          widget is Scrollable &&
+          (widget.axisDirection == AxisDirection.down ||
+              widget.axisDirection == AxisDirection.up),
+      description: 'vertical Scrollable',
+    ),
+  );
+}
+
+void _expectReplyItem(
+  WidgetTester tester, {
+  required Finder thread,
+  required String identityName,
+  required String kind,
+  required int index,
+  required List<String> expectedText,
+}) {
+  final item = find.byKey(Key('profile-reel-reply-item-$kind-$index'));
+  final author = find.byKey(Key('profile-reel-reply-author-$kind-$index'));
+  final content = find.byKey(Key('profile-reel-reply-content-$kind-$index'));
+  expect(find.descendant(of: thread, matching: item), findsOneWidget);
+  expect(find.descendant(of: item, matching: author), findsOneWidget);
+  expect(find.descendant(of: item, matching: content), findsOneWidget);
   expect(
-    find.descendant(of: context, matching: find.text('Reels')),
+    find.descendant(of: author, matching: find.text(identityName)),
     findsOneWidget,
   );
-  expect(visual, findsOneWidget);
-  final visualRect = tester.getRect(visual);
-  expect(visualRect.height, greaterThan(visualRect.width));
-  expect(visualRect.width, greaterThan(tester.getSize(detail).width * 0.55));
+
+  final authorText = find
+      .descendant(of: author, matching: find.byType(Text))
+      .evaluate()
+      .map((element) => (element.widget as Text).data)
+      .whereType<String>()
+      .toList();
+  expect(authorText, <String>[
+    identityName,
+  ], reason: '실제 identity만 reply 작성자로 노출한다.');
+
+  final contentTextWidgets = find.descendant(
+    of: content,
+    matching: find.byType(Text),
+  );
+  final contentText = contentTextWidgets
+      .evaluate()
+      .map((element) => (element.widget as Text).data)
+      .whereType<String>()
+      .toList();
+  expect(contentText, expectedText, reason: '임의의 댓글 대신 실제 포트폴리오 데이터만 서술한다.');
+  for (final text in expectedText) {
+    final textWidget = find.descendant(of: content, matching: find.text(text));
+    expect(textWidget, findsOneWidget, reason: text);
+    final widget = tester.widget<Text>(textWidget);
+    expect(widget.maxLines, isNull, reason: text);
+    expect(widget.overflow, isNot(TextOverflow.ellipsis), reason: text);
+  }
+}
+
+void _expectReelTemplate(WidgetTester tester, {required PortfolioData data}) {
+  final detail = find.byKey(const Key('profile-history-detail'));
+  final overlay = find.byKey(const Key('profile-reel-overlay'));
+  final topBar = find.byKey(const Key('profile-reel-top-bar'));
+  final actionRail = find.byKey(const Key('profile-reel-action-rail'));
+  final info = find.byKey(const Key('profile-reel-info'));
+  final account = find.byKey(const Key('profile-reel-account-row'));
+
+  expect(detail, findsOneWidget);
+  expect(overlay, findsOneWidget);
+  final overlayRect = tester.getRect(overlay);
+  expect(overlayRect.height, greaterThan(overlayRect.width));
+  expect(overlayRect.width, greaterThan(tester.getSize(detail).width * 0.55));
+
+  for (final section in <Finder>[topBar, actionRail, info]) {
+    expect(
+      find.descendant(of: overlay, matching: section),
+      findsOneWidget,
+      reason: section.description,
+    );
+  }
+  final topBarRect = tester.getRect(topBar);
+  final actionRailRect = tester.getRect(actionRail);
+  final infoRect = tester.getRect(info);
+  for (final sectionRect in <Rect>[topBarRect, actionRailRect, infoRect]) {
+    expect(sectionRect.left, greaterThanOrEqualTo(overlayRect.left));
+    expect(sectionRect.top, greaterThanOrEqualTo(overlayRect.top));
+    expect(sectionRect.right, lessThanOrEqualTo(overlayRect.right));
+    expect(sectionRect.bottom, lessThanOrEqualTo(overlayRect.bottom));
+  }
+  expect(
+    topBarRect.center.dy,
+    lessThan(overlayRect.top + (overlayRect.height * 0.25)),
+    reason: 'Reels 제목과 카메라는 미디어 슬롯 상단에 오버레이한다.',
+  );
+  expect(
+    actionRailRect.center.dx,
+    greaterThan(overlayRect.center.dx),
+    reason: '하트·댓글·공유 액션은 미디어 슬롯 오른쪽에 세로 배치한다.',
+  );
+  expect(
+    infoRect.center.dy,
+    greaterThan(overlayRect.center.dy),
+    reason: '계정과 설명은 미디어 슬롯 하단에 오버레이한다.',
+  );
+  expect(
+    infoRect.right,
+    lessThanOrEqualTo(actionRailRect.left),
+    reason: '하단 정보와 오른쪽 액션 레일이 겹치지 않아야 한다.',
+  );
+  expect(
+    find.descendant(of: topBar, matching: find.text('Reels')),
+    findsOneWidget,
+  );
+  final cameraAction = find.byKey(const Key('profile-reel-camera-action'));
+  expect(find.descendant(of: topBar, matching: cameraAction), findsOneWidget);
+  _expectButtonSemantics(tester, cameraAction, label: '카메라');
+  final likeAction = find.byKey(const Key('profile-reel-like-action'));
+  final commentAction = find.byKey(const Key('profile-reel-comment-action'));
+  final shareAction = find.byKey(const Key('profile-reel-share-action'));
+  for (final action in <Finder>[likeAction, commentAction, shareAction]) {
+    expect(find.descendant(of: actionRail, matching: action), findsOneWidget);
+  }
+  _expectButtonSemantics(tester, likeAction, label: '좋아요');
+  _expectButtonSemantics(tester, commentAction, label: '댓글 보기');
+  _expectButtonSemantics(tester, shareAction, label: '공유');
+  expect(find.descendant(of: info, matching: account), findsOneWidget);
+  expect(
+    find.descendant(of: account, matching: find.text(data.identity.name)),
+    findsOneWidget,
+  );
   expect(
     find.descendant(
-      of: visual,
-      matching: find.byKey(const Key('profile-reel-artwork')),
+      of: account,
+      matching: find.byKey(const Key('profile-reel-avatar')),
     ),
     findsOneWidget,
   );
-  for (final text in <String>[expectedKind, expectedTitle, expectedPeriod]) {
-    expect(
-      find.descendant(of: visual, matching: find.text(text)),
-      findsOneWidget,
-      reason: 'Reels visual metadata: $text',
-    );
-  }
+
+  expect(find.byKey(const Key('profile-reel-visual')), findsNothing);
+  expect(find.byKey(const Key('profile-reel-artwork')), findsNothing);
+  expect(find.byKey(const Key('profile-reel-caption')), findsNothing);
   expect(
-    find.descendant(of: visual, matching: find.byType(Image)),
+    find.descendant(of: detail, matching: find.byType(Image)),
     findsNothing,
   );
   expect(
-    find.descendant(of: visual, matching: find.byType(RawImage)),
+    find.descendant(of: detail, matching: find.byType(RawImage)),
+    findsNothing,
+  );
+  expect(
+    find.descendant(of: detail, matching: find.byType(CustomPaint)),
     findsNothing,
   );
   expect(
     find.descendant(
-      of: visual,
+      of: detail,
       matching: find.byWidgetPredicate(
         (widget) => switch (widget) {
           Container(:final decoration) =>
@@ -928,28 +1250,8 @@ void _expectReelTemplate(
     ),
     findsNothing,
   );
-  expect(account, findsOneWidget);
-  expect(
-    find.descendant(of: account, matching: find.text(data.identity.name)),
-    findsOneWidget,
-  );
-  expect(
-    find.descendant(
-      of: account,
-      matching: find.byKey(const Key('profile-reel-avatar')),
-    ),
-    findsOneWidget,
-  );
-  expect(caption, findsOneWidget);
-  final captionText = tester.widget<Text>(
-    find.descendant(of: caption, matching: find.text(expectedCaption)),
-  );
-  expect(captionText.maxLines, isNull);
-  expect(captionText.overflow, isNot(TextOverflow.ellipsis));
-  expect(tester.getRect(context).top, lessThan(tester.getRect(visual).top));
-  expect(tester.getRect(visual).top, lessThan(tester.getRect(account).top));
-  expect(tester.getRect(account).top, lessThan(tester.getRect(caption).top));
   expect(find.byKey(const Key('profile-reel-like-count')), findsNothing);
+  expect(find.byKey(const Key('profile-reel-comment-count')), findsNothing);
   expect(find.byKey(const Key('profile-reel-follower-count')), findsNothing);
   expect(find.byKey(const Key('mobile-app-navigation-bar')), findsOneWidget);
   expect(_fakeSocialMetricTextInside(detail), findsNothing);
