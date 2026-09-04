@@ -72,7 +72,7 @@ void main() {
         await tester.pump(const Duration(seconds: 1));
         expect(
           find.text('Skills'),
-          findsOneWidget,
+          findsNWidgets(2),
           reason: '${scenario.$2} 아이콘 이름이 툴팁으로 중복되면 안 됩니다.',
         );
       }

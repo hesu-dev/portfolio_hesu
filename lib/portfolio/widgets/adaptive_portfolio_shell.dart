@@ -49,20 +49,28 @@ class AdaptivePortfolioShell extends StatelessWidget {
           );
         }
         if (width >= iPadBreakpoint) {
-          return AppleMobileShell(
-            key: const Key('ipad-shell'),
+          return TooltipVisibility(
+            key: const Key('mobile-tooltip-visibility'),
+            visible: false,
+            child: AppleMobileShell(
+              key: const Key('ipad-shell'),
+              data: data,
+              externalLauncher: externalLauncher,
+              themeController: themeController,
+              tablet: true,
+            ),
+          );
+        }
+        return TooltipVisibility(
+          key: const Key('mobile-tooltip-visibility'),
+          visible: false,
+          child: AppleMobileShell(
+            key: const Key('iphone-shell'),
             data: data,
             externalLauncher: externalLauncher,
             themeController: themeController,
-            tablet: true,
-          );
-        }
-        return AppleMobileShell(
-          key: const Key('iphone-shell'),
-          data: data,
-          externalLauncher: externalLauncher,
-          themeController: themeController,
-          tablet: false,
+            tablet: false,
+          ),
         );
       },
     );
