@@ -1081,7 +1081,7 @@ void main() {
     });
 
     testWidgets(
-      'terminal shows only a focused blinking command line above its transcript',
+      'terminal shows only a focused blinking command line below its transcript',
       (tester) async {
         await _pumpApp(
           tester,
@@ -1095,8 +1095,8 @@ void main() {
         expect(inputArea, findsOneWidget);
         expect(transcript, findsOneWidget);
         expect(
-          tester.getTopLeft(inputArea).dy,
-          lessThan(tester.getTopLeft(transcript).dy),
+          tester.getTopLeft(transcript).dy,
+          lessThan(tester.getTopLeft(inputArea).dy),
         );
         expect(find.text('portfolio — zsh'), findsNothing);
         expect(find.text(r'포트폴리오: ~$'), findsOneWidget);
@@ -1109,6 +1109,11 @@ void main() {
         expect(input.autofocus, isTrue);
         expect(input.cursorOpacityAnimates, isTrue);
         expect(input.enableInteractiveSelection, isFalse);
+        expect(input.decoration?.filled, isFalse);
+        expect(input.decoration?.hoverColor, Colors.transparent);
+        expect(input.decoration?.border, InputBorder.none);
+        expect(input.decoration?.enabledBorder, InputBorder.none);
+        expect(input.decoration?.focusedBorder, InputBorder.none);
         final inputSurface = tester.widget<Container>(
           find.byKey(const Key('terminal-input-surface')),
         );
@@ -1133,6 +1138,50 @@ void main() {
         expect(tester.takeException(), isNull);
       },
     );
+
+    testWidgets('terminal restores input focus after transcript interaction', (
+      tester,
+    ) async {
+      await _pumpApp(
+        tester,
+        appId: PortfolioAppId.terminal,
+        launcher: _FakeExternalLauncher(),
+        size: const Size(900, 650),
+      );
+
+      final input = find.byKey(const Key('terminal-input'));
+      final transcript = find.byKey(const Key('terminal-transcript'));
+
+      FocusNode inputFocus() => tester
+          .widget<EditableText>(
+            find.descendant(of: input, matching: find.byType(EditableText)),
+          )
+          .focusNode;
+
+      expect(inputFocus().hasFocus, isTrue);
+
+      final mouse = await tester.startGesture(
+        tester.getCenter(transcript),
+        kind: ui.PointerDeviceKind.mouse,
+      );
+      await tester.pump();
+      expect(inputFocus().hasFocus, isTrue);
+      await mouse.up();
+      await tester.pump();
+
+      await tester.enterText(input, 'whoami');
+      await tester.testTextInput.receiveAction(TextInputAction.send);
+      await tester.pump();
+      expect(inputFocus().hasFocus, isTrue);
+
+      inputFocus().unfocus();
+      await tester.pump();
+      expect(inputFocus().hasFocus, isFalse);
+
+      await tester.tap(transcript);
+      await tester.pump();
+      expect(inputFocus().hasFocus, isTrue);
+    });
 
     testWidgets('terminal exposes one named and editable accessibility field', (
       tester,
