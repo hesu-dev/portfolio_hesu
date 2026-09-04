@@ -7,6 +7,7 @@ import '../theme/portfolio_theme_controller.dart';
 import '../widgets/apple_finder_scaffold.dart';
 import 'about_app.dart';
 import 'photos_app.dart';
+import 'profile_app.dart';
 import 'projects_app.dart';
 import 'settings_app.dart';
 import 'skills_app.dart';
@@ -39,7 +40,12 @@ class PortfolioAppContent extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return switch (appId) {
-      PortfolioAppId.profile => const SizedBox.expand(key: Key('profile-app')),
+      PortfolioAppId.profile => ProfileApp(
+        data: data,
+        launcher: launcher,
+        compact: compact,
+        tablet: tablet,
+      ),
       PortfolioAppId.about => AboutApp(
         data: data,
         launcher: launcher,
