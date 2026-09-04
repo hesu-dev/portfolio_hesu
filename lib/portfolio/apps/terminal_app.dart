@@ -116,58 +116,50 @@ class _TerminalAppState extends State<TerminalApp> {
         child: Listener(
           behavior: HitTestBehavior.opaque,
           onPointerDown: (_) => _focusNode.requestFocus(),
-          child: Column(
-            children: <Widget>[
-              Expanded(
-                child: Scrollbar(
-                  controller: _scrollController,
-                  thumbVisibility: !widget.compact,
-                  child: ListView(
-                    key: const Key('terminal-transcript'),
-                    controller: _scrollController,
-                    padding: EdgeInsets.fromLTRB(
-                      widget.compact ? 14 : 22,
-                      18,
-                      widget.compact ? 14 : 22,
-                      24,
+          child: Scrollbar(
+            controller: _scrollController,
+            thumbVisibility: !widget.compact,
+            child: ListView(
+              key: const Key('terminal-transcript'),
+              controller: _scrollController,
+              padding: EdgeInsets.fromLTRB(
+                widget.compact ? 14 : 22,
+                18,
+                widget.compact ? 14 : 22,
+                24,
+              ),
+              children: <Widget>[
+                for (final entry in _transcript.indexed)
+                  Padding(
+                    key: ValueKey<String>(
+                      'terminal-transcript-entry-${entry.$1}',
                     ),
-                    children: <Widget>[
-                      for (final entry in _transcript.indexed)
-                        Padding(
-                          key: ValueKey<String>(
-                            'terminal-transcript-entry-${entry.$1}',
+                    padding: const EdgeInsets.only(bottom: 5),
+                    child: entry.$2.helpEntry != null
+                        ? _TerminalHelpRow(
+                            entry: entry.$2.helpEntry!,
+                            compact: widget.compact,
+                            color: primary,
+                          )
+                        : Text(
+                            entry.$2.text,
+                            style: _terminalTextStyle(
+                              color: entry.$2.isCommand ? accent : primary,
+                              compact: widget.compact,
+                            ),
                           ),
-                          padding: const EdgeInsets.only(bottom: 5),
-                          child: entry.$2.helpEntry != null
-                              ? _TerminalHelpRow(
-                                  entry: entry.$2.helpEntry!,
-                                  compact: widget.compact,
-                                  color: primary,
-                                )
-                              : Text(
-                                  entry.$2.text,
-                                  style: _terminalTextStyle(
-                                    color: entry.$2.isCommand
-                                        ? accent
-                                        : primary,
-                                    compact: widget.compact,
-                                  ),
-                                ),
-                        ),
-                    ],
                   ),
+                _TerminalInput(
+                  key: const Key('terminal-input-area'),
+                  controller: _controller,
+                  focusNode: _focusNode,
+                  compact: widget.compact,
+                  prompt: _prompt,
+                  background: background,
+                  onSubmitted: _submit,
                 ),
-              ),
-              _TerminalInput(
-                key: const Key('terminal-input-area'),
-                controller: _controller,
-                focusNode: _focusNode,
-                compact: widget.compact,
-                prompt: _prompt,
-                background: background,
-                onSubmitted: _submit,
-              ),
-            ],
+              ],
+            ),
           ),
         ),
       ),
@@ -329,12 +321,7 @@ class _TerminalInput extends StatelessWidget {
       onTap: focusNode.requestFocus,
       child: Container(
         key: const Key('terminal-input-surface'),
-        padding: EdgeInsets.fromLTRB(
-          compact ? 12 : 18,
-          10,
-          compact ? 12 : 18,
-          10,
-        ),
+        padding: const EdgeInsets.only(bottom: 10),
         decoration: BoxDecoration(color: background),
         child: Row(
           children: <Widget>[
