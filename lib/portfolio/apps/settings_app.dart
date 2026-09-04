@@ -326,7 +326,7 @@ class _DisplayModeContent extends StatelessWidget {
                         crossAxisAlignment: CrossAxisAlignment.stretch,
                         children: <Widget>[
                           light,
-                          const SizedBox(height: 8),
+                          const SizedBox(height: 12),
                           dark,
                         ],
                       )
@@ -334,7 +334,7 @@ class _DisplayModeContent extends StatelessWidget {
                         crossAxisAlignment: CrossAxisAlignment.start,
                         children: <Widget>[
                           Expanded(child: light),
-                          const SizedBox(width: 8),
+                          const SizedBox(width: 24),
                           Expanded(child: dark),
                         ],
                       ),
@@ -364,7 +364,7 @@ class _DisplayModeContent extends StatelessWidget {
               alignment: Alignment.topCenter,
               child: FractionallySizedBox(
                 key: const Key('settings-mode-choice-group'),
-                widthFactor: 0.5,
+                widthFactor: compact ? 1 : 0.5,
                 child: choices,
               ),
             );
@@ -504,22 +504,22 @@ class _ThemeChoiceState extends State<_ThemeChoice> {
             constraints: const BoxConstraints(minHeight: 168),
             padding: EdgeInsets.all(widget.compact ? 8 : 12),
             decoration: BoxDecoration(
-              color: selected
-                  ? AppleTheme.selectionBackground(context, AppleTheme.blue)
-                  : widget.compact
+              color: widget.compact
                   ? Colors.transparent
+                  : selected
+                  ? AppleTheme.selectionBackground(context, AppleTheme.blue)
                   : AppleTheme.surface(context),
               borderRadius: BorderRadius.circular(16),
-              border: Border.all(
-                color: _showFocus
-                    ? emphasisColor
-                    : selected
-                    ? emphasisColor
-                    : widget.compact
-                    ? Colors.transparent
-                    : AppleTheme.separator(context),
-                width: _showFocus ? 3 : (selected ? 2 : 0.8),
-              ),
+              border: _showFocus
+                  ? Border.all(color: emphasisColor, width: 3)
+                  : widget.compact
+                  ? null
+                  : Border.all(
+                      color: selected
+                          ? emphasisColor
+                          : AppleTheme.separator(context),
+                      width: selected ? 2 : 0.8,
+                    ),
               boxShadow: widget.compact
                   ? const <BoxShadow>[]
                   : <BoxShadow>[
@@ -544,9 +544,10 @@ class _ThemeChoiceState extends State<_ThemeChoice> {
                       ),
                       const SizedBox(height: 10),
                       Text(
-                        widget.label,
+                        '${widget.label} 모드',
                         textAlign: TextAlign.center,
-                        maxLines: 2,
+                        maxLines: 1,
+                        softWrap: false,
                         overflow: TextOverflow.ellipsis,
                         style: Theme.of(context).textTheme.labelLarge,
                       ),
@@ -603,8 +604,8 @@ class _ThemeChoiceState extends State<_ThemeChoice> {
 }
 
 enum _AppearancePreviewFormFactor {
-  phone(0.64, maxWidth: 160),
-  tablet(4 / 3),
+  phone(0.64, maxWidth: 72),
+  tablet(4 / 3, maxWidth: 176),
   desktop(2.05);
 
   const _AppearancePreviewFormFactor(this.aspectRatio, {this.maxWidth});
