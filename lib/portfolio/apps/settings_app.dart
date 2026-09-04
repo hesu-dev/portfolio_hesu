@@ -6,6 +6,8 @@ import '../data/portfolio_data.dart';
 import '../theme/apple_theme.dart';
 import '../theme/portfolio_theme_controller.dart';
 
+const double _displayModeChoiceGap = 24;
+
 /// Profile and appearance settings shared by every portfolio shell.
 class SettingsApp extends StatelessWidget {
   const SettingsApp({
@@ -334,7 +336,7 @@ class _DisplayModeContent extends StatelessWidget {
                         crossAxisAlignment: CrossAxisAlignment.start,
                         children: <Widget>[
                           Expanded(child: light),
-                          const SizedBox(width: 24),
+                          const SizedBox(width: _displayModeChoiceGap),
                           Expanded(child: dark),
                         ],
                       ),
@@ -354,7 +356,7 @@ class _DisplayModeContent extends StatelessWidget {
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: <Widget>[
                         Expanded(child: light),
-                        const SizedBox(width: 18),
+                        const SizedBox(width: _displayModeChoiceGap),
                         Expanded(child: dark),
                       ],
                     );
@@ -567,29 +569,24 @@ class _ThemeChoiceState extends State<_ThemeChoice> {
                             widget.preference == PortfolioThemePreference.dark,
                       ),
                       const SizedBox(height: 12),
-                      Row(
-                        crossAxisAlignment: CrossAxisAlignment.start,
+                      Column(
+                        mainAxisSize: MainAxisSize.min,
                         children: <Widget>[
-                          Expanded(
-                            child: Column(
-                              crossAxisAlignment: CrossAxisAlignment.start,
-                              children: <Widget>[
-                                Text(
-                                  widget.label,
-                                  style: Theme.of(context).textTheme.labelLarge,
-                                ),
-                                const SizedBox(height: 2),
-                                Text(
-                                  widget.description,
-                                  style: AppleTheme.caption(
-                                    context,
-                                  ).copyWith(color: descriptionColor),
-                                ),
-                              ],
-                            ),
+                          Text(
+                            widget.label,
+                            textAlign: TextAlign.center,
+                            style: Theme.of(context).textTheme.labelLarge,
                           ),
-                          const SizedBox(width: 8),
+                          const SizedBox(height: 8),
                           selectionIndicator,
+                          const SizedBox(height: 6),
+                          Text(
+                            widget.description,
+                            textAlign: TextAlign.center,
+                            style: AppleTheme.caption(
+                              context,
+                            ).copyWith(color: descriptionColor),
+                          ),
                         ],
                       ),
                       if (_showFocus)
