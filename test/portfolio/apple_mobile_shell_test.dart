@@ -1,3 +1,5 @@
+import 'dart:ui' show PointerDeviceKind;
+
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_test/flutter_test.dart';
@@ -68,13 +70,29 @@ void main() {
         );
 
         expect(find.text('Skills'), findsOneWidget);
-        await tester.longPress(find.byKey(const Key('home-app-skills')));
+        final icon = find.byKey(const Key('home-app-skills'));
+        final touch = await tester.startGesture(tester.getCenter(icon));
+        await tester.pump(const Duration(seconds: 1));
+        expect(find.byKey(const Key('mobile-home')), findsOneWidget);
+        expect(find.byKey(const Key('mobile-app-surface')), findsNothing);
+        expect(
+          find.text('Skills'),
+          findsOneWidget,
+          reason: '${scenario.$2} 길게 누르기에 툴팁이 나타나면 안 됩니다.',
+        );
+        await touch.cancel();
+        await tester.pump();
+
+        final mouse = await tester.createGesture(kind: PointerDeviceKind.mouse);
+        await mouse.addPointer(location: Offset.zero);
+        await mouse.moveTo(tester.getCenter(icon));
         await tester.pump(const Duration(seconds: 1));
         expect(
           find.text('Skills'),
-          findsNWidgets(2),
-          reason: '${scenario.$2} 아이콘 이름이 툴팁으로 중복되면 안 됩니다.',
+          findsOneWidget,
+          reason: '${scenario.$2} hover에 툴팁이 나타나면 안 됩니다.',
         );
+        await mouse.removePointer();
       }
 
       await tester.pumpWidget(const SizedBox.shrink());
