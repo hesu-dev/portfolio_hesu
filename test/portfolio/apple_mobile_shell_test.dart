@@ -69,14 +69,14 @@ void main() {
           isFalse,
         );
 
-        expect(find.text('Skills'), findsOneWidget);
-        final icon = find.byKey(const Key('home-app-skills'));
+        expect(find.text('프로필'), findsOneWidget);
+        final icon = find.byKey(const Key('home-app-profile'));
         final touch = await tester.startGesture(tester.getCenter(icon));
         await tester.pump(const Duration(seconds: 1));
         expect(find.byKey(const Key('mobile-home')), findsOneWidget);
         expect(find.byKey(const Key('mobile-app-surface')), findsNothing);
         expect(
-          find.text('Skills'),
+          find.text('프로필'),
           findsOneWidget,
           reason: '${scenario.$2} 길게 누르기에 툴팁이 나타나면 안 됩니다.',
         );
@@ -88,7 +88,7 @@ void main() {
         await mouse.moveTo(tester.getCenter(icon));
         await tester.pump(const Duration(seconds: 1));
         expect(
-          find.text('Skills'),
+          find.text('프로필'),
           findsOneWidget,
           reason: '${scenario.$2} hover에 툴팁이 나타나면 안 됩니다.',
         );
@@ -184,15 +184,18 @@ void main() {
     ) async {
       await _pumpShell(tester, size: const Size(390, 844));
 
-      await tester.tap(find.byKey(const Key('iphone-profile-card')));
+      final profile = find.byKey(const Key('home-app-profile'));
+      expect(profile, findsOneWidget);
+      await tester.tap(profile);
       await tester.pumpAndSettle();
 
       expect(find.byKey(const Key('mobile-home')), findsNothing);
       expect(find.byKey(const Key('mobile-app-surface')), findsOneWidget);
-      expect(find.byKey(const Key('about-app')), findsOneWidget);
-      expect(find.bySemanticsLabel('Close About window'), findsOneWidget);
+      expect(find.byKey(const Key('profile-app')), findsOneWidget);
+      expect(find.byKey(const Key('about-app')), findsNothing);
+      expect(find.bySemanticsLabel('Close 프로필 window'), findsOneWidget);
 
-      await tester.tap(find.byKey(const Key('mobile-back-close-about')));
+      await tester.tap(find.byKey(const Key('mobile-back-close-profile')));
       await tester.pumpAndSettle();
 
       expect(find.byKey(const Key('mobile-home')), findsOneWidget);
@@ -205,11 +208,11 @@ void main() {
       final semantics = tester.ensureSemantics();
       await _pumpShell(tester, size: const Size(390, 844));
 
-      expect(find.bySemanticsLabel('Open Skills'), findsOneWidget);
+      expect(find.bySemanticsLabel('Open 프로필'), findsOneWidget);
       await tester.sendKeyEvent(LogicalKeyboardKey.enter);
       await tester.pumpAndSettle();
 
-      expect(find.byKey(const Key('skills-app')), findsOneWidget);
+      expect(find.byKey(const Key('profile-app')), findsOneWidget);
       semantics.dispose();
     });
 
@@ -221,7 +224,7 @@ void main() {
       await tester.sendKeyEvent(LogicalKeyboardKey.space);
       await tester.pumpAndSettle();
 
-      expect(find.byKey(const Key('skills-app')), findsOneWidget);
+      expect(find.byKey(const Key('profile-app')), findsOneWidget);
     });
 
     testWidgets('does not add duplicate Dock focus targets', (tester) async {
@@ -230,7 +233,7 @@ void main() {
       expect(find.byKey(const Key('mobile-dock')), findsNothing);
       expect(find.byKey(const Key('mobile-dock-about')), findsNothing);
       expect(find.bySemanticsLabel('Open About'), findsNothing);
-      expect(find.bySemanticsLabel('Open Skills'), findsOneWidget);
+      expect(find.bySemanticsLabel('Open 프로필'), findsOneWidget);
     });
 
     testWidgets('opens GitHub externally only after its explicit action', (
@@ -295,11 +298,12 @@ void main() {
       await tester.pumpAndSettle();
       expect(tester.takeException(), isNull);
 
-      final about = find.byKey(const Key('iphone-profile-card'));
-      await tester.ensureVisible(about);
-      await tester.tap(about);
+      final profile = find.byKey(const Key('home-app-profile'));
+      expect(profile, findsOneWidget);
+      await tester.ensureVisible(profile);
+      await tester.tap(profile);
       await tester.pumpAndSettle();
-      expect(find.byKey(const Key('about-scroll')), findsOneWidget);
+      expect(find.byKey(const Key('profile-scroll')), findsOneWidget);
       expect(tester.takeException(), isNull);
     });
 
@@ -412,30 +416,22 @@ void main() {
       expect(tester.takeException(), isNull);
     });
 
-    testWidgets('uses six columns and renders the injected profile widget', (
+    testWidgets('uses six columns with an injected profile app first', (
       tester,
     ) async {
       final data = _profileData(name: '테스트 사용자');
       await _pumpShell(tester, size: const Size(834, 1194), data: data);
 
       expect(find.byKey(const Key('ipad-shell')), findsOneWidget);
-      expect(find.byKey(const Key('ipad-profile-widget')), findsOneWidget);
+      expect(find.byKey(const Key('ipad-profile-widget')), findsNothing);
       expect(
-        find.descendant(
-          of: find.byKey(const Key('mobile-notes-profile-header')),
-          matching: find.text('테스트 사용자'),
-        ),
-        findsOneWidget,
-      );
-      expect(
-        find.descendant(
-          of: find.byKey(const Key('mobile-notes-profile-body')),
-          matching: find.text('테스트 사용자'),
-        ),
+        find.byKey(const Key('mobile-notes-profile-header')),
         findsNothing,
       );
-      expect(find.text('프로필 보러가기'), findsOneWidget);
-      expect(find.text('자세히 보러가기'), findsNothing);
+      expect(find.byKey(const Key('mobile-notes-profile-body')), findsNothing);
+      expect(find.byKey(const Key('home-app-profile')), findsOneWidget);
+      expect(find.text('테스트 사용자'), findsNothing);
+      expect(find.text('프로필 보러가기'), findsNothing);
       expect(find.text('Injected headline'), findsNothing);
       expect(find.text(portfolioData.name), findsNothing);
       _expectAllHomeApps();
@@ -451,7 +447,7 @@ void main() {
       expect(find.text('MH'), findsNothing);
     });
 
-    testWidgets('uses a dark profile surface with readable dark-mode text', (
+    testWidgets('keeps the profile launcher visible on the dark iPad home', (
       tester,
     ) async {
       final data = _profileData(name: '어두운 사용자');
@@ -462,22 +458,10 @@ void main() {
         brightness: Brightness.dark,
       );
 
-      expect(find.byKey(const Key('ipad-profile-card')), findsOneWidget);
-      final card = tester.widget<Container>(
-        find.byKey(const Key('ipad-profile-card')),
-      );
-      final decoration = card.decoration! as BoxDecoration;
-      final gradient = decoration.gradient! as LinearGradient;
-      expect(gradient.colors.first.computeLuminance(), lessThan(0.2));
-
-      final name = tester.widget<Text>(
-        find.descendant(
-          of: find.byKey(const Key('mobile-notes-profile-header')),
-          matching: find.text('어두운 사용자'),
-        ),
-      );
-      expect(name.style?.color?.computeLuminance(), greaterThan(0.7));
-      expect(find.byKey(const Key('ipad-profile-date')), findsNothing);
+      expect(find.byKey(const Key('home-app-profile')), findsOneWidget);
+      expect(find.byKey(const Key('ipad-profile-card')), findsNothing);
+      expect(find.byKey(const Key('ipad-profile-widget')), findsNothing);
+      expect(find.text('어두운 사용자'), findsNothing);
       expect(tester.takeException(), isNull);
     });
 
@@ -556,7 +540,8 @@ void main() {
         );
 
         expect(find.byKey(const Key('ipad-shell')), findsOneWidget);
-        expect(find.byKey(const Key('ipad-profile-widget')), findsOneWidget);
+        expect(find.byKey(const Key('home-app-profile')), findsOneWidget);
+        expect(find.byKey(const Key('ipad-profile-widget')), findsNothing);
         expect(tester.takeException(), isNull, reason: '$size');
       }
     });
@@ -662,6 +647,7 @@ Future<void> _scrollHomeIconIntoView(
 }
 
 const List<String> _allAppNames = <String>[
+  'profile',
   'skills',
   'projects',
   'terminal',

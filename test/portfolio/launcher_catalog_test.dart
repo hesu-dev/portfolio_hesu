@@ -21,6 +21,7 @@ void main() {
       'trash',
     ]);
     expect(AppleHomeGrid.apps.map((appId) => appId.name), <String>[
+      'profile',
       'skills',
       'projects',
       'terminal',
@@ -41,23 +42,29 @@ void main() {
     ]);
   });
 
-  testWidgets('mobile home hides About and exposes the Photos placeholder', (
-    tester,
-  ) async {
-    tester.view.devicePixelRatio = 1;
-    tester.view.physicalSize = const Size(390, 844);
-    addTearDown(tester.view.resetDevicePixelRatio);
-    addTearDown(tester.view.resetPhysicalSize);
+  testWidgets(
+    'mobile home exposes Profile first without changing desktop About',
+    (tester) async {
+      tester.view.devicePixelRatio = 1;
+      tester.view.physicalSize = const Size(390, 844);
+      addTearDown(tester.view.resetDevicePixelRatio);
+      addTearDown(tester.view.resetPhysicalSize);
 
-    await tester.pumpWidget(
-      MaterialApp(
-        home: AppleHomeGrid(data: portfolioData, tablet: false, onOpen: (_) {}),
-      ),
-    );
+      await tester.pumpWidget(
+        MaterialApp(
+          home: AppleHomeGrid(
+            data: portfolioData,
+            tablet: false,
+            onOpen: (_) {},
+          ),
+        ),
+      );
 
-    expect(find.byKey(const Key('home-app-about')), findsNothing);
-    expect(find.byKey(const Key('home-app-photos')), findsOneWidget);
-  });
+      expect(find.byKey(const Key('home-app-about')), findsNothing);
+      expect(find.byKey(const Key('home-app-profile')), findsOneWidget);
+      expect(find.byKey(const Key('home-app-photos')), findsOneWidget);
+    },
+  );
 
   testWidgets(
     'desktop shows the 포트폴리오 launcher without the duplicate project app',

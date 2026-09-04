@@ -1,167 +1,48 @@
-import 'dart:ui' as ui;
-
 import 'package:flutter/material.dart';
-import 'package:flutter/services.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:portfolio_hesu/portfolio/apps/about_app.dart';
 import 'package:portfolio_hesu/portfolio/data/portfolio_data.dart';
 import 'package:portfolio_hesu/portfolio/mobile/apple_home_grid.dart';
-import 'package:portfolio_hesu/portfolio/models/portfolio_app_id.dart';
 import 'package:portfolio_hesu/portfolio/services/external_launcher.dart';
 import 'package:portfolio_hesu/portfolio/theme/apple_theme.dart';
 import 'package:portfolio_hesu/portfolio/widgets/apple_notes_surface.dart';
 
 void main() {
-  group('모바일 홈 Notes 프로필', () {
+  group('모바일 홈 프로필 앱', () {
     for (final scenario in <(Size, bool, String)>[
-      (const Size(390, 844), false, 'iphone-notes-profile'),
-      (const Size(834, 1194), true, 'ipad-profile-widget'),
+      (const Size(390, 844), false, 'iPhone'),
+      (const Size(834, 1194), true, 'iPad'),
     ]) {
-      testWidgets('${scenario.$2 ? 'iPad' : 'iPhone'}에서 메모 전체가 About 버튼이다', (
+      testWidgets('${scenario.$3} 홈은 기존 Notes 위젯 없이 프로필 앱을 첫 칸에 둔다', (
         tester,
       ) async {
         final semantics = tester.ensureSemantics();
         await _pumpMobileHome(tester, size: scenario.$1, tablet: scenario.$2);
 
-        final profile = find.byKey(Key(scenario.$3));
-        expect(profile, findsOneWidget);
-        expect(tester.widget(profile), isA<AppleNotesSurface>());
-        expect(
-          find.descendant(of: profile, matching: find.byType(AppleNotesPaper)),
-          findsOneWidget,
-        );
-        expect(
-          find.descendant(of: profile, matching: find.text('메모')),
-          findsNothing,
-        );
-        expect(
-          find.descendant(
-            of: profile,
-            matching: find.text(portfolioData.monogram),
-          ),
-          findsNothing,
-        );
-        expect(find.byKey(const Key('ipad-profile-date')), findsNothing);
-        final header = find.descendant(
-          of: profile,
-          matching: find.byKey(const Key('mobile-notes-profile-header')),
-        );
-        final body = find.descendant(
-          of: profile,
-          matching: find.byKey(const Key('mobile-notes-profile-body')),
-        );
-        expect(
-          find.descendant(
-            of: header,
-            matching: find.byIcon(Icons.folder_outlined),
-          ),
-          findsOneWidget,
-        );
-        final headerName = find.descendant(
-          of: header,
-          matching: find.text(portfolioData.identity.name),
-        );
-        expect(headerName, findsOneWidget);
-        expect(tester.widget<Text>(headerName).style?.color, Colors.white);
-        expect(
-          find.descendant(
-            of: body,
-            matching: find.text(portfolioData.identity.name),
-          ),
-          findsNothing,
-        );
-        expect(
-          find.descendant(of: body, matching: find.text('프로필 보러가기')),
-          findsOneWidget,
-        );
-        expect(
-          find.descendant(of: body, matching: find.text('자세히 보러가기')),
-          findsNothing,
-        );
-        expect(
-          find.descendant(
-            of: profile,
-            matching: find.text(portfolioData.identity.headline),
-          ),
-          findsNothing,
-        );
-        final semanticsData = tester.getSemantics(profile).getSemanticsData();
-        expect(semanticsData.label, isNot(contains('메모')));
-        expect(semanticsData.label, '${portfolioData.identity.name} 소개 열기');
-        expect(semanticsData.flagsCollection.isButton, isTrue);
-        expect(semanticsData.hasAction(ui.SemanticsAction.tap), isTrue);
+        for (final legacyKey in const <String>[
+          'iphone-notes-profile',
+          'ipad-profile-widget',
+          'mobile-notes-profile-header',
+          'mobile-notes-profile-body',
+        ]) {
+          expect(find.byKey(Key(legacyKey)), findsNothing);
+        }
+        expect(find.text('프로필 보러가기'), findsNothing);
+        expect(find.text(portfolioData.identity.name), findsNothing);
 
-        await tester.tap(profile);
-        await tester.pumpAndSettle();
-        expect(find.byKey(const Key('about-app')), findsOneWidget);
-        expect(
-          find.descendant(
-            of: find.byKey(const Key('about-app')),
-            matching: find.text(portfolioData.identity.headline),
-          ),
-          findsOneWidget,
-        );
+        final profile = find.byKey(const Key('home-app-profile'));
+        final skills = find.byKey(const Key('home-app-skills'));
+        expect(profile, findsOneWidget);
+        expect(skills, findsOneWidget);
+        expect(find.bySemanticsLabel('Open 프로필'), findsOneWidget);
+
+        final profileRect = tester.getRect(profile);
+        final skillsRect = tester.getRect(skills);
+        expect(profileRect.top, closeTo(skillsRect.top, 0.1));
+        expect(profileRect.left, lessThan(skillsRect.left));
         semantics.dispose();
       });
-
-      testWidgets('${scenario.$2 ? 'iPad' : 'iPhone'} 메모는 헤더 이름과 본문 안내만 표시한다', (
-        tester,
-      ) async {
-        await _pumpMobileHome(tester, size: scenario.$1, tablet: scenario.$2);
-
-        _expectProfileContent(tester, profileKey: scenario.$3);
-      });
     }
-
-    for (final scenario in <(Size, bool, String, String)>[
-      (const Size(844, 390), false, 'iphone-notes-profile', 'iPhone 가로'),
-      (const Size(600, 400), true, 'ipad-profile-widget', '짧은 iPad 가로'),
-    ]) {
-      testWidgets('${scenario.$4}에서도 이름 중복 없는 안내를 유지한다', (tester) async {
-        await _pumpMobileHome(
-          tester,
-          size: scenario.$1,
-          tablet: scenario.$2,
-          textScaler: const TextScaler.linear(2),
-        );
-
-        _expectProfileContent(tester, profileKey: scenario.$3);
-        expect(tester.takeException(), isNull);
-      });
-    }
-
-    testWidgets('iPad와 iPhone 메모는 Enter와 Space로 About을 연다', (tester) async {
-      for (final scenario in <(Size, bool, String)>[
-        (const Size(390, 844), false, 'iphone-notes-profile'),
-        (const Size(834, 1194), true, 'ipad-profile-widget'),
-      ]) {
-        for (final key in <LogicalKeyboardKey>[
-          LogicalKeyboardKey.enter,
-          LogicalKeyboardKey.space,
-        ]) {
-          await tester.pumpWidget(const SizedBox.shrink());
-          await _pumpMobileHome(tester, size: scenario.$1, tablet: scenario.$2);
-
-          final profile = find.byKey(Key(scenario.$3));
-          final detector = tester.widget<FocusableActionDetector>(
-            find.descendant(
-              of: profile,
-              matching: find.byType(FocusableActionDetector),
-            ),
-          );
-          detector.focusNode!.requestFocus();
-          await tester.pump();
-          await tester.sendKeyEvent(key);
-          await tester.pumpAndSettle();
-
-          expect(
-            find.byKey(const Key('about-app')),
-            findsOneWidget,
-            reason: '${scenario.$2 ? 'iPad' : 'iPhone'} $key',
-          );
-        }
-      }
-    });
   });
 
   group('About 연속 메모', () {
@@ -230,42 +111,6 @@ void main() {
   });
 }
 
-void _expectProfileContent(WidgetTester tester, {required String profileKey}) {
-  final profile = find.byKey(Key(profileKey));
-  final header = find.descendant(
-    of: profile,
-    matching: find.byKey(const Key('mobile-notes-profile-header')),
-  );
-  final body = find.descendant(
-    of: profile,
-    matching: find.byKey(const Key('mobile-notes-profile-body')),
-  );
-  expect(header, findsOneWidget);
-  expect(body, findsOneWidget);
-
-  final headerName = tester.widget<Text>(
-    find.descendant(
-      of: header,
-      matching: find.text(portfolioData.identity.name),
-    ),
-  );
-  expect(headerName.style?.color, Colors.white);
-  expect(
-    find.descendant(of: body, matching: find.text(portfolioData.identity.name)),
-    findsNothing,
-  );
-  final guidance = tester.widget<Text>(
-    find.descendant(of: body, matching: find.text('프로필 보러가기')),
-  );
-  expect(
-    find.descendant(of: body, matching: find.text('자세히 보러가기')),
-    findsNothing,
-  );
-
-  expect(guidance.maxLines, 1);
-  expect(guidance.style?.fontSize, inInclusiveRange(16, 18));
-}
-
 class _RecordingLauncher implements ExternalLauncher {
   _RecordingLauncher({this.succeeds = true});
 
@@ -294,43 +139,15 @@ Future<void> _pumpMobileHome(
       theme: AppleTheme.light(),
       home: MediaQuery(
         data: MediaQueryData(size: size, textScaler: textScaler),
-        child: _MobileHomeHarness(data: portfolioData, tablet: tablet),
+        child: AppleHomeGrid(
+          data: portfolioData,
+          tablet: tablet,
+          onOpen: (_) {},
+        ),
       ),
     ),
   );
   await tester.pump();
-}
-
-class _MobileHomeHarness extends StatefulWidget {
-  const _MobileHomeHarness({required this.data, required this.tablet});
-
-  final PortfolioData data;
-  final bool tablet;
-
-  @override
-  State<_MobileHomeHarness> createState() => _MobileHomeHarnessState();
-}
-
-class _MobileHomeHarnessState extends State<_MobileHomeHarness> {
-  PortfolioAppId? _openApp;
-
-  @override
-  Widget build(BuildContext context) {
-    if (_openApp == PortfolioAppId.about) {
-      return AboutApp(
-        data: widget.data,
-        launcher: _RecordingLauncher(),
-        compact: !widget.tablet,
-        tablet: widget.tablet,
-      );
-    }
-
-    return AppleHomeGrid(
-      data: widget.data,
-      tablet: widget.tablet,
-      onOpen: (appId) => setState(() => _openApp = appId),
-    );
-  }
 }
 
 Future<void> _pumpAbout(

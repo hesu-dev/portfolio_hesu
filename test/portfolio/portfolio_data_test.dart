@@ -295,6 +295,7 @@ void main() {
 
   test('PortfolioAppId exposes the shared app catalog', () {
     expect(PortfolioAppId.values.map((appId) => appId.name), <String>[
+      'profile',
       'about',
       'skills',
       'projects',

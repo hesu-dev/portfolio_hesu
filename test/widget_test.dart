@@ -28,19 +28,23 @@ void main() {
     testWidgets('shows only the canonical portfolio identity', (tester) async {
       await _pumpAtWidth(tester, 390);
 
+      expect(find.byKey(const Key('home-app-profile')), findsOneWidget);
+      expect(find.text('민희수'), findsNothing);
+      expect(
+        find.byKey(const Key('mobile-notes-profile-header')),
+        findsNothing,
+      );
+      expect(find.byKey(const Key('mobile-notes-profile-body')), findsNothing);
+
+      await tester.tap(find.byKey(const Key('home-app-profile')));
+      await tester.pumpAndSettle();
+
       expect(
         find.descendant(
-          of: find.byKey(const Key('mobile-notes-profile-header')),
+          of: find.byKey(const Key('profile-app')),
           matching: find.text('민희수'),
         ),
         findsOneWidget,
-      );
-      expect(
-        find.descendant(
-          of: find.byKey(const Key('mobile-notes-profile-body')),
-          matching: find.text('민희수'),
-        ),
-        findsNothing,
       );
       expect(find.textContaining('천주아'), findsNothing);
       expect(find.textContaining('juah'), findsNothing);
