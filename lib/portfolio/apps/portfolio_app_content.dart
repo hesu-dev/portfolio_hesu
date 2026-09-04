@@ -25,6 +25,7 @@ class PortfolioAppContent extends StatelessWidget {
     this.tablet = false,
     this.finderWindowChrome,
     this.onOpenApp,
+    this.onClose,
     super.key,
   });
 
@@ -36,6 +37,7 @@ class PortfolioAppContent extends StatelessWidget {
   final bool tablet;
   final AppleFinderWindowChrome? finderWindowChrome;
   final ValueChanged<PortfolioAppId>? onOpenApp;
+  final VoidCallback? onClose;
 
   @override
   Widget build(BuildContext context) {
@@ -45,6 +47,7 @@ class PortfolioAppContent extends StatelessWidget {
         launcher: launcher,
         compact: compact,
         tablet: tablet,
+        onClose: onClose,
       ),
       PortfolioAppId.about => AboutApp(
         data: data,

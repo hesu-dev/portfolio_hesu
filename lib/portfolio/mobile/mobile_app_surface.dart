@@ -37,6 +37,7 @@ class MobileAppSurface extends StatelessWidget {
     final label = AppleAppIcon.labelFor(appId);
     final windowTitle = AppleAppIcon.windowTitleFor(appId);
     final integratesFinderToolbar = appId == PortfolioAppId.projects;
+    final ownsNavigationHeader = appId == PortfolioAppId.profile;
     final finderWindowChrome = integratesFinderToolbar
         ? AppleFinderWindowChrome(
             leadingControls: MobileBackCloseButton(
@@ -89,7 +90,7 @@ class MobileAppSurface extends StatelessWidget {
             color: AppleTheme.surface(context),
             child: Column(
               children: <Widget>[
-                if (!integratesFinderToolbar)
+                if (!integratesFinderToolbar && !ownsNavigationHeader)
                   _MobileAppNavigationBar(
                     appId: appId,
                     label: label,
@@ -106,6 +107,7 @@ class MobileAppSurface extends StatelessWidget {
                     tablet: tablet,
                     finderWindowChrome: finderWindowChrome,
                     onOpenApp: onOpenApp,
+                    onClose: onClose,
                   ),
                 ),
               ],
