@@ -105,6 +105,60 @@ void main() {
         isTrue,
       );
     });
+
+    testWidgets('열린 앱은 투명 홈 인디케이터 뒤와 하단 안전 영역까지 이어진다', (tester) async {
+      for (final scenario in const <(Size, List<double>)>[
+        (Size(390, 844), <double>[0, 34]),
+        (Size(834, 1194), <double>[0, 20]),
+      ]) {
+        for (final bottomInset in scenario.$2) {
+          for (final brightness in Brightness.values) {
+            await tester.pumpWidget(const SizedBox.shrink());
+            await _pumpShell(
+              tester,
+              size: scenario.$1,
+              brightness: brightness,
+              viewPadding: EdgeInsets.only(bottom: bottomInset),
+            );
+            final homeIndicatorRect = tester.getRect(
+              find.byKey(const Key('mobile-home-indicator')),
+            );
+
+            await tester.tap(find.byKey(const Key('home-app-settings')));
+            await tester.pumpAndSettle();
+
+            final surfaceRect = tester.getRect(
+              find.byKey(const Key('mobile-app-surface')),
+            );
+            final indicatorRect = tester.getRect(
+              find.byKey(const Key('mobile-home-indicator')),
+            );
+
+            final reason = '${scenario.$1} bottom=$bottomInset $brightness';
+            expect(
+              surfaceRect.top,
+              lessThan(indicatorRect.top),
+              reason: reason,
+            );
+            expect(
+              surfaceRect.bottom,
+              greaterThanOrEqualTo(indicatorRect.bottom),
+              reason: reason,
+            );
+            expect(
+              indicatorRect.bottom,
+              lessThanOrEqualTo(scenario.$1.height - bottomInset),
+              reason: reason,
+            );
+            expect(
+              indicatorRect.center.dy,
+              closeTo(homeIndicatorRect.center.dy, 0.1),
+              reason: '$reason 앱 전환 중 인디케이터 위치',
+            );
+          }
+        }
+      }
+    });
   });
 
   group('iPhone home and navigation', () {
@@ -656,6 +710,7 @@ Future<void> _pumpShell(
   TextScaler textScaler = TextScaler.noScaling,
   Brightness brightness = Brightness.light,
   bool? mobilePlatformOverride,
+  EdgeInsets viewPadding = EdgeInsets.zero,
 }) async {
   final themeController = PortfolioThemeController(
     initial: brightness == Brightness.dark
@@ -674,7 +729,12 @@ Future<void> _pumpShell(
           ? AppleTheme.dark()
           : AppleTheme.light(),
       home: MediaQuery(
-        data: MediaQueryData(size: size, textScaler: textScaler),
+        data: MediaQueryData(
+          size: size,
+          textScaler: textScaler,
+          padding: viewPadding,
+          viewPadding: viewPadding,
+        ),
         child: AdaptivePortfolioShell(
           data: data,
           externalLauncher: launcher ?? _RecordingLauncher(),
