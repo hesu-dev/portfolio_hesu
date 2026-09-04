@@ -51,6 +51,7 @@
 | 데스크톱·iPad·iPhone 아이콘 형태 공통화 | 충족 | 모든 launcher가 `AppleAppArtworkFrame`을 사용하며 폼팩터별 캡처를 비교했다. |
 | 데스크톱 Trash 아이콘이 잘리지 않음 | 충족 | 1280×720에서도 artwork와 `Trash` 라벨이 desktop grid 안에 완전히 포함된다. |
 | 중복 프로젝트 아이콘 제거, 영문 `Projects` 유지 | 충족 | 공용 런처 목록에서 한글 프로젝트 허브 아이콘을 제외하고 desktop/iPad/iPhone/Dock에서 `Projects`만 노출한다. |
+| 데스크톱 런처 선택 효과를 Projects 방식으로 통일 | 충족 | 8개 앱 모두 artwork는 바꾸지 않고 아이콘 바로 주변과 이름에만 중립 회색 배경을 표시한다. iPad/iPhone 선택 표현에는 적용하지 않는다. |
 | 폼팩터별 앱 순서 통일 | 충족 | desktop은 `About → Skills → Projects → Terminal → GitHub → Mail → 설정 → Trash`, iPhone·iPad는 About 중복을 제외한 `Skills → Projects → Terminal → 사진 → GitHub → Mail → 설정 → Trash` 순서를 사용한다. |
 | 모바일·태블릿 Photos 자리 추가 | 충족 | Terminal 다음에 공용 frame의 code-native Photos artwork를 배치하고 Light/Dark·스크롤 가능한 준비 화면에 연결한다. desktop에는 노출하지 않는다. |
 
@@ -60,11 +61,11 @@
 |---|---|---|
 | 홈의 민희수 영역 자체가 About을 여는 메모 위젯 | 충족 | iPad와 iPhone 모두 노란 메모 위젯 전체를 탭/Enter/Space로 열 수 있다. |
 | About 내용은 하나의 연속된 메모 | 충족 | 소개·경력·교육·연락처가 별도 카드 없이 한 종이 안에서 이어진다. |
-| 홈 위젯의 날짜·`MH` 상자·`메모` 텍스트 제거 | 충족 | 세 장식 요소는 렌더링하지 않고 흰 폴더 아이콘과 민희수 프로필 내용만 유지한다. |
+| 홈 위젯의 날짜·`MH` 상자·`메모` 텍스트 제거 | 충족 | 세 장식 요소는 렌더링하지 않고 헤더의 흰 폴더 아이콘·이름과 본문의 CTA만 유지한다. |
 | 홈과 About 메모 본문은 공용 레이아웃 | 충족 | 홈의 `AppleNotesSurface`와 About 전체 화면이 같은 `AppleNotesPaper` 종이 레이어를 사용한다. |
-| 홈 메모 헤더에 흰 폴더 아이콘과 `민희수` 표시 | 충족 | 기존 흰 폴더 아이콘을 유지하고 같은 헤더의 오른쪽 제목 슬롯에 주입된 이름을 표시한다. |
-| 홈 메모의 이름과 `자세히 보러가기`를 같은 타이포그래피로 표시 | 충족 | 기존 Flutter 소개 문구만 CTA로 교체하고 iPhone 17px, iPad 18px의 같은 굵기와 행간을 사용한다. |
-| 짧은 가로 화면에서도 메모 두 줄 유지 | 충족 | iPhone 844×390과 iPad 600×400·글자 200%에서도 이름과 CTA 본문을 숨기지 않고 두 줄을 유지한다. |
+| 홈 메모 헤더에 흰 폴더 아이콘과 흰색 `민희수` 표시 | 충족 | 폴더 아이콘은 삭제하지 않고 같은 노란 헤더의 오른쪽 제목 슬롯에 흰색 이름을 표시한다. |
+| 홈 메모 본문에서 중복 이름 제거 | 충족 | `자세히 보러가기` 위의 두 번째 `민희수`를 제거하고 본문에는 CTA만 한 번 표시한다. |
+| 짧은 가로 화면에서도 메모 CTA 유지 | 충족 | iPhone 844×390과 iPad 600×400·글자 200%에서도 헤더 이름과 단일 CTA가 잘리지 않는다. |
 
 ## Finder와 프로젝트
 
@@ -100,6 +101,7 @@
 | `< 홈` 텍스트형 뒤로가기 제거 | 충족 | iPhone·iPad 일반 앱은 모두 44px 원형 뒤로 화살표로 앱을 닫고 텍스트형 홈 버튼이나 신호등을 사용하지 않는다. |
 | 일반 앱의 기기별 닫기 규칙 통일 | 충족 | desktop은 공용 `MacTrafficControls`, iPhone·iPad는 공용 `MobileBackCloseButton`을 사용한다. |
 | iPad/iPhone Finder 전용 상단바 | 충족 | 두 기기 모두 신호등 없이 왼쪽 원형 뒤로 버튼, 실제 중앙 타이틀, 오른쪽 비동작 `…` 버튼을 사용한다. |
+| iPad/iPhone의 모든 툴팁 효과 제거 | 충족 | 공통 반응형 셸에서 두 폼팩터의 하위 `Tooltip` 표시를 일괄 차단해 아이콘·버튼 이름이 겹쳐 보이지 않으며, macOS 툴팁과 접근성 의미 정보는 유지한다. |
 | iPhone 앱 상단 타이틀을 화면 기준 중앙 정렬 | 충족 | 좌우 컨트롤 폭과 무관하게 공용 mobile navigation title의 중심이 viewport 중심과 일치하며 Finder도 같은 기준을 사용한다. |
 | 모바일·태블릿 상단 타이틀의 아래 가짜 여백 제거 | 충족 | 제목을 44px 전체로 늘리지 않고 자연 높이로 배치해 원형 leading과 세로 중심이 1px 이내로 맞는다. |
 | 모바일·태블릿 헤더의 `…`와 닫기 영역 분리 | 충족 | 모든 앱이 오른쪽 비동작 `…`를 공유하고 제목·빈 영역·`…` 탭은 화면을 닫지 않는다. 왼쪽 44×44 버튼만 독립 semantics action을 가진다. |
@@ -108,7 +110,7 @@
 | About의 중복 아이콘·제목 영역과 중첩 메모 제거 | 충족 | 앱 내부 toolbar와 두 번째 메모 카드를 없애고 navigation bar 아래 한 장의 종이 본문만 렌더링한다. |
 | macOS Finder 데스크탑의 앱은 기존 창을 교체하지 않고 새 창으로 열기 | 충족 | 데스크탑 위치의 앱을 열면 Projects Finder를 유지한 채 각 앱을 독립 창으로 연다. iPad/iPhone은 최신 3탭 요구에 따라 데스크탑 위치 자체를 노출하지 않는다. |
 | iPad/iPhone 홈 앱 Dock 숨김 | 충족 | viewport 크기와 실제 touch 기반 기기 판정을 함께 사용해 태블릿·모바일 홈에서는 macOS식 하단 앱 Dock을 렌더링하지 않는다. |
-| Projects 원형 뒤로 버튼은 상세만 내부 이동하고 폴더 루트에서는 닫기 | 충족 | iPhone/iPad 모두 프로젝트 상세에서는 해당 목록으로 돌아가고, 회사·최근 항목·개인 프로젝트의 루트에서는 홈으로 앱을 닫는다. Tooltip과 semantics도 상태에 맞게 바뀐다. |
+| Projects 원형 뒤로 버튼은 상세만 내부 이동하고 폴더 루트에서는 닫기 | 충족 | iPhone/iPad 모두 프로젝트 상세에서는 해당 목록으로 돌아가고, 회사·최근 항목·개인 프로젝트의 루트에서는 홈으로 앱을 닫는다. 접근성 label과 semantics도 상태에 맞게 바뀐다. |
 
 ## 터미널
 
@@ -155,12 +157,12 @@
 | 공통 레이아웃으로 향후 일괄 수정 | 충족 | Mac window, Finder, Notes, mobile navigation, app artwork를 각각 공용 컴포넌트로 유지한다. |
 | 한국어 Conventional/Angular 커밋 제목 | 충족 | 이번 작업의 새 커밋 제목은 한국어 Conventional Commit 형식을 준수한다. |
 | 작업을 가능한 작은 커밋으로 분리 | 충족 | 테스트·자산·공용 컴포넌트·기능·수정을 독립 커밋으로 분리했다. |
-| 전체 정적 분석·테스트·Vercel 빌드 | 충족 | 최종 소스에서 정적 분석 0건, 전체 272개 테스트 통과, Vercel 루트 release web build 성공을 확인한다. |
+| 전체 정적 분석·테스트·Vercel 빌드 | 충족 | 최종 소스에서 정적 분석 0건, 전체 274개 테스트 통과, Vercel 루트 release web build 성공을 확인한다. |
 | 데스크톱·iPad·iPhone 실화면 검수 | 충족 | 로컬 인앱 브라우저에서 세 폼팩터의 핵심 화면과 Light/Dark 전환을 다시 확인하고 자동 양 테마 계약으로 나머지 조합을 보완했다. |
 
 ## 2026-09-04 최종 검증 기록
 
-- `flutter test --reporter compact`: 전체 272개 통과
+- `flutter test --reporter compact`: 전체 274개 통과
 - `flutter analyze`: 문제 없음
 - Vercel 루트 경로 `/` release web build: 성공, 생성된 `<base href="/">` 확인
 - `git diff --check`: 통과
@@ -168,6 +170,7 @@
 - Finder 재검수: macOS `최근 항목`이 전체 6개 프로젝트로 이동하고 ReadingLog가 첫 번째이며, 상세에서 돌아오면 폴더 아이콘 주변에만 중립 회색 선택 배경이 남는 것을 확인
 - 모바일 재검수: 홈 앱 Dock은 숨고, Projects 내부에만 `최근 항목`·`회사`·`개인` 3탭 탐색이 있으며 세 아이콘·라벨은 각 1/3 중심에 정렬된다. pill 배경은 투명하고 iPhone/iPad Finder는 신호등 없이 상태별 뒤로/닫기·중앙 자연 높이 타이틀·`…`를 사용한다.
 - 테마 재검수: 기본 Light, iPhone 설정의 즉시 Dark 전환, Dark About 메모·Terminal·macOS 창/메뉴/시스템 패널의 가독성을 확인
+- 최신 UI 회귀 검수: 홈 메모 헤더의 흰색 이름과 본문 단일 CTA, desktop 8개 런처의 국소 회색 선택 효과, iPad/iPhone 공통 툴팁 비노출을 자동 테스트와 로컬 렌더링으로 확인
 - 독립 요구사항 감사: 핵심 런타임 미충족과 Critical 항목 없음. 감사에서 발견한 데스크톱 `최근 항목` 비동작과 웹 기본 dark chrome은 각각 수정하고 회귀 테스트를 추가함
 - 외부 상태 변경: 기존 Pages workflow 2개를 비활성화하고, Pages 게시 해제와 배포 소스 `None` 저장을 완료했다. Pages API는 404를 반환한다.
 - 원격 `gh-pages` 브랜치를 삭제해 기존 저장소에서 자동 재게시될 경로를 제거했다.
