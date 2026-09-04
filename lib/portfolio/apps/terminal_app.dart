@@ -283,34 +283,35 @@ class _TerminalInput extends StatelessWidget {
         fontWeight: FontWeight.w600,
       ),
     );
-    final input = Semantics(
-      label: '터미널 명령 입력',
-      textField: true,
-      child: TextField(
-        key: const Key('terminal-input'),
-        controller: controller,
-        focusNode: focusNode,
-        onSubmitted: onSubmitted,
-        autofocus: true,
-        autocorrect: false,
-        enableSuggestions: false,
-        enableInteractiveSelection: false,
-        cursorOpacityAnimates: true,
-        textInputAction: TextInputAction.send,
-        style: TextStyle(
-          color: inputForeground,
-          fontFamily: 'monospace',
-          fontSize: compact ? 13 : 13.5,
-        ),
-        cursorColor: accent,
-        decoration: const InputDecoration(
-          isDense: true,
-          filled: false,
-          hoverColor: Colors.transparent,
-          border: InputBorder.none,
-          enabledBorder: InputBorder.none,
-          focusedBorder: InputBorder.none,
-          contentPadding: EdgeInsets.symmetric(vertical: 8),
+    final input = MergeSemantics(
+      child: Semantics(
+        label: '터미널 명령 입력',
+        child: TextField(
+          key: const Key('terminal-input'),
+          controller: controller,
+          focusNode: focusNode,
+          onSubmitted: onSubmitted,
+          autofocus: true,
+          autocorrect: false,
+          enableSuggestions: false,
+          enableInteractiveSelection: false,
+          cursorOpacityAnimates: true,
+          textInputAction: TextInputAction.send,
+          style: TextStyle(
+            color: inputForeground,
+            fontFamily: 'monospace',
+            fontSize: compact ? 13 : 13.5,
+          ),
+          cursorColor: accent,
+          decoration: const InputDecoration(
+            isDense: true,
+            filled: false,
+            hoverColor: Colors.transparent,
+            border: InputBorder.none,
+            enabledBorder: InputBorder.none,
+            focusedBorder: InputBorder.none,
+            contentPadding: EdgeInsets.symmetric(vertical: 8),
+          ),
         ),
       ),
     );

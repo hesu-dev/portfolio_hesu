@@ -1138,7 +1138,6 @@ void main() {
       tester,
     ) async {
       final semantics = tester.ensureSemantics();
-      addTearDown(semantics.dispose);
       await _pumpApp(
         tester,
         appId: PortfolioAppId.terminal,
@@ -1154,6 +1153,7 @@ void main() {
       expect(inputSemantics.label, '터미널 명령 입력');
       expect(inputSemantics.flagsCollection.isEnabled, ui.Tristate.isTrue);
       expect(inputSemantics.hasAction(SemanticsAction.setText), isTrue);
+      semantics.dispose();
     });
 
     testWidgets('terminal keeps the fixed Korean prompt for injected data', (
