@@ -113,10 +113,9 @@ class _TerminalAppState extends State<TerminalApp> {
       key: const Key('terminal-app'),
       color: background,
       child: TextFieldTapRegion(
-        child: GestureDetector(
+        child: Listener(
           behavior: HitTestBehavior.opaque,
-          excludeFromSemantics: true,
-          onTap: _focusNode.requestFocus,
+          onPointerDown: (_) => _focusNode.requestFocus(),
           child: Column(
             children: <Widget>[
               Expanded(
