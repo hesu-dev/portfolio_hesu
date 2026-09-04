@@ -4,7 +4,7 @@
 
 **Goal:** Replace the static career/education detail card with an image-ready Instagram Reels overlay whose like and comment controls work, and render the real career and education data as a continuous reply thread below it.
 
-**Architecture:** Keep the existing profile feed and selected-history navigation. The detail becomes one vertical `CustomScrollView`: an image-free media slot contains the Reels top bar, right action rail, and bottom account/caption/audio overlay; the existing portfolio history is then mapped to accessible reply rows below the slot. Like state lives in `ProfileApp` per selected post, and the comment action scrolls the same detail controller to the reply thread. No generated image, comment composer, fake account, or copied social metric is introduced.
+**Architecture:** Collapse career and education into one aggregate profile post instead of creating one feed post per history item. Its detail is one vertical `CustomScrollView`: an image-free media slot contains the Reels top bar, right action rail, and bottom account/caption overlay; every experience and education item is then mapped to its own accessible reply row below the slot. One boolean like state belongs to the aggregate post, and the comment action scrolls the same detail controller to the reply thread. No generated image, comment composer, fake account, or copied social metric is introduced.
 
 **Tech Stack:** Flutter, Dart, Material widgets, `flutter_test`
 
@@ -18,6 +18,8 @@
 **Step 1: Write the failing overlay test**
 
 Assert that `profile-reel-overlay` owns the top bar, action rail, and information overlay; the right rail sits to the right of the information; and the old generated artwork/image widgets are absent.
+
+Also assert that any non-empty history produces exactly one square `profile-history-post`, the post statistic is `1`, and no per-experience or per-education feed cards exist.
 
 **Step 2: Write the failing like test**
 
@@ -42,13 +44,13 @@ Expected: FAIL because the overlay/action/thread keys and interactions do not ex
 **Files:**
 - Modify: `lib/portfolio/apps/profile_app.dart`
 
-**Step 1: Add per-post like state**
+**Step 1: Add aggregate-post navigation and like state**
 
-Store liked history selections in `_ProfileAppState`, expose a toggle callback to the selected detail, and preserve the state while navigating back to the feed.
+Store one open/closed state and one liked state in `_ProfileAppState`, expose an argument-free toggle callback to the detail, and preserve the state while navigating back to the feed. Do not use an arbitrary first history item as a hidden selection.
 
 **Step 2: Replace the static visual with a neutral media slot and overlay stack**
 
-Build `profile-reel-overlay` without `Image`, `RawImage`, `DecorationImage`, or generated artwork. Overlay `Reels` and camera at the top, a heart/comment/share rail at the right, and the real account plus selected item caption/audio label at the bottom.
+Build `profile-reel-overlay` without `Image`, `RawImage`, `DecorationImage`, or generated artwork. Overlay `Reels` and camera at the top, a heart/comment/share rail at the right, and the real account plus aggregate career/education caption at the bottom. Individual history metadata belongs only in the reply rows.
 
 **Step 3: Wire the actions**
 
