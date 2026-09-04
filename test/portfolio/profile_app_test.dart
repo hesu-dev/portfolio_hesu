@@ -231,6 +231,152 @@ void main() {
       semantics.dispose();
     });
 
+    testWidgets('릴스 오버레이는 iPhone과 iPad의 상세 뷰포트를 정확히 채운다', (tester) async {
+      for (final scenario in const <(String, Size, bool)>[
+        ('iPhone', Size(390, 844), false),
+        ('iPad', Size(834, 1194), true),
+      ]) {
+        await tester.pumpWidget(const SizedBox.shrink());
+        await _pumpProfileShell(
+          tester,
+          size: scenario.$2,
+          tablet: scenario.$3,
+          data: _injectedProfileData(),
+        );
+        await _openProfile(tester);
+        await _openHistoryCard(
+          tester,
+          const Key('profile-history-card-experience-0'),
+        );
+
+        final detail = find.byKey(const Key('profile-history-detail'));
+        final overlay = find.byKey(const Key('profile-reel-overlay'));
+        final thread = find.byKey(const Key('profile-reel-reply-thread'));
+        final detailRect = tester.getRect(detail);
+        final overlayRect = tester.getRect(overlay);
+
+        expect(
+          overlayRect.left,
+          closeTo(detailRect.left, 1),
+          reason: '${scenario.$1} left edge',
+        );
+        expect(
+          overlayRect.right,
+          closeTo(detailRect.right, 1),
+          reason: '${scenario.$1} right edge',
+        );
+        expect(
+          overlayRect.top,
+          closeTo(detailRect.top, 1),
+          reason: '${scenario.$1} top edge',
+        );
+        expect(
+          overlayRect.height,
+          closeTo(detailRect.height, 1),
+          reason: '${scenario.$1} viewport height',
+        );
+        expect(
+          tester.getRect(thread).top,
+          closeTo(overlayRect.bottom, 1),
+          reason: '${scenario.$1} thread follows the viewport surface',
+        );
+        expect(tester.widget<Stack>(overlay), isA<Stack>());
+        expect(
+          tester
+              .element(overlay)
+              .findAncestorWidgetOfExactType<ClipRRect>()
+              ?.key,
+          const Key('mobile-app-clip'),
+          reason: '${scenario.$1} overlay is not a rounded inset card',
+        );
+      }
+    });
+
+    testWidgets('중립 미디어 슬롯과 오버레이 컨트롤은 라이트·다크 대비를 따른다', (tester) async {
+      for (final brightness in Brightness.values) {
+        await tester.pumpWidget(const SizedBox.shrink());
+        await _pumpProfileShell(
+          tester,
+          size: const Size(390, 844),
+          tablet: false,
+          brightness: brightness,
+          data: _injectedProfileData(),
+        );
+        await _openProfile(tester);
+        await _openHistoryCard(
+          tester,
+          const Key('profile-history-card-experience-0'),
+        );
+
+        final overlay = find.byKey(const Key('profile-reel-overlay'));
+        final mediaSlot = find.byKey(const Key('profile-reel-media-slot'));
+        final topBar = find.byKey(const Key('profile-reel-top-bar'));
+        final actionRail = find.byKey(const Key('profile-reel-action-rail'));
+        final info = find.byKey(const Key('profile-reel-info'));
+        expect(
+          find.descendant(of: overlay, matching: mediaSlot),
+          findsOneWidget,
+        );
+
+        final mediaColor = tester.widget<ColoredBox>(mediaSlot).color;
+        final foreground = brightness == Brightness.dark
+            ? Colors.white
+            : AppleTheme.primaryLabel(tester.element(overlay));
+        if (brightness == Brightness.light) {
+          expect(mediaColor.computeLuminance(), greaterThan(0.7));
+          expect(foreground.computeLuminance(), lessThan(0.2));
+        } else {
+          expect(mediaColor.computeLuminance(), lessThan(0.2));
+          expect(foreground, Colors.white);
+        }
+
+        final overlayText = <Text>[
+          ...find
+              .descendant(of: topBar, matching: find.byType(Text))
+              .evaluate()
+              .map((element) => element.widget as Text),
+          ...find
+              .descendant(of: info, matching: find.byType(Text))
+              .evaluate()
+              .map((element) => element.widget as Text),
+        ];
+        expect(overlayText, isNotEmpty);
+        for (final text in overlayText) {
+          expect(text.style?.color, foreground, reason: text.data);
+        }
+
+        final actionIcons = find
+            .descendant(of: actionRail, matching: find.byType(Icon))
+            .evaluate()
+            .map((element) => element.widget as Icon)
+            .toList();
+        expect(actionIcons, hasLength(3));
+        for (final icon in actionIcons) {
+          expect(icon.color, foreground);
+        }
+        final cameraIcon = tester.widget<Icon>(
+          find.descendant(of: topBar, matching: find.byType(Icon)),
+        );
+        expect(cameraIcon.color, foreground);
+
+        final avatar = tester.widget<Container>(
+          find.byKey(const Key('profile-reel-avatar')),
+        );
+        final avatarDecoration = avatar.decoration! as BoxDecoration;
+        expect(avatarDecoration.border!.top.color, foreground);
+
+        final likeAction = find.byKey(const Key('profile-reel-like-action'));
+        await tester.tap(likeAction);
+        await tester.pump();
+        final filledHeart = find.descendant(
+          of: likeAction,
+          matching: find.byIcon(Icons.favorite_rounded),
+        );
+        expect(filledHeart, findsOneWidget);
+        expect(tester.widget<Icon>(filledHeart).color, AppleTheme.red);
+      }
+    });
+
     testWidgets('하트는 카운트 없이 outline과 빨간 filled 상태를 두 번 토글한다', (tester) async {
       final semantics = tester.ensureSemantics();
       await _pumpProfileShell(
@@ -313,6 +459,60 @@ void main() {
       expect(find.byKey(const Key('profile-reel-comment-count')), findsNothing);
       expect(_fakeSocialMetricTextInside(detail), findsNothing);
       expect(_fakeSocialMetricSemanticsInside(detail), findsNothing);
+      semantics.dispose();
+    });
+
+    testWidgets('좋아요는 같은 게시물에 보존되고 다른 게시물과 분리된다', (tester) async {
+      final semantics = tester.ensureSemantics();
+      await _pumpProfileShell(
+        tester,
+        size: const Size(390, 844),
+        tablet: false,
+        data: _injectedProfileData(),
+      );
+      await _openProfile(tester);
+      await _openHistoryCard(
+        tester,
+        const Key('profile-history-card-experience-0'),
+      );
+
+      var likeAction = find.byKey(const Key('profile-reel-like-action'));
+      await tester.tap(likeAction);
+      await tester.pump();
+      _expectButtonSemantics(tester, likeAction, label: '좋아요 취소');
+
+      await tester.tap(find.byKey(const Key('mobile-back-close-profile')));
+      await tester.pumpAndSettle();
+      await _openHistoryCard(
+        tester,
+        const Key('profile-history-card-experience-0'),
+      );
+
+      likeAction = find.byKey(const Key('profile-reel-like-action'));
+      _expectButtonSemantics(tester, likeAction, label: '좋아요 취소');
+      final persistedHeart = find.descendant(
+        of: likeAction,
+        matching: find.byIcon(Icons.favorite_rounded),
+      );
+      expect(persistedHeart, findsOneWidget);
+      expect(tester.widget<Icon>(persistedHeart).color, AppleTheme.red);
+
+      await tester.tap(find.byKey(const Key('mobile-back-close-profile')));
+      await tester.pumpAndSettle();
+      await _openHistoryCard(
+        tester,
+        const Key('profile-history-card-experience-1'),
+      );
+
+      likeAction = find.byKey(const Key('profile-reel-like-action'));
+      _expectButtonSemantics(tester, likeAction, label: '좋아요');
+      expect(
+        find.descendant(
+          of: likeAction,
+          matching: find.byIcon(Icons.favorite_border_rounded),
+        ),
+        findsOneWidget,
+      );
       semantics.dispose();
     });
 
