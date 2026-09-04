@@ -3,6 +3,7 @@ import 'dart:ui' as ui show SemanticsAction;
 
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
+import 'package:portfolio_hesu/portfolio/apps/profile_app.dart';
 import 'package:portfolio_hesu/portfolio/data/portfolio_data.dart';
 import 'package:portfolio_hesu/portfolio/mobile/apple_mobile_shell.dart';
 import 'package:portfolio_hesu/portfolio/portfolio_app.dart';
@@ -504,6 +505,118 @@ void main() {
         const Key('profile-history-card-experience-1'),
       );
 
+      likeAction = find.byKey(const Key('profile-reel-like-action'));
+      _expectButtonSemantics(tester, likeAction, label: '좋아요');
+      expect(
+        find.descendant(
+          of: likeAction,
+          matching: find.byIcon(Icons.favorite_border_rounded),
+        ),
+        findsOneWidget,
+      );
+      semantics.dispose();
+    });
+
+    testWidgets('동일 경력 재빌드는 상태를 보존하고 변경된 경력은 상세와 좋아요를 초기화한다', (tester) async {
+      final semantics = tester.ensureSemantics();
+      final original = _injectedProfileData();
+      await _pumpProfileShell(
+        tester,
+        size: const Size(390, 844),
+        tablet: false,
+        data: original,
+      );
+      await _openProfile(tester);
+      await _openHistoryCard(
+        tester,
+        const Key('profile-history-card-experience-0'),
+      );
+
+      final profileState = tester.state(find.byType(ProfileApp));
+      var likeAction = find.byKey(const Key('profile-reel-like-action'));
+      await tester.tap(likeAction);
+      await tester.pump();
+      _expectButtonSemantics(tester, likeAction, label: '좋아요 취소');
+
+      final copiedExperiences = <PortfolioExperience>[
+        for (final item in original.experiences)
+          PortfolioExperience(
+            role: item.role,
+            organization: item.organization,
+            period: item.period,
+            description: item.description,
+          ),
+      ];
+      final copiedEducation = <PortfolioEducation>[
+        for (final item in original.education)
+          PortfolioEducation(
+            program: item.program,
+            institution: item.institution,
+            period: item.period,
+            link: switch (item.link) {
+              final link? => PortfolioProjectLink(
+                label: link.label,
+                url: link.url,
+              ),
+              null => null,
+            },
+          ),
+      ];
+      final identicalHistory = _profileDataWithHistory(
+        original,
+        experiences: copiedExperiences,
+        education: copiedEducation,
+      );
+
+      await _pumpProfileShell(
+        tester,
+        size: const Size(390, 844),
+        tablet: false,
+        data: identicalHistory,
+      );
+
+      expect(
+        identical(tester.state(find.byType(ProfileApp)), profileState),
+        isTrue,
+      );
+      expect(find.byKey(const Key('profile-history-detail')), findsOneWidget);
+      likeAction = find.byKey(const Key('profile-reel-like-action'));
+      _expectButtonSemantics(tester, likeAction, label: '좋아요 취소');
+
+      final changedHistory = _profileDataWithHistory(
+        identicalHistory,
+        experiences: <PortfolioExperience>[
+          copiedExperiences[1],
+          copiedExperiences[0],
+          copiedExperiences[2],
+        ],
+        education: <PortfolioEducation>[copiedEducation[1], copiedEducation[0]],
+      );
+
+      await _pumpProfileShell(
+        tester,
+        size: const Size(390, 844),
+        tablet: false,
+        data: changedHistory,
+      );
+
+      expect(
+        identical(tester.state(find.byType(ProfileApp)), profileState),
+        isTrue,
+      );
+      expect(find.byKey(const Key('profile-history-detail')), findsNothing);
+      expect(find.byKey(const Key('profile-history-grid')), findsOneWidget);
+      final feedPosition = tester
+          .state<ScrollableState>(
+            _scrollableInside(const Key('profile-scroll')),
+          )
+          .position;
+      expect(feedPosition.pixels, closeTo(0, 0.5));
+
+      await _openHistoryCard(
+        tester,
+        const Key('profile-history-card-experience-0'),
+      );
       likeAction = find.byKey(const Key('profile-reel-like-action'));
       _expectButtonSemantics(tester, likeAction, label: '좋아요');
       expect(
@@ -1119,6 +1232,20 @@ PortfolioData _injectedProfileData() {
         links: <PortfolioProjectLink>[],
       ),
     ],
+  );
+}
+
+PortfolioData _profileDataWithHistory(
+  PortfolioData source, {
+  required Iterable<PortfolioExperience> experiences,
+  required Iterable<PortfolioEducation> education,
+}) {
+  return PortfolioData(
+    identity: source.identity,
+    experiences: experiences,
+    education: education,
+    skillGroups: source.skillGroups,
+    projects: source.projects,
   );
 }
 
