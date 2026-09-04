@@ -1028,6 +1028,16 @@ void main() {
       await tester.pump();
       expect(find.textContaining('command not found'), findsOneWidget);
 
+      for (var index = 0; index < 3; index++) {
+        await tester.enterText(find.byKey(const Key('terminal-input')), 'help');
+        await tester.testTextInput.receiveAction(TextInputAction.send);
+        await tester.pump();
+      }
+      final transcript = tester.widget<ListView>(
+        find.byKey(const Key('terminal-transcript')),
+      );
+      expect(transcript.controller!.offset, greaterThan(0));
+
       await tester.enterText(find.byKey(const Key('terminal-input')), 'clear');
       await tester.testTextInput.receiveAction(TextInputAction.send);
       await tester.pumpAndSettle();

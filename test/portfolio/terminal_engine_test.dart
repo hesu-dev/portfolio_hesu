@@ -1,3 +1,5 @@
+import 'dart:convert';
+
 import 'package:flutter_test/flutter_test.dart';
 import 'package:portfolio_hesu/portfolio/data/portfolio_data.dart';
 import 'package:portfolio_hesu/portfolio/terminal/terminal_engine.dart';
@@ -26,6 +28,7 @@ void main() {
           ('ls', '개인 프로젝트 목록'),
           ('whoami', '개발자 소개'),
           ('clear', '화면 지우기'),
+          ('help', '명령어 안내'),
         ],
       );
       expect(result.lines.join('\n'), isNot(contains('npm run dev')));
@@ -104,6 +107,33 @@ void main() {
       for (final project in portfolioData.projects) {
         expect(result.lines.join('\n'), isNot(contains(project.title)));
       }
+    });
+
+    test('git log decodes the build-time commit snapshot', () {
+      final encoded = base64Url.encode(
+        utf8.encode(
+          jsonEncode(<Map<String, String>>[
+            <String, String>{
+              'hash': 'abc1234',
+              'subject': 'feat(terminal): 최신 커밋 연결',
+            },
+            <String, String>{
+              'hash': 'def5678',
+              'subject': 'test(terminal): 명령 계약 보강',
+            },
+          ]),
+        ),
+      );
+
+      final history = resolveTerminalGitHistory(encodedSnapshot: encoded);
+
+      expect(
+        history.map((commit) => (commit.hash, commit.subject)).toList(),
+        <(String, String)>[
+          ('abc1234', 'feat(terminal): 최신 커밋 연결'),
+          ('def5678', 'test(terminal): 명령 계약 보강'),
+        ],
+      );
     });
 
     test('npm run dev is removed in favor of flutter run', () {
