@@ -350,7 +350,7 @@ class _TerminalInput extends StatelessWidget {
 }
 
 class _TerminalLine {
-  const _TerminalLine(this.text, {this.isCommand = false, this.helpEntry});
+  const _TerminalLine(this.text, {this.isCommand = false}) : helpEntry = null;
 
   const _TerminalLine.help(TerminalHelpEntry entry)
     : text = '',
