@@ -55,12 +55,30 @@ void main() {
       semantics.dispose();
     });
 
-    testWidgets('모든 기기의 화면 모드 선택 영역은 절반 폭으로 줄여 가운데 정렬한다', (tester) async {
-      for (final scenario in const <({Size size, bool compact, bool tablet})>[
-        (size: Size(820, 620), compact: false, tablet: false),
-        (size: Size(834, 1194), compact: false, tablet: true),
-        (size: Size(390, 844), compact: true, tablet: false),
-      ]) {
+    testWidgets('데스크톱은 선택 영역을 줄이고 모바일은 흰 카드를 전체 폭으로 유지한다', (tester) async {
+      for (final scenario
+          in const <
+            ({Size size, bool compact, bool tablet, double widthFactor})
+          >[
+            (
+              size: Size(820, 620),
+              compact: false,
+              tablet: false,
+              widthFactor: 0.5,
+            ),
+            (
+              size: Size(834, 1194),
+              compact: false,
+              tablet: true,
+              widthFactor: 1,
+            ),
+            (
+              size: Size(390, 844),
+              compact: true,
+              tablet: false,
+              widthFactor: 1,
+            ),
+          ]) {
         final controller = PortfolioThemeController();
 
         await _pumpSettings(
@@ -80,7 +98,7 @@ void main() {
         final choicesRect = tester.getRect(choices);
         expect(
           choicesRect.width,
-          closeTo(content.width * 0.5, 1),
+          closeTo(content.width * scenario.widthFactor, 1),
           reason: '${scenario.size}',
         );
         expect(
@@ -88,10 +106,104 @@ void main() {
           closeTo(content.center.dx, 1),
           reason: '${scenario.size}',
         );
+        if (scenario.tablet || scenario.compact) {
+          expect(
+            tester
+                .getSize(find.byKey(const Key('settings-mobile-mode-panel')))
+                .width,
+            closeTo(content.width, 1),
+            reason: '${scenario.size} 흰 카드는 본문 폭을 유지해야 합니다.',
+          );
+        }
         expect(tester.takeException(), isNull, reason: '${scenario.size}');
 
         await tester.pumpWidget(const SizedBox.shrink());
         controller.dispose();
+      }
+    });
+
+    testWidgets('모바일 선택지는 배경과 테두리 없이 한 줄 이름과 체크만 표시한다', (tester) async {
+      for (final scenario in const <({Size size, bool compact, bool tablet})>[
+        (size: Size(390, 844), compact: true, tablet: false),
+        (size: Size(834, 1194), compact: false, tablet: true),
+      ]) {
+        for (final preference in PortfolioThemePreference.values) {
+          final controller = PortfolioThemeController(initial: preference);
+
+          await _pumpSettings(
+            tester,
+            controller: controller,
+            size: scenario.size,
+            compact: scenario.compact,
+            tablet: scenario.tablet,
+          );
+
+          for (final mode in const <String>['light', 'dark']) {
+            final decoration = _choiceDecoration(tester, Key('theme-$mode'));
+            expect(
+              decoration.color,
+              Colors.transparent,
+              reason: '${scenario.size}/$mode 배경',
+            );
+            expect(
+              decoration.border,
+              isNull,
+              reason: '${scenario.size}/$mode 테두리',
+            );
+          }
+
+          for (final label in const <String>['라이트 모드', '다크 모드']) {
+            final text = tester.widget<Text>(find.text(label));
+            expect(text.maxLines, 1);
+            expect(text.softWrap, isFalse);
+            expect(
+              tester
+                  .renderObject<RenderParagraph>(find.text(label))
+                  .didExceedMaxLines,
+              isFalse,
+              reason: '${scenario.size}/$label',
+            );
+          }
+
+          final lightPreview = tester.getRect(
+            find.byKey(const Key('theme-preview-light')),
+          );
+          final darkPreview = tester.getRect(
+            find.byKey(const Key('theme-preview-dark')),
+          );
+          final maxPreviewWidth = scenario.tablet ? 176.0 : 72.0;
+          for (final mode in const <String>['light', 'dark']) {
+            final choice = tester.getRect(find.byKey(Key('theme-$mode')));
+            final preview = tester.getRect(
+              find.byKey(Key('theme-preview-$mode')),
+            );
+            expect(preview.width, lessThanOrEqualTo(maxPreviewWidth + 0.1));
+            expect(
+              preview.center.dx,
+              closeTo(choice.center.dx, 1),
+              reason: '${scenario.size}/$mode 미리보기 가운데 정렬',
+            );
+          }
+          expect(
+            darkPreview.left - lightPreview.right,
+            greaterThanOrEqualTo(32),
+            reason: '${scenario.size} 미리보기 사이 여백',
+          );
+          expect(
+            find.byKey(Key('theme-selected-${preference.name}')),
+            findsOneWidget,
+          );
+          expect(
+            find.descendant(
+              of: find.byKey(Key('theme-selected-${preference.name}')),
+              matching: find.byIcon(Icons.check_rounded),
+            ),
+            findsOneWidget,
+          );
+
+          await tester.pumpWidget(const SizedBox.shrink());
+          controller.dispose();
+        }
       }
     });
 
@@ -372,7 +484,10 @@ void main() {
             expect(preview.width, lessThanOrEqualTo(160));
           }
 
-          final label = mode == 'light' ? '라이트' : '다크';
+          final label = mode == 'light' ? '라이트 모드' : '다크 모드';
+          final labelWidget = tester.widget<Text>(find.text(label));
+          expect(labelWidget.maxLines, 1);
+          expect(labelWidget.softWrap, isFalse);
           final paragraph = tester.renderObject<RenderParagraph>(
             find.text(label),
           );
