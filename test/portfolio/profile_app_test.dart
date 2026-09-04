@@ -25,7 +25,15 @@ void main() {
 
         final launcher = find.byKey(const Key('home-app-profile'));
         expect(launcher, findsOneWidget);
-        expect(find.bySemanticsLabel('Open 프로필'), findsOneWidget);
+        final launcherSemantics = find.descendant(
+          of: launcher,
+          matching: find.byKey(const Key('apple-app-icon-profile')),
+        );
+        expect(launcherSemantics, findsOneWidget);
+        expect(
+          tester.getSemantics(launcherSemantics).getSemanticsData().label,
+          'Open 프로필',
+        );
         expect(find.byKey(const Key('about-app')), findsNothing);
 
         await tester.tap(launcher);
@@ -47,16 +55,19 @@ void main() {
       semantics.dispose();
     });
 
-    testWidgets('피드는 identity와 연락처를 유지하고 게시물·경력·교육만 집계한다', (tester) async {
+    testWidgets('피드는 identity와 단위가 있는 게시물·경력·교육 통계만 보여준다', (tester) async {
       final semantics = tester.ensureSemantics();
-      final data = _injectedProfileData();
-      final launcher = _RecordingLauncher();
+      final source = _injectedProfileData();
+      final data = _profileDataWithHistory(
+        source,
+        experiences: source.experiences.take(1),
+        education: source.education,
+      );
       await _pumpProfileShell(
         tester,
         size: const Size(390, 844),
         tablet: false,
         data: data,
-        launcher: launcher,
       );
 
       await _openProfile(tester);
@@ -75,13 +86,26 @@ void main() {
           reason: text,
         );
       }
-      expect(find.bySemanticsLabel('게시물 1개'), findsOneWidget);
-      expect(find.bySemanticsLabel('경력 3개'), findsOneWidget);
-      expect(find.bySemanticsLabel('교육 2개'), findsOneWidget);
+      expect(find.bySemanticsLabel('게시물 2개'), findsOneWidget);
+      expect(find.bySemanticsLabel('경력 3년'), findsOneWidget);
+      expect(find.bySemanticsLabel('교육 2번'), findsOneWidget);
       expect(find.bySemanticsLabel('프로젝트 1개'), findsNothing);
       expect(find.bySemanticsLabel('스킬 2개'), findsNothing);
-      expect(find.byKey(const Key('profile-github-action')), findsOneWidget);
-      expect(find.byKey(const Key('profile-mail-action')), findsOneWidget);
+      final stats = find.byKey(const Key('profile-stats'));
+      expect(
+        find.descendant(of: stats, matching: find.text('2개')),
+        findsOneWidget,
+      );
+      expect(
+        find.descendant(of: stats, matching: find.text('3년')),
+        findsOneWidget,
+      );
+      expect(
+        find.descendant(of: stats, matching: find.text('2번')),
+        findsOneWidget,
+      );
+      expect(find.byKey(const Key('profile-github-action')), findsNothing);
+      expect(find.byKey(const Key('profile-mail-action')), findsNothing);
       expect(find.byKey(const Key('profile-history-grid')), findsOneWidget);
       expect(find.byKey(const Key('profile-highlights')), findsNothing);
       expect(find.byKey(const Key('profile-project-grid')), findsNothing);
@@ -90,24 +114,10 @@ void main() {
       expect(find.text(_sentinelProjectTitle), findsNothing);
       expect(find.text(_sentinelProjectDescription), findsNothing);
       expect(_fakeSocialMetricTextInside(profile), findsNothing);
-
-      await tester.ensureVisible(
-        find.byKey(const Key('profile-github-action')),
-      );
-      await tester.tap(find.byKey(const Key('profile-github-action')));
-      await tester.pumpAndSettle();
-      await tester.ensureVisible(find.byKey(const Key('profile-mail-action')));
-      await tester.tap(find.byKey(const Key('profile-mail-action')));
-      await tester.pumpAndSettle();
-
-      expect(launcher.uris, <Uri>[
-        Uri.parse(data.identity.githubUrl),
-        Uri.parse('mailto:${data.identity.email}'),
-      ]);
       semantics.dispose();
     });
 
-    testWidgets('경력과 교육은 하나의 정사각형 게시물로만 피드에 배치한다', (tester) async {
+    testWidgets('경력과 교육은 각각 하나의 정사각형 게시물로 피드에 배치한다', (tester) async {
       final semantics = tester.ensureSemantics();
       final data = _injectedProfileData();
       for (final scenario in const <(String, Size, bool)>[
@@ -124,10 +134,24 @@ void main() {
         await _openProfile(tester);
 
         final grid = find.byKey(const Key('profile-history-grid'));
-        final post = find.byKey(const Key('profile-history-post'));
+        final experiencePost = find.byKey(
+          const Key('profile-history-post-experience'),
+        );
+        final educationPost = find.byKey(
+          const Key('profile-history-post-education'),
+        );
         expect(grid, findsOneWidget, reason: scenario.$1);
-        await _ensureCardBuilt(tester, post);
-        expect(find.descendant(of: grid, matching: post), findsOneWidget);
+        for (final post in <Finder>[experiencePost, educationPost]) {
+          await _ensureCardBuilt(tester, post);
+          expect(find.descendant(of: grid, matching: post), findsOneWidget);
+          final postRect = tester.getRect(post);
+          expect(postRect.width, greaterThan(0), reason: scenario.$1);
+          expect(
+            postRect.width,
+            closeTo(postRect.height, 0.5),
+            reason: scenario.$1,
+          );
+        }
         expect(
           _widgetsWithKeyPrefixInside(grid, 'profile-history-card-experience-'),
           findsNothing,
@@ -136,26 +160,30 @@ void main() {
           _widgetsWithKeyPrefixInside(grid, 'profile-history-card-education-'),
           findsNothing,
         );
-        _expectButtonSemantics(tester, post, label: '경력과 교육 게시물 열기');
+        expect(find.byKey(const Key('profile-history-post')), findsNothing);
+        _expectButtonSemantics(tester, experiencePost, label: '경력 게시물 열기');
+        _expectButtonSemantics(tester, educationPost, label: '교육 게시물 열기');
         expect(
-          find.descendant(of: post, matching: find.text('경력 · 교육')),
-          findsOneWidget,
+          find.descendant(of: experiencePost, matching: find.text('경력')),
+          findsWidgets,
         );
         expect(
           find.descendant(
-            of: post,
-            matching: find.text(
-              '경력 ${data.experiences.length}개 · 교육 ${data.education.length}개',
-            ),
+            of: experiencePost,
+            matching: find.text('경력 ${data.experiences.length}개'),
           ),
           findsOneWidget,
         );
-        final postRect = tester.getRect(post);
-        expect(postRect.width, greaterThan(0), reason: scenario.$1);
         expect(
-          postRect.width,
-          closeTo(postRect.height, 0.5),
-          reason: scenario.$1,
+          find.descendant(of: educationPost, matching: find.text('교육')),
+          findsWidgets,
+        );
+        expect(
+          find.descendant(
+            of: educationPost,
+            matching: find.text('교육 ${data.education.length}개'),
+          ),
+          findsOneWidget,
         );
       }
       semantics.dispose();
@@ -171,7 +199,10 @@ void main() {
         data: data,
       );
       await _openProfile(tester);
-      await _openHistoryCard(tester, const Key('profile-history-post'));
+      await _openHistoryCard(
+        tester,
+        const Key('profile-history-post-experience'),
+      );
 
       _expectReelTemplate(tester, data: data);
       expect(tester.takeException(), isNull);
@@ -191,7 +222,10 @@ void main() {
           data: _injectedProfileData(),
         );
         await _openProfile(tester);
-        await _openHistoryCard(tester, const Key('profile-history-post'));
+        await _openHistoryCard(
+          tester,
+          const Key('profile-history-post-experience'),
+        );
 
         final detail = find.byKey(const Key('profile-history-detail'));
         final overlay = find.byKey(const Key('profile-reel-overlay'));
@@ -247,7 +281,10 @@ void main() {
           data: _injectedProfileData(),
         );
         await _openProfile(tester);
-        await _openHistoryCard(tester, const Key('profile-history-post'));
+        await _openHistoryCard(
+          tester,
+          const Key('profile-history-post-experience'),
+        );
 
         final overlay = find.byKey(const Key('profile-reel-overlay'));
         final mediaSlot = find.byKey(const Key('profile-reel-media-slot'));
@@ -327,7 +364,10 @@ void main() {
         data: _injectedProfileData(),
       );
       await _openProfile(tester);
-      await _openHistoryCard(tester, const Key('profile-history-post'));
+      await _openHistoryCard(
+        tester,
+        const Key('profile-history-post-experience'),
+      );
 
       final detail = find.byKey(const Key('profile-history-detail'));
       final actionRail = find.byKey(const Key('profile-reel-action-rail'));
@@ -400,7 +440,7 @@ void main() {
       semantics.dispose();
     });
 
-    testWidgets('좋아요는 단일 게시물을 다시 열어도 보존된다', (tester) async {
+    testWidgets('좋아요는 같은 게시물에 보존되고 경력·교육 사이에서 분리된다', (tester) async {
       final semantics = tester.ensureSemantics();
       await _pumpProfileShell(
         tester,
@@ -409,7 +449,10 @@ void main() {
         data: _injectedProfileData(),
       );
       await _openProfile(tester);
-      await _openHistoryCard(tester, const Key('profile-history-post'));
+      await _openHistoryCard(
+        tester,
+        const Key('profile-history-post-experience'),
+      );
 
       var likeAction = find.byKey(const Key('profile-reel-like-action'));
       await tester.tap(likeAction);
@@ -418,7 +461,10 @@ void main() {
 
       await tester.tap(find.byKey(const Key('mobile-back-close-profile')));
       await tester.pumpAndSettle();
-      await _openHistoryCard(tester, const Key('profile-history-post'));
+      await _openHistoryCard(
+        tester,
+        const Key('profile-history-post-experience'),
+      );
 
       likeAction = find.byKey(const Key('profile-reel-like-action'));
       _expectButtonSemantics(tester, likeAction, label: '좋아요 취소');
@@ -428,6 +474,23 @@ void main() {
       );
       expect(persistedHeart, findsOneWidget);
       expect(tester.widget<Icon>(persistedHeart).color, AppleTheme.red);
+
+      await tester.tap(find.byKey(const Key('mobile-back-close-profile')));
+      await tester.pumpAndSettle();
+      await _openHistoryCard(
+        tester,
+        const Key('profile-history-post-education'),
+      );
+
+      likeAction = find.byKey(const Key('profile-reel-like-action'));
+      _expectButtonSemantics(tester, likeAction, label: '좋아요');
+      expect(
+        find.descendant(
+          of: likeAction,
+          matching: find.byIcon(Icons.favorite_border_rounded),
+        ),
+        findsOneWidget,
+      );
       semantics.dispose();
     });
 
@@ -441,7 +504,10 @@ void main() {
         data: original,
       );
       await _openProfile(tester);
-      await _openHistoryCard(tester, const Key('profile-history-post'));
+      await _openHistoryCard(
+        tester,
+        const Key('profile-history-post-experience'),
+      );
 
       final profileState = tester.state(find.byType(ProfileApp));
       var likeAction = find.byKey(const Key('profile-reel-like-action'));
@@ -524,7 +590,10 @@ void main() {
           .position;
       expect(feedPosition.pixels, closeTo(0, 0.5));
 
-      await _openHistoryCard(tester, const Key('profile-history-post'));
+      await _openHistoryCard(
+        tester,
+        const Key('profile-history-post-experience'),
+      );
       likeAction = find.byKey(const Key('profile-reel-like-action'));
       _expectButtonSemantics(tester, likeAction, label: '좋아요');
       expect(
@@ -546,7 +615,10 @@ void main() {
         data: _injectedProfileData(),
       );
       await _openProfile(tester);
-      await _openHistoryCard(tester, const Key('profile-history-post'));
+      await _openHistoryCard(
+        tester,
+        const Key('profile-history-post-experience'),
+      );
 
       final detail = find.byKey(const Key('profile-history-detail'));
       final detailScroll = find.byKey(
@@ -605,34 +677,45 @@ void main() {
       semantics.dispose();
     });
 
-    testWidgets('답글은 실제 경력 다음 교육을 연속 서술하고 링크를 해당 교육에만 둔다', (tester) async {
+    testWidgets('경력 게시물은 실제 경력만 각각의 답글로 서술한다', (tester) async {
       final semantics = tester.ensureSemantics();
       final data = _injectedProfileData();
-      final launcher = _RecordingLauncher();
       await _pumpProfileShell(
         tester,
         size: const Size(390, 844),
         tablet: false,
         data: data,
-        launcher: launcher,
       );
       await _openProfile(tester);
-      await _openHistoryCard(tester, const Key('profile-history-post'));
+      await _openHistoryCard(
+        tester,
+        const Key('profile-history-post-experience'),
+      );
 
       final detail = find.byKey(const Key('profile-history-detail'));
       final overlay = find.byKey(const Key('profile-reel-overlay'));
+      final info = find.byKey(const Key('profile-reel-info'));
       final thread = find.byKey(const Key('profile-reel-reply-thread'));
       expect(thread, findsOneWidget);
       expect(
         tester.getRect(overlay).bottom,
         lessThanOrEqualTo(tester.getRect(thread).top),
       );
+      expect(
+        find.descendant(of: info, matching: find.text('경력')),
+        findsOneWidget,
+      );
+      expect(
+        find.descendant(
+          of: info,
+          matching: find.text('경력 ${data.experiences.length}개'),
+        ),
+        findsOneWidget,
+      );
 
       final expectedItemKeys = <String>[
         for (var index = 0; index < data.experiences.length; index++)
           'profile-reel-reply-item-experience-$index',
-        for (var index = 0; index < data.education.length; index++)
-          'profile-reel-reply-item-education-$index',
       ];
       final replyItems = _widgetsWithKeyPrefixInside(
         thread,
@@ -644,7 +727,14 @@ void main() {
           return (element.widget.key! as ValueKey<String>).value;
         }).toList(),
         expectedItemKeys,
-        reason: '경력 전체 다음에 교육 전체가 연속해야 한다.',
+        reason: '경력 게시물에는 경력 답글만 원본 순서로 이어져야 한다.',
+      );
+      expect(
+        _widgetsWithKeyPrefixInside(
+          thread,
+          'profile-reel-reply-item-education-',
+        ),
+        findsNothing,
       );
       expect(
         _widgetsWithKeyPrefixInside(thread, 'profile-reel-reply-author-'),
@@ -683,6 +773,78 @@ void main() {
         );
       }
 
+      for (final education in data.education) {
+        expect(
+          find.descendant(of: thread, matching: find.text(education.program)),
+          findsNothing,
+        );
+      }
+      expect(
+        find.byKey(const Key('profile-reel-comment-composer')),
+        findsNothing,
+      );
+      expect(
+        find.descendant(of: detail, matching: find.byType(TextField)),
+        findsNothing,
+      );
+      semantics.dispose();
+    });
+
+    testWidgets('교육 게시물은 실제 교육만 각각의 답글로 서술하고 링크를 유지한다', (tester) async {
+      final semantics = tester.ensureSemantics();
+      final data = _injectedProfileData();
+      final launcher = _RecordingLauncher();
+      await _pumpProfileShell(
+        tester,
+        size: const Size(390, 844),
+        tablet: false,
+        data: data,
+        launcher: launcher,
+      );
+      await _openProfile(tester);
+      await _openHistoryCard(
+        tester,
+        const Key('profile-history-post-education'),
+      );
+
+      final detail = find.byKey(const Key('profile-history-detail'));
+      final info = find.byKey(const Key('profile-reel-info'));
+      final thread = find.byKey(const Key('profile-reel-reply-thread'));
+      expect(
+        find.descendant(of: info, matching: find.text('교육')),
+        findsOneWidget,
+      );
+      expect(
+        find.descendant(
+          of: info,
+          matching: find.text('교육 ${data.education.length}개'),
+        ),
+        findsOneWidget,
+      );
+      final expectedItemKeys = <String>[
+        for (var index = 0; index < data.education.length; index++)
+          'profile-reel-reply-item-education-$index',
+      ];
+      final replyItems = _widgetsWithKeyPrefixInside(
+        thread,
+        'profile-reel-reply-item-',
+      );
+      expect(replyItems, findsNWidgets(expectedItemKeys.length));
+      expect(
+        replyItems.evaluate().map((element) {
+          return (element.widget.key! as ValueKey<String>).value;
+        }).toList(),
+        expectedItemKeys,
+        reason: '교육 게시물에는 교육 답글만 원본 순서로 이어져야 한다.',
+      );
+      expect(
+        _widgetsWithKeyPrefixInside(
+          thread,
+          'profile-reel-reply-item-experience-',
+        ),
+        findsNothing,
+      );
+
       for (var index = 0; index < data.education.length; index++) {
         final education = data.education[index];
         _expectReplyItem(
@@ -697,6 +859,12 @@ void main() {
             education.period,
             if (education.link case final link?) link.label,
           ],
+        );
+      }
+      for (final experience in data.experiences) {
+        expect(
+          find.descendant(of: thread, matching: find.text(experience.role)),
+          findsNothing,
         );
       }
 
@@ -791,7 +959,10 @@ void main() {
           reason: scenario.$1,
         );
 
-        await _openHistoryCard(tester, const Key('profile-history-post'));
+        await _openHistoryCard(
+          tester,
+          const Key('profile-history-post-experience'),
+        );
         expect(
           find.byKey(const Key('mobile-app-navigation-bar')),
           findsOneWidget,
@@ -838,8 +1009,8 @@ void main() {
     testWidgets('상세에서 돌아오면 iPhone과 iPad 피드의 비영 스크롤 위치를 복원한다', (tester) async {
       final data = _injectedProfileData();
       for (final scenario in const <(String, Size, bool)>[
-        ('iPhone', Size(390, 560), false),
-        ('iPad', Size(834, 620), true),
+        ('iPhone', Size(390, 420), false),
+        ('iPad', Size(834, 420), true),
       ]) {
         await tester.pumpWidget(const SizedBox.shrink());
         await _pumpProfileShell(
@@ -850,7 +1021,7 @@ void main() {
         );
         await _openProfile(tester);
 
-        final card = find.byKey(const Key('profile-history-post'));
+        final card = find.byKey(const Key('profile-history-post-education'));
         await _ensureCardBuilt(tester, card);
         await tester.ensureVisible(card);
         await tester.pumpAndSettle();
@@ -918,12 +1089,18 @@ void main() {
               .color;
           expect(find.byKey(const Key('profile-scroll')), findsOneWidget);
           expect(find.byKey(const Key('profile-history-grid')), findsOneWidget);
-          final firstCard = find.byKey(const Key('profile-history-post'));
+          final firstCard = find.byKey(
+            const Key('profile-history-post-experience'),
+          );
           await _ensureCardBuilt(tester, firstCard);
           await tester.ensureVisible(firstCard);
           await tester.pumpAndSettle();
-          final metadata = find.byKey(const Key('profile-history-post-meta'));
-          final title = find.byKey(const Key('profile-history-post-title'));
+          final metadata = find.byKey(
+            const Key('profile-history-post-meta-experience'),
+          );
+          final title = find.byKey(
+            const Key('profile-history-post-title-experience'),
+          );
           expect(metadata, findsOneWidget);
           expect(title, findsOneWidget);
           expect(
@@ -942,7 +1119,10 @@ void main() {
             reason: '${formFactor.$1} $brightness feed',
           );
 
-          await _openHistoryCard(tester, const Key('profile-history-post'));
+          await _openHistoryCard(
+            tester,
+            const Key('profile-history-post-experience'),
+          );
           expect(
             find.byKey(const Key('profile-history-detail')),
             findsOneWidget,
@@ -965,7 +1145,10 @@ void main() {
 
           await tester.tap(find.byKey(const Key('mobile-back-close-profile')));
           await tester.pumpAndSettle();
-          await _openHistoryCard(tester, const Key('profile-history-post'));
+          await _openHistoryCard(
+            tester,
+            const Key('profile-history-post-education'),
+          );
           expect(
             find.byKey(const Key('profile-history-detail')),
             findsOneWidget,
@@ -1002,7 +1185,10 @@ void main() {
           const Key('profile-scroll'),
           reason: '${scenario.$1} feed',
         );
-        await _openHistoryCard(tester, const Key('profile-history-post'));
+        await _openHistoryCard(
+          tester,
+          const Key('profile-history-post-experience'),
+        );
         await _expectTouchAndMouseScroll(
           tester,
           const Key('profile-history-detail-scroll'),

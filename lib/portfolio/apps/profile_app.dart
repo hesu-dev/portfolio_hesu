@@ -33,16 +33,16 @@ class ProfileApp extends StatefulWidget {
 
 class _ProfileAppState extends State<ProfileApp> {
   final ScrollController _rootScrollController = ScrollController();
-  bool _historyLiked = false;
-  bool _historyOpen = false;
+  final Set<_ProfileHistoryKind> _likedHistory = <_ProfileHistoryKind>{};
+  _ProfileHistoryKind? _selectedHistoryKind;
   double _rootScrollOffset = 0;
 
   @override
   void didUpdateWidget(covariant ProfileApp oldWidget) {
     super.didUpdateWidget(oldWidget);
     if (!_hasSameHistory(oldWidget.data, widget.data)) {
-      _historyOpen = false;
-      _historyLiked = false;
+      _selectedHistoryKind = null;
+      _likedHistory.clear();
       _rootScrollOffset = 0;
       _scheduleRootScrollRestore();
     }
@@ -111,20 +111,24 @@ class _ProfileAppState extends State<ProfileApp> {
     });
   }
 
-  void _openHistory() {
+  void _openHistory(_ProfileHistoryKind kind) {
     if (_rootScrollController.hasClients) {
       _rootScrollOffset = _rootScrollController.offset;
     }
-    setState(() => _historyOpen = true);
+    setState(() => _selectedHistoryKind = kind);
   }
 
-  void _toggleHistoryLike() {
-    setState(() => _historyLiked = !_historyLiked);
+  void _toggleHistoryLike(_ProfileHistoryKind kind) {
+    setState(() {
+      if (!_likedHistory.remove(kind)) {
+        _likedHistory.add(kind);
+      }
+    });
   }
 
   void _handleLeadingAction() {
-    if (_historyOpen) {
-      setState(() => _historyOpen = false);
+    if (_selectedHistoryKind != null) {
+      setState(() => _selectedHistoryKind = null);
       _scheduleRootScrollRestore();
       return;
     }
@@ -133,6 +137,7 @@ class _ProfileAppState extends State<ProfileApp> {
 
   @override
   Widget build(BuildContext context) {
+    final selectedHistoryKind = _selectedHistoryKind;
     final label = AppleAppIcon.labelFor(PortfolioAppId.profile);
 
     return SizedBox.expand(
@@ -151,17 +156,16 @@ class _ProfileAppState extends State<ProfileApp> {
               leading: MobileBackCloseButton(
                 appId: PortfolioAppId.profile,
                 windowLabel: label,
-                action: _historyOpen
+                action: selectedHistoryKind != null
                     ? MobileBackCloseAction.back
                     : MobileBackCloseAction.close,
                 onPressed: _handleLeadingAction,
               ),
             ),
             Expanded(
-              child: !_historyOpen
+              child: selectedHistoryKind == null
                   ? _ProfileFeed(
                       data: widget.data,
-                      launcher: widget.launcher,
                       compact: widget.compact,
                       tablet: widget.tablet,
                       scrollController: _rootScrollController,
@@ -170,8 +174,10 @@ class _ProfileAppState extends State<ProfileApp> {
                   : _ProfileHistoryDetail(
                       data: widget.data,
                       launcher: widget.launcher,
-                      liked: _historyLiked,
-                      onToggleLike: _toggleHistoryLike,
+                      kind: selectedHistoryKind,
+                      liked: _likedHistory.contains(selectedHistoryKind),
+                      onToggleLike: () =>
+                          _toggleHistoryLike(selectedHistoryKind),
                       compact: widget.compact,
                       tablet: widget.tablet,
                     ),
@@ -186,7 +192,6 @@ class _ProfileAppState extends State<ProfileApp> {
 class _ProfileFeed extends StatelessWidget {
   const _ProfileFeed({
     required this.data,
-    required this.launcher,
     required this.compact,
     required this.tablet,
     required this.scrollController,
@@ -194,11 +199,10 @@ class _ProfileFeed extends StatelessWidget {
   });
 
   final PortfolioData data;
-  final ExternalLauncher launcher;
   final bool compact;
   final bool tablet;
   final ScrollController scrollController;
-  final VoidCallback onOpenHistory;
+  final ValueChanged<_ProfileHistoryKind> onOpenHistory;
 
   @override
   Widget build(BuildContext context) {
@@ -226,8 +230,6 @@ class _ProfileFeed extends StatelessWidget {
                   crossAxisAlignment: CrossAxisAlignment.stretch,
                   children: <Widget>[
                     _ProfileSummary(data: data, compact: compact),
-                    SizedBox(height: compact ? 24 : 30),
-                    _ProfileActions(data: data, launcher: launcher),
                     SizedBox(height: compact ? 28 : 34),
                     Divider(height: 1, color: AppleTheme.separator(context)),
                     SizedBox(height: compact ? 3 : 4),
@@ -254,9 +256,9 @@ class _ProfileSummary extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final postCount = data.experiences.isEmpty && data.education.isEmpty
-        ? 0
-        : 1;
+    final postCount =
+        (data.experiences.isNotEmpty ? 1 : 0) +
+        (data.education.isNotEmpty ? 1 : 0);
 
     return Column(
       key: const Key('profile-summary'),
@@ -274,23 +276,23 @@ class _ProfileSummary extends StatelessWidget {
                 children: <Widget>[
                   Expanded(
                     child: _ProfileStat(
-                      count: postCount,
+                      value: '$postCount개',
                       label: '게시물',
                       semanticsLabel: '게시물 $postCount개',
                     ),
                   ),
                   Expanded(
                     child: _ProfileStat(
-                      count: data.experiences.length,
+                      value: '$_profileCareerYears년',
                       label: '경력',
-                      semanticsLabel: '경력 ${data.experiences.length}개',
+                      semanticsLabel: '경력 $_profileCareerYears년',
                     ),
                   ),
                   Expanded(
                     child: _ProfileStat(
-                      count: data.education.length,
+                      value: '${data.education.length}번',
                       label: '교육',
-                      semanticsLabel: '교육 ${data.education.length}개',
+                      semanticsLabel: '교육 ${data.education.length}번',
                     ),
                   ),
                 ],
@@ -403,12 +405,12 @@ class _ProfileAvatar extends StatelessWidget {
 
 class _ProfileStat extends StatelessWidget {
   const _ProfileStat({
-    required this.count,
+    required this.value,
     required this.label,
     required this.semanticsLabel,
   });
 
-  final int count;
+  final String value;
   final String label;
   final String semanticsLabel;
 
@@ -422,7 +424,7 @@ class _ProfileStat extends StatelessWidget {
           mainAxisSize: MainAxisSize.min,
           children: <Widget>[
             Text(
-              '$count',
+              value,
               maxLines: 1,
               style: Theme.of(context).textTheme.titleLarge?.copyWith(
                 color: AppleTheme.primaryLabel(context),
@@ -446,99 +448,11 @@ class _ProfileStat extends StatelessWidget {
   }
 }
 
-class _ProfileActions extends StatelessWidget {
-  const _ProfileActions({required this.data, required this.launcher});
-
-  final PortfolioData data;
-  final ExternalLauncher launcher;
-
-  Future<void> _launch(Uri uri) async {
-    try {
-      await launcher.launch(uri);
-    } catch (_) {
-      // External navigation should never interrupt the portfolio surface.
-    }
-  }
-
-  @override
-  Widget build(BuildContext context) {
-    final largeText = MediaQuery.textScalerOf(context).scale(1) > 1.4;
-    return LayoutBuilder(
-      builder: (context, constraints) {
-        final stackActions = largeText || constraints.maxWidth < 340;
-        final actions = <Widget>[
-          _ProfileActionButton(
-            key: const Key('profile-github-action'),
-            icon: Icons.code_rounded,
-            label: 'GitHub',
-            onPressed: () => _launch(Uri.parse(data.identity.githubUrl)),
-          ),
-          _ProfileActionButton(
-            key: const Key('profile-mail-action'),
-            icon: Icons.mail_outline_rounded,
-            label: '이메일',
-            onPressed: () => _launch(Uri.parse(data.mailUrl)),
-          ),
-        ];
-
-        if (stackActions) {
-          return Column(
-            crossAxisAlignment: CrossAxisAlignment.stretch,
-            children: <Widget>[
-              actions.first,
-              const SizedBox(height: 10),
-              actions.last,
-            ],
-          );
-        }
-
-        return Row(
-          children: <Widget>[
-            Expanded(child: actions.first),
-            const SizedBox(width: 10),
-            Expanded(child: actions.last),
-          ],
-        );
-      },
-    );
-  }
-}
-
-class _ProfileActionButton extends StatelessWidget {
-  const _ProfileActionButton({
-    required this.icon,
-    required this.label,
-    required this.onPressed,
-    super.key,
-  });
-
-  final IconData icon;
-  final String label;
-  final VoidCallback onPressed;
-
-  @override
-  Widget build(BuildContext context) {
-    return OutlinedButton.icon(
-      onPressed: onPressed,
-      style: OutlinedButton.styleFrom(
-        foregroundColor: AppleTheme.primaryLabel(context),
-        backgroundColor: AppleTheme.surface(context),
-        side: BorderSide(color: AppleTheme.separator(context)),
-        minimumSize: const Size(44, 44),
-        padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
-        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
-      ),
-      icon: Icon(icon, size: 19),
-      label: Text(label, maxLines: 1, overflow: TextOverflow.ellipsis),
-    );
-  }
-}
-
 class _ProfileHistoryGrid extends StatelessWidget {
   const _ProfileHistoryGrid({required this.data, required this.onOpenHistory});
 
   final PortfolioData data;
-  final VoidCallback onOpenHistory;
+  final ValueChanged<_ProfileHistoryKind> onOpenHistory;
 
   @override
   Widget build(BuildContext context) {
@@ -565,17 +479,30 @@ class _ProfileHistoryGrid extends StatelessWidget {
           spacing: spacing,
           runSpacing: spacing,
           children: <Widget>[
-            SizedBox(
-              width: tileWidth,
-              child: _ProfileHistoryCard(
-                key: const Key('profile-history-post'),
-                label: '경력과 교육 게시물 열기',
-                title: '경력 · 교육',
-                summary:
-                    '경력 ${data.experiences.length}개 · 교육 ${data.education.length}개',
-                onTap: onOpenHistory,
+            if (data.experiences.isNotEmpty)
+              SizedBox(
+                width: tileWidth,
+                child: _ProfileHistoryCard(
+                  key: const Key('profile-history-post-experience'),
+                  label: '경력 게시물 열기',
+                  title: '경력',
+                  summary: '경력 ${data.experiences.length}개',
+                  kind: _ProfileHistoryKind.experience,
+                  onTap: () => onOpenHistory(_ProfileHistoryKind.experience),
+                ),
               ),
-            ),
+            if (data.education.isNotEmpty)
+              SizedBox(
+                width: tileWidth,
+                child: _ProfileHistoryCard(
+                  key: const Key('profile-history-post-education'),
+                  label: '교육 게시물 열기',
+                  title: '교육',
+                  summary: '교육 ${data.education.length}개',
+                  kind: _ProfileHistoryKind.education,
+                  onTap: () => onOpenHistory(_ProfileHistoryKind.education),
+                ),
+              ),
           ],
         );
       },
@@ -588,6 +515,7 @@ class _ProfileHistoryCard extends StatelessWidget {
     required this.label,
     required this.title,
     required this.summary,
+    required this.kind,
     required this.onTap,
     super.key,
   });
@@ -595,12 +523,19 @@ class _ProfileHistoryCard extends StatelessWidget {
   final String label;
   final String title;
   final String summary;
+  final _ProfileHistoryKind kind;
   final VoidCallback onTap;
 
   @override
   Widget build(BuildContext context) {
-    final accent = _profileAccents.first;
-    final companion = AppleTheme.indigo;
+    final kindName = kind.name;
+    final accent = kind == _ProfileHistoryKind.experience
+        ? _profileAccents.first
+        : AppleTheme.orange;
+    final companion = kind == _ProfileHistoryKind.experience
+        ? AppleTheme.indigo
+        : AppleTheme.red;
+    final seed = kind == _ProfileHistoryKind.experience ? 0 : 1;
     final dark = AppleTheme.isDark(context);
 
     return Semantics(
@@ -639,7 +574,7 @@ class _ProfileHistoryCard extends StatelessWidget {
                       painter: _ProfileArtworkPainter(
                         accent: accent,
                         companion: companion,
-                        seed: 0,
+                        seed: seed,
                       ),
                     ),
                     Positioned(
@@ -648,7 +583,7 @@ class _ProfileHistoryCard extends StatelessWidget {
                       right: 7,
                       height: 40,
                       child: Column(
-                        key: const Key('profile-history-post-meta'),
+                        key: Key('profile-history-post-meta-$kindName'),
                         crossAxisAlignment: CrossAxisAlignment.start,
                         children: <Widget>[
                           Container(
@@ -661,7 +596,7 @@ class _ProfileHistoryCard extends StatelessWidget {
                               borderRadius: BorderRadius.circular(999),
                             ),
                             child: Text(
-                              '프로필',
+                              title,
                               maxLines: 1,
                               textScaler: MediaQuery.textScalerOf(
                                 context,
@@ -699,7 +634,7 @@ class _ProfileHistoryCard extends StatelessWidget {
                       bottom: 0,
                       height: 46,
                       child: Container(
-                        key: const Key('profile-history-post-title'),
+                        key: Key('profile-history-post-title-$kindName'),
                         width: double.infinity,
                         alignment: Alignment.bottomLeft,
                         padding: const EdgeInsets.fromLTRB(8, 8, 8, 5),
@@ -743,6 +678,7 @@ class _ProfileHistoryDetail extends StatefulWidget {
   const _ProfileHistoryDetail({
     required this.data,
     required this.launcher,
+    required this.kind,
     required this.liked,
     required this.onToggleLike,
     required this.compact,
@@ -751,6 +687,7 @@ class _ProfileHistoryDetail extends StatefulWidget {
 
   final PortfolioData data;
   final ExternalLauncher launcher;
+  final _ProfileHistoryKind kind;
   final bool liked;
   final VoidCallback onToggleLike;
   final bool compact;
@@ -798,8 +735,10 @@ class _ProfileHistoryDetailState extends State<_ProfileHistoryDetail> {
 
   @override
   Widget build(BuildContext context) {
-    final kindLabel = '경력 ${widget.data.experiences.length}개';
-    final period = '교육 ${widget.data.education.length}개';
+    final title = widget.kind == _ProfileHistoryKind.experience ? '경력' : '교육';
+    final itemCount = widget.kind == _ProfileHistoryKind.experience
+        ? widget.data.experiences.length
+        : widget.data.education.length;
 
     return SizedBox.expand(
       key: const Key('profile-history-detail'),
@@ -822,10 +761,9 @@ class _ProfileHistoryDetailState extends State<_ProfileHistoryDetail> {
                       child: _ProfileReelOverlay(
                         compact: widget.compact,
                         liked: widget.liked,
-                        kindLabel: kindLabel,
-                        title: '경력과 교육',
+                        title: title,
                         organization: widget.data.identity.headline,
-                        period: period,
+                        metadata: '$title $itemCount개',
                         name: widget.data.identity.name,
                         monogram: widget.data.monogram,
                         onCamera: _acknowledgeAction,
@@ -837,6 +775,7 @@ class _ProfileHistoryDetailState extends State<_ProfileHistoryDetail> {
                     _ProfileReplyThread(
                       key: _replyThreadKey,
                       data: widget.data,
+                      kind: widget.kind,
                       compact: widget.compact,
                       tablet: widget.tablet,
                       onLaunch: _launch,
@@ -856,10 +795,9 @@ class _ProfileReelOverlay extends StatelessWidget {
   const _ProfileReelOverlay({
     required this.compact,
     required this.liked,
-    required this.kindLabel,
     required this.title,
     required this.organization,
-    required this.period,
+    required this.metadata,
     required this.name,
     required this.monogram,
     required this.onCamera,
@@ -870,10 +808,9 @@ class _ProfileReelOverlay extends StatelessWidget {
 
   final bool compact;
   final bool liked;
-  final String kindLabel;
   final String title;
   final String organization;
-  final String period;
+  final String metadata;
   final String name;
   final String monogram;
   final VoidCallback onCamera;
@@ -996,7 +933,7 @@ class _ProfileReelOverlay extends StatelessWidget {
               ),
               const SizedBox(height: 4),
               Text(
-                '$kindLabel · $period',
+                metadata,
                 maxLines: 2,
                 overflow: TextOverflow.ellipsis,
                 style: AppleTheme.caption(context).copyWith(
@@ -1143,6 +1080,7 @@ class _ProfileReelAccountRow extends StatelessWidget {
 class _ProfileReplyThread extends StatelessWidget {
   const _ProfileReplyThread({
     required this.data,
+    required this.kind,
     required this.compact,
     required this.tablet,
     required this.onLaunch,
@@ -1150,33 +1088,38 @@ class _ProfileReplyThread extends StatelessWidget {
   });
 
   final PortfolioData data;
+  final _ProfileHistoryKind kind;
   final bool compact;
   final bool tablet;
   final Future<void> Function(Uri uri) onLaunch;
 
   @override
   Widget build(BuildContext context) {
-    final items = <Widget>[
-      for (final entry in data.experiences.indexed)
-        _ProfileReplyItem.experience(
-          key: Key('profile-reel-reply-item-experience-${entry.$1}'),
-          identityName: data.identity.name,
-          monogram: data.monogram,
-          index: entry.$1,
-          experience: entry.$2,
-          compact: compact,
-        ),
-      for (final entry in data.education.indexed)
-        _ProfileReplyItem.education(
-          key: Key('profile-reel-reply-item-education-${entry.$1}'),
-          identityName: data.identity.name,
-          monogram: data.monogram,
-          index: entry.$1,
-          education: entry.$2,
-          compact: compact,
-          onLaunch: onLaunch,
-        ),
-    ];
+    final items = switch (kind) {
+      _ProfileHistoryKind.experience => <Widget>[
+        for (final entry in data.experiences.indexed)
+          _ProfileReplyItem.experience(
+            key: Key('profile-reel-reply-item-experience-${entry.$1}'),
+            identityName: data.identity.name,
+            monogram: data.monogram,
+            index: entry.$1,
+            experience: entry.$2,
+            compact: compact,
+          ),
+      ],
+      _ProfileHistoryKind.education => <Widget>[
+        for (final entry in data.education.indexed)
+          _ProfileReplyItem.education(
+            key: Key('profile-reel-reply-item-education-${entry.$1}'),
+            identityName: data.identity.name,
+            monogram: data.monogram,
+            index: entry.$1,
+            education: entry.$2,
+            compact: compact,
+            onLaunch: onLaunch,
+          ),
+      ],
+    };
 
     final horizontalPadding = compact ? 14.0 : (tablet ? 30.0 : 24.0);
 
@@ -1531,6 +1474,8 @@ class _ProfileArtworkPainter extends CustomPainter {
 }
 
 enum _ProfileHistoryKind { experience, education }
+
+const int _profileCareerYears = 3;
 
 const List<Color> _profileAccents = <Color>[
   Color(0xFFE1306C),

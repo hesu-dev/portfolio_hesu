@@ -4,7 +4,7 @@
 
 **Goal:** Replace the static career/education detail card with an image-ready Instagram Reels overlay whose like and comment controls work, and render the real career and education data as a continuous reply thread below it.
 
-**Architecture:** Collapse career and education into one aggregate profile post instead of creating one feed post per history item. Its detail is one vertical `CustomScrollView`: an image-free media slot contains the Reels top bar, right action rail, and bottom account/caption overlay; every experience and education item is then mapped to its own accessible reply row below the slot. One boolean like state belongs to the aggregate post, and the comment action scrolls the same detail controller to the reply thread. No generated image, comment composer, fake account, or copied social metric is introduced.
+**Architecture:** Represent history with two category posts—career and education—instead of one post per individual item or one combined post. Each detail is one vertical `CustomScrollView`: an image-free media slot contains the Reels top bar, right action rail, and bottom account/caption overlay; only the selected category's items are mapped to accessible reply rows below it. Like state is stored independently per category, and the comment action scrolls the same detail controller to that category's reply thread. The redundant feed-level GitHub and email actions are omitted. No generated image, comment composer, fake account, or copied social metric is introduced.
 
 **Tech Stack:** Flutter, Dart, Material widgets, `flutter_test`
 
@@ -19,7 +19,7 @@
 
 Assert that `profile-reel-overlay` owns the top bar, action rail, and information overlay; the right rail sits to the right of the information; and the old generated artwork/image widgets are absent.
 
-Also assert that any non-empty history produces exactly one square `profile-history-post`, the post statistic is `1`, and no per-experience or per-education feed cards exist.
+Also assert that career and education each produce one square category post, the post statistic matches the number of non-empty categories, and no per-item feed cards exist. The visible statistics use `게시물 N개`, `경력 N년`, and `교육 N번`, with no feed-level GitHub or email actions.
 
 **Step 2: Write the failing like test**
 
@@ -44,13 +44,13 @@ Expected: FAIL because the overlay/action/thread keys and interactions do not ex
 **Files:**
 - Modify: `lib/portfolio/apps/profile_app.dart`
 
-**Step 1: Add aggregate-post navigation and like state**
+**Step 1: Add category-post navigation and like state**
 
-Store one open/closed state and one liked state in `_ProfileAppState`, expose an argument-free toggle callback to the detail, and preserve the state while navigating back to the feed. Do not use an arbitrary first history item as a hidden selection.
+Store the selected history category and a liked-category set in `_ProfileAppState`. Preserve each category's like state while navigating back to the feed, without binding a post to an arbitrary individual item.
 
 **Step 2: Replace the static visual with a neutral media slot and overlay stack**
 
-Build `profile-reel-overlay` without `Image`, `RawImage`, `DecorationImage`, or generated artwork. Overlay `Reels` and camera at the top, a heart/comment/share rail at the right, and the real account plus aggregate career/education caption at the bottom. Individual history metadata belongs only in the reply rows.
+Build `profile-reel-overlay` without `Image`, `RawImage`, `DecorationImage`, or generated artwork. Overlay `Reels` and camera at the top, a heart/comment/share rail at the right, and the real account plus the selected career or education caption at the bottom. Individual item metadata belongs only in the reply rows.
 
 **Step 3: Wire the actions**
 
@@ -70,7 +70,7 @@ Expected: overlay and like interaction assertions pass; reply tests remain the o
 
 **Step 1: Map existing data without a new comment model**
 
-Render every experience first and every education second in `profile-reel-reply-thread`. Each item is an owner comment; its organization/institution, period, full description, and optional education link appear as indented replies.
+For the career post, render every experience in source order in `profile-reel-reply-thread`. For the education post, render every education item in source order. Each item is an owner comment; its organization/institution, period, full description, and optional education link appear as indented replies. Never mix the opposite category into the selected post.
 
 **Step 2: Preserve exact data and links**
 
