@@ -62,6 +62,7 @@ class AppleAppArtwork extends StatelessWidget {
   final double size;
 
   static bool usesBespokeArtwork(PortfolioAppId appId) => switch (appId) {
+    PortfolioAppId.profile ||
     PortfolioAppId.about ||
     PortfolioAppId.skills ||
     PortfolioAppId.projects ||
@@ -79,6 +80,11 @@ class AppleAppArtwork extends StatelessWidget {
   };
 
   static List<Color> colorsFor(PortfolioAppId appId) => switch (appId) {
+    PortfolioAppId.profile => const <Color>[
+      Color(0xFF833AB4),
+      Color(0xFFE1306C),
+      Color(0xFFFCAF45),
+    ],
     PortfolioAppId.about => const <Color>[Color(0xFF79DCFF), Color(0xFF2167E8)],
     PortfolioAppId.skills => const <Color>[
       Color(0xFFFFFFFF),
@@ -218,6 +224,8 @@ class _AppleAppArtworkPainter extends CustomPainter {
       _drawGlassHighlight(canvas, size);
     }
     switch (appId) {
+      case PortfolioAppId.profile:
+        _drawProfile(canvas, size);
       case PortfolioAppId.about:
         _drawAbout(canvas, size);
       case PortfolioAppId.skills:
@@ -238,6 +246,46 @@ class _AppleAppArtworkPainter extends CustomPainter {
       case PortfolioAppId.github:
         throw StateError('Utility artwork is rendered by its existing glyph.');
     }
+  }
+
+  void _drawProfile(Canvas canvas, Size size) {
+    final unit = size.shortestSide;
+    final center = size.center(Offset.zero);
+    final ring = Paint()
+      ..color = Colors.white.withValues(alpha: 0.94)
+      ..style = PaintingStyle.stroke
+      ..strokeWidth = math.max(1.8, unit * 0.055);
+    canvas.drawCircle(center, unit * 0.31, ring);
+
+    final silhouette = Paint()..color = Colors.white;
+    canvas.drawCircle(
+      Offset(center.dx, size.height * 0.4),
+      unit * 0.115,
+      silhouette,
+    );
+
+    final shoulders = Path()
+      ..moveTo(size.width * 0.28, size.height * 0.7)
+      ..quadraticBezierTo(
+        size.width * 0.31,
+        size.height * 0.54,
+        center.dx,
+        size.height * 0.54,
+      )
+      ..quadraticBezierTo(
+        size.width * 0.69,
+        size.height * 0.54,
+        size.width * 0.72,
+        size.height * 0.7,
+      )
+      ..quadraticBezierTo(
+        center.dx,
+        size.height * 0.79,
+        size.width * 0.28,
+        size.height * 0.7,
+      )
+      ..close();
+    canvas.drawPath(shoulders, silhouette);
   }
 
   void _drawGlassHighlight(Canvas canvas, Size size) {

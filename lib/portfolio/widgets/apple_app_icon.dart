@@ -35,6 +35,7 @@ class AppleAppIcon extends StatefulWidget {
   State<AppleAppIcon> createState() => _AppleAppIconState();
 
   static String labelFor(PortfolioAppId appId) => switch (appId) {
+    PortfolioAppId.profile => '프로필',
     PortfolioAppId.about => 'About',
     PortfolioAppId.skills => 'Skills',
     PortfolioAppId.projects => '포트폴리오',

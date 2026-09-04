@@ -1,4 +1,5 @@
 enum PortfolioAppId {
+  profile,
   about,
   skills,
   projects,
@@ -29,9 +30,10 @@ const List<PortfolioAppId> portfolioLauncherAppIds = <PortfolioAppId>[
 
 /// Apps shown as tiles on both the iPhone and iPad home surfaces.
 ///
-/// About stays available through the Notes profile card, while Photos is a
-/// mobile-only placeholder for a future gallery experience.
+/// Profile is a mobile-only experience separate from the desktop About app,
+/// while Photos remains a placeholder for a future gallery experience.
 const List<PortfolioAppId> portfolioMobileLauncherAppIds = <PortfolioAppId>[
+  PortfolioAppId.profile,
   PortfolioAppId.skills,
   PortfolioAppId.projects,
   PortfolioAppId.terminal,

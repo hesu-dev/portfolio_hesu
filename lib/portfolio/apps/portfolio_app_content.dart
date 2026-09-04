@@ -39,6 +39,7 @@ class PortfolioAppContent extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return switch (appId) {
+      PortfolioAppId.profile => const SizedBox.expand(key: Key('profile-app')),
       PortfolioAppId.about => AboutApp(
         data: data,
         launcher: launcher,
