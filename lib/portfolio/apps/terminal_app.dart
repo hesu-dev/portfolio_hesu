@@ -38,6 +38,11 @@ class _TerminalAppState extends State<TerminalApp> {
       _TerminalLine('$_prompt help', isCommand: true),
       ..._linesFor(_engine.execute('help')),
     ];
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (mounted) {
+        _focusNode.requestFocus();
+      }
+    });
   }
 
   @override
