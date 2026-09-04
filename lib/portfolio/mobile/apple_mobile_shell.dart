@@ -123,6 +123,7 @@ class _AppleMobileShellState extends State<AppleMobileShell> {
               ),
             ),
             SafeArea(
+              bottom: activeApp == null,
               child: Column(
                 children: <Widget>[
                   AppleStatusBar(tablet: widget.tablet, now: _now),
@@ -166,7 +167,7 @@ class _AppleMobileShellState extends State<AppleMobileShell> {
                                                 left: index * 12,
                                                 top: index * 10,
                                                 right: index * 4,
-                                                bottom: index * 4,
+                                                bottom: 0,
                                               )
                                             : EdgeInsets.zero,
                                         child: IgnorePointer(
@@ -203,10 +204,24 @@ class _AppleMobileShellState extends State<AppleMobileShell> {
                             ),
                     ),
                   ),
-                  const _AppleHomeIndicator(),
+                  if (activeApp == null) const _AppleHomeIndicator(),
                 ],
               ),
             ),
+            if (activeApp != null)
+              Positioned.fill(
+                child: IgnorePointer(
+                  child: SafeArea(
+                    top: false,
+                    left: false,
+                    right: false,
+                    child: const Align(
+                      alignment: Alignment.bottomCenter,
+                      child: _AppleHomeIndicator(),
+                    ),
+                  ),
+                ),
+              ),
           ],
         ),
       ),

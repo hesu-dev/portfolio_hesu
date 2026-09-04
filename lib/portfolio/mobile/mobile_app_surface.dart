@@ -60,7 +60,7 @@ class MobileAppSurface extends StatelessWidget {
 
     return Padding(
       padding: tablet
-          ? const EdgeInsets.fromLTRB(24, 10, 24, 14)
+          ? const EdgeInsets.fromLTRB(24, 10, 24, 0)
           : EdgeInsets.zero,
       child: Container(
         key: const Key('mobile-app-surface'),
