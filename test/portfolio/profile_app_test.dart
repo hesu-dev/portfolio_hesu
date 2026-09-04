@@ -285,8 +285,14 @@ void main() {
         tester.getRect(caption).top,
         lessThan(tester.getRect(linkButton).top),
       );
-      await tester.ensureVisible(linkButton);
-      await tester.tap(linkButton);
+      final tappableLink = find.descendant(
+        of: linkButton,
+        matching: find.byType(OutlinedButton),
+      );
+      expect(tappableLink, findsOneWidget);
+      await tester.ensureVisible(tappableLink);
+      await tester.pumpAndSettle();
+      await tester.tap(tappableLink);
       await tester.pumpAndSettle();
       expect(launcher.uris, <Uri>[link.uri]);
 
@@ -304,9 +310,17 @@ void main() {
         const Key('profile-history-card-education-1'),
       );
       final unlinkedEducation = data.education[1];
-      expect(find.text(unlinkedEducation.program), findsOneWidget);
-      expect(find.text(unlinkedEducation.institution), findsOneWidget);
-      expect(find.text(unlinkedEducation.period), findsOneWidget);
+      final unlinkedCaption = find.byKey(const Key('profile-reel-caption'));
+      for (final text in <String>[
+        unlinkedEducation.program,
+        unlinkedEducation.institution,
+        unlinkedEducation.period,
+      ]) {
+        expect(
+          find.descendant(of: unlinkedCaption, matching: find.text(text)),
+          findsOneWidget,
+        );
+      }
       expect(find.bySemanticsLabel('Open ${link.label}'), findsNothing);
       semantics.dispose();
     });
@@ -524,7 +538,13 @@ void main() {
             find.byKey(const Key('profile-history-detail')),
             findsOneWidget,
           );
-          expect(find.text(data.education.first.program), findsOneWidget);
+          expect(
+            find.descendant(
+              of: find.byKey(const Key('profile-reel-caption')),
+              matching: find.text(data.education.first.program),
+            ),
+            findsOneWidget,
+          );
           expect(
             tester.takeException(),
             isNull,
