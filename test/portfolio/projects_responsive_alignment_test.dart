@@ -57,6 +57,62 @@ void main() {
       }
     });
 
+    testWidgets('프로젝트 폴더의 각 행을 파일 영역 가운데에 정렬한다', (tester) async {
+      for (final scenario
+          in const <
+            ({Size size, bool compact, bool tablet, List<int> rowLengths})
+          >[
+            (
+              size: Size(900, 650),
+              compact: false,
+              tablet: false,
+              rowLengths: <int>[4],
+            ),
+            (
+              size: Size(834, 700),
+              compact: false,
+              tablet: true,
+              rowLengths: <int>[4],
+            ),
+            (
+              size: Size(390, 700),
+              compact: true,
+              tablet: false,
+              rowLengths: <int>[3, 1],
+            ),
+          ]) {
+        await tester.pumpWidget(const SizedBox.shrink());
+        await _pumpProjects(
+          tester,
+          size: scenario.size,
+          compact: scenario.compact,
+          tablet: scenario.tablet,
+        );
+
+        final gridRect = tester.getRect(
+          find.byKey(const Key('projects-finder-grid')),
+        );
+        final folders = <Finder>[
+          for (var index = 0; index < 4; index++)
+            find.byKey(Key('projects-career-folder-$index')),
+        ];
+        var rowStart = 0;
+        for (final rowLength in scenario.rowLengths) {
+          final firstRect = tester.getRect(folders[rowStart]);
+          final lastRect = tester.getRect(folders[rowStart + rowLength - 1]);
+          final leadingSpace = firstRect.left - gridRect.left;
+          final trailingSpace = gridRect.right - lastRect.right;
+
+          expect(
+            leadingSpace,
+            closeTo(trailingSpace, 0.01),
+            reason: '${scenario.size} row starting at $rowStart',
+          );
+          rowStart += rowLength;
+        }
+      }
+    });
+
     testWidgets('mobile Finder navigation centers every icon in its third', (
       tester,
     ) async {
