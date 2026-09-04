@@ -156,7 +156,7 @@ class PortfolioData {
   String get githubUrl => identity.githubUrl;
   String get mailUrl => 'mailto:${identity.email}';
   String get monogram => _deriveMonogram(identity);
-  String get terminalPrompt => '${_deriveTerminalUser(identity)}@portfolio ~ %';
+  String get terminalPrompt => r'포트폴리오: ~$';
   String get appTitle {
     final localName = identity.name.trim();
     final englishName = identity.englishName.trim();
@@ -257,19 +257,6 @@ String? _safeEmailLocalPart(String email) {
     return null;
   }
   return localPart.toLowerCase();
-}
-
-String _deriveTerminalUser(PortfolioIdentity identity) {
-  final emailLocalPart = _safeEmailLocalPart(identity.email);
-  if (emailLocalPart != null) {
-    return emailLocalPart;
-  }
-
-  final englishTokens = RegExp(r'[A-Za-z0-9]+')
-      .allMatches(identity.englishName)
-      .map((match) => match.group(0)!.toLowerCase());
-  final englishUser = englishTokens.join('-');
-  return englishUser.isEmpty ? 'guest' : englishUser;
 }
 
 const portfolioData = PortfolioData.constant(
