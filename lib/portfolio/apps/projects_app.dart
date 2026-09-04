@@ -431,6 +431,7 @@ class _ProjectFolderGrid extends StatelessWidget {
           child: SizedBox(
             width: constraints.maxWidth,
             child: Wrap(
+              alignment: WrapAlignment.center,
               spacing: spacing,
               runSpacing: spacing,
               children: <Widget>[
