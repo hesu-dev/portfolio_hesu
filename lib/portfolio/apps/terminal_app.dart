@@ -129,34 +129,47 @@ class _TerminalAppState extends State<TerminalApp> {
                 24,
               ),
               children: <Widget>[
-                for (final entry in _transcript.indexed)
-                  Padding(
-                    key: ValueKey<String>(
-                      'terminal-transcript-entry-${entry.$1}',
-                    ),
-                    padding: const EdgeInsets.only(bottom: 5),
-                    child: entry.$2.helpEntry != null
-                        ? _TerminalHelpRow(
-                            entry: entry.$2.helpEntry!,
-                            compact: widget.compact,
-                            color: primary,
-                          )
-                        : Text(
-                            entry.$2.text,
-                            style: _terminalTextStyle(
-                              color: entry.$2.isCommand ? accent : primary,
-                              compact: widget.compact,
+                Column(
+                  crossAxisAlignment: CrossAxisAlignment.stretch,
+                  children: <Widget>[
+                    Column(
+                      key: const Key('terminal-output'),
+                      crossAxisAlignment: CrossAxisAlignment.stretch,
+                      children: <Widget>[
+                        for (final entry in _transcript.indexed)
+                          Padding(
+                            key: ValueKey<String>(
+                              'terminal-transcript-entry-${entry.$1}',
                             ),
+                            padding: const EdgeInsets.only(bottom: 5),
+                            child: entry.$2.helpEntry != null
+                                ? _TerminalHelpRow(
+                                    entry: entry.$2.helpEntry!,
+                                    compact: widget.compact,
+                                    color: primary,
+                                  )
+                                : Text(
+                                    entry.$2.text,
+                                    style: _terminalTextStyle(
+                                      color: entry.$2.isCommand
+                                          ? accent
+                                          : primary,
+                                      compact: widget.compact,
+                                    ),
+                                  ),
                           ),
-                  ),
-                _TerminalInput(
-                  key: const Key('terminal-input-area'),
-                  controller: _controller,
-                  focusNode: _focusNode,
-                  compact: widget.compact,
-                  prompt: _prompt,
-                  background: background,
-                  onSubmitted: _submit,
+                      ],
+                    ),
+                    _TerminalInput(
+                      key: const Key('terminal-input-area'),
+                      controller: _controller,
+                      focusNode: _focusNode,
+                      compact: widget.compact,
+                      prompt: _prompt,
+                      background: background,
+                      onSubmitted: _submit,
+                    ),
+                  ],
                 ),
               ],
             ),
