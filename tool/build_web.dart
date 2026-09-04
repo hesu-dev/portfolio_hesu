@@ -1,7 +1,7 @@
 import 'dart:convert';
 import 'dart:io';
 
-import '../lib/portfolio/terminal/terminal_git_history.dart';
+import 'package:portfolio_hesu/portfolio/terminal/terminal_git_history.dart';
 
 const _historyLimit = 8;
 
