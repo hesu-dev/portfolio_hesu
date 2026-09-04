@@ -132,6 +132,10 @@ void main() {
           for (final experience in data.experiences) experience.role,
           for (final education in data.education) education.program,
         ];
+        final periods = <String>[
+          for (final experience in data.experiences) experience.period,
+          for (final education in data.education) education.period,
+        ];
         final grid = find.byKey(const Key('profile-history-grid'));
         expect(grid, findsOneWidget, reason: scenario.$1);
 
@@ -175,6 +179,17 @@ void main() {
             reason: '${scenario.$1} ${labels[index]}',
           );
           expect(semanticsData.label, semanticsLabel);
+          final kindLabel = index < data.experiences.length ? '경력' : '교육';
+          expect(
+            find.descendant(of: card, matching: find.text(kindLabel)),
+            findsOneWidget,
+            reason: '${scenario.$1} $kindLabel',
+          );
+          expect(
+            find.descendant(of: card, matching: find.text(periods[index])),
+            findsOneWidget,
+            reason: '${scenario.$1} ${periods[index]}',
+          );
         }
         await _expectThreeColumnSquareGrid(tester, cards);
       }
@@ -202,6 +217,9 @@ void main() {
         tester,
         data: data,
         expectedCaption: experience.description,
+        expectedKind: '경력',
+        expectedTitle: experience.role,
+        expectedPeriod: experience.period,
       );
       for (final text in <String>[
         experience.role,
@@ -243,6 +261,9 @@ void main() {
         tester,
         data: data,
         expectedCaption: linkedEducation.program,
+        expectedKind: '교육',
+        expectedTitle: linkedEducation.program,
+        expectedPeriod: linkedEducation.period,
       );
       for (final text in <String>[
         linkedEducation.program,
@@ -260,6 +281,10 @@ void main() {
       final linkSemantics = tester.getSemantics(linkButton).getSemanticsData();
       expect(linkSemantics.flagsCollection.isButton, isTrue);
       expect(linkSemantics.hasAction(ui.SemanticsAction.tap), isTrue);
+      expect(
+        tester.getRect(caption).top,
+        lessThan(tester.getRect(linkButton).top),
+      );
       await tester.ensureVisible(linkButton);
       await tester.tap(linkButton);
       await tester.pumpAndSettle();
@@ -340,6 +365,9 @@ void main() {
           tester,
           data: data,
           expectedCaption: experience.description,
+          expectedKind: '경력',
+          expectedTitle: experience.role,
+          expectedPeriod: experience.period,
         );
         expect(_fakeSocialMetricTextInside(detail), findsNothing);
         expect(_fakeSocialMetricSemanticsInside(detail), findsNothing);
@@ -366,6 +394,60 @@ void main() {
         expect(find.byKey(const Key('mobile-app-surface')), findsNothing);
       }
       semantics.dispose();
+    });
+
+    testWidgets('상세에서 돌아오면 iPhone과 iPad 피드의 비영 스크롤 위치를 복원한다', (tester) async {
+      final data = _injectedProfileData();
+      for (final scenario in const <(String, Size, bool)>[
+        ('iPhone', Size(390, 560), false),
+        ('iPad', Size(834, 620), true),
+      ]) {
+        await tester.pumpWidget(const SizedBox.shrink());
+        await _pumpProfileShell(
+          tester,
+          size: scenario.$2,
+          tablet: scenario.$3,
+          data: data,
+        );
+        await _openProfile(tester);
+
+        final card = find.byKey(const Key('profile-history-card-education-1'));
+        await _ensureCardBuilt(tester, card);
+        await tester.ensureVisible(card);
+        await tester.pumpAndSettle();
+        final feedPosition = tester
+            .state<ScrollableState>(
+              _scrollableInside(const Key('profile-scroll')),
+            )
+            .position;
+        final offsetBeforeDetail = feedPosition.pixels;
+        expect(
+          offsetBeforeDetail,
+          greaterThan(0),
+          reason: '${scenario.$1} precondition',
+        );
+
+        await tester.tap(card);
+        await tester.pumpAndSettle();
+        expect(find.byKey(const Key('profile-history-detail')), findsOneWidget);
+        await tester.tap(find.byKey(const Key('mobile-back-close-profile')));
+        await tester.pumpAndSettle();
+
+        final restoredPosition = tester
+            .state<ScrollableState>(
+              _scrollableInside(const Key('profile-scroll')),
+            )
+            .position;
+        expect(
+          restoredPosition.pixels,
+          closeTo(offsetBeforeDetail, 1),
+          reason: scenario.$1,
+        );
+        expect(card, findsOneWidget, reason: scenario.$1);
+        final cardRect = tester.getRect(card);
+        expect(cardRect.bottom, greaterThan(0), reason: scenario.$1);
+        expect(cardRect.top, lessThan(scenario.$2.height), reason: scenario.$1);
+      }
     });
 
     testWidgets('라이트와 다크의 iPhone·iPad 200% 피드와 상세가 넘치지 않는다', (tester) async {
@@ -734,6 +816,9 @@ void _expectReelTemplate(
   WidgetTester tester, {
   required PortfolioData data,
   required String expectedCaption,
+  required String expectedKind,
+  required String expectedTitle,
+  required String expectedPeriod,
 }) {
   final detail = find.byKey(const Key('profile-history-detail'));
   final context = find.byKey(const Key('profile-reel-context'));
@@ -758,6 +843,13 @@ void _expectReelTemplate(
     ),
     findsOneWidget,
   );
+  for (final text in <String>[expectedKind, expectedTitle, expectedPeriod]) {
+    expect(
+      find.descendant(of: visual, matching: find.text(text)),
+      findsOneWidget,
+      reason: 'Reels visual metadata: $text',
+    );
+  }
   expect(
     find.descendant(of: visual, matching: find.byType(Image)),
     findsNothing,
