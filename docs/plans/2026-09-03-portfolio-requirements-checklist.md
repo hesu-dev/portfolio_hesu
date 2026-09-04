@@ -111,6 +111,7 @@
 | macOS Finder 데스크탑의 앱은 기존 창을 교체하지 않고 새 창으로 열기 | 충족 | 데스크탑 위치의 앱을 열면 Projects Finder를 유지한 채 각 앱을 독립 창으로 연다. iPad/iPhone은 최신 3탭 요구에 따라 데스크탑 위치 자체를 노출하지 않는다. |
 | iPad/iPhone 홈 앱 Dock 숨김 | 충족 | viewport 크기와 실제 touch 기반 기기 판정을 함께 사용해 태블릿·모바일 홈에서는 macOS식 하단 앱 Dock을 렌더링하지 않는다. |
 | Projects 원형 뒤로 버튼은 상세만 내부 이동하고 폴더 루트에서는 닫기 | 충족 | iPhone/iPad 모두 프로젝트 상세에서는 해당 목록으로 돌아가고, 회사·최근 항목·개인 프로젝트의 루트에서는 홈으로 앱을 닫는다. 접근성 label과 semantics도 상태에 맞게 바뀐다. |
+| 열린 앱의 하단 홈 인디케이터 배경 투명 | 충족 | iPhone·iPad 앱 표면을 하단 안전영역과 고정된 홈 인디케이터 뒤까지 연장한다. 안전영역 0px/실기기 값과 Light/Dark에서 wallpaper 색 띠가 드러나지 않고 홈→앱 전환 때 인디케이터 위치가 바뀌지 않는지 검증한다. |
 
 ## 터미널
 
@@ -130,7 +131,8 @@
 | 화면 모드 위에 프로필과 `he-su min` 표시 | 충족 | wide sidebar와 compact 화면 모두 profile row가 화면 모드보다 먼저 나온다. |
 | 화면 모드에 새 SVG 아이콘 사용 | 충족 | 원격 참조 없이 새로 그린 로컬 `settings-display-mode.svg`를 렌더링한다. |
 | 데스크톱 설정 화면 구성 유지 | 충족 | macOS 설정은 좌측 프로필·검색과 우측 화면 모드 구성을 유지한다. |
-| iPad/iPhone 설정은 기기 비율의 Light/Dark 미리보기 | 충족 | iPhone은 세로형 0.64 비율, iPad는 카드 폭을 사용하는 4:3 비율의 미리보기 두 개를 나란히 놓고 선택 상태를 즉시 반영한다. desktop 2.05 비율은 유지하며 옵션 아래의 불필요한 시스템 설정 항목은 모사하지 않는다. |
+| iPad/iPhone 설정은 기기 비율의 Light/Dark 미리보기 | 충족 | 외곽 화면 모드 카드는 본문 전체 폭으로 유지하고, iPhone은 72px 세로형 0.64 비율, iPad는 최대 176px의 4:3 미리보기를 가운데 배치한다. 두 미리보기 사이에는 24px 여백을 두고 `라이트 모드`·`다크 모드`를 한 줄로 표시한다. |
+| 모바일 화면 모드 선택 효과는 하단 체크만 표시 | 충족 | iPhone·iPad의 개별 선택지는 선택 배경과 stroke를 제거하고 하단 원형 체크만 상태를 표시한다. 외곽 Light/Dark 공용 카드는 유지하며 키보드 포커스 링은 접근성을 위해 별도로 보존한다. |
 | 모든 공개 화면의 Light/Dark 지원 | 충족 | 홈, 공용 창 chrome, Finder, About, Skills, Terminal, Photos, Settings, macOS 메뉴 막대와 세 시스템 패널을 양 테마로 렌더링하고 대비 계약을 검증한다. |
 | 웹/PWA 기본 chrome도 Light와 일치 | 충족 | `MaterialApp.color`, HTML `theme-color`, manifest 배경·테마 색을 기본 Light `#F4F4F7`로 통일했다. 앱 내부에서 선택한 Dark는 전역 Flutter 테마가 즉시 반영한다. |
 
@@ -157,12 +159,12 @@
 | 공통 레이아웃으로 향후 일괄 수정 | 충족 | Mac window, Finder, Notes, mobile navigation, app artwork를 각각 공용 컴포넌트로 유지한다. |
 | 한국어 Conventional/Angular 커밋 제목 | 충족 | 이번 작업의 새 커밋 제목은 한국어 Conventional Commit 형식을 준수한다. |
 | 작업을 가능한 작은 커밋으로 분리 | 충족 | 테스트·자산·공용 컴포넌트·기능·수정을 독립 커밋으로 분리했다. |
-| 전체 정적 분석·테스트·Vercel 빌드 | 충족 | 최종 소스에서 정적 분석 0건, 전체 274개 테스트 통과, Vercel 루트 release web build 성공을 확인한다. |
+| 전체 정적 분석·테스트·Vercel 빌드 | 충족 | 최종 소스에서 정적 분석 0건, 전체 276개 테스트 통과, Vercel 루트 release web build 성공을 확인한다. |
 | 데스크톱·iPad·iPhone 실화면 검수 | 충족 | 로컬 인앱 브라우저에서 세 폼팩터의 핵심 화면과 Light/Dark 전환을 다시 확인하고 자동 양 테마 계약으로 나머지 조합을 보완했다. |
 
 ## 2026-09-04 최종 검증 기록
 
-- `flutter test --reporter compact`: 전체 274개 통과
+- `flutter test --reporter compact`: 전체 276개 통과
 - `flutter analyze`: 문제 없음
 - Vercel 루트 경로 `/` release web build: 성공, 생성된 `<base href="/">` 확인
 - `git diff --check`: 통과
@@ -170,7 +172,7 @@
 - Finder 재검수: macOS `최근 항목`이 전체 6개 프로젝트로 이동하고 ReadingLog가 첫 번째이며, 상세에서 돌아오면 폴더 아이콘 주변에만 중립 회색 선택 배경이 남는 것을 확인
 - 모바일 재검수: 홈 앱 Dock은 숨고, Projects 내부에만 `최근 항목`·`회사`·`개인` 3탭 탐색이 있으며 세 아이콘·라벨은 각 1/3 중심에 정렬된다. pill 배경은 투명하고 iPhone/iPad Finder는 신호등 없이 상태별 뒤로/닫기·중앙 자연 높이 타이틀·`…`를 사용한다.
 - 테마 재검수: 기본 Light, iPhone 설정의 즉시 Dark 전환, Dark About 메모·Terminal·macOS 창/메뉴/시스템 패널의 가독성을 확인
-- 최신 UI 회귀 검수: 홈 메모 헤더의 흰색 이름과 본문 단일 CTA, desktop 8개 런처의 국소 회색 선택 효과, iPad/iPhone 공통 툴팁 비노출을 자동 테스트와 로컬 렌더링으로 확인
+- 최신 UI 회귀 검수: 홈 메모 헤더의 흰색 이름과 본문 단일 CTA, desktop 8개 런처의 국소 회색 선택 효과, iPad/iPhone 공통 툴팁 비노출을 확인했다. 설정은 전체 폭 외곽 카드·축소된 내부 미리보기·한 줄 이름·체크 전용 선택 표시를 Light/Dark 실화면과 자동 테스트로 확인했고, 열린 앱의 홈 인디케이터는 iPhone 실화면 및 iPhone/iPad 안전영역 회귀 테스트로 하단 wallpaper 색 띠와 위치 이동이 없음을 확인했다.
 - 독립 요구사항 감사: 핵심 런타임 미충족과 Critical 항목 없음. 감사에서 발견한 데스크톱 `최근 항목` 비동작과 웹 기본 dark chrome은 각각 수정하고 회귀 테스트를 추가함
 - 외부 상태 변경: 기존 Pages workflow 2개를 비활성화하고, Pages 게시 해제와 배포 소스 `None` 저장을 완료했다. Pages API는 404를 반환한다.
 - 원격 `gh-pages` 브랜치를 삭제해 기존 저장소에서 자동 재게시될 경로를 제거했다.
