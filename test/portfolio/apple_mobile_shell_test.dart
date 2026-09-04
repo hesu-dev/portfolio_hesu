@@ -50,6 +50,43 @@ void main() {
       expect(find.byKey(const Key('mobile-dock')), findsNothing);
       expect(find.byKey(const Key('mac-dock')), findsNothing);
     });
+
+    testWidgets('iPhone과 iPad는 모든 툴팁 효과를 숨기고 Mac은 유지한다', (tester) async {
+      for (final scenario in const <(Size, String)>[
+        (Size(390, 844), 'iphone-shell'),
+        (Size(834, 1194), 'ipad-shell'),
+      ]) {
+        await tester.pumpWidget(const SizedBox.shrink());
+        await _pumpShell(tester, size: scenario.$1);
+
+        final visibility = find.byKey(const Key('mobile-tooltip-visibility'));
+        expect(visibility, findsOneWidget, reason: scenario.$2);
+        expect(tester.widget<TooltipVisibility>(visibility).visible, isFalse);
+        expect(
+          TooltipVisibility.of(tester.element(find.byKey(Key(scenario.$2)))),
+          isFalse,
+        );
+
+        expect(find.text('Skills'), findsOneWidget);
+        await tester.longPress(find.byKey(const Key('home-app-skills')));
+        await tester.pump(const Duration(seconds: 1));
+        expect(
+          find.text('Skills'),
+          findsOneWidget,
+          reason: '${scenario.$2} 아이콘 이름이 툴팁으로 중복되면 안 됩니다.',
+        );
+      }
+
+      await tester.pumpWidget(const SizedBox.shrink());
+      await _pumpShell(tester, size: const Size(1024, 700));
+      expect(find.byKey(const Key('mobile-tooltip-visibility')), findsNothing);
+      expect(
+        TooltipVisibility.of(
+          tester.element(find.byKey(const Key('mac-shell'))),
+        ),
+        isTrue,
+      );
+    });
   });
 
   group('iPhone home and navigation', () {
@@ -323,7 +360,7 @@ void main() {
           of: find.byKey(const Key('mobile-notes-profile-body')),
           matching: find.text('테스트 사용자'),
         ),
-        findsOneWidget,
+        findsNothing,
       );
       expect(find.text('자세히 보러가기'), findsOneWidget);
       expect(find.text('Injected headline'), findsNothing);
@@ -362,7 +399,7 @@ void main() {
 
       final name = tester.widget<Text>(
         find.descendant(
-          of: find.byKey(const Key('mobile-notes-profile-body')),
+          of: find.byKey(const Key('mobile-notes-profile-header')),
           matching: find.text('어두운 사용자'),
         ),
       );

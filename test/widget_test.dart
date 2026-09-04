@@ -40,7 +40,7 @@ void main() {
           of: find.byKey(const Key('mobile-notes-profile-body')),
           matching: find.text('민희수'),
         ),
-        findsOneWidget,
+        findsNothing,
       );
       expect(find.textContaining('천주아'), findsNothing);
       expect(find.textContaining('juah'), findsNothing);

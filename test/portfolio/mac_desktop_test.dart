@@ -99,15 +99,15 @@ void main() {
       );
       expect(
         (selection.decoration! as BoxDecoration).color,
-        Colors.white.withValues(alpha: 0.2),
+        Colors.transparent,
       );
       expect(
         find.byKey(const Key('desktop-app-artwork-selection-about')),
-        findsNothing,
+        findsOneWidget,
       );
       expect(
         find.byKey(const Key('desktop-app-label-selection-about')),
-        findsNothing,
+        findsOneWidget,
       );
       expect(find.byKey(const Key('mac-window-about')), findsNothing);
 
@@ -117,7 +117,7 @@ void main() {
       expect(find.byKey(const Key('mac-window-active-about')), findsOneWidget);
     });
 
-    testWidgets('Projects 선택은 artwork를 바꾸지 않고 아이콘 주변과 이름만 중립 회색으로 표시한다', (
+    testWidgets('모든 선택은 artwork를 바꾸지 않고 아이콘 주변과 이름만 중립 회색으로 표시한다', (
       tester,
     ) async {
       final previousHighlightStrategy = FocusManager.instance.highlightStrategy;
@@ -139,64 +139,105 @@ void main() {
           size: scenario.size,
         );
 
-        const appId = PortfolioAppId.projects;
-        final launcher = find.byKey(const Key('desktop-app-projects'));
-        final beforeArtwork = _desktopArtworkSignature(tester, appId);
+        PortfolioAppId? previousAppId;
+        for (final appId in _labels.keys) {
+          final launcher = find.byKey(Key('desktop-app-${appId.name}'));
+          final beforeArtwork = _desktopArtworkSignature(tester, appId);
 
-        await tester.tap(launcher);
-        await tester.pump(kDoubleTapTimeout + const Duration(milliseconds: 20));
+          await tester.tap(launcher);
+          await tester.pump(
+            kDoubleTapTimeout + const Duration(milliseconds: 20),
+          );
 
-        expect(_desktopArtworkSignature(tester, appId), beforeArtwork);
-        expect(
-          find.byKey(const Key('desktop-app-selection-projects')),
-          findsOneWidget,
-        );
+          expect(_desktopArtworkSignature(tester, appId), beforeArtwork);
+          final outerSelection = _desktopSelectionDecoration(
+            tester,
+            Key('desktop-app-selection-${appId.name}'),
+          );
+          expect(outerSelection.color, Colors.transparent);
+          expect(outerSelection.border, isNull);
 
-        for (final key in const <Key>[
-          Key('desktop-app-artwork-selection-projects'),
-          Key('desktop-app-label-selection-projects'),
-          Key('desktop-app-focus-projects'),
-        ]) {
-          expect(find.byKey(key), findsOneWidget, reason: '$key $scenario');
+          for (final suffix in const <String>[
+            'artwork-selection',
+            'label-selection',
+            'focus',
+          ]) {
+            expect(
+              find.byKey(Key('desktop-app-$suffix-${appId.name}')),
+              findsOneWidget,
+              reason: '$suffix/$appId/$scenario',
+            );
+          }
+
+          final artworkSelection = _desktopSelectionDecoration(
+            tester,
+            Key('desktop-app-artwork-selection-${appId.name}'),
+          );
+          final labelSelection = _desktopSelectionDecoration(
+            tester,
+            Key('desktop-app-label-selection-${appId.name}'),
+          );
+          for (final decoration in <BoxDecoration>[
+            artworkSelection,
+            labelSelection,
+          ]) {
+            expect(decoration.color, isNotNull);
+            expect(decoration.color, isNot(Colors.transparent));
+            expect(_isNeutralGray(decoration.color!), isTrue);
+            expect(decoration.color, isNot(AppleTheme.blue));
+            expect(decoration.border, isNull);
+          }
+          final launcherRect = tester.getRect(launcher);
+          expect(
+            tester
+                .getRect(
+                  find.byKey(
+                    Key('desktop-app-artwork-selection-${appId.name}'),
+                  ),
+                )
+                .width,
+            lessThan(launcherRect.width),
+          );
+          expect(
+            tester
+                .getRect(
+                  find.byKey(Key('desktop-app-label-selection-${appId.name}')),
+                )
+                .width,
+            lessThan(launcherRect.width),
+          );
+
+          if (previousAppId case final previous?) {
+            for (final suffix in const <String>[
+              'artwork-selection',
+              'label-selection',
+            ]) {
+              expect(
+                _desktopSelectionDecoration(
+                  tester,
+                  Key('desktop-app-$suffix-${previous.name}'),
+                ).color,
+                Colors.transparent,
+              );
+            }
+          }
+          previousAppId = appId;
+
+          final focusDecoration = _desktopSelectionDecoration(
+            tester,
+            Key('desktop-app-focus-${appId.name}'),
+          );
+          expect(focusDecoration.border, isNotNull);
+          expect(
+            _isNeutralGray((focusDecoration.border! as Border).top.color),
+            isTrue,
+          );
+
+          final semantics = tester.getSemantics(launcher).getSemanticsData();
+          expect(semantics.flagsCollection.isSelected, ui.Tristate.isTrue);
+          expect(semantics.flagsCollection.isButton, isTrue);
+          expect(tester.takeException(), isNull, reason: '$appId/$scenario');
         }
-
-        final artworkSelection = _desktopSelectionDecoration(
-          tester,
-          const Key('desktop-app-artwork-selection-projects'),
-        );
-        final labelSelection = _desktopSelectionDecoration(
-          tester,
-          const Key('desktop-app-label-selection-projects'),
-        );
-        for (final decoration in <BoxDecoration>[
-          artworkSelection,
-          labelSelection,
-        ]) {
-          expect(decoration.color, isNotNull);
-          expect(decoration.color, isNot(Colors.transparent));
-          expect(_isNeutralGray(decoration.color!), isTrue);
-          expect(decoration.color, isNot(AppleTheme.blue));
-          expect(decoration.border, isNull);
-        }
-
-        final focusDecoration = _desktopSelectionDecoration(
-          tester,
-          const Key('desktop-app-focus-projects'),
-        );
-        expect(focusDecoration.border, isNotNull);
-        expect(
-          _isNeutralGray((focusDecoration.border! as Border).top.color),
-          isTrue,
-        );
-
-        final semantics = tester.getSemantics(launcher).getSemanticsData();
-        expect(semantics.flagsCollection.isSelected, ui.Tristate.isTrue);
-        expect(semantics.flagsCollection.isButton, isTrue);
-
-        await tester.sendKeyEvent(LogicalKeyboardKey.enter);
-        await tester.pumpAndSettle();
-        expect(find.byKey(const Key('mac-window-projects')), findsOneWidget);
-        expect(tester.takeException(), isNull, reason: '$scenario');
       }
     });
 

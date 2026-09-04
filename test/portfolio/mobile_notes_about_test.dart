@@ -57,19 +57,18 @@ void main() {
           ),
           findsOneWidget,
         );
-        expect(
-          find.descendant(
-            of: header,
-            matching: find.text(portfolioData.identity.name),
-          ),
-          findsOneWidget,
+        final headerName = find.descendant(
+          of: header,
+          matching: find.text(portfolioData.identity.name),
         );
+        expect(headerName, findsOneWidget);
+        expect(tester.widget<Text>(headerName).style?.color, Colors.white);
         expect(
           find.descendant(
             of: body,
             matching: find.text(portfolioData.identity.name),
           ),
-          findsOneWidget,
+          findsNothing,
         );
         expect(
           find.descendant(of: body, matching: find.text('자세히 보러가기')),
@@ -101,21 +100,20 @@ void main() {
         semantics.dispose();
       });
 
-      testWidgets(
-        '${scenario.$2 ? 'iPad' : 'iPhone'} 메모의 이름과 안내는 같은 스타일의 두 줄이다',
-        (tester) async {
-          await _pumpMobileHome(tester, size: scenario.$1, tablet: scenario.$2);
+      testWidgets('${scenario.$2 ? 'iPad' : 'iPhone'} 메모는 헤더 이름과 본문 안내만 표시한다', (
+        tester,
+      ) async {
+        await _pumpMobileHome(tester, size: scenario.$1, tablet: scenario.$2);
 
-          _expectProfileTwoLines(tester, profileKey: scenario.$3);
-        },
-      );
+        _expectProfileContent(tester, profileKey: scenario.$3);
+      });
     }
 
     for (final scenario in <(Size, bool, String, String)>[
       (const Size(844, 390), false, 'iphone-notes-profile', 'iPhone 가로'),
       (const Size(600, 400), true, 'ipad-profile-widget', '짧은 iPad 가로'),
     ]) {
-      testWidgets('${scenario.$4}에서도 이름과 안내 두 줄을 유지한다', (tester) async {
+      testWidgets('${scenario.$4}에서도 이름 중복 없는 안내를 유지한다', (tester) async {
         await _pumpMobileHome(
           tester,
           size: scenario.$1,
@@ -123,7 +121,7 @@ void main() {
           textScaler: const TextScaler.linear(2),
         );
 
-        _expectProfileTwoLines(tester, profileKey: scenario.$3);
+        _expectProfileContent(tester, profileKey: scenario.$3);
         expect(tester.takeException(), isNull);
       });
     }
@@ -228,27 +226,36 @@ void main() {
   });
 }
 
-void _expectProfileTwoLines(WidgetTester tester, {required String profileKey}) {
+void _expectProfileContent(WidgetTester tester, {required String profileKey}) {
   final profile = find.byKey(Key(profileKey));
+  final header = find.descendant(
+    of: profile,
+    matching: find.byKey(const Key('mobile-notes-profile-header')),
+  );
   final body = find.descendant(
     of: profile,
     matching: find.byKey(const Key('mobile-notes-profile-body')),
   );
+  expect(header, findsOneWidget);
   expect(body, findsOneWidget);
 
-  final name = tester.widget<Text>(
+  final headerName = tester.widget<Text>(
+    find.descendant(
+      of: header,
+      matching: find.text(portfolioData.identity.name),
+    ),
+  );
+  expect(headerName.style?.color, Colors.white);
+  expect(
     find.descendant(of: body, matching: find.text(portfolioData.identity.name)),
+    findsNothing,
   );
   final guidance = tester.widget<Text>(
     find.descendant(of: body, matching: find.text('자세히 보러가기')),
   );
 
-  expect(name.maxLines, 1);
   expect(guidance.maxLines, 1);
-  expect(name.style?.fontSize, guidance.style?.fontSize);
-  expect(name.style?.fontWeight, guidance.style?.fontWeight);
-  expect(name.style?.height, guidance.style?.height);
-  expect(name.style?.fontSize, inInclusiveRange(16, 18));
+  expect(guidance.style?.fontSize, inInclusiveRange(16, 18));
 }
 
 class _RecordingLauncher implements ExternalLauncher {
