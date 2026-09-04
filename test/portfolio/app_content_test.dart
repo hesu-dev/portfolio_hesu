@@ -1081,7 +1081,7 @@ void main() {
     });
 
     testWidgets(
-      'terminal shows only a focused blinking command line below its transcript',
+      'terminal places its focused blinking command line immediately after help',
       (tester) async {
         await _pumpApp(
           tester,
@@ -1097,6 +1097,13 @@ void main() {
         expect(
           tester.getTopLeft(transcript).dy,
           lessThan(tester.getTopLeft(inputArea).dy),
+        );
+        final lastHelpDescription = find.text('명령어 안내');
+        expect(lastHelpDescription, findsOneWidget);
+        expect(
+          tester.getTopLeft(inputArea).dy -
+              tester.getBottomLeft(lastHelpDescription).dy,
+          inInclusiveRange(0, 12),
         );
         expect(find.text('portfolio — zsh'), findsNothing);
         expect(find.text(r'포트폴리오: ~$'), findsOneWidget);
