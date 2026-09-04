@@ -813,34 +813,26 @@ class _ProfileHistoryDetailState extends State<_ProfileHistoryDetail> {
     final title = experience?.role ?? education!.program;
     final organization = experience?.organization ?? education!.institution;
     final period = experience?.period ?? education!.period;
-    final horizontalPadding = widget.compact
-        ? 14.0
-        : (widget.tablet ? 30.0 : 24.0);
 
     return SizedBox.expand(
       key: const Key('profile-history-detail'),
-      child: CustomScrollView(
-        key: const Key('profile-history-detail-scroll'),
-        controller: _scrollController,
-        physics: const BouncingScrollPhysics(
-          parent: AlwaysScrollableScrollPhysics(),
-        ),
-        slivers: <Widget>[
-          SliverPadding(
-            padding: EdgeInsets.fromLTRB(
-              horizontalPadding,
-              widget.compact ? 16 : 20,
-              horizontalPadding,
-              widget.compact ? 38 : 48,
+      child: LayoutBuilder(
+        builder: (context, constraints) {
+          return CustomScrollView(
+            key: const Key('profile-history-detail-scroll'),
+            controller: _scrollController,
+            physics: const BouncingScrollPhysics(
+              parent: AlwaysScrollableScrollPhysics(),
             ),
-            sliver: SliverToBoxAdapter(
-              child: Center(
-                child: ConstrainedBox(
-                  constraints: const BoxConstraints(maxWidth: 560),
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.stretch,
-                    children: <Widget>[
-                      _ProfileReelOverlay(
+            slivers: <Widget>[
+              SliverToBoxAdapter(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.stretch,
+                  children: <Widget>[
+                    SizedBox(
+                      width: constraints.maxWidth,
+                      height: constraints.maxHeight,
+                      child: _ProfileReelOverlay(
                         compact: widget.compact,
                         liked: widget.liked,
                         kindLabel: kindLabel,
@@ -854,20 +846,20 @@ class _ProfileHistoryDetailState extends State<_ProfileHistoryDetail> {
                         onComment: _scrollToReplyThread,
                         onShare: _acknowledgeAction,
                       ),
-                      SizedBox(height: widget.compact ? 22 : 28),
-                      _ProfileReplyThread(
-                        key: _replyThreadKey,
-                        data: widget.data,
-                        compact: widget.compact,
-                        onLaunch: _launch,
-                      ),
-                    ],
-                  ),
+                    ),
+                    _ProfileReplyThread(
+                      key: _replyThreadKey,
+                      data: widget.data,
+                      compact: widget.compact,
+                      tablet: widget.tablet,
+                      onLaunch: _launch,
+                    ),
+                  ],
                 ),
               ),
-            ),
-          ),
-        ],
+            ],
+          );
+        },
       ),
     );
   }
@@ -904,143 +896,132 @@ class _ProfileReelOverlay extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return AspectRatio(
-      aspectRatio: 9 / 16,
-      child: ClipRRect(
-        borderRadius: BorderRadius.circular(compact ? 18 : 24),
-        child: Stack(
-          key: const Key('profile-reel-overlay'),
-          fit: StackFit.expand,
-          children: <Widget>[
-            Positioned.fill(
-              child: ColoredBox(
-                color: AppleTheme.isDark(context)
-                    ? const Color(0xFF151619)
-                    : const Color(0xFF34363B),
-              ),
-            ),
-            Positioned(
-              top: compact ? 8 : 12,
-              left: compact ? 14 : 18,
-              right: compact ? 4 : 8,
-              child: Row(
-                key: const Key('profile-reel-top-bar'),
-                children: <Widget>[
-                  Expanded(
-                    child: Text(
-                      'Reels',
-                      style: Theme.of(context).textTheme.titleLarge?.copyWith(
-                        color: Colors.white,
-                        fontWeight: FontWeight.w800,
-                        shadows: const <Shadow>[
-                          Shadow(color: Color(0x80000000), blurRadius: 4),
-                        ],
-                      ),
-                    ),
-                  ),
-                  _ProfileReelIconAction(
-                    actionKey: const Key('profile-reel-camera-action'),
-                    semanticsLabel: '카메라',
-                    icon: Icons.camera_alt_outlined,
-                    color: Colors.white,
-                    onPressed: onCamera,
-                  ),
-                ],
-              ),
-            ),
-            Positioned(
-              top: compact ? 90 : 116,
-              right: compact ? 4 : 8,
-              child: Column(
-                key: const Key('profile-reel-action-rail'),
-                mainAxisSize: MainAxisSize.min,
-                children: <Widget>[
-                  _ProfileReelIconAction(
-                    actionKey: const Key('profile-reel-like-action'),
-                    semanticsLabel: liked ? '좋아요 취소' : '좋아요',
-                    icon: liked
-                        ? Icons.favorite_rounded
-                        : Icons.favorite_border_rounded,
-                    color: liked ? AppleTheme.red : Colors.white,
-                    onPressed: onToggleLike,
-                  ),
-                  const SizedBox(height: 4),
-                  _ProfileReelIconAction(
-                    actionKey: const Key('profile-reel-comment-action'),
-                    semanticsLabel: '댓글 보기',
-                    icon: Icons.mode_comment_outlined,
-                    color: Colors.white,
-                    onPressed: onComment,
-                  ),
-                  const SizedBox(height: 4),
-                  _ProfileReelIconAction(
-                    actionKey: const Key('profile-reel-share-action'),
-                    semanticsLabel: '공유',
-                    icon: Icons.send_rounded,
-                    color: Colors.white,
-                    onPressed: onShare,
-                  ),
-                ],
-              ),
-            ),
-            Positioned(
-              left: compact ? 14 : 18,
-              right: compact ? 64 : 72,
-              bottom: compact ? 16 : 20,
-              child: Column(
-                key: const Key('profile-reel-info'),
-                crossAxisAlignment: CrossAxisAlignment.start,
-                mainAxisSize: MainAxisSize.min,
-                children: <Widget>[
-                  _ProfileReelAccountRow(name: name, monogram: monogram),
-                  SizedBox(height: compact ? 12 : 16),
-                  Text(
-                    title,
-                    maxLines: 3,
-                    overflow: TextOverflow.ellipsis,
-                    style: Theme.of(context).textTheme.titleMedium?.copyWith(
-                      color: Colors.white,
-                      fontWeight: FontWeight.w800,
-                      height: 1.2,
-                      shadows: const <Shadow>[
-                        Shadow(color: Color(0x99000000), blurRadius: 5),
-                      ],
-                    ),
-                  ),
-                  const SizedBox(height: 5),
-                  Text(
-                    organization,
-                    maxLines: 2,
-                    overflow: TextOverflow.ellipsis,
-                    style: AppleTheme.body(context).copyWith(
-                      color: Colors.white,
-                      fontWeight: FontWeight.w600,
-                      height: 1.25,
-                      shadows: const <Shadow>[
-                        Shadow(color: Color(0x99000000), blurRadius: 5),
-                      ],
-                    ),
-                  ),
-                  const SizedBox(height: 4),
-                  Text(
-                    '$kindLabel · $period',
-                    maxLines: 2,
-                    overflow: TextOverflow.ellipsis,
-                    style: AppleTheme.caption(context).copyWith(
-                      color: Colors.white.withValues(alpha: 0.86),
-                      fontWeight: FontWeight.w600,
-                      height: 1.25,
-                      shadows: const <Shadow>[
-                        Shadow(color: Color(0x99000000), blurRadius: 5),
-                      ],
-                    ),
-                  ),
-                ],
-              ),
-            ),
-          ],
+    final dark = AppleTheme.isDark(context);
+    final foreground = dark ? Colors.white : AppleTheme.primaryLabel(context);
+    final mediaColor = dark ? const Color(0xFF151619) : const Color(0xFFF0F1F3);
+
+    return Stack(
+      key: const Key('profile-reel-overlay'),
+      fit: StackFit.expand,
+      children: <Widget>[
+        Positioned.fill(
+          child: ColoredBox(
+            key: const Key('profile-reel-media-slot'),
+            color: mediaColor,
+          ),
         ),
-      ),
+        Positioned(
+          top: compact ? 8 : 12,
+          left: compact ? 14 : 18,
+          right: compact ? 4 : 8,
+          child: Row(
+            key: const Key('profile-reel-top-bar'),
+            children: <Widget>[
+              Expanded(
+                child: Text(
+                  'Reels',
+                  style: Theme.of(context).textTheme.titleLarge?.copyWith(
+                    color: foreground,
+                    fontWeight: FontWeight.w800,
+                  ),
+                ),
+              ),
+              _ProfileReelIconAction(
+                actionKey: const Key('profile-reel-camera-action'),
+                semanticsLabel: '카메라',
+                icon: Icons.camera_alt_outlined,
+                color: foreground,
+                onPressed: onCamera,
+              ),
+            ],
+          ),
+        ),
+        Positioned(
+          top: compact ? 90 : 116,
+          right: compact ? 4 : 8,
+          child: Column(
+            key: const Key('profile-reel-action-rail'),
+            mainAxisSize: MainAxisSize.min,
+            children: <Widget>[
+              _ProfileReelIconAction(
+                actionKey: const Key('profile-reel-like-action'),
+                semanticsLabel: liked ? '좋아요 취소' : '좋아요',
+                icon: liked
+                    ? Icons.favorite_rounded
+                    : Icons.favorite_border_rounded,
+                color: liked ? AppleTheme.red : foreground,
+                onPressed: onToggleLike,
+              ),
+              const SizedBox(height: 4),
+              _ProfileReelIconAction(
+                actionKey: const Key('profile-reel-comment-action'),
+                semanticsLabel: '댓글 보기',
+                icon: Icons.mode_comment_outlined,
+                color: foreground,
+                onPressed: onComment,
+              ),
+              const SizedBox(height: 4),
+              _ProfileReelIconAction(
+                actionKey: const Key('profile-reel-share-action'),
+                semanticsLabel: '공유',
+                icon: Icons.send_rounded,
+                color: foreground,
+                onPressed: onShare,
+              ),
+            ],
+          ),
+        ),
+        Positioned(
+          left: compact ? 14 : 18,
+          right: compact ? 64 : 72,
+          bottom: compact ? 16 : 20,
+          child: Column(
+            key: const Key('profile-reel-info'),
+            crossAxisAlignment: CrossAxisAlignment.start,
+            mainAxisSize: MainAxisSize.min,
+            children: <Widget>[
+              _ProfileReelAccountRow(
+                name: name,
+                monogram: monogram,
+                foreground: foreground,
+              ),
+              SizedBox(height: compact ? 12 : 16),
+              Text(
+                title,
+                maxLines: 3,
+                overflow: TextOverflow.ellipsis,
+                style: Theme.of(context).textTheme.titleMedium?.copyWith(
+                  color: foreground,
+                  fontWeight: FontWeight.w800,
+                  height: 1.2,
+                ),
+              ),
+              const SizedBox(height: 5),
+              Text(
+                organization,
+                maxLines: 2,
+                overflow: TextOverflow.ellipsis,
+                style: AppleTheme.body(context).copyWith(
+                  color: foreground,
+                  fontWeight: FontWeight.w600,
+                  height: 1.25,
+                ),
+              ),
+              const SizedBox(height: 4),
+              Text(
+                '$kindLabel · $period',
+                maxLines: 2,
+                overflow: TextOverflow.ellipsis,
+                style: AppleTheme.caption(context).copyWith(
+                  color: foreground,
+                  fontWeight: FontWeight.w600,
+                  height: 1.25,
+                ),
+              ),
+            ],
+          ),
+        ),
+      ],
     );
   }
 }
@@ -1107,9 +1088,9 @@ class _ProfileReelIconActionState extends State<_ProfileReelIconAction> {
             alignment: Alignment.center,
             decoration: BoxDecoration(
               color: _pressed
-                  ? Colors.white.withValues(alpha: 0.22)
+                  ? widget.color.withValues(alpha: 0.20)
                   : _hovered
-                  ? Colors.white.withValues(alpha: 0.12)
+                  ? widget.color.withValues(alpha: 0.10)
                   : Colors.transparent,
               shape: BoxShape.circle,
             ),
@@ -1122,10 +1103,15 @@ class _ProfileReelIconActionState extends State<_ProfileReelIconAction> {
 }
 
 class _ProfileReelAccountRow extends StatelessWidget {
-  const _ProfileReelAccountRow({required this.name, required this.monogram});
+  const _ProfileReelAccountRow({
+    required this.name,
+    required this.monogram,
+    required this.foreground,
+  });
 
   final String name;
   final String monogram;
+  final Color foreground;
 
   @override
   Widget build(BuildContext context) {
@@ -1140,14 +1126,14 @@ class _ProfileReelAccountRow extends StatelessWidget {
           alignment: Alignment.center,
           decoration: BoxDecoration(
             shape: BoxShape.circle,
-            color: Colors.white.withValues(alpha: 0.18),
-            border: Border.all(color: Colors.white, width: 1.5),
+            color: foreground.withValues(alpha: 0.12),
+            border: Border.all(color: foreground, width: 1.5),
           ),
           child: Text(
             monogram,
             maxLines: 1,
             style: Theme.of(context).textTheme.labelLarge?.copyWith(
-              color: Colors.white,
+              color: foreground,
               fontWeight: FontWeight.w800,
             ),
           ),
@@ -1157,11 +1143,8 @@ class _ProfileReelAccountRow extends StatelessWidget {
           child: Text(
             name,
             style: Theme.of(context).textTheme.titleMedium?.copyWith(
-              color: Colors.white,
+              color: foreground,
               fontWeight: FontWeight.w800,
-              shadows: const <Shadow>[
-                Shadow(color: Color(0x99000000), blurRadius: 5),
-              ],
             ),
           ),
         ),
@@ -1174,12 +1157,14 @@ class _ProfileReplyThread extends StatelessWidget {
   const _ProfileReplyThread({
     required this.data,
     required this.compact,
+    required this.tablet,
     required this.onLaunch,
     super.key,
   });
 
   final PortfolioData data;
   final bool compact;
+  final bool tablet;
   final Future<void> Function(Uri uri) onLaunch;
 
   @override
@@ -1206,23 +1191,41 @@ class _ProfileReplyThread extends StatelessWidget {
         ),
     ];
 
-    return Column(
+    final horizontalPadding = compact ? 14.0 : (tablet ? 30.0 : 24.0);
+
+    return Padding(
       key: const Key('profile-reel-reply-thread'),
-      crossAxisAlignment: CrossAxisAlignment.stretch,
-      children: <Widget>[
-        for (final item in items.indexed) ...<Widget>[
-          if (item.$1 > 0)
-            Padding(
-              padding: EdgeInsets.only(
-                left: compact ? 50 : 58,
-                top: compact ? 18 : 22,
-                bottom: compact ? 18 : 22,
-              ),
-              child: Divider(height: 1, color: AppleTheme.separator(context)),
-            ),
-          item.$2,
-        ],
-      ],
+      padding: EdgeInsets.fromLTRB(
+        horizontalPadding,
+        compact ? 22 : 28,
+        horizontalPadding,
+        compact ? 38 : 48,
+      ),
+      child: Center(
+        child: ConstrainedBox(
+          constraints: const BoxConstraints(maxWidth: 560),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.stretch,
+            children: <Widget>[
+              for (final item in items.indexed) ...<Widget>[
+                if (item.$1 > 0)
+                  Padding(
+                    padding: EdgeInsets.only(
+                      left: compact ? 50 : 58,
+                      top: compact ? 18 : 22,
+                      bottom: compact ? 18 : 22,
+                    ),
+                    child: Divider(
+                      height: 1,
+                      color: AppleTheme.separator(context),
+                    ),
+                  ),
+                item.$2,
+              ],
+            ],
+          ),
+        ),
+      ),
     );
   }
 }
