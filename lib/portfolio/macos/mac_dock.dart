@@ -15,10 +15,11 @@ class MacDock extends StatelessWidget {
     super.key,
   });
 
-  static const List<PortfolioAppId> launchableApps = portfolioDockAppIds;
+  static const List<PortfolioAppId> launchableApps = portfolioLauncherAppIds;
 
-  static const List<PortfolioAppId> utilityApps = <PortfolioAppId>[
-    PortfolioAppId.trash,
+  static const List<PortfolioAppId> pinnedApps = <PortfolioAppId>[
+    PortfolioAppId.about,
+    PortfolioAppId.projects,
   ];
 
   final Set<PortfolioAppId> runningApps;
@@ -28,7 +29,9 @@ class MacDock extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final runningLaunchableApps = launchableApps
-        .where(runningApps.contains)
+        .where(
+          (appId) => runningApps.contains(appId) && !pinnedApps.contains(appId),
+        )
         .toList(growable: false);
     final theme = Theme.of(context);
 
@@ -59,13 +62,13 @@ class MacDock extends StatelessWidget {
                 mainAxisSize: MainAxisSize.min,
                 crossAxisAlignment: CrossAxisAlignment.end,
                 children: <Widget>[
-                  for (final appId in runningLaunchableApps)
-                    _buildDockItem(appId),
+                  for (final appId in pinnedApps) _buildDockItem(appId),
                   if (runningLaunchableApps.isNotEmpty)
                     const _DockSeparator(
                       key: Key('mac-dock-utility-separator'),
                     ),
-                  for (final appId in utilityApps) _buildDockItem(appId),
+                  for (final appId in runningLaunchableApps)
+                    _buildDockItem(appId),
                 ],
               ),
             ),
@@ -77,6 +80,7 @@ class MacDock extends StatelessWidget {
 
   Widget _buildDockItem(PortfolioAppId appId) {
     return _MacDockItem(
+      key: ValueKey<PortfolioAppId>(appId),
       appId: appId,
       running: runningApps.contains(appId),
       active: activeApp == appId,
@@ -105,6 +109,7 @@ class _MacDockItem extends StatefulWidget {
     required this.running,
     required this.active,
     required this.onPressed,
+    super.key,
   });
 
   final PortfolioAppId appId;

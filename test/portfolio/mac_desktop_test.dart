@@ -334,7 +334,7 @@ void main() {
       await tester.tap(find.byKey(const Key('window-close-about')));
       await tester.pumpAndSettle();
       expect(window, findsNothing);
-      expect(find.byKey(const Key('dock-app-about')), findsNothing);
+      expect(find.byKey(const Key('dock-app-about')), findsOneWidget);
       expect(find.byKey(const Key('dock-running-about')), findsNothing);
     });
 
@@ -677,35 +677,42 @@ void main() {
       expect(find.byKey(const Key('dock-app-thisMac')), findsNothing);
     });
 
-    testWidgets('shows desktop chrome and only Trash in Dock initially', (
-      tester,
-    ) async {
-      await _pumpPortfolio(tester);
+    testWidgets(
+      'shows desktop chrome with About and Projects pinned initially',
+      (tester) async {
+        await _pumpPortfolio(tester);
 
-      for (final label in const <String>[
-        'Finder',
-        'File',
-        'Edit',
-        'View',
-        'Window',
-        'Help',
-      ]) {
-        expect(find.text(label), findsOneWidget);
-      }
-      expect(find.byKey(const Key('mac-wifi-status')), findsOneWidget);
-      expect(find.byKey(const Key('mac-battery-status')), findsOneWidget);
-      expect(
-        find.byKey(const Key('mac-control-center-button')),
-        findsOneWidget,
-      );
-      expect(find.byKey(const Key('mac-clock-button')), findsOneWidget);
+        for (final label in const <String>[
+          'Finder',
+          'File',
+          'Edit',
+          'View',
+          'Window',
+          'Help',
+        ]) {
+          expect(find.text(label), findsOneWidget);
+        }
+        expect(find.byKey(const Key('mac-wifi-status')), findsOneWidget);
+        expect(find.byKey(const Key('mac-battery-status')), findsOneWidget);
+        expect(
+          find.byKey(const Key('mac-control-center-button')),
+          findsOneWidget,
+        );
+        expect(find.byKey(const Key('mac-clock-button')), findsOneWidget);
 
-      expect(find.byKey(const Key('dock-app-trash')), findsOneWidget);
-      for (final appId in _launchableDockApps) {
-        expect(find.byKey(Key('dock-app-${appId.name}')), findsNothing);
-        expect(find.byKey(Key('desktop-app-${appId.name}')), findsOneWidget);
-      }
-    });
+        expect(find.byKey(const Key('dock-app-about')), findsOneWidget);
+        expect(find.byKey(const Key('dock-app-projects')), findsOneWidget);
+        expect(find.byKey(const Key('dock-app-trash')), findsNothing);
+        for (final appId in _launchableDockApps) {
+          expect(
+            find.byKey(Key('dock-app-${appId.name}')),
+            _pinnedDockApps.contains(appId) ? findsOneWidget : findsNothing,
+          );
+          expect(find.byKey(Key('dock-running-${appId.name}')), findsNothing);
+          expect(find.byKey(Key('desktop-app-${appId.name}')), findsOneWidget);
+        }
+      },
+    );
 
     testWidgets('uses a borderless theme-derived translucent Dock surface', (
       tester,
@@ -794,7 +801,11 @@ void main() {
       await _pumpPortfolio(tester, size: const Size(1024, 700));
 
       for (final appId in _launchableDockApps) {
-        expect(find.byKey(Key('dock-app-${appId.name}')), findsNothing);
+        final pinned = _pinnedDockApps.contains(appId);
+        expect(
+          find.byKey(Key('dock-app-${appId.name}')),
+          pinned ? findsOneWidget : findsNothing,
+        );
 
         await _openDesktopApp(tester, appId);
         expect(find.byKey(Key('dock-app-${appId.name}')), findsOneWidget);
@@ -815,7 +826,11 @@ void main() {
 
         await tester.tap(find.byKey(Key('window-close-${appId.name}')));
         await tester.pumpAndSettle();
-        expect(find.byKey(Key('dock-app-${appId.name}')), findsNothing);
+        expect(
+          find.byKey(Key('dock-app-${appId.name}')),
+          pinned ? findsOneWidget : findsNothing,
+        );
+        expect(find.byKey(Key('dock-running-${appId.name}')), findsNothing);
         expect(find.byKey(Key('desktop-app-${appId.name}')), findsOneWidget);
       }
     });
@@ -828,6 +843,7 @@ void main() {
         PortfolioAppId.settings,
         PortfolioAppId.terminal,
         PortfolioAppId.about,
+        PortfolioAppId.trash,
       };
       await _pumpDock(
         tester,
@@ -838,14 +854,16 @@ void main() {
 
       final centers = <double>[
         for (final appId in _launchableDockApps)
-          if (runningApps.contains(appId))
+          if (_pinnedDockApps.contains(appId) || runningApps.contains(appId))
             tester.getCenter(find.byKey(Key('dock-app-${appId.name}'))).dx,
       ];
       expect(centers, orderedEquals(centers.toList()..sort()));
       for (final appId in _launchableDockApps) {
         expect(
           find.byKey(Key('dock-app-${appId.name}')),
-          runningApps.contains(appId) ? findsOneWidget : findsNothing,
+          _pinnedDockApps.contains(appId) || runningApps.contains(appId)
+              ? findsOneWidget
+              : findsNothing,
         );
       }
       expect(find.byKey(const Key('dock-app-trash')), findsOneWidget);
@@ -1002,6 +1020,7 @@ void main() {
 
 const Map<PortfolioAppId, String> _labels = <PortfolioAppId, String>{
   PortfolioAppId.about: 'About',
+  PortfolioAppId.introduction: '자기소개',
   PortfolioAppId.skills: 'Skills',
   PortfolioAppId.projects: '포트폴리오',
   PortfolioAppId.terminal: 'Terminal',
@@ -1011,7 +1030,12 @@ const Map<PortfolioAppId, String> _labels = <PortfolioAppId, String>{
   PortfolioAppId.trash: 'Trash',
 };
 
-const List<PortfolioAppId> _launchableDockApps = portfolioDockAppIds;
+const List<PortfolioAppId> _launchableDockApps = portfolioLauncherAppIds;
+
+const List<PortfolioAppId> _pinnedDockApps = <PortfolioAppId>[
+  PortfolioAppId.about,
+  PortfolioAppId.projects,
+];
 
 const PortfolioData _customPortfolioData = PortfolioData.constant(
   identity: PortfolioIdentity(

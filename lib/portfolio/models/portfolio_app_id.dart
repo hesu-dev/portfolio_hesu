@@ -1,6 +1,7 @@
 enum PortfolioAppId {
   profile,
   about,
+  introduction,
   skills,
   projects,
   terminal,
@@ -19,6 +20,7 @@ enum PortfolioAppId {
 /// [PortfolioAppId.projects] as the single public project entry point.
 const List<PortfolioAppId> portfolioLauncherAppIds = <PortfolioAppId>[
   PortfolioAppId.about,
+  PortfolioAppId.introduction,
   PortfolioAppId.skills,
   PortfolioAppId.projects,
   PortfolioAppId.terminal,
@@ -34,6 +36,7 @@ const List<PortfolioAppId> portfolioLauncherAppIds = <PortfolioAppId>[
 /// while Photos remains a placeholder for a future gallery experience.
 const List<PortfolioAppId> portfolioMobileLauncherAppIds = <PortfolioAppId>[
   PortfolioAppId.profile,
+  PortfolioAppId.introduction,
   PortfolioAppId.skills,
   PortfolioAppId.projects,
   PortfolioAppId.terminal,
@@ -46,6 +49,7 @@ const List<PortfolioAppId> portfolioMobileLauncherAppIds = <PortfolioAppId>[
 
 const List<PortfolioAppId> portfolioDockAppIds = <PortfolioAppId>[
   PortfolioAppId.about,
+  PortfolioAppId.introduction,
   PortfolioAppId.skills,
   PortfolioAppId.projects,
   PortfolioAppId.terminal,

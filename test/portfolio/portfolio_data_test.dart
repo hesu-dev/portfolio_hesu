@@ -297,6 +297,7 @@ void main() {
     expect(PortfolioAppId.values.map((appId) => appId.name), <String>[
       'profile',
       'about',
+      'introduction',
       'skills',
       'projects',
       'terminal',

@@ -83,6 +83,11 @@ const List<_AdaptiveLayout> _adaptiveLayouts = <_AdaptiveLayout>[
 
 const List<_AppScrollTarget> _publicAppScrollTargets = <_AppScrollTarget>[
   _AppScrollTarget(PortfolioAppId.about, Key('about-scroll')),
+  _AppScrollTarget(
+    PortfolioAppId.introduction,
+    Key('introduction-scroll'),
+    height: 180,
+  ),
   _AppScrollTarget(PortfolioAppId.projects, Key('projects-collection-scroll')),
   _AppScrollTarget(PortfolioAppId.skills, Key('skills-list')),
   _AppScrollTarget(

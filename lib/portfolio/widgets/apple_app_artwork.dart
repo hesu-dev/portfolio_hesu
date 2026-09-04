@@ -49,11 +49,11 @@ class AppleAppArtworkFrame extends StatelessWidget {
   }
 }
 
-/// Scalable, code-native artwork shared by every portfolio app launcher.
+/// Normalized artwork shared by every portfolio app launcher.
 ///
-/// Primary app marks and Trash are drawn with Flutter paths instead of bundled
-/// platform artwork. The remaining utility apps keep their established
-/// Material glyphs for visual continuity with the existing desktop.
+/// Supplied brand artwork is rendered from bundled assets, while the remaining
+/// primary app marks and Trash use scalable Flutter paths. Utility apps keep
+/// their established Material glyphs for visual continuity with the desktop.
 class AppleAppArtwork extends StatelessWidget {
   const AppleAppArtwork({required this.appId, required this.size, super.key})
     : assert(size > 0);
@@ -71,7 +71,15 @@ class AppleAppArtwork extends StatelessWidget {
     PortfolioAppId.mail ||
     PortfolioAppId.settings ||
     PortfolioAppId.trash => true,
-    PortfolioAppId.thisMac || PortfolioAppId.github => false,
+    PortfolioAppId.introduction ||
+    PortfolioAppId.thisMac ||
+    PortfolioAppId.github => false,
+  };
+
+  static String? assetPathFor(PortfolioAppId appId) => switch (appId) {
+    PortfolioAppId.introduction => 'assets/icons/microsoft-word.png',
+    PortfolioAppId.github => 'assets/icons/github.png',
+    _ => null,
   };
 
   static bool usesTransparentFrame(PortfolioAppId appId) => switch (appId) {
@@ -86,6 +94,10 @@ class AppleAppArtwork extends StatelessWidget {
       Color(0xFFFCAF45),
     ],
     PortfolioAppId.about => const <Color>[Color(0xFF79DCFF), Color(0xFF2167E8)],
+    PortfolioAppId.introduction => const <Color>[
+      Color(0x00000000),
+      Color(0x00000000),
+    ],
     PortfolioAppId.skills => const <Color>[
       Color(0xFFFFFFFF),
       Color(0xFFF7F7F8),
@@ -124,56 +136,76 @@ class AppleAppArtwork extends StatelessWidget {
       Color(0xFF7559D9),
     ],
     PortfolioAppId.github => const <Color>[
-      Color(0xFF42454D),
-      Color(0xFF111216),
+      Color(0xFFFFFFFF),
+      Color(0xFFFFFFFF),
     ],
     PortfolioAppId.mail => const <Color>[Color(0xFF5ED4FF), Color(0xFF0868E8)],
   };
 
   static IconData utilityIconFor(PortfolioAppId appId) => switch (appId) {
     PortfolioAppId.thisMac => Icons.folder_copy_rounded,
-    PortfolioAppId.github => Icons.code_rounded,
     _ => throw ArgumentError.value(
       appId,
       'appId',
-      'Primary app artwork does not use a Material icon.',
+      'Asset-backed and primary app artwork do not use a Material icon.',
     ),
   };
+
+  Widget _buildAssetArtwork(String assetPath) {
+    final image = Image.asset(
+      assetPath,
+      key: Key('apple-app-artwork-${appId.name}-image'),
+      fit: BoxFit.contain,
+      filterQuality: FilterQuality.high,
+    );
+
+    if (appId == PortfolioAppId.introduction) {
+      return Padding(
+        key: Key('apple-app-artwork-${appId.name}-inset'),
+        padding: EdgeInsets.all(size * 0.06),
+        child: image,
+      );
+    }
+    return image;
+  }
 
   @override
   Widget build(BuildContext context) {
     final radius = size * 0.28;
     final bespoke = usesBespokeArtwork(appId);
     final transparentFrame = usesTransparentFrame(appId);
+    final assetPath = assetPathFor(appId);
 
-    final Widget artwork = switch (appId) {
-      PortfolioAppId.projects => Transform.scale(
-        key: const Key('apple-app-artwork-projects-silhouette'),
-        scale: 1.18,
-        child: CustomPaint(
-          painter: _AppleAppArtworkPainter(appId),
-          child: const SizedBox.expand(),
-        ),
-      ),
-      PortfolioAppId.terminal => CustomPaint(
-        foregroundPainter: _AppleAppArtworkPainter(appId),
-        child: const ColoredBox(
-          key: Key('apple-app-artwork-terminal-screen'),
-          color: Color(0xFF0B0D11),
-        ),
-      ),
-      _ when bespoke => CustomPaint(
-        painter: _AppleAppArtworkPainter(appId),
-        child: const SizedBox.expand(),
-      ),
-      _ => Center(
-        child: Icon(
-          utilityIconFor(appId),
-          color: Colors.white,
-          size: size * 0.5,
-        ),
-      ),
-    };
+    final Widget artwork = assetPath == null
+        ? switch (appId) {
+            PortfolioAppId.projects => Transform.scale(
+              key: const Key('apple-app-artwork-projects-silhouette'),
+              scale: 1.18,
+              child: CustomPaint(
+                painter: _AppleAppArtworkPainter(appId),
+                child: const SizedBox.expand(),
+              ),
+            ),
+            PortfolioAppId.terminal => CustomPaint(
+              foregroundPainter: _AppleAppArtworkPainter(appId),
+              child: const ColoredBox(
+                key: Key('apple-app-artwork-terminal-screen'),
+                color: Color(0xFF0B0D11),
+              ),
+            ),
+            _ when bespoke => CustomPaint(
+              painter: _AppleAppArtworkPainter(appId),
+              child: const SizedBox.expand(),
+            ),
+            _ => Center(
+              child: Icon(
+                utilityIconFor(appId),
+                color: Colors.white,
+                size: size * 0.5,
+              ),
+            ),
+          }
+        : _buildAssetArtwork(assetPath);
 
     final content = transparentFrame
         ? Stack(
@@ -228,6 +260,9 @@ class _AppleAppArtworkPainter extends CustomPainter {
         _drawProfile(canvas, size);
       case PortfolioAppId.about:
         _drawAbout(canvas, size);
+      case PortfolioAppId.introduction:
+      case PortfolioAppId.github:
+        throw StateError('Asset artwork is rendered by Image.asset.');
       case PortfolioAppId.skills:
         _drawSkills(canvas, size);
       case PortfolioAppId.projects:
@@ -243,7 +278,6 @@ class _AppleAppArtworkPainter extends CustomPainter {
       case PortfolioAppId.trash:
         _drawTrash(canvas, size);
       case PortfolioAppId.thisMac:
-      case PortfolioAppId.github:
         throw StateError('Utility artwork is rendered by its existing glyph.');
     }
   }
@@ -286,17 +320,6 @@ class _AppleAppArtworkPainter extends CustomPainter {
       )
       ..close();
     canvas.drawPath(shoulders, silhouette);
-  }
-
-  void _drawGlassHighlight(Canvas canvas, Size size) {
-    final highlight = Paint()
-      ..shader = const LinearGradient(
-        begin: Alignment.topCenter,
-        end: Alignment.bottomCenter,
-        colors: <Color>[Color(0x38FFFFFF), Color(0x00FFFFFF)],
-        stops: <double>[0, 0.62],
-      ).createShader(Offset.zero & size);
-    canvas.drawRect(Offset.zero & size, highlight);
   }
 
   void _drawAbout(Canvas canvas, Size size) {
@@ -355,6 +378,17 @@ class _AppleAppArtworkPainter extends CustomPainter {
         size.height * 0.65,
       );
     canvas.drawPath(smile, line);
+  }
+
+  void _drawGlassHighlight(Canvas canvas, Size size) {
+    final highlight = Paint()
+      ..shader = const LinearGradient(
+        begin: Alignment.topCenter,
+        end: Alignment.bottomCenter,
+        colors: <Color>[Color(0x38FFFFFF), Color(0x00FFFFFF)],
+        stops: <double>[0, 0.62],
+      ).createShader(Offset.zero & size);
+    canvas.drawRect(Offset.zero & size, highlight);
   }
 
   void _drawSkills(Canvas canvas, Size size) {

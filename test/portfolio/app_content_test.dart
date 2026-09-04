@@ -37,6 +37,7 @@ void main() {
       const expectedLabels = <String, String>{
         'profile': '프로필',
         'about': 'About',
+        'introduction': '자기소개',
         'skills': 'Skills',
         'projects': '포트폴리오',
         'terminal': 'Terminal',
@@ -52,8 +53,12 @@ void main() {
         final appId = PortfolioAppId.values.singleWhere(
           (candidate) => candidate.name == entry.key,
         );
-        expect(find.byKey(Key('apple-app-icon-${appId.name}')), findsOneWidget);
-        expect(find.text(entry.value), findsOneWidget);
+        final icon = find.byKey(Key('apple-app-icon-${appId.name}'));
+        expect(icon, findsOneWidget);
+        expect(
+          find.descendant(of: icon, matching: find.text(entry.value)),
+          findsOneWidget,
+        );
       }
 
       await tester.tap(find.byKey(const Key('apple-app-icon-about')));
@@ -245,6 +250,7 @@ void main() {
       const expectedRootKeys = <String, String>{
         'profile': 'profile-app',
         'about': 'about-app',
+        'introduction': 'introduction-app',
         'skills': 'skills-app',
         'projects': 'projects-app',
         'terminal': 'terminal-app',
@@ -306,6 +312,96 @@ void main() {
     });
 
     testWidgets(
+      'Introduction is a separate scrollable document without invented copy',
+      (tester) async {
+        await _pumpApp(
+          tester,
+          appId: PortfolioAppId.introduction,
+          launcher: _FakeExternalLauncher(),
+          size: const Size(390, 220),
+          compact: true,
+        );
+
+        final scroll = find.byKey(const Key('introduction-scroll'));
+        expect(find.byKey(const Key('introduction-app')), findsOneWidget);
+        final document = find.byKey(const Key('introduction-document'));
+        expect(document, findsOneWidget);
+        expect(scroll, findsOneWidget);
+        expect(
+          tester
+              .widgetList<Text>(
+                find.descendant(of: document, matching: find.byType(Text)),
+              )
+              .map((text) => text.data)
+              .whereType<String>(),
+          orderedEquals(<String>['자기소개', '자기소개서 내용을 추가할 예정입니다.']),
+        );
+        expect(find.byKey(const Key('profile-app')), findsNothing);
+        expect(find.byKey(const Key('about-app')), findsNothing);
+
+        final scrollable = tester.state<ScrollableState>(
+          find.descendant(of: scroll, matching: find.byType(Scrollable)),
+        );
+        expect(scrollable.position.maxScrollExtent, greaterThan(0));
+        await tester.drag(scroll, const Offset(0, -80));
+        await tester.pumpAndSettle();
+        expect(scrollable.position.pixels, greaterThan(0));
+        expect(tester.takeException(), isNull);
+      },
+    );
+
+    testWidgets(
+      'Introduction stays readable and scrollable at 200 percent in both themes',
+      (tester) async {
+        for (final brightness in Brightness.values) {
+          final semantics = tester.ensureSemantics();
+          await _pumpApp(
+            tester,
+            appId: PortfolioAppId.introduction,
+            launcher: _FakeExternalLauncher(),
+            size: const Size(320, 260),
+            compact: true,
+            brightness: brightness,
+            textScaler: const TextScaler.linear(2),
+          );
+
+          final surface = find.byKey(const Key('introduction-app'));
+          final document = find.byKey(const Key('introduction-document'));
+          final message = find.descendant(
+            of: document,
+            matching: find.text('자기소개서 내용을 추가할 예정입니다.'),
+          );
+          expect(
+            tester.widget<AppleAppSurface>(surface).color,
+            AppleTheme.panel(tester.element(surface)),
+          );
+          expect(
+            (tester.widget<Container>(document).decoration! as BoxDecoration)
+                .color,
+            AppleTheme.surface(tester.element(document)),
+          );
+          expect(
+            tester.widget<Text>(message).style?.color,
+            AppleTheme.secondaryLabel(tester.element(message)),
+          );
+          expect(find.bySemanticsLabel('자기소개'), findsWidgets);
+          expect(find.bySemanticsLabel('자기소개서 내용을 추가할 예정입니다.'), findsOneWidget);
+
+          final scroll = find.byKey(const Key('introduction-scroll'));
+          final scrollable = tester.state<ScrollableState>(
+            find.descendant(of: scroll, matching: find.byType(Scrollable)),
+          );
+          expect(scrollable.position.maxScrollExtent, greaterThan(0));
+          await tester.drag(scroll, const Offset(0, -80));
+          await tester.pumpAndSettle();
+          expect(scrollable.position.pixels, greaterThan(0));
+          expect(tester.takeException(), isNull, reason: '$brightness');
+          semantics.dispose();
+        }
+      },
+    );
+
+    testWidgets(
       'app bodies omit the duplicate icon and title toolbar on every form factor',
       (tester) async {
         for (final scenario in const <({Size size, bool compact, bool tablet})>[
@@ -314,6 +410,7 @@ void main() {
           (size: Size(1024, 700), compact: false, tablet: false),
         ]) {
           for (final appId in const <PortfolioAppId>[
+            PortfolioAppId.introduction,
             PortfolioAppId.skills,
             PortfolioAppId.photos,
             PortfolioAppId.trash,
@@ -1424,6 +1521,7 @@ Future<void> _pumpApp(
   bool compact = false,
   bool tablet = false,
   Brightness brightness = Brightness.light,
+  TextScaler textScaler = TextScaler.noScaling,
 }) async {
   final themeController = PortfolioThemeController(
     initial: brightness == Brightness.dark
@@ -1443,6 +1541,10 @@ Future<void> _pumpApp(
       themeMode: brightness == Brightness.dark
           ? ThemeMode.dark
           : ThemeMode.light,
+      builder: (context, child) => MediaQuery(
+        data: MediaQuery.of(context).copyWith(textScaler: textScaler),
+        child: child!,
+      ),
       home: SizedBox.expand(
         child: PortfolioAppContent(
           key: ValueKey<PortfolioAppId>(appId),

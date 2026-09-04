@@ -14,20 +14,9 @@ class AppleMobileDock extends StatelessWidget {
     super.key,
   });
 
-  static const List<PortfolioAppId> phoneApps = <PortfolioAppId>[
-    PortfolioAppId.about,
+  static const List<PortfolioAppId> apps = <PortfolioAppId>[
+    PortfolioAppId.profile,
     PortfolioAppId.projects,
-    PortfolioAppId.github,
-    PortfolioAppId.mail,
-  ];
-
-  static const List<PortfolioAppId> tabletApps = <PortfolioAppId>[
-    PortfolioAppId.about,
-    PortfolioAppId.skills,
-    PortfolioAppId.projects,
-    PortfolioAppId.terminal,
-    PortfolioAppId.github,
-    PortfolioAppId.mail,
   ];
 
   final bool tablet;
@@ -36,7 +25,6 @@ class AppleMobileDock extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final apps = tablet ? tabletApps : phoneApps;
     final radius = tablet ? 26.0 : 23.0;
 
     return RepaintBoundary(

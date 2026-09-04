@@ -1,3 +1,5 @@
+import 'dart:ui' as ui;
+
 import 'package:flutter/material.dart';
 import 'package:flutter/semantics.dart';
 import 'package:flutter/services.dart';
@@ -54,12 +56,9 @@ void main() {
     );
 
     testWidgets(
-      'draws Profile as bespoke Instagram-inspired code-native artwork',
+      'keeps Profile as bespoke Instagram-inspired code-native artwork',
       (tester) async {
-        final profile = PortfolioAppId.values.singleWhere(
-          (appId) => appId.name == 'profile',
-        );
-        await _pumpArtwork(tester, profile);
+        await _pumpArtwork(tester, PortfolioAppId.profile);
 
         final artwork = find.byKey(const Key('apple-app-artwork-profile'));
         expect(artwork, findsOneWidget);
@@ -76,7 +75,7 @@ void main() {
           findsNothing,
         );
 
-        final palette = AppleAppArtwork.colorsFor(profile);
+        final palette = AppleAppArtwork.colorsFor(PortfolioAppId.profile);
         expect(palette.length, greaterThanOrEqualTo(3));
         expect(
           palette.map((color) => color.toARGB32()),
@@ -86,6 +85,98 @@ void main() {
             const Color(0xFFFCAF45).toARGB32(),
           ]),
         );
+      },
+    );
+
+    testWidgets('uses the supplied Word artwork only for Introduction', (
+      tester,
+    ) async {
+      await _pumpArtwork(tester, PortfolioAppId.introduction);
+
+      final artwork = find.byKey(const Key('apple-app-artwork-introduction'));
+      final imageFinder = find.descendant(
+        of: artwork,
+        matching: find.byKey(const Key('apple-app-artwork-introduction-image')),
+      );
+      expect(imageFinder, findsOneWidget);
+      final image = tester.widget<Image>(imageFinder);
+      expect(image.image, isA<AssetImage>());
+      expect(
+        (image.image as AssetImage).assetName,
+        'assets/icons/microsoft-word.png',
+      );
+      expect(image.fit, BoxFit.contain);
+      expect(
+        find.descendant(of: artwork, matching: find.byType(Icon)),
+        findsNothing,
+      );
+      expect(
+        find.descendant(of: artwork, matching: find.byType(CustomPaint)),
+        findsNothing,
+      );
+      expect(tester.takeException(), isNull);
+    });
+
+    testWidgets('preserves the transparent Word source inside its frame', (
+      tester,
+    ) async {
+      await _pumpArtwork(tester, PortfolioAppId.introduction);
+
+      final artwork = find.byKey(const Key('apple-app-artwork-introduction'));
+      final inset = tester.widget<Padding>(
+        find.byKey(const Key('apple-app-artwork-introduction-inset')),
+      );
+      expect(
+        inset.padding.resolve(TextDirection.ltr),
+        const EdgeInsets.all(72 * 0.06),
+      );
+      expect(
+        find.descendant(of: artwork, matching: find.byType(ColoredBox)),
+        findsNothing,
+      );
+      final gradient =
+          _artworkDecoration(tester, PortfolioAppId.introduction).gradient!
+              as LinearGradient;
+      expect(gradient.colors.every((color) => color.a == 0), isTrue);
+    });
+
+    testWidgets('uses the supplied GitHub artwork instead of a generic glyph', (
+      tester,
+    ) async {
+      await _pumpArtwork(tester, PortfolioAppId.github);
+
+      final artwork = find.byKey(const Key('apple-app-artwork-github'));
+      final imageFinder = find.descendant(
+        of: artwork,
+        matching: find.byKey(const Key('apple-app-artwork-github-image')),
+      );
+      expect(imageFinder, findsOneWidget);
+      final image = tester.widget<Image>(imageFinder);
+      expect(image.image, isA<AssetImage>());
+      expect((image.image as AssetImage).assetName, 'assets/icons/github.png');
+      expect(image.fit, BoxFit.contain);
+      expect(
+        find.descendant(of: artwork, matching: find.byType(Icon)),
+        findsNothing,
+      );
+      expect(
+        find.descendant(of: artwork, matching: find.byType(CustomPaint)),
+        findsNothing,
+      );
+      expect(tester.takeException(), isNull);
+    });
+
+    test(
+      'bundles the supplied image payload sizes and decoded dimensions',
+      () async {
+        final word = await rootBundle.load('assets/icons/microsoft-word.png');
+        final github = await rootBundle.load('assets/icons/github.png');
+
+        expect(word.lengthInBytes, 32999);
+        expect(github.lengthInBytes, 10608);
+        expect(await _decodeImageSize(word), const Size(512, 476));
+        expect(await _decodeTopLeftAlpha(word), 0);
+        expect(await _decodeImageSize(github), const Size(320, 320));
       },
     );
 
@@ -262,11 +353,12 @@ void main() {
       expect(decoration.boxShadow, isEmpty);
     });
 
-    testWidgets('keeps About and Mail on their existing framed tiles', (
+    testWidgets('keeps About, Introduction, and Mail on framed tiles', (
       tester,
     ) async {
       for (final appId in const <PortfolioAppId>[
         PortfolioAppId.about,
+        PortfolioAppId.introduction,
         PortfolioAppId.mail,
       ]) {
         await _pumpArtwork(tester, appId);
@@ -402,7 +494,10 @@ void main() {
       );
       await tester.pump();
 
-      expect(find.byKey(const Key('apple-app-artwork-about')), findsOneWidget);
+      expect(
+        find.byKey(const Key('apple-app-artwork-about')),
+        findsNWidgets(2),
+      );
 
       final desktopAbout = find.byKey(const Key('desktop-app-about'));
       await tester.tap(desktopAbout);
@@ -474,7 +569,6 @@ const List<PortfolioAppId> _bespokeApps = <PortfolioAppId>[
 
 const List<PortfolioAppId> _utilityApps = <PortfolioAppId>[
   PortfolioAppId.thisMac,
-  PortfolioAppId.github,
 ];
 
 DateTime _fixedNow() => DateTime(2026, 9, 3, 10, 9);
@@ -513,4 +607,39 @@ BoxDecoration _artworkDecoration(WidgetTester tester, PortfolioAppId appId) {
   );
   return tester.widget<DecoratedBox>(decoratedBox.first).decoration
       as BoxDecoration;
+}
+
+Future<Size> _decodeImageSize(ByteData data) async {
+  final codec = await ui.instantiateImageCodec(
+    data.buffer.asUint8List(data.offsetInBytes, data.lengthInBytes),
+  );
+  try {
+    final frame = await codec.getNextFrame();
+    try {
+      return Size(frame.image.width.toDouble(), frame.image.height.toDouble());
+    } finally {
+      frame.image.dispose();
+    }
+  } finally {
+    codec.dispose();
+  }
+}
+
+Future<int> _decodeTopLeftAlpha(ByteData data) async {
+  final codec = await ui.instantiateImageCodec(
+    data.buffer.asUint8List(data.offsetInBytes, data.lengthInBytes),
+  );
+  try {
+    final frame = await codec.getNextFrame();
+    try {
+      final pixels = await frame.image.toByteData(
+        format: ui.ImageByteFormat.rawRgba,
+      );
+      return pixels!.getUint8(3);
+    } finally {
+      frame.image.dispose();
+    }
+  } finally {
+    codec.dispose();
+  }
 }

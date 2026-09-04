@@ -6,6 +6,7 @@ import '../services/external_launcher.dart';
 import '../theme/portfolio_theme_controller.dart';
 import '../widgets/apple_finder_scaffold.dart';
 import 'about_app.dart';
+import 'introduction_app.dart';
 import 'photos_app.dart';
 import 'profile_app.dart';
 import 'projects_app.dart';
@@ -52,6 +53,10 @@ class PortfolioAppContent extends StatelessWidget {
       PortfolioAppId.about => AboutApp(
         data: data,
         launcher: launcher,
+        compact: compact,
+        tablet: tablet,
+      ),
+      PortfolioAppId.introduction => IntroductionApp(
         compact: compact,
         tablet: tablet,
       ),

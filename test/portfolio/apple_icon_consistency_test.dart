@@ -151,10 +151,7 @@ void main() {
 List<PortfolioAppId> _appsFor(_IconSurface surface) => switch (surface) {
   _IconSurface.desktop => portfolioLauncherAppIds,
   _IconSurface.iPad || _IconSurface.iPhone => AppleHomeGrid.apps,
-  _IconSurface.dock => <PortfolioAppId>[
-    ...MacDock.launchableApps,
-    ...MacDock.utilityApps,
-  ],
+  _IconSurface.dock => MacDock.launchableApps,
 };
 
 enum _IconSurface {

@@ -7,6 +7,7 @@ import '../models/portfolio_app_id.dart';
 import '../services/external_launcher.dart';
 import '../theme/portfolio_theme_controller.dart';
 import 'apple_home_grid.dart';
+import 'apple_mobile_dock.dart';
 import 'apple_status_bar.dart';
 import 'mobile_app_surface.dart';
 
@@ -231,10 +232,24 @@ class _AppleMobileShellState extends State<AppleMobileShell> {
   Widget _buildHome() {
     return SizedBox.expand(
       key: const Key('mobile-home'),
-      child: AppleHomeGrid(
-        data: widget.data,
-        tablet: widget.tablet,
-        onOpen: _openApp,
+      child: Stack(
+        children: <Widget>[
+          Positioned.fill(
+            child: AppleHomeGrid(
+              data: widget.data,
+              tablet: widget.tablet,
+              onOpen: _openApp,
+            ),
+          ),
+          Positioned(
+            left: 12,
+            right: 12,
+            bottom: widget.tablet ? 14 : 9,
+            child: Center(
+              child: AppleMobileDock(tablet: widget.tablet, onOpen: _openApp),
+            ),
+          ),
+        ],
       ),
     );
   }

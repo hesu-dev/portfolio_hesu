@@ -3,6 +3,7 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:portfolio_hesu/portfolio/macos/mac_desktop.dart';
 import 'package:portfolio_hesu/portfolio/macos/mac_dock.dart';
 import 'package:portfolio_hesu/portfolio/mobile/apple_home_grid.dart';
+import 'package:portfolio_hesu/portfolio/mobile/apple_mobile_dock.dart';
 import 'package:portfolio_hesu/portfolio/models/portfolio_app_id.dart';
 import 'package:portfolio_hesu/portfolio/services/external_launcher.dart';
 import 'package:portfolio_hesu/portfolio/theme/portfolio_theme_controller.dart';
@@ -12,6 +13,7 @@ void main() {
   test('desktop and mobile expose distinct ordered launcher catalogs', () {
     expect(portfolioLauncherAppIds.map((appId) => appId.name), <String>[
       'about',
+      'introduction',
       'skills',
       'projects',
       'terminal',
@@ -22,6 +24,7 @@ void main() {
     ]);
     expect(AppleHomeGrid.apps.map((appId) => appId.name), <String>[
       'profile',
+      'introduction',
       'skills',
       'projects',
       'terminal',
@@ -33,12 +36,22 @@ void main() {
     ]);
     expect(MacDock.launchableApps.map((appId) => appId.name), <String>[
       'about',
+      'introduction',
       'skills',
       'projects',
       'terminal',
       'github',
       'mail',
       'settings',
+      'trash',
+    ]);
+    expect(MacDock.pinnedApps.map((appId) => appId.name), <String>[
+      'about',
+      'projects',
+    ]);
+    expect(AppleMobileDock.apps.map((appId) => appId.name), <String>[
+      'profile',
+      'projects',
     ]);
   });
 
@@ -62,6 +75,7 @@ void main() {
 
       expect(find.byKey(const Key('home-app-about')), findsNothing);
       expect(find.byKey(const Key('home-app-profile')), findsOneWidget);
+      expect(find.byKey(const Key('home-app-introduction')), findsOneWidget);
       expect(find.byKey(const Key('home-app-photos')), findsOneWidget);
     },
   );
