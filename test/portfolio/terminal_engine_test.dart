@@ -1,6 +1,7 @@
 import 'package:flutter_test/flutter_test.dart';
 import 'package:portfolio_hesu/portfolio/data/portfolio_data.dart';
 import 'package:portfolio_hesu/portfolio/terminal/terminal_engine.dart';
+import 'package:portfolio_hesu/portfolio/terminal/terminal_git_history.dart';
 
 void main() {
   late TerminalEngine engine;
@@ -10,18 +11,25 @@ void main() {
   });
 
   group('TerminalEngine', () {
-    test('help lists every supported command', () {
-      expect(engine.execute('help').lines, <String>[
-        'Available commands:',
-        '  help',
-        '  whoami',
-        '  ls',
-        '  cat skills.md',
-        '  git status',
-        '  git log',
-        '  npm run dev',
-        '  clear',
-      ]);
+    test('help pairs every supported English command with Korean guidance', () {
+      final result = engine.execute('help');
+
+      expect(
+        result.helpEntries
+            .map((entry) => (entry.command, entry.description))
+            .toList(),
+        <(String, String)>[
+          ('flutter run', '포트폴리오 개발 서버 실행'),
+          ('git log', '최신 커밋 내역'),
+          ('git status', '현재 상태'),
+          ('cat skills.md', '기술 스택 출력'),
+          ('ls', '개인 프로젝트 목록'),
+          ('whoami', '개발자 소개'),
+          ('clear', '화면 지우기'),
+        ],
+      );
+      expect(result.lines.join('\n'), isNot(contains('npm run dev')));
+      expect(result.lines.join('\n'), isNot(contains('Available commands')));
     });
 
     test('whoami returns the portfolio identity', () {
@@ -32,14 +40,28 @@ void main() {
       expect(output, contains('hesu-dev'));
     });
 
-    test('ls lists portfolio files and project names', () {
+    test('ls lists only personal projects in portfolio order', () {
       final output = engine.execute('ls').lines.join('\n');
 
-      expect(output, contains('about.md'));
-      expect(output, contains('skills.md'));
-      for (final project in portfolioData.projects) {
-        expect(output, contains(project.title), reason: project.title);
+      expect(output, isNot(contains('about.md')));
+      expect(output, isNot(contains('skills.md')));
+      final personalProjects = portfolioData.projects
+          .where(
+            (project) => project.category == PortfolioProjectCategory.personal,
+          )
+          .toList();
+      for (final project in personalProjects) {
+        expect(output, contains('${project.title}/'), reason: project.title);
       }
+      for (final project in portfolioData.projects.where(
+        (project) => project.category == PortfolioProjectCategory.career,
+      )) {
+        expect(output, isNot(contains(project.title)), reason: project.title);
+      }
+      expect(
+        engine.execute('ls').lines.skip(1).toList(),
+        personalProjects.map((project) => '  ${project.title}/').toList(),
+      );
     });
 
     test('cat skills.md lists every skill grouped by category', () {
@@ -55,30 +77,40 @@ void main() {
 
     test('git status returns a clean deterministic status', () {
       expect(engine.execute('git status').lines, <String>[
-        'On branch portfolio',
+        'On branch dev',
+        "Your branch is up to date with 'origin/dev'.",
         'nothing to commit, working tree clean',
       ]);
     });
 
-    test('git log returns one deterministic entry per project', () {
-      final result = engine.execute('git log');
+    test('git log renders injected real commit snapshots newest first', () {
+      const history = <TerminalGitCommit>[
+        TerminalGitCommit(
+          hash: 'abc1234',
+          subject: 'feat(terminal): 명령 인터페이스 추가',
+        ),
+        TerminalGitCommit(hash: 'def5678', subject: 'test(terminal): 명령 계약 보강'),
+      ];
+      final result = TerminalEngine(
+        portfolioData,
+        gitHistory: history,
+      ).execute('git log');
 
-      expect(result.lines, hasLength(portfolioData.projects.length));
+      expect(result.lines, <String>[
+        'abc1234  feat(terminal): 명령 인터페이스 추가',
+        'def5678  test(terminal): 명령 계약 보강',
+      ]);
+      expect(result.lines.join('\n'), isNot(contains('portfolio-01')));
       for (final project in portfolioData.projects) {
-        expect(
-          result.lines.where((line) => line.contains(project.title)),
-          hasLength(1),
-          reason: project.title,
-        );
+        expect(result.lines.join('\n'), isNot(contains(project.title)));
       }
     });
 
-    test('npm run dev reports a ready portfolio preview', () {
-      final output = engine.execute('npm run dev').lines.join('\n');
+    test('npm run dev is removed in favor of flutter run', () {
+      final result = engine.execute('npm run dev');
 
-      expect(output, contains('portfolio'));
-      expect(output, contains('Min He-su'));
-      expect(output, contains('ready'));
+      expect(result.lines.single, contains('command not found'));
+      expect(result.lines.single, contains('help'));
     });
 
     test('flutter run unlocks the portfolio Easter egg', () {
@@ -131,8 +163,8 @@ void main() {
           engine.execute('cat skills.md').lines,
         );
         expect(
-          engine.execute('  NPM   RUN   DEV  ').lines,
-          engine.execute('npm run dev').lines,
+          engine.execute('  FLUTTER   RUN  ').lines,
+          engine.execute('flutter run').lines,
         );
       },
     );
@@ -162,6 +194,7 @@ void main() {
             period: '2026',
             technologies: <String>['Test Skill'],
             links: <PortfolioProjectLink>[],
+            category: PortfolioProjectCategory.personal,
           ),
         ],
       );
@@ -178,10 +211,6 @@ void main() {
       expect(
         customEngine.execute('cat skills.md').lines.join('\n'),
         contains('Test Skill'),
-      );
-      expect(
-        customEngine.execute('git log').lines.join('\n'),
-        contains('Test Project'),
       );
     });
 
@@ -203,7 +232,6 @@ void main() {
         'cat skills.md',
         'git status',
         'git log',
-        'npm run dev',
         'flutter run',
         'clear',
         'https://portfolio-juah.vercel.app/',
