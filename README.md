@@ -37,10 +37,12 @@ flutter analyze
 Vercel은 도메인 루트에서 실행되므로 `/` base 경로로 빌드합니다.
 
 ```bash
-flutter build web --release --base-href / --pwa-strategy=none
+dart run tool/build_web.dart
 ```
 
-결과물 디렉터리는 `build/web`입니다.
+이 빌드 진입점은 현재 저장소의 최근 Git 커밋 8개를 터미널의 `git log`에
+주입한 뒤 Flutter Web 릴리스 빌드를 실행합니다. 결과물 디렉터리는
+`build/web`입니다.
 
 ### Vercel 설정
 
@@ -55,7 +57,7 @@ git clone --depth 1 --branch 3.38.9 https://github.com/flutter/flutter.git .flut
 `Build Command`:
 
 ```bash
-./.flutter/bin/flutter build web --release --base-href / --pwa-strategy=none
+./.flutter/bin/dart run tool/build_web.dart --flutter-bin ./.flutter/bin/flutter
 ```
 
 `Output Directory`:
@@ -66,7 +68,7 @@ build/web
 
 Flutter SDK는 검증한 `3.38.9` 태그로 고정해 Vercel의 반복 빌드 결과가 `stable` 브랜치 변경에 따라 달라지지 않게 합니다.
 
-사전 빌드 정적 배포 대안도 있습니다. Flutter가 설치된 로컬 환경이나 별도 CI에서 위 루트 경로 명령으로 사전 빌드하고, 생성된 `build/web`을 별도의 Vercel 정적 프로젝트에 배포합니다. 이 경우 Vercel 안에서 Flutter SDK를 내려받을 필요가 없으며 소스 저장소 루트에는 생성물을 커밋하지 않습니다.
+사전 빌드 정적 배포 대안도 있습니다. Flutter가 설치된 로컬 환경이나 별도 CI에서 `dart run tool/build_web.dart`로 사전 빌드하고, 생성된 `build/web`을 별도의 Vercel 정적 프로젝트에 배포합니다. 이 경우 Vercel 안에서 Flutter SDK를 내려받을 필요가 없으며 소스 저장소 루트에는 생성물을 커밋하지 않습니다.
 
 GitHub Pages 자동 배포 워크플로는 제거했습니다. Vercel 프로젝트 생성, 도메인 연결, 환경 설정은 실제 이전 시점에 별도로 진행합니다.
 
