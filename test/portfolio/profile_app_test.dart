@@ -111,6 +111,7 @@ void main() {
         (Size(320, 480), false),
         (Size(834, 1194), true),
       ]) {
+        final backgroundColors = <Brightness, Color>{};
         for (final brightness in Brightness.values) {
           await tester.pumpWidget(const SizedBox.shrink());
           await _pumpProfileShell(
@@ -128,6 +129,12 @@ void main() {
 
           final profile = find.byKey(const Key('profile-app'));
           expect(profile, findsOneWidget);
+          final background = find.byKey(const Key('profile-background'));
+          expect(background, findsOneWidget);
+          backgroundColors[brightness] = tester
+              .widget<ColoredBox>(background)
+              .color;
+          expect(find.byKey(const Key('profile-scroll')), findsOneWidget);
           expect(
             Theme.of(tester.element(profile)).brightness,
             brightness,
@@ -139,44 +146,52 @@ void main() {
             reason: '${formFactor.$1} $brightness',
           );
         }
+        expect(
+          backgroundColors[Brightness.light],
+          isNot(backgroundColors[Brightness.dark]),
+          reason: '${formFactor.$1} light and dark surfaces',
+        );
       }
     });
 
-    testWidgets('프로필 본문은 터치와 마우스 드래그로 스크롤된다', (tester) async {
-      await _pumpProfileShell(
-        tester,
-        size: const Size(320, 480),
-        tablet: false,
-      );
-      final profileLauncher = find.byKey(const Key('home-app-profile'));
-      expect(profileLauncher, findsOneWidget);
-      await tester.tap(profileLauncher);
-      await tester.pumpAndSettle();
+    testWidgets('iPhone과 iPad 프로필 본문은 터치와 마우스 드래그로 스크롤된다', (tester) async {
+      for (final scenario in const <(String, Size, bool)>[
+        ('iPhone', Size(320, 480), false),
+        ('iPad', Size(834, 620), true),
+      ]) {
+        await tester.pumpWidget(const SizedBox.shrink());
+        await _pumpProfileShell(tester, size: scenario.$2, tablet: scenario.$3);
+        final profileLauncher = find.byKey(const Key('home-app-profile'));
+        expect(profileLauncher, findsOneWidget, reason: scenario.$1);
+        await tester.tap(profileLauncher);
+        await tester.pumpAndSettle();
 
-      final profileScroll = find.byKey(const Key('profile-scroll'));
-      expect(profileScroll, findsOneWidget);
-      final scrollable = find.descendant(
-        of: profileScroll,
-        matching: find.byType(Scrollable),
-      );
-      final position = tester.state<ScrollableState>(scrollable).position;
+        final profileScroll = find.byKey(const Key('profile-scroll'));
+        expect(profileScroll, findsOneWidget, reason: scenario.$1);
+        final scrollable = find.descendant(
+          of: profileScroll,
+          matching: find.byType(Scrollable),
+        );
+        final position = tester.state<ScrollableState>(scrollable).position;
+        expect(position.maxScrollExtent, greaterThan(0), reason: scenario.$1);
 
-      await tester.drag(profileScroll, const Offset(0, -180));
-      await tester.pumpAndSettle();
-      expect(position.pixels, greaterThan(0));
+        await tester.drag(profileScroll, const Offset(0, -180));
+        await tester.pumpAndSettle();
+        expect(position.pixels, greaterThan(0), reason: '${scenario.$1} touch');
 
-      position.jumpTo(0);
-      await tester.pump();
-      final center = tester.getCenter(profileScroll);
-      final mouse = await tester.createGesture(kind: PointerDeviceKind.mouse);
-      await mouse.addPointer(location: center);
-      await mouse.down(center);
-      await mouse.moveBy(const Offset(0, -180));
-      await mouse.up();
-      await tester.pumpAndSettle();
+        position.jumpTo(0);
+        await tester.pump();
+        final center = tester.getCenter(profileScroll);
+        final mouse = await tester.createGesture(kind: PointerDeviceKind.mouse);
+        await mouse.addPointer(location: center);
+        await mouse.down(center);
+        await mouse.moveBy(const Offset(0, -180));
+        await mouse.up();
+        await tester.pumpAndSettle();
 
-      expect(position.pixels, greaterThan(0));
-      await mouse.removePointer();
+        expect(position.pixels, greaterThan(0), reason: '${scenario.$1} mouse');
+        await mouse.removePointer();
+      }
     });
   });
 }
