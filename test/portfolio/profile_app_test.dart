@@ -1485,7 +1485,7 @@ void _expectReelTemplate(WidgetTester tester, {required PortfolioData data}) {
     expect(
       find.descendant(of: overlay, matching: section),
       findsOneWidget,
-      reason: section.description,
+      reason: 'Reel controls must stay inside the overlay',
     );
   }
   final topBarRect = tester.getRect(topBar);

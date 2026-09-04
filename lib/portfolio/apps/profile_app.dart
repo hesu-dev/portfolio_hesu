@@ -41,9 +41,19 @@ class _ProfileAppState extends State<ProfileApp> {
   @override
   void didUpdateWidget(covariant ProfileApp oldWidget) {
     super.didUpdateWidget(oldWidget);
+    if (!_hasSameHistory(oldWidget.data, widget.data)) {
+      _selection = null;
+      _likedHistory.clear();
+      _rootScrollOffset = 0;
+      _scheduleRootScrollRestore();
+      return;
+    }
+
     final selection = _selection;
     if (selection != null && !_selectionExists(selection)) {
       _selection = null;
+      _rootScrollOffset = 0;
+      _scheduleRootScrollRestore();
     }
   }
 
@@ -61,6 +71,63 @@ class _ProfileAppState extends State<ProfileApp> {
       _ProfileHistoryKind.education =>
         selection.index >= 0 && selection.index < widget.data.education.length,
     };
+  }
+
+  bool _hasSameHistory(PortfolioData previous, PortfolioData current) {
+    if (previous.experiences.length != current.experiences.length ||
+        previous.education.length != current.education.length) {
+      return false;
+    }
+
+    for (var index = 0; index < previous.experiences.length; index++) {
+      final previousItem = previous.experiences[index];
+      final currentItem = current.experiences[index];
+      if (previousItem.role != currentItem.role ||
+          previousItem.organization != currentItem.organization ||
+          previousItem.period != currentItem.period ||
+          previousItem.description != currentItem.description) {
+        return false;
+      }
+    }
+
+    for (var index = 0; index < previous.education.length; index++) {
+      final previousItem = previous.education[index];
+      final currentItem = current.education[index];
+      if (previousItem.program != currentItem.program ||
+          previousItem.institution != currentItem.institution ||
+          previousItem.period != currentItem.period ||
+          !_hasSameLink(previousItem.link, currentItem.link)) {
+        return false;
+      }
+    }
+
+    return true;
+  }
+
+  bool _hasSameLink(
+    PortfolioProjectLink? previous,
+    PortfolioProjectLink? current,
+  ) {
+    return identical(previous, current) ||
+        (previous != null &&
+            current != null &&
+            previous.label == current.label &&
+            previous.url == current.url);
+  }
+
+  void _scheduleRootScrollRestore() {
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (!mounted || !_rootScrollController.hasClients) {
+        return;
+      }
+      final position = _rootScrollController.position;
+      _rootScrollController.jumpTo(
+        _rootScrollOffset.clamp(
+          position.minScrollExtent,
+          position.maxScrollExtent,
+        ),
+      );
+    });
   }
 
   void _openHistory(_ProfileHistoryKind kind, int index) {
@@ -86,18 +153,7 @@ class _ProfileAppState extends State<ProfileApp> {
       setState(() {
         _selection = null;
       });
-      WidgetsBinding.instance.addPostFrameCallback((_) {
-        if (!mounted || !_rootScrollController.hasClients) {
-          return;
-        }
-        final position = _rootScrollController.position;
-        _rootScrollController.jumpTo(
-          _rootScrollOffset.clamp(
-            position.minScrollExtent,
-            position.maxScrollExtent,
-          ),
-        );
-      });
+      _scheduleRootScrollRestore();
       return;
     }
     widget.onClose?.call();
@@ -1235,11 +1291,10 @@ class _ProfileReplyItem extends StatelessWidget {
     required this.identityName,
     required this.monogram,
     required this.index,
-    required PortfolioExperience experience,
+    required this.experience,
     required this.compact,
     super.key,
   }) : kind = _ProfileHistoryKind.experience,
-       experience = experience,
        education = null,
        onLaunch = null;
 
@@ -1247,14 +1302,12 @@ class _ProfileReplyItem extends StatelessWidget {
     required this.identityName,
     required this.monogram,
     required this.index,
-    required PortfolioEducation education,
+    required this.education,
     required this.compact,
-    required Future<void> Function(Uri uri) onLaunch,
+    required this.onLaunch,
     super.key,
   }) : kind = _ProfileHistoryKind.education,
-       experience = null,
-       education = education,
-       onLaunch = onLaunch;
+       experience = null;
 
   final String identityName;
   final String monogram;
