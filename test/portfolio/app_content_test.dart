@@ -1013,27 +1013,65 @@ void main() {
         compact: true,
       );
 
+      expect(find.text(r'포트폴리오: ~$ help'), findsOneWidget);
+      expect(find.text('flutter run'), findsOneWidget);
+      expect(find.text('포트폴리오 개발 서버 실행'), findsOneWidget);
+
       await tester.enterText(find.byKey(const Key('terminal-input')), 'whoami');
-      await tester.tap(find.byKey(const Key('terminal-submit')));
+      await tester.testTextInput.receiveAction(TextInputAction.send);
       await tester.pump();
       expect(find.textContaining('Min He-su'), findsOneWidget);
       expect(find.textContaining(portfolioData.identity.email), findsOneWidget);
 
       await tester.enterText(find.byKey(const Key('terminal-input')), 'oops');
-      await tester.tap(find.byKey(const Key('terminal-submit')));
+      await tester.testTextInput.receiveAction(TextInputAction.send);
       await tester.pump();
       expect(find.textContaining('command not found'), findsOneWidget);
 
       await tester.enterText(find.byKey(const Key('terminal-input')), 'clear');
-      await tester.tap(find.byKey(const Key('terminal-submit')));
-      await tester.pump();
+      await tester.testTextInput.receiveAction(TextInputAction.send);
+      await tester.pumpAndSettle();
       expect(find.textContaining('Min He-su'), findsNothing);
       expect(find.textContaining('command not found'), findsNothing);
+      expect(find.text(r'포트폴리오: ~$ help'), findsNothing);
+      expect(
+        find.descendant(
+          of: find.byKey(const Key('terminal-transcript')),
+          matching: find.byType(Text),
+        ),
+        findsNothing,
+      );
+      expect(
+        tester
+            .widget<TextField>(find.byKey(const Key('terminal-input')))
+            .controller!
+            .text,
+        isEmpty,
+      );
+      expect(
+        tester
+            .widget<EditableText>(find.byType(EditableText))
+            .focusNode
+            .hasFocus,
+        isTrue,
+      );
+      expect(
+        tester
+            .widget<ListView>(find.byKey(const Key('terminal-transcript')))
+            .controller!
+            .offset,
+        0,
+      );
+
+      await tester.enterText(find.byKey(const Key('terminal-input')), 'whoami');
+      await tester.testTextInput.receiveAction(TextInputAction.send);
+      await tester.pump();
+      expect(find.textContaining('Min He-su'), findsOneWidget);
       expect(tester.takeException(), isNull);
     });
 
     testWidgets(
-      'terminal keeps one title and places the flutter run input at the top',
+      'terminal shows only a focused blinking command line above its transcript',
       (tester) async {
         await _pumpApp(
           tester,
@@ -1051,12 +1089,33 @@ void main() {
           lessThan(tester.getTopLeft(transcript).dy),
         );
         expect(find.text('portfolio — zsh'), findsNothing);
+        expect(find.text(r'포트폴리오: ~$'), findsOneWidget);
+        expect(find.text(r'포트폴리오: ~$ help'), findsOneWidget);
+        expect(find.byKey(const Key('terminal-submit')), findsNothing);
+        final input = tester.widget<TextField>(
+          find.byKey(const Key('terminal-input')),
+        );
+        expect(input.decoration?.hintText, isNull);
+        expect(input.autofocus, isTrue);
+        expect(input.cursorOpacityAnimates, isTrue);
+        expect(input.enableInteractiveSelection, isFalse);
+        final inputSurface = tester.widget<Container>(
+          find.byKey(const Key('terminal-input-surface')),
+        );
+        final decoration = inputSurface.decoration! as BoxDecoration;
+        expect(decoration.border, isNull);
+        expect(
+          (tester.getCenter(find.text(r'포트폴리오: ~$')).dy -
+                  tester.getCenter(find.byKey(const Key('terminal-input'))).dy)
+              .abs(),
+          lessThan(1),
+        );
 
         await tester.enterText(
           find.byKey(const Key('terminal-input')),
           'flutter run',
         );
-        await tester.tap(find.byKey(const Key('terminal-submit')));
+        await tester.testTextInput.receiveAction(TextInputAction.send);
         await tester.pump();
 
         expect(find.textContaining('Easter egg'), findsOneWidget);
@@ -1065,7 +1124,7 @@ void main() {
       },
     );
 
-    testWidgets('terminal derives one consistent prompt from injected email', (
+    testWidgets('terminal keeps the fixed Korean prompt for injected data', (
       tester,
     ) async {
       final data = _dataWithIdentity(
@@ -1073,7 +1132,7 @@ void main() {
         englishName: 'Ada Lovelace',
         email: 'ada.dev@example.com',
       );
-      const prompt = 'ada.dev@portfolio ~ %';
+      const prompt = r'포트폴리오: ~$';
       await _pumpApp(
         tester,
         appId: PortfolioAppId.terminal,
@@ -1084,20 +1143,23 @@ void main() {
       );
 
       expect(find.text(prompt), findsOneWidget);
-
-      await tester.enterText(find.byKey(const Key('terminal-input')), 'help');
-      await tester.tap(find.byKey(const Key('terminal-submit')));
-      await tester.pump();
       expect(find.text('$prompt help'), findsOneWidget);
 
+      await tester.enterText(find.byKey(const Key('terminal-input')), 'whoami');
+      await tester.testTextInput.receiveAction(TextInputAction.send);
+      await tester.pump();
+      expect(find.text('$prompt whoami'), findsOneWidget);
+      expect(find.textContaining('Ada Lovelace'), findsOneWidget);
+
       await tester.enterText(find.byKey(const Key('terminal-input')), 'clear');
-      await tester.tap(find.byKey(const Key('terminal-submit')));
+      await tester.testTextInput.receiveAction(TextInputAction.send);
       await tester.pump();
       expect(find.text('$prompt help'), findsNothing);
+      expect(find.text('$prompt whoami'), findsNothing);
       expect(find.text(prompt), findsOneWidget);
     });
 
-    testWidgets('terminal falls back to a safe English-name prompt', (
+    testWidgets('terminal prompt never leaks an invalid injected email', (
       tester,
     ) async {
       final data = _dataWithIdentity(
@@ -1114,8 +1176,8 @@ void main() {
         compact: true,
       );
 
-      expect(find.text('grace-hopper@portfolio ~ %'), findsOneWidget);
-      expect(find.textContaining('hesu@portfolio'), findsNothing);
+      expect(find.text(r'포트폴리오: ~$'), findsOneWidget);
+      expect(find.textContaining('invalid email'), findsNothing);
     });
 
     testWidgets('system actions use the injected launcher and report failure', (

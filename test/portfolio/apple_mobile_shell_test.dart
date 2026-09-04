@@ -357,11 +357,13 @@ void main() {
           find.byKey(const Key('mobile-back-close-terminal')),
         );
         expect(closeSize, const Size(44, 44));
-        final submitSize = tester.getSize(
-          find.byKey(const Key('terminal-submit')),
+        expect(find.text(r'포트폴리오: ~$'), findsOneWidget);
+        expect(find.byKey(const Key('terminal-submit')), findsNothing);
+        final input = tester.widget<TextField>(
+          find.byKey(const Key('terminal-input')),
         );
-        expect(submitSize.width, greaterThanOrEqualTo(44));
-        expect(submitSize.height, greaterThanOrEqualTo(44));
+        expect(input.decoration?.hintText, isNull);
+        expect(input.autofocus, isTrue);
         expect(tester.takeException(), isNull, reason: '$size');
       }
       semantics.dispose();
@@ -563,11 +565,15 @@ void main() {
         await tester.pumpAndSettle();
 
         expect(find.byKey(const Key('terminal-app')), findsOneWidget);
-        final submitSize = tester.getSize(
-          find.byKey(const Key('terminal-submit')),
+        expect(find.text(r'포트폴리오: ~$'), findsOneWidget);
+        expect(find.byKey(const Key('terminal-submit')), findsNothing);
+        expect(
+          tester
+              .widget<TextField>(find.byKey(const Key('terminal-input')))
+              .decoration
+              ?.hintText,
+          isNull,
         );
-        expect(submitSize.width, greaterThanOrEqualTo(44));
-        expect(submitSize.height, greaterThanOrEqualTo(44));
         expect(tester.takeException(), isNull, reason: '$size');
       }
     });

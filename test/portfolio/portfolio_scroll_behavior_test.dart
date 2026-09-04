@@ -163,7 +163,7 @@ Future<void> _pumpAppContent(
 Future<void> _fillTerminalTranscript(WidgetTester tester) async {
   for (var index = 0; index < 4; index++) {
     await tester.enterText(find.byKey(const Key('terminal-input')), 'help');
-    await tester.tap(find.byKey(const Key('terminal-submit')));
+    await tester.testTextInput.receiveAction(TextInputAction.send);
     await tester.pump();
   }
   await tester.pumpAndSettle();

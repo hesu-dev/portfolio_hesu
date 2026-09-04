@@ -515,7 +515,7 @@ void main() {
           find.byKey(const Key('terminal-input')),
           'skills',
         );
-        await tester.tap(find.byKey(const Key('terminal-submit')));
+        await tester.testTextInput.receiveAction(TextInputAction.send);
         await tester.pumpAndSettle();
 
         await tester.drag(
@@ -527,7 +527,7 @@ void main() {
         await tester.tap(find.byKey(const Key('project-selector-3')));
         await tester.pumpAndSettle();
 
-        expect(find.text('hs0647@portfolio ~ % skills'), findsOneWidget);
+        expect(find.text(r'포트폴리오: ~$ skills'), findsOneWidget);
         expect(
           tester
               .widget<Text>(find.byKey(const Key('project-detail-title')))
@@ -552,7 +552,7 @@ void main() {
           find.byKey(const Key('mac-window-active-terminal')),
           findsOneWidget,
         );
-        expect(find.text('hs0647@portfolio ~ % skills'), findsOneWidget);
+        expect(find.text(r'포트폴리오: ~$ skills'), findsOneWidget);
         expect(
           tester
               .widget<Text>(find.byKey(const Key('project-detail-title')))
@@ -572,7 +572,7 @@ void main() {
           find.byKey(const Key('terminal-input')),
           'skills',
         );
-        await tester.tap(find.byKey(const Key('terminal-submit')));
+        await tester.testTextInput.receiveAction(TextInputAction.send);
         await tester.pumpAndSettle();
 
         expect(
@@ -613,7 +613,7 @@ void main() {
         await tester.pumpAndSettle();
 
         expect(find.byKey(const Key('mac-window-terminal')), findsOneWidget);
-        expect(find.text('hs0647@portfolio ~ % skills'), findsOneWidget);
+        expect(find.text(r'포트폴리오: ~$ skills'), findsOneWidget);
         semantics.dispose();
       },
     );
