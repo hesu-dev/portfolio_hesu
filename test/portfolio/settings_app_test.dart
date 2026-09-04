@@ -122,6 +122,61 @@ void main() {
       }
     });
 
+    testWidgets('데스크톱 화면 모드 카드는 모바일과 같은 24px 간격을 사용한다', (tester) async {
+      final controller = PortfolioThemeController();
+      addTearDown(controller.dispose);
+
+      await _pumpSettings(
+        tester,
+        controller: controller,
+        size: const Size(820, 620),
+      );
+
+      final light = tester.getRect(find.byKey(const Key('theme-light')));
+      final dark = tester.getRect(find.byKey(const Key('theme-dark')));
+      expect(dark.left - light.right, closeTo(24, 0.1));
+    });
+
+    testWidgets('데스크톱 체크는 제목 아래 중앙에 두고 설명을 그 아래에 표시한다', (tester) async {
+      for (final preference in PortfolioThemePreference.values) {
+        final controller = PortfolioThemeController(initial: preference);
+
+        await _pumpSettings(
+          tester,
+          controller: controller,
+          size: const Size(820, 620),
+        );
+
+        final mode = preference.name;
+        final title = preference == PortfolioThemePreference.light
+            ? '라이트'
+            : '다크';
+        final description = preference == PortfolioThemePreference.light
+            ? '밝고 선명한 화면'
+            : '눈이 편안한 어두운 화면';
+        final choiceRect = tester.getRect(find.byKey(Key('theme-$mode')));
+        final titleRect = tester.getRect(find.text(title));
+        final indicatorRect = tester.getRect(
+          find.byKey(Key('theme-selected-$mode')),
+        );
+        final descriptionRect = tester.getRect(find.text(description));
+
+        expect(indicatorRect.top, greaterThan(titleRect.bottom));
+        expect(indicatorRect.center.dx, closeTo(choiceRect.center.dx, 1));
+        expect(descriptionRect.top, greaterThan(indicatorRect.bottom));
+        expect(
+          find.descendant(
+            of: find.byKey(Key('theme-selected-$mode')),
+            matching: find.byIcon(Icons.check_rounded),
+          ),
+          findsOneWidget,
+        );
+
+        await tester.pumpWidget(const SizedBox.shrink());
+        controller.dispose();
+      }
+    });
+
     testWidgets('모바일 선택지는 배경과 테두리 없이 한 줄 이름과 체크만 표시한다', (tester) async {
       for (final scenario in const <({Size size, bool compact, bool tablet})>[
         (size: Size(390, 844), compact: true, tablet: false),
