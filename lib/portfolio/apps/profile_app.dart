@@ -9,6 +9,7 @@ import '../services/external_launcher.dart';
 import '../theme/apple_theme.dart';
 import '../widgets/apple_app_icon.dart';
 import '../widgets/apple_mobile_navigation_header.dart';
+import '../widgets/career_pixel_runner.dart';
 
 /// Mobile-only social profile built independently from the reusable About app.
 class ProfileApp extends StatefulWidget {
@@ -137,11 +138,10 @@ class _ProfileAppState extends State<ProfileApp> {
   }
 
   void _openCareerReel() {
-    if (widget.data.experiences.isNotEmpty) {
-      _openHistory(_ProfileHistoryKind.experience);
-    } else if (widget.data.education.isNotEmpty) {
-      _openHistory(_ProfileHistoryKind.education);
+    if (widget.data.experiences.isEmpty) {
+      return;
     }
+    _openHistory(_ProfileHistoryKind.experience);
   }
 
   VoidCallback? _openAppAction(PortfolioAppId appId) {
@@ -232,9 +232,13 @@ class _ProfileAppState extends State<ProfileApp> {
             ? Row(
                 children: <Widget>[
                   _ProfileSidebar(
-                    showingReel: selectedHistoryKind != null,
+                    showingDetail: selectedHistoryKind != null,
+                    showingCareer:
+                        selectedHistoryKind == _ProfileHistoryKind.experience,
                     onShowProfile: _showProfileFeed,
-                    onShowReels: _openCareerReel,
+                    onShowCareer: widget.data.experiences.isEmpty
+                        ? null
+                        : _openCareerReel,
                     onOpenProjects: onOpenProjects,
                     onOpenMail: onOpenMail,
                     onOpenSettings: onOpenSettings,
@@ -250,17 +254,19 @@ class _ProfileAppState extends State<ProfileApp> {
 
 class _ProfileSidebar extends StatelessWidget {
   const _ProfileSidebar({
-    required this.showingReel,
+    required this.showingDetail,
+    required this.showingCareer,
     required this.onShowProfile,
-    required this.onShowReels,
+    required this.onShowCareer,
     required this.onOpenProjects,
     required this.onOpenMail,
     required this.onOpenSettings,
   });
 
-  final bool showingReel;
+  final bool showingDetail;
+  final bool showingCareer;
   final VoidCallback onShowProfile;
-  final VoidCallback onShowReels;
+  final VoidCallback? onShowCareer;
   final VoidCallback? onOpenProjects;
   final VoidCallback? onOpenMail;
   final VoidCallback? onOpenSettings;
@@ -297,17 +303,17 @@ class _ProfileSidebar extends StatelessWidget {
                     label: '프로필 홈',
                     icon: Icons.home_outlined,
                     selectedIcon: Icons.home_rounded,
-                    selected: !showingReel,
+                    selected: !showingDetail,
                     onTap: onShowProfile,
                   ),
                   const SizedBox(height: 6),
                   _ProfileSidebarAction(
                     actionKey: const Key('profile-sidebar-reels-action'),
-                    label: '릴스 보기',
+                    label: '경력 보기',
                     icon: Icons.smart_display_outlined,
                     selectedIcon: Icons.smart_display_rounded,
-                    selected: showingReel,
-                    onTap: onShowReels,
+                    selected: showingCareer,
+                    onTap: onShowCareer,
                   ),
                   const SizedBox(height: 6),
                   _ProfileSidebarAction(
@@ -1248,6 +1254,8 @@ class _ProfileHistoryDetailState extends State<_ProfileHistoryDetail> {
                       ),
                       child: _ProfileReelOverlay(
                         compact: widget.compact,
+                        showCareerRunner:
+                            widget.kind == _ProfileHistoryKind.experience,
                         liked: widget.liked,
                         title: title,
                         organization: widget.data.identity.headline,
@@ -1282,6 +1290,7 @@ class _ProfileHistoryDetailState extends State<_ProfileHistoryDetail> {
 class _ProfileReelOverlay extends StatelessWidget {
   const _ProfileReelOverlay({
     required this.compact,
+    required this.showCareerRunner,
     required this.liked,
     required this.title,
     required this.organization,
@@ -1295,6 +1304,7 @@ class _ProfileReelOverlay extends StatelessWidget {
   });
 
   final bool compact;
+  final bool showCareerRunner;
   final bool liked;
   final String title;
   final String organization;
@@ -1317,7 +1327,9 @@ class _ProfileReelOverlay extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final dark = AppleTheme.isDark(context);
-    final foreground = dark ? Colors.white : AppleTheme.primaryLabel(context);
+    final foreground = showCareerRunner || dark
+        ? Colors.white
+        : AppleTheme.primaryLabel(context);
     final mediaColor = dark ? const Color(0xFF151619) : const Color(0xFFF0F1F3);
 
     return Stack(
@@ -1328,6 +1340,11 @@ class _ProfileReelOverlay extends StatelessWidget {
           child: ColoredBox(
             key: const Key('profile-reel-media-slot'),
             color: mediaColor,
+            child: showCareerRunner
+                ? const CareerPixelRunner(
+                    key: Key('profile-career-pixel-runner'),
+                  )
+                : null,
           ),
         ),
         Positioned(
@@ -1337,15 +1354,7 @@ class _ProfileReelOverlay extends StatelessWidget {
           child: Row(
             key: const Key('profile-reel-top-bar'),
             children: <Widget>[
-              Expanded(
-                child: Text(
-                  'Reels',
-                  style: Theme.of(context).textTheme.titleLarge?.copyWith(
-                    color: foreground,
-                    fontWeight: FontWeight.w800,
-                  ),
-                ),
-              ),
+              const Spacer(),
               _ProfileReelIconAction(
                 actionKey: const Key('profile-reel-camera-action'),
                 semanticsLabel: '카메라',

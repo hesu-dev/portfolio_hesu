@@ -1,7 +1,9 @@
 import 'dart:ui' show PointerDeviceKind;
-import 'dart:ui' as ui show SemanticsAction, Tristate;
+import 'dart:ui' as ui show ImageByteFormat, SemanticsAction, Tristate;
 
 import 'package:flutter/material.dart';
+import 'package:flutter/rendering.dart';
+import 'package:flutter/services.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:portfolio_hesu/portfolio/apps/profile_app.dart';
 import 'package:portfolio_hesu/portfolio/data/portfolio_data.dart';
@@ -10,11 +12,53 @@ import 'package:portfolio_hesu/portfolio/portfolio_app.dart';
 import 'package:portfolio_hesu/portfolio/services/external_launcher.dart';
 import 'package:portfolio_hesu/portfolio/theme/apple_theme.dart';
 import 'package:portfolio_hesu/portfolio/theme/portfolio_theme_controller.dart';
+import 'package:portfolio_hesu/portfolio/widgets/career_pixel_runner.dart';
 
 import 'support/music_test_controller.dart';
 
 void main() {
   group('모바일 Instagram형 프로필 앱', () {
+    test('구름·후경 빌딩·메인 빌딩은 앞쪽일수록 빠르게 무한 스크롤한다', () {
+      expect(CareerPixelRunner.cloudSpeedMultiplier, 1.0);
+      expect(CareerPixelRunner.farCitySpeedMultiplier, 1.25);
+      expect(CareerPixelRunner.mainBuildingSpeedMultiplier, 1.5);
+      expect(
+        CareerPixelRunner.cloudSpeedMultiplier,
+        lessThan(CareerPixelRunner.farCitySpeedMultiplier),
+      );
+      expect(
+        CareerPixelRunner.farCitySpeedMultiplier,
+        lessThan(CareerPixelRunner.mainBuildingSpeedMultiplier),
+      );
+    });
+
+    test('플레이어는 초당 8프레임이며 편의점보다 작게 그린다', () {
+      expect(CareerPixelRunner.runFramesPerSecond, 8);
+      expect(CareerPixelRunner.runFrameVerticalLift, hasLength(8));
+      expect(CareerPixelRunner.runFrameVerticalLift[1], -1);
+      expect(CareerPixelRunner.runFrameVerticalLift[2], 1);
+      expect(CareerPixelRunner.runFrameVerticalLift[3], 2);
+      expect(CareerPixelRunner.runFrameVerticalLift[5], -1);
+      expect(CareerPixelRunner.runFrameVerticalLift[6], 1);
+      expect(CareerPixelRunner.runFrameVerticalLift[7], 2);
+      expect(
+        CareerPixelRunner.maxRunnerHeight,
+        lessThanOrEqualTo(CareerPixelRunner.convenienceStoreHeight),
+      );
+    });
+
+    test('승인한 달리기와 점프 스프라이트 시트를 번들 자산으로 제공한다', () async {
+      expect(CareerPixelRunner.runDecodeWidth, 384);
+      expect(CareerPixelRunner.jumpDecodeWidth, 314);
+      for (final assetPath in <String>[
+        CareerPixelRunner.runSpriteAsset,
+        CareerPixelRunner.jumpSpriteAsset,
+      ]) {
+        final asset = await rootBundle.load(assetPath);
+        expect(asset.lengthInBytes, greaterThan(0), reason: assetPath);
+      }
+    });
+
     testWidgets('iPhone과 iPad는 About과 분리된 프로필 앱을 연다', (tester) async {
       final semantics = tester.ensureSemantics();
 
@@ -296,7 +340,8 @@ void main() {
       semantics.dispose();
     });
 
-    testWidgets('iPhone 경력 카드 본체는 기존 릴스와 경력 답글을 유지한다', (tester) async {
+    testWidgets('경력 상세는 Reels 문구 대신 도심 픽셀 러너를 미디어 슬롯에 채운다', (tester) async {
+      final semantics = tester.ensureSemantics();
       final data = _injectedProfileData();
       await _pumpProfileShell(
         tester,
@@ -311,15 +356,122 @@ void main() {
         const Key('profile-history-post-experience'),
       );
 
-      expect(find.byKey(const Key('profile-history-detail')), findsOneWidget);
+      final detail = find.byKey(const Key('profile-history-detail'));
+      final mediaSlot = find.byKey(const Key('profile-reel-media-slot'));
+      final runner = find.byKey(const Key('profile-career-pixel-runner'));
+      expect(detail, findsOneWidget);
       expect(find.byKey(const Key('projects-app')), findsNothing);
+      expect(
+        find.descendant(of: detail, matching: find.text('Reels')),
+        findsNothing,
+      );
+      expect(find.descendant(of: mediaSlot, matching: runner), findsOneWidget);
+      expect(tester.widget(runner).runtimeType.toString(), 'CareerPixelRunner');
+      expect(tester.getRect(runner), tester.getRect(mediaSlot));
+      expect(
+        find.descendant(of: runner, matching: find.byType(CustomPaint)),
+        findsOneWidget,
+      );
+      expect(
+        find.descendant(of: runner, matching: find.byType(RepaintBoundary)),
+        findsOneWidget,
+      );
+
+      final runnerSemantics = tester.getSemantics(runner).getSemanticsData();
+      expect(runnerSemantics.flagsCollection.isImage, isTrue);
+      expect(runnerSemantics.label, _careerPixelRunnerSemantics);
       expect(
         find.byKey(const Key('profile-reel-reply-item-experience-0')),
         findsOneWidget,
       );
+      semantics.dispose();
     });
 
-    testWidgets('iPad 사이드바 Reels는 경력 상세를 열고 뒤로 가기를 유지한다', (tester) async {
+    testWidgets('경력 픽셀 러너는 시간이 지나면 서로 다른 프레임을 그린다', (tester) async {
+      await _pumpProfileShell(
+        tester,
+        size: const Size(390, 844),
+        tablet: false,
+        data: _injectedProfileData(),
+        disableAnimations: false,
+      );
+      await _openProfile(tester);
+      await _openHistoryCard(
+        tester,
+        const Key('profile-history-post-experience'),
+      );
+
+      final runner = find.byKey(const Key('profile-career-pixel-runner'));
+      expect(runner, findsOneWidget);
+      final firstFrame = await _renderedBytes(tester, runner);
+
+      await tester.pump(const Duration(milliseconds: 733));
+
+      final secondFrame = await _renderedBytes(tester, runner);
+      expect(
+        secondFrame,
+        isNot(equals(firstFrame)),
+        reason: '달리기, 점프, 배경 이동, 코인 획득이 시간에 따라 실제 픽셀을 바꿔야 한다.',
+      );
+    });
+
+    testWidgets('5초 뒤 점프는 반복되지만 1.5배 배경은 계속 전진한다', (tester) async {
+      await _pumpProfileShell(
+        tester,
+        size: const Size(390, 844),
+        tablet: false,
+        data: _injectedProfileData(),
+        disableAnimations: false,
+      );
+      await _openProfile(tester);
+      await _openHistoryCard(
+        tester,
+        const Key('profile-history-post-experience'),
+      );
+
+      final runner = find.byKey(const Key('profile-career-pixel-runner'));
+      final firstFrame = await _renderedBytes(tester, runner);
+
+      await tester.pump(const Duration(seconds: 5));
+
+      final advancedFrame = await _renderedBytes(tester, runner);
+      expect(
+        advancedFrame,
+        isNot(equals(firstFrame)),
+        reason: '점프 타임라인은 그대로 반복되어도 배경은 독립된 1.5배 루프로 계속 전진해야 한다.',
+      );
+    });
+
+    testWidgets('경력 픽셀 러너는 동작 줄이기에서 같은 정지 장면만 제공한다', (tester) async {
+      await _pumpProfileShell(
+        tester,
+        size: const Size(390, 844),
+        tablet: false,
+        data: _injectedProfileData(),
+        disableAnimations: true,
+      );
+      await _openProfile(tester);
+      await _openHistoryCard(
+        tester,
+        const Key('profile-history-post-experience'),
+      );
+
+      final runner = find.byKey(const Key('profile-career-pixel-runner'));
+      expect(runner, findsOneWidget);
+      final firstFrame = await _renderedBytes(tester, runner);
+
+      await tester.pump(const Duration(milliseconds: 733));
+
+      final secondFrame = await _renderedBytes(tester, runner);
+      expect(secondFrame, equals(firstFrame));
+      expect(
+        tester.binding.hasScheduledFrame,
+        isFalse,
+        reason: '동작 줄이기에서는 무한 ticker가 다음 프레임을 예약하면 안 된다.',
+      );
+    });
+
+    testWidgets('iPad 경력 바로가기는 릴스 명칭 없이 경력 상세를 연다', (tester) async {
       final semantics = tester.ensureSemantics();
       final data = _injectedProfileData();
       await _pumpProfileShell(
@@ -330,6 +482,11 @@ void main() {
       );
       await _openProfile(tester);
 
+      final careerAction = find.byKey(
+        const Key('profile-sidebar-reels-action'),
+      );
+      _expectButtonSemantics(tester, careerAction, label: '경력 보기');
+      expect(find.bySemanticsLabel('릴스 보기'), findsNothing);
       await _openCareerReelFromSidebar(tester);
 
       expect(find.byKey(const Key('profile-history-detail')), findsOneWidget);
@@ -348,6 +505,36 @@ void main() {
       expect(find.byKey(const Key('profile-history-detail')), findsNothing);
       expect(find.byKey(const Key('profile-history-grid')), findsOneWidget);
       expect(find.byKey(const Key('profile-sidebar')), findsOneWidget);
+      semantics.dispose();
+    });
+
+    testWidgets('경력이 없으면 iPad 경력 바로가기는 교육을 대신 열지 않는다', (tester) async {
+      final semantics = tester.ensureSemantics();
+      final source = _injectedProfileData();
+      final data = _profileDataWithHistory(
+        source,
+        experiences: const <PortfolioExperience>[],
+        education: source.education,
+      );
+      await _pumpProfileShell(
+        tester,
+        size: const Size(834, 1194),
+        tablet: true,
+        data: data,
+      );
+      await _openProfile(tester);
+
+      final careerAction = find.byKey(
+        const Key('profile-sidebar-reels-action'),
+      );
+      final careerSemantics = tester
+          .getSemantics(careerAction)
+          .getSemanticsData();
+      expect(careerSemantics.label, '경력 보기');
+      expect(careerSemantics.flagsCollection.isEnabled, ui.Tristate.isFalse);
+      expect(careerSemantics.hasAction(ui.SemanticsAction.tap), isFalse);
+      expect(find.byKey(const Key('profile-history-detail')), findsNothing);
+
       semantics.dispose();
     });
 
@@ -485,7 +672,7 @@ void main() {
       semantics.dispose();
     });
 
-    testWidgets('상세는 이미지 없이 Instagram Reels 오버레이 구조만 제공한다', (tester) async {
+    testWidgets('교육 상세에는 경력 픽셀 러너를 표시하지 않는다', (tester) async {
       final semantics = tester.ensureSemantics();
       final data = _injectedProfileData();
       await _pumpProfileShell(
@@ -500,7 +687,11 @@ void main() {
         const Key('profile-history-post-education'),
       );
 
-      _expectReelTemplate(tester, data: data);
+      expect(
+        find.byKey(const Key('profile-career-pixel-runner')),
+        findsNothing,
+      );
+      _expectHistoryDetailTemplate(tester, data: data);
       expect(tester.takeException(), isNull);
       semantics.dispose();
     });
@@ -1529,6 +1720,7 @@ Future<void> _pumpProfileShell(
   ExternalLauncher? launcher,
   Brightness brightness = Brightness.light,
   TextScaler textScaler = TextScaler.noScaling,
+  bool disableAnimations = true,
 }) async {
   tester.view.devicePixelRatio = 1;
   tester.view.physicalSize = size;
@@ -1549,7 +1741,11 @@ Future<void> _pumpProfileShell(
       themeMode: themeController.themeMode,
       scrollBehavior: const PortfolioScrollBehavior(),
       home: MediaQuery(
-        data: MediaQueryData(size: size, textScaler: textScaler),
+        data: MediaQueryData(
+          size: size,
+          textScaler: textScaler,
+          disableAnimations: disableAnimations,
+        ),
         child: AppleMobileShell(
           data: data,
           externalLauncher: launcher ?? _RecordingLauncher(),
@@ -1700,7 +1896,7 @@ Future<void> _openHistoryCard(WidgetTester tester, Key cardKey) async {
   await tester.ensureVisible(card);
   await tester.pumpAndSettle();
   await tester.tap(card);
-  await tester.pumpAndSettle();
+  await tester.pump();
 }
 
 Future<void> _openCareerReelFromSidebar(WidgetTester tester) async {
@@ -1708,7 +1904,7 @@ Future<void> _openCareerReelFromSidebar(WidgetTester tester) async {
   expect(find.byKey(const Key('profile-sidebar')), findsOneWidget);
   expect(reelsAction, findsOneWidget);
   await tester.tap(reelsAction);
-  await tester.pumpAndSettle();
+  await tester.pump();
 }
 
 Future<void> _ensureCardBuilt(WidgetTester tester, Finder card) async {
@@ -1746,7 +1942,7 @@ Future<void> _expectTouchAndMouseScroll(
   expect(position.maxScrollExtent, greaterThan(0), reason: reason);
 
   await tester.drag(target, const Offset(0, -180));
-  await tester.pumpAndSettle();
+  await tester.pump(const Duration(milliseconds: 300));
   expect(position.pixels, greaterThan(0), reason: '$reason touch');
 
   position.jumpTo(0);
@@ -1758,7 +1954,7 @@ Future<void> _expectTouchAndMouseScroll(
   await mouse.down(dragStart);
   await mouse.moveBy(const Offset(0, -180));
   await mouse.up();
-  await tester.pumpAndSettle();
+  await tester.pump(const Duration(milliseconds: 300));
   expect(position.pixels, greaterThan(0), reason: '$reason mouse');
   await mouse.removePointer();
 
@@ -1815,6 +2011,31 @@ Finder _verticalScrollablesInside(Finder scope) {
   );
 }
 
+Future<Uint8List> _renderedBytes(WidgetTester tester, Finder scope) async {
+  final boundary = find.descendant(
+    of: scope,
+    matching: find.byType(RepaintBoundary),
+  );
+  expect(boundary, findsOneWidget);
+  final renderBoundary = tester.renderObject<RenderRepaintBoundary>(boundary);
+  final rendered = await tester.runAsync<Uint8List>(() async {
+    final image = await renderBoundary.toImage(pixelRatio: 1);
+    try {
+      final bytes = await image.toByteData(format: ui.ImageByteFormat.rawRgba);
+      if (bytes == null) {
+        throw StateError('The career pixel runner did not render RGBA bytes.');
+      }
+      return Uint8List.fromList(
+        bytes.buffer.asUint8List(bytes.offsetInBytes, bytes.lengthInBytes),
+      );
+    } finally {
+      image.dispose();
+    }
+  });
+  expect(rendered, isNotNull);
+  return rendered!;
+}
+
 void _expectReplyItem(
   WidgetTester tester, {
   required Finder thread,
@@ -1863,7 +2084,10 @@ void _expectReplyItem(
   }
 }
 
-void _expectReelTemplate(WidgetTester tester, {required PortfolioData data}) {
+void _expectHistoryDetailTemplate(
+  WidgetTester tester, {
+  required PortfolioData data,
+}) {
   final detail = find.byKey(const Key('profile-history-detail'));
   final overlay = find.byKey(const Key('profile-reel-overlay'));
   final topBar = find.byKey(const Key('profile-reel-top-bar'));
@@ -1896,7 +2120,7 @@ void _expectReelTemplate(WidgetTester tester, {required PortfolioData data}) {
   expect(
     topBarRect.center.dy,
     lessThan(overlayRect.top + (overlayRect.height * 0.25)),
-    reason: 'Reels 제목과 카메라는 미디어 슬롯 상단에 오버레이한다.',
+    reason: '상단 액션은 미디어 슬롯 상단에 오버레이한다.',
   );
   expect(
     actionRailRect.center.dx,
@@ -1915,7 +2139,7 @@ void _expectReelTemplate(WidgetTester tester, {required PortfolioData data}) {
   );
   expect(
     find.descendant(of: topBar, matching: find.text('Reels')),
-    findsOneWidget,
+    findsNothing,
   );
   final cameraAction = find.byKey(const Key('profile-reel-camera-action'));
   expect(find.descendant(of: topBar, matching: cameraAction), findsOneWidget);
@@ -1985,6 +2209,10 @@ const _sentinelSkillGroup = 'SENTINEL_SKILL_GROUP';
 const _sentinelSkill = 'SENTINEL_SKILL';
 const _sentinelProjectTitle = 'SENTINEL_PROJECT_TITLE';
 const _sentinelProjectDescription = 'SENTINEL_PROJECT_DESCRIPTION';
+const _careerPixelRunnerSemantics =
+    '밝은 피부에 갈색 포니테일과 안경, 비즈니스 정장을 갖춘 여성 캐릭터가 '
+    '오른쪽을 바라보고 구름과 AT Center, 판교역, 편의점이 이어지는 도심을 달리고 점프하며 '
+    '골드 코인을 모아 LV UP 하는 도트 애니메이션';
 const _longExperienceDescription =
     '사용자 문제를 분석하고 Flutter 애플리케이션의 구조를 설계한 뒤 구현과 출시를 '
     '담당했습니다. 다양한 화면 크기와 접근성 글자 크기를 함께 검증하고, 제품 출시 이후에는 '
