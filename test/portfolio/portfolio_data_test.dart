@@ -73,9 +73,21 @@ void main() {
           );
         }
       }
+    });
+
+    test('uses concise Flutter activity copy', () {
+      final development = portfolioData.skillGroups.singleWhere(
+        (group) => group.title == 'Development',
+      );
+      final flutterActivity = development.activityDescriptions['Flutter'];
+
+      expect(flutterActivity, 'Flutter 기반 크로스플랫폼 애플리케이션 개발');
+      expect(flutterActivity, isNot(contains('금일 업무 보고')));
+      expect(flutterActivity, isNot(contains('Flutter 개인 프로젝트 어플 개발')));
+      expect(portfolioData.allSearchableText, isNot(contains('금일 업무 보고')));
       expect(
-        portfolioData.skillGroups.first.activityDescriptions['Flutter'],
-        contains('Flutter 개인 프로젝트 어플 개발'),
+        portfolioData.allSearchableText,
+        isNot(contains('Flutter 개인 프로젝트 어플 개발')),
       );
     });
 

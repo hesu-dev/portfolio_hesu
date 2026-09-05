@@ -142,13 +142,11 @@ class _WorkspaceRail extends StatelessWidget {
                 color: Colors.white.withValues(alpha: 0.96),
                 borderRadius: BorderRadius.circular(12),
               ),
-              child: const Text(
-                'S',
-                style: TextStyle(
-                  color: Color(0xFF4A154B),
-                  fontSize: 19,
-                  fontWeight: FontWeight.w800,
-                ),
+              child: const Icon(
+                Icons.workspace_premium_rounded,
+                key: Key('skills-workspace-icon'),
+                color: Color(0xFF4A154B),
+                size: 22,
               ),
             ),
             const SizedBox(height: 14),
@@ -175,13 +173,11 @@ class _WorkspaceRail extends StatelessWidget {
                       ? Border.all(color: Colors.white.withValues(alpha: 0.72))
                       : null,
                 ),
-                child: Text(
-                  _firstCharacter(entry.$2.title),
-                  style: const TextStyle(
-                    color: Colors.white,
-                    fontSize: 13,
-                    fontWeight: FontWeight.w700,
-                  ),
+                child: Icon(
+                  _workspaceIconForGroup(entry.$2.title),
+                  key: Key('skills-workspace-group-icon-${entry.$2.title}'),
+                  color: Colors.white,
+                  size: 18,
                 ),
               ),
               const SizedBox(height: 9),
@@ -249,7 +245,7 @@ class _CategorySidebar extends StatelessWidget {
                 ),
                 const SizedBox(width: 4),
                 const Text(
-                  'Channels',
+                  '채널',
                   style: TextStyle(
                     color: foreground,
                     fontSize: 12,
@@ -1032,4 +1028,13 @@ class _SkillDetail extends StatelessWidget {
 String _firstCharacter(String value) {
   final trimmed = value.trim();
   return trimmed.isEmpty ? '#' : String.fromCharCode(trimmed.runes.first);
+}
+
+IconData _workspaceIconForGroup(String title) {
+  return switch (title) {
+    'Development' => Icons.code_rounded,
+    'Collaboration' => Icons.description_rounded,
+    'Design & UI/UX' => Icons.draw_rounded,
+    _ => Icons.tag_rounded,
+  };
 }

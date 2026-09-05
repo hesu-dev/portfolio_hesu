@@ -24,6 +24,11 @@ void main() {
           find.byKey(Key('skills-category-${group.title}')),
           findsOneWidget,
         );
+        final workspaceIcon = find.byKey(
+          Key('skills-workspace-group-icon-${group.title}'),
+        );
+        expect(workspaceIcon, findsOneWidget);
+        expect(tester.widget<Icon>(workspaceIcon).icon, Icons.tag_rounded);
       }
       for (final skill in _data.skillGroups.first.skills) {
         expect(find.byKey(Key('skill-item-$skill')), findsOneWidget);
@@ -35,6 +40,86 @@ void main() {
       expect(find.text('업무보고'), findsNothing);
       expect(find.text('구매대행공급'), findsNothing);
     });
+
+    testWidgets('uses keyed Material icons in the workspace rail', (
+      tester,
+    ) async {
+      await _pumpSkills(tester, size: const Size(900, 650), data: _mobileData);
+
+      final rail = find.byKey(const Key('skills-workspace-rail'));
+      expect(find.descendant(of: rail, matching: find.text('S')), findsNothing);
+
+      final workspaceIcon = find.byKey(const Key('skills-workspace-icon'));
+      expect(workspaceIcon, findsOneWidget);
+      expect(
+        tester.widget<Icon>(workspaceIcon).icon,
+        Icons.workspace_premium_rounded,
+      );
+
+      const expectedIcons = <String, IconData>{
+        'Development': Icons.code_rounded,
+        'Collaboration': Icons.description_rounded,
+        'Design & UI/UX': Icons.draw_rounded,
+      };
+      for (final entry in expectedIcons.entries) {
+        final icon = find.byKey(
+          Key('skills-workspace-group-icon-${entry.key}'),
+        );
+        expect(icon, findsOneWidget, reason: entry.key);
+        expect(tester.widget<Icon>(icon).icon, entry.value, reason: entry.key);
+      }
+
+      for (final initial in <String>['D', 'C']) {
+        expect(
+          find.descendant(of: rail, matching: find.text(initial)),
+          findsNothing,
+        );
+      }
+    });
+
+    testWidgets('uses the Korean channel title in the wide sidebar', (
+      tester,
+    ) async {
+      await _pumpSkills(tester, size: const Size(900, 650), data: _mobileData);
+
+      final sidebar = find.byKey(const Key('skills-channel-sidebar'));
+      expect(
+        find.descendant(of: sidebar, matching: find.text('채널')),
+        findsOneWidget,
+      );
+      expect(
+        find.descendant(of: sidebar, matching: find.text('Channels')),
+        findsNothing,
+      );
+    });
+
+    for (final configuration in <({String name, Size size, bool tablet})>[
+      (name: 'desktop', size: const Size(900, 650), tablet: false),
+      (name: 'tablet', size: const Size(600, 650), tablet: true),
+    ]) {
+      testWidgets('keeps workspace icons at 200% on ${configuration.name}', (
+        tester,
+      ) async {
+        await _pumpSkills(
+          tester,
+          size: configuration.size,
+          data: _mobileData,
+          mobile: configuration.tablet,
+          tablet: configuration.tablet,
+          textScaler: const TextScaler.linear(2),
+        );
+
+        expect(find.byKey(const Key('skills-workspace-icon')), findsOneWidget);
+        for (final group in _mobileData.skillGroups) {
+          expect(
+            find.byKey(Key('skills-workspace-group-icon-${group.title}')),
+            findsOneWidget,
+            reason: '${configuration.name}: ${group.title}',
+          );
+        }
+        expect(tester.takeException(), isNull, reason: configuration.name);
+      });
+    }
 
     testWidgets('desktop channels use the dated activity message feed', (
       tester,
@@ -69,8 +154,7 @@ void main() {
         findsOneWidget,
       );
       expect(find.text('9:00 오전'), findsOneWidget);
-      expect(find.textContaining('금일 업무 보고'), findsOneWidget);
-      expect(find.textContaining('Flutter 개인 프로젝트 어플 개발'), findsOneWidget);
+      expect(find.text('Flutter 기반 크로스플랫폼 애플리케이션 개발'), findsOneWidget);
 
       await tester.tap(find.byKey(const Key('skills-category-Collaboration')));
       await tester.pumpAndSettle();
@@ -84,7 +168,7 @@ void main() {
         find.byKey(const Key('skills-message-author-Flutter')),
         findsNothing,
       );
-      expect(find.textContaining('금일 업무 보고'), findsNothing);
+      expect(find.text('Flutter 기반 크로스플랫폼 애플리케이션 개발'), findsNothing);
       expect(tester.takeException(), isNull);
       semantics.dispose();
     });
@@ -128,8 +212,7 @@ void main() {
         findsOneWidget,
       );
       expect(find.text('9:00 오전'), findsOneWidget);
-      expect(find.textContaining('금일 업무 보고'), findsOneWidget);
-      expect(find.textContaining('Flutter 개인 프로젝트 어플 개발'), findsOneWidget);
+      expect(find.text('Flutter 기반 크로스플랫폼 애플리케이션 개발'), findsOneWidget);
 
       await tester.tap(find.byKey(const Key('skills-category-Design & UI/UX')));
       await tester.pumpAndSettle();
@@ -143,7 +226,7 @@ void main() {
         find.byKey(const Key('skills-message-author-Flutter')),
         findsNothing,
       );
-      expect(find.textContaining('금일 업무 보고'), findsNothing);
+      expect(find.text('Flutter 기반 크로스플랫폼 애플리케이션 개발'), findsNothing);
       expect(tester.takeException(), isNull);
       semantics.dispose();
     });
@@ -229,7 +312,7 @@ void main() {
         final channelText = tester.widget<Text>(
           find.descendant(
             of: find.byKey(const Key('skills-channel-sidebar')),
-            matching: find.text('Channels'),
+            matching: find.text('채널'),
           ),
         );
         final foreground = channelText.style!.color!;
@@ -282,6 +365,8 @@ void main() {
         find.byKey(const Key('skills-mobile-channel-list')),
         findsOneWidget,
       );
+      expect(find.text('채널'), findsOneWidget);
+      expect(find.text('Channels'), findsNothing);
       for (final group in _mobileData.skillGroups) {
         expect(
           find.byKey(Key('skills-mobile-channel-${group.title}')),
@@ -435,8 +520,7 @@ void main() {
         find.byKey(const Key('skills-message-content-Flutter')),
         findsOneWidget,
       );
-      expect(find.textContaining('금일 업무 보고'), findsOneWidget);
-      expect(find.textContaining('Flutter 개인 프로젝트 어플 개발'), findsOneWidget);
+      expect(find.text('Flutter 기반 크로스플랫폼 애플리케이션 개발'), findsOneWidget);
       expect(
         tester
             .getSemantics(
@@ -460,7 +544,7 @@ void main() {
             )
             .getSemanticsData()
             .label,
-        allOf(contains('금일 업무 보고'), contains('Flutter 개인 프로젝트 어플 개발')),
+        contains('Flutter 기반 크로스플랫폼 애플리케이션 개발'),
       );
 
       final headerTopBefore = tester.getTopLeft(header).dy;
@@ -610,7 +694,7 @@ const PortfolioData _mobileData = PortfolioData.constant(
       title: 'Development',
       skills: <String>['Flutter', 'Dart', 'React', 'Java'],
       activityDescriptions: <String, String>{
-        'Flutter': '금일 업무 보고\nFlutter 개인 프로젝트 어플 개발',
+        'Flutter': 'Flutter 기반 크로스플랫폼 애플리케이션 개발',
         'Dart': 'Dart 코드 품질 개선',
         'React': 'React 화면 구조 검토',
         'Java': 'Java 서비스 유지보수',

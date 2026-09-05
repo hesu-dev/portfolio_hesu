@@ -431,7 +431,7 @@ const portfolioData = PortfolioData.constant(
       title: 'Development',
       skills: <String>['Flutter', 'Dart', 'React', 'Java'],
       activityDescriptions: <String, String>{
-        'Flutter': '금일 업무 보고\nFlutter 개인 프로젝트 어플 개발',
+        'Flutter': 'Flutter 기반 크로스플랫폼 애플리케이션 개발',
         'Dart': 'Dart 비동기 로직과 상태 관리 기능 개발',
         'React': 'React 기반 웹 서비스 화면 기획 및 개발',
         'Java': 'Java/JSP 애플리케이션 개발 및 유지보수',
