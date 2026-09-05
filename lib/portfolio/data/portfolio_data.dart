@@ -76,6 +76,22 @@ class PortfolioProjectLink {
   Uri get uri => Uri.parse(url);
 }
 
+class PortfolioRepository {
+  const PortfolioRepository({
+    required this.name,
+    required this.description,
+    required this.language,
+    required this.url,
+  });
+
+  final String name;
+  final String description;
+  final String language;
+  final String url;
+
+  Uri get uri => Uri.parse(url);
+}
+
 enum PortfolioProjectCategory { career, personal }
 
 class PortfolioProject {
@@ -124,6 +140,7 @@ class PortfolioData {
     required Iterable<PortfolioEducation> education,
     required Iterable<PortfolioSkillGroup> skillGroups,
     required Iterable<PortfolioProject> projects,
+    Iterable<PortfolioRepository> repositories = const <PortfolioRepository>[],
   }) {
     return PortfolioData.constant(
       identity: identity,
@@ -131,6 +148,7 @@ class PortfolioData {
       education: List<PortfolioEducation>.unmodifiable(education),
       skillGroups: List<PortfolioSkillGroup>.unmodifiable(skillGroups),
       projects: List<PortfolioProject>.unmodifiable(projects),
+      repositories: List<PortfolioRepository>.unmodifiable(repositories),
     );
   }
 
@@ -143,6 +161,7 @@ class PortfolioData {
     required this.education,
     required this.skillGroups,
     required this.projects,
+    this.repositories = const <PortfolioRepository>[],
   });
 
   final PortfolioIdentity identity;
@@ -150,13 +169,14 @@ class PortfolioData {
   final List<PortfolioEducation> education;
   final List<PortfolioSkillGroup> skillGroups;
   final List<PortfolioProject> projects;
+  final List<PortfolioRepository> repositories;
 
   String get name => identity.name;
   String get email => identity.email;
   String get githubUrl => identity.githubUrl;
   String get mailUrl => 'mailto:${identity.email}';
   String get monogram => _deriveMonogram(identity);
-  String get terminalPrompt => r'포트폴리오: ~$';
+  String get terminalPrompt => r'portfolio: ~$';
   String get appTitle {
     final localName = identity.name.trim();
     final englishName = identity.englishName.trim();
@@ -191,6 +211,11 @@ class PortfolioData {
       ...project.technologies,
       for (final link in project.links) link.label,
     ],
+    for (final repository in repositories) ...<String>[
+      repository.name,
+      repository.description,
+      repository.language,
+    ],
   ].join('\n');
 
   List<String> get allUrls => List<String>.unmodifiable(<String>[
@@ -200,6 +225,7 @@ class PortfolioData {
       if (item.link case final link?) link.url,
     for (final project in projects)
       for (final link in project.links) link.url,
+    for (final repository in repositories) repository.url,
   ]);
 }
 
@@ -318,6 +344,26 @@ const portfolioData = PortfolioData.constant(
     PortfolioSkillGroup.constant(
       title: 'Design & UI/UX',
       skills: <String>['Figma', 'Adobe Photoshop', 'Adobe Illustrator'],
+    ),
+  ],
+  repositories: <PortfolioRepository>[
+    PortfolioRepository(
+      name: 'portfolio_hesu',
+      description: 'Flutter로 구현한 반응형 Apple 스타일 개발자 포트폴리오',
+      language: 'Dart',
+      url: 'https://github.com/hesu-dev/portfolio_hesu',
+    ),
+    PortfolioRepository(
+      name: 'chrome_extension',
+      description: '취미로 제작해 배포한 미니 프로그램',
+      language: 'JavaScript',
+      url: 'https://github.com/hesu-dev/chrome_extension',
+    ),
+    PortfolioRepository(
+      name: 'code_study',
+      description: '스터디와 매일 코드 쓰기 챌린지 기록',
+      language: 'Dart',
+      url: 'https://github.com/hesu-dev/code_study',
     ),
   ],
   projects: <PortfolioProject>[

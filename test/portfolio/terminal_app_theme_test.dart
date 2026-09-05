@@ -30,7 +30,7 @@ void main() {
         find.byKey(const Key('terminal-input-surface')),
       );
       final inputDecoration = inputSurface.decoration! as BoxDecoration;
-      final line = tester.widget<Text>(find.text(r'포트폴리오: ~$ help'));
+      final line = tester.widget<Text>(find.text(r'portfolio: ~$ help'));
       final input = tester.widget<TextField>(
         find.byKey(const Key('terminal-input')),
       );

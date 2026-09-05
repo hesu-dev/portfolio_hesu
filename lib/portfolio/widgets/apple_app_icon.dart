@@ -6,7 +6,7 @@ import '../theme/apple_theme.dart';
 import 'apple_app_artwork.dart';
 
 class AppleAppIcon extends StatefulWidget {
-  static const String terminalWindowTitle = '터미널 - 포트폴리오 zsh';
+  static const String terminalWindowTitle = 'Terminal - Portfolio zsh';
 
   const AppleAppIcon({
     required this.appId,
@@ -18,6 +18,9 @@ class AppleAppIcon extends StatefulWidget {
     this.size,
     this.focusNode,
     this.autofocus = false,
+    this.artworkSurface = AppleAppArtworkSurface.desktop,
+    this.artworkForegroundColor,
+    this.trashEmpty = false,
     super.key,
   });
 
@@ -30,6 +33,9 @@ class AppleAppIcon extends StatefulWidget {
   final double? size;
   final FocusNode? focusNode;
   final bool autofocus;
+  final AppleAppArtworkSurface artworkSurface;
+  final Color? artworkForegroundColor;
+  final bool trashEmpty;
 
   @override
   State<AppleAppIcon> createState() => _AppleAppIconState();
@@ -83,6 +89,9 @@ class _AppleAppIconState extends State<AppleAppIcon> {
       button: true,
       enabled: onTap != null,
       selected: selected,
+      value: appId == PortfolioAppId.trash
+          ? (widget.trashEmpty ? 'Empty' : 'Contains items')
+          : null,
       onTap: onTap,
       child: FocusableActionDetector(
         enabled: onTap != null,
@@ -133,6 +142,9 @@ class _AppleAppIconState extends State<AppleAppIcon> {
                             child: AppleAppArtworkFrame(
                               appId: appId,
                               size: tileSize,
+                              surface: widget.artworkSurface,
+                              foregroundColor: widget.artworkForegroundColor,
+                              trashEmpty: widget.trashEmpty,
                             ),
                           ),
                           if (selected)

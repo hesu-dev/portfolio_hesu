@@ -378,7 +378,7 @@ void main() {
           expect(
             find.descendant(
               of: navigationBar,
-              matching: find.text('터미널 - 포트폴리오 zsh'),
+              matching: find.text('Terminal - Portfolio zsh'),
             ),
             findsOneWidget,
             reason: '$size',

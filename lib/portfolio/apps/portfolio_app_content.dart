@@ -27,6 +27,8 @@ class PortfolioAppContent extends StatelessWidget {
     this.finderWindowChrome,
     this.onOpenApp,
     this.onClose,
+    this.trashEmpty = false,
+    this.onTrashEmptied,
     super.key,
   });
 
@@ -39,6 +41,8 @@ class PortfolioAppContent extends StatelessWidget {
   final AppleFinderWindowChrome? finderWindowChrome;
   final ValueChanged<PortfolioAppId>? onOpenApp;
   final VoidCallback? onClose;
+  final bool trashEmpty;
+  final VoidCallback? onTrashEmptied;
 
   @override
   Widget build(BuildContext context) {
@@ -95,6 +99,8 @@ class PortfolioAppContent extends StatelessWidget {
         data: data,
         compact: compact,
         tablet: tablet,
+        trashEmpty: trashEmpty,
+        onTrashEmptied: onTrashEmptied,
       ),
       PortfolioAppId.github => GitHubApp(
         data: data,

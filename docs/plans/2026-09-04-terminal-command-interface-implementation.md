@@ -32,7 +32,7 @@
 - Test: `test/portfolio/app_content_test.dart`
 - Test: `test/portfolio/terminal_app_theme_test.dart`
 
-1. `포트폴리오: ~$` 프롬프트, 초기 help 출력, placeholder·전송 버튼 부재, autofocus와 clear 초기화를 기대하는 실패 테스트를 작성한다.
+1. `portfolio: ~$` 프롬프트, 초기 help 출력, placeholder·전송 버튼 부재, autofocus와 clear 초기화를 기대하는 실패 테스트를 작성한다.
 2. 관련 위젯 테스트의 예상 실패를 확인한다.
 3. transcript를 `initState`에서 help 결과로 초기화한다.
 4. 입력부를 프롬프트·TextField 한 행으로 단순화하고 hint·버튼·hover·selection 강조를 제거한다.

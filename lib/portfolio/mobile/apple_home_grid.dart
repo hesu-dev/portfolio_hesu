@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 
 import '../data/portfolio_data.dart';
 import '../models/portfolio_app_id.dart';
+import '../widgets/apple_app_artwork.dart';
 import '../widgets/apple_app_icon.dart';
 
 class AppleHomeGrid extends StatelessWidget {
@@ -9,6 +10,7 @@ class AppleHomeGrid extends StatelessWidget {
     required this.data,
     required this.tablet,
     required this.onOpen,
+    this.trashEmpty = false,
     super.key,
   });
 
@@ -17,6 +19,7 @@ class AppleHomeGrid extends StatelessWidget {
   final PortfolioData data;
   final bool tablet;
   final ValueChanged<PortfolioAppId> onOpen;
+  final bool trashEmpty;
 
   @override
   Widget build(BuildContext context) {
@@ -51,6 +54,8 @@ class AppleHomeGrid extends StatelessWidget {
                         size: tablet ? 62 : 52,
                         compact: !tablet,
                         autofocus: index == 0,
+                        artworkSurface: AppleAppArtworkSurface.mobile,
+                        trashEmpty: trashEmpty,
                         onTap: () => onOpen(appId),
                       ),
                     );

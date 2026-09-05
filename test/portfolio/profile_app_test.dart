@@ -209,7 +209,7 @@ void main() {
       semantics.dispose();
     });
 
-    testWidgets('릴스 오버레이는 iPhone과 iPad의 상세 뷰포트를 정확히 채운다', (tester) async {
+    testWidgets('릴스 미디어는 공유 액션 직후 끝나고 첫 답글을 바로 보여준다', (tester) async {
       for (final scenario in const <(String, Size, bool)>[
         ('iPhone', Size(390, 844), false),
         ('iPad', Size(834, 1194), true),
@@ -230,8 +230,15 @@ void main() {
         final detail = find.byKey(const Key('profile-history-detail'));
         final overlay = find.byKey(const Key('profile-reel-overlay'));
         final thread = find.byKey(const Key('profile-reel-reply-thread'));
+        final firstReply = find.byKey(
+          const Key('profile-reel-reply-item-experience-0'),
+        );
+        final shareAction = find.byKey(const Key('profile-reel-share-action'));
         final detailRect = tester.getRect(detail);
         final overlayRect = tester.getRect(overlay);
+        final threadRect = tester.getRect(thread);
+        final firstReplyRect = tester.getRect(firstReply);
+        final shareActionRect = tester.getRect(shareAction);
 
         expect(
           overlayRect.left,
@@ -250,13 +257,33 @@ void main() {
         );
         expect(
           overlayRect.height,
-          closeTo(detailRect.height, 1),
-          reason: '${scenario.$1} viewport height',
+          lessThan(detailRect.height),
+          reason: '${scenario.$1} compact reel height',
         );
         expect(
-          tester.getRect(thread).top,
+          threadRect.top,
           closeTo(overlayRect.bottom, 1),
-          reason: '${scenario.$1} thread follows the viewport surface',
+          reason: '${scenario.$1} thread follows the reel surface',
+        );
+        expect(
+          overlayRect.bottom - shareActionRect.bottom,
+          inInclusiveRange(0, 24),
+          reason: '${scenario.$1} reel ends near the share action',
+        );
+        expect(
+          threadRect.top,
+          lessThan(detailRect.bottom),
+          reason: '${scenario.$1} thread starts in the initial viewport',
+        );
+        expect(
+          firstReplyRect.top,
+          lessThan(detailRect.bottom),
+          reason: '${scenario.$1} first reply is initially visible',
+        );
+        expect(
+          firstReplyRect.bottom,
+          greaterThan(detailRect.top),
+          reason: '${scenario.$1} first reply intersects the viewport',
         );
         expect(tester.widget<Stack>(overlay), isA<Stack>());
         expect(
@@ -1516,7 +1543,7 @@ void _expectReelTemplate(WidgetTester tester, {required PortfolioData data}) {
   expect(detail, findsOneWidget);
   expect(overlay, findsOneWidget);
   final overlayRect = tester.getRect(overlay);
-  expect(overlayRect.height, greaterThan(overlayRect.width));
+  expect(overlayRect.height, greaterThan(0));
   expect(overlayRect.width, greaterThan(tester.getSize(detail).width * 0.55));
 
   for (final section in <Finder>[topBar, actionRail, info]) {

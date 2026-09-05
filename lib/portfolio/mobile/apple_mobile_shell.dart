@@ -8,6 +8,7 @@ import '../services/external_launcher.dart';
 import '../theme/portfolio_theme_controller.dart';
 import 'apple_home_grid.dart';
 import 'apple_mobile_dock.dart';
+import 'apple_mobile_dock_geometry.dart';
 import 'apple_status_bar.dart';
 import 'mobile_app_surface.dart';
 
@@ -21,6 +22,8 @@ class AppleMobileShell extends StatefulWidget {
     required this.externalLauncher,
     required this.themeController,
     required this.tablet,
+    this.trashEmpty = false,
+    this.onTrashEmptied,
     this.now = _systemNow,
     this.clockTickInterval = const Duration(seconds: 30),
     super.key,
@@ -30,6 +33,8 @@ class AppleMobileShell extends StatefulWidget {
   final ExternalLauncher externalLauncher;
   final PortfolioThemeController themeController;
   final bool tablet;
+  final bool trashEmpty;
+  final VoidCallback? onTrashEmptied;
   final AppleNow now;
   final Duration clockTickInterval;
 
@@ -192,6 +197,9 @@ class _AppleMobileShellState extends State<AppleMobileShell> {
                                                 themeController:
                                                     widget.themeController,
                                                 tablet: widget.tablet,
+                                                trashEmpty: widget.trashEmpty,
+                                                onTrashEmptied:
+                                                    widget.onTrashEmptied,
                                                 onClose: _closeApp,
                                                 onOpenApp: _openAppWindow,
                                               ),
@@ -238,13 +246,16 @@ class _AppleMobileShellState extends State<AppleMobileShell> {
             child: AppleHomeGrid(
               data: widget.data,
               tablet: widget.tablet,
+              trashEmpty: widget.trashEmpty,
               onOpen: _openApp,
             ),
           ),
           Positioned(
             left: 12,
             right: 12,
-            bottom: widget.tablet ? 14 : 9,
+            bottom: AppleMobileDockGeometry.homeBottomOffset(
+              tablet: widget.tablet,
+            ),
             child: Center(
               child: AppleMobileDock(tablet: widget.tablet, onOpen: _openApp),
             ),

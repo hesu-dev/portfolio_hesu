@@ -9,6 +9,7 @@ import '../theme/portfolio_theme_controller.dart';
 import '../widgets/apple_app_icon.dart';
 import '../widgets/apple_finder_scaffold.dart';
 import '../widgets/apple_mobile_navigation_header.dart';
+import 'apple_mobile_dock_geometry.dart';
 import 'mobile_back_close_button.dart';
 
 class MobileAppSurface extends StatelessWidget {
@@ -19,6 +20,8 @@ class MobileAppSurface extends StatelessWidget {
     required this.themeController,
     required this.tablet,
     required this.onClose,
+    this.trashEmpty = false,
+    this.onTrashEmptied,
     this.onOpenApp,
     super.key,
   });
@@ -29,6 +32,8 @@ class MobileAppSurface extends StatelessWidget {
   final PortfolioThemeController themeController;
   final bool tablet;
   final VoidCallback onClose;
+  final bool trashEmpty;
+  final VoidCallback? onTrashEmptied;
   final ValueChanged<PortfolioAppId>? onOpenApp;
 
   @override
@@ -70,7 +75,7 @@ class MobileAppSurface extends StatelessWidget {
           border: tablet
               ? Border.all(
                   color: Colors.white.withValues(alpha: 0.66),
-                  width: 0.9,
+                  width: AppleMobileDockGeometry.tabletAppSurfaceBorderWidth,
                 )
               : null,
           boxShadow: tablet
@@ -108,6 +113,8 @@ class MobileAppSurface extends StatelessWidget {
                     finderWindowChrome: finderWindowChrome,
                     onOpenApp: onOpenApp,
                     onClose: onClose,
+                    trashEmpty: trashEmpty,
+                    onTrashEmptied: onTrashEmptied,
                   ),
                 ),
               ],

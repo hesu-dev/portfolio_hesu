@@ -13,7 +13,7 @@ enum PortfolioAppId {
   settings,
 }
 
-/// Apps exposed as launcher icons on the macOS desktop surfaces.
+/// Apps exposed through macOS launch surfaces.
 ///
 /// [PortfolioAppId.thisMac] remains only as an internal legacy route for shared
 /// component coverage. Launchers and the system menu use
@@ -30,10 +30,25 @@ const List<PortfolioAppId> portfolioLauncherAppIds = <PortfolioAppId>[
   PortfolioAppId.trash,
 ];
 
+/// Apps placed in the macOS desktop icon grid.
+///
+/// Trash is intentionally excluded because macOS keeps it in the Dock's
+/// utility area instead of treating it as a desktop launcher.
+const List<PortfolioAppId> portfolioMacDesktopLauncherAppIds = <PortfolioAppId>[
+  PortfolioAppId.about,
+  PortfolioAppId.introduction,
+  PortfolioAppId.skills,
+  PortfolioAppId.projects,
+  PortfolioAppId.terminal,
+  PortfolioAppId.github,
+  PortfolioAppId.mail,
+  PortfolioAppId.settings,
+];
+
 /// Apps shown as tiles on both the iPhone and iPad home surfaces.
 ///
 /// Profile is a mobile-only experience separate from the desktop About app,
-/// while Photos remains a placeholder for a future gallery experience.
+/// while Photos provides the shared responsive gallery experience.
 const List<PortfolioAppId> portfolioMobileLauncherAppIds = <PortfolioAppId>[
   PortfolioAppId.profile,
   PortfolioAppId.introduction,

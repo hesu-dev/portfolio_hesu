@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 
+import '../mobile/apple_mobile_dock_geometry.dart';
 import '../theme/apple_theme.dart';
 import 'apple_mobile_navigation_header.dart';
 import 'apple_selection_control.dart';
@@ -324,6 +325,7 @@ class AppleFinderMobileNavigationBar extends StatelessWidget {
     required this.destinations,
     required this.selectedId,
     required this.onSelected,
+    required this.tablet,
     super.key,
   });
 
@@ -331,17 +333,24 @@ class AppleFinderMobileNavigationBar extends StatelessWidget {
   final List<AppleFinderMobileDestination> destinations;
   final String selectedId;
   final ValueChanged<String> onSelected;
+  final bool tablet;
 
   @override
   Widget build(BuildContext context) {
+    final bottomClearance = AppleMobileDockGeometry.appBottomClearance(
+      tablet: tablet,
+      safeAreaBottom: MediaQuery.paddingOf(context).bottom,
+    );
     return Padding(
-      padding: const EdgeInsets.fromLTRB(12, 6, 12, 8),
+      padding: EdgeInsets.fromLTRB(12, 6, 12, bottomClearance),
       child: Center(
         child: ConstrainedBox(
           constraints: const BoxConstraints(maxWidth: 520),
           child: Container(
             key: Key('$keyPrefix-mobile-dock'),
-            constraints: const BoxConstraints(minHeight: 66),
+            constraints: BoxConstraints(
+              minHeight: AppleMobileDockGeometry.height(tablet: tablet),
+            ),
             padding: const EdgeInsets.all(5),
             decoration: BoxDecoration(
               color: Colors.transparent,

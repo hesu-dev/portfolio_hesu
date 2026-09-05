@@ -57,27 +57,43 @@ void main() {
       }
     });
 
-    testWidgets('프로젝트 폴더의 각 행을 파일 영역 가운데에 정렬한다', (tester) async {
+    testWidgets('프로젝트 폴더의 모든 행을 파일 영역 왼쪽에 정렬한다', (tester) async {
       for (final scenario
           in const <
-            ({Size size, bool compact, bool tablet, List<int> rowLengths})
+            ({
+              Size size,
+              bool compact,
+              bool tablet,
+              double horizontalPadding,
+              List<int> rowLengths,
+            })
           >[
             (
               size: Size(900, 650),
               compact: false,
               tablet: false,
+              horizontalPadding: 30,
               rowLengths: <int>[4],
             ),
             (
               size: Size(834, 700),
               compact: false,
               tablet: true,
+              horizontalPadding: 30,
+              rowLengths: <int>[4],
+            ),
+            (
+              size: Size(1366, 900),
+              compact: false,
+              tablet: true,
+              horizontalPadding: 30,
               rowLengths: <int>[4],
             ),
             (
               size: Size(390, 700),
               compact: true,
               tablet: false,
+              horizontalPadding: 16,
               rowLengths: <int>[3, 1],
             ),
           ]) {
@@ -92,6 +108,14 @@ void main() {
         final gridRect = tester.getRect(
           find.byKey(const Key('projects-finder-grid')),
         );
+        final collectionRect = tester.getRect(
+          find.byKey(const Key('projects-collection-scroll')),
+        );
+        expect(
+          gridRect.left,
+          closeTo(collectionRect.left + scenario.horizontalPadding, 0.01),
+          reason: '${scenario.size} grid leading edge',
+        );
         final folders = <Finder>[
           for (var index = 0; index < 4; index++)
             find.byKey(Key('projects-career-folder-$index')),
@@ -99,13 +123,9 @@ void main() {
         var rowStart = 0;
         for (final rowLength in scenario.rowLengths) {
           final firstRect = tester.getRect(folders[rowStart]);
-          final lastRect = tester.getRect(folders[rowStart + rowLength - 1]);
-          final leadingSpace = firstRect.left - gridRect.left;
-          final trailingSpace = gridRect.right - lastRect.right;
-
           expect(
-            leadingSpace,
-            closeTo(trailingSpace, 0.01),
+            firstRect.left,
+            closeTo(gridRect.left, 0.01),
             reason: '${scenario.size} row starting at $rowStart',
           );
           rowStart += rowLength;

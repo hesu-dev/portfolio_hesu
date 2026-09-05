@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 
 import '../data/portfolio_data.dart';
 import '../services/external_launcher.dart';
@@ -267,40 +268,283 @@ class _ProjectHubDetail extends StatelessWidget {
   }
 }
 
-class TrashApp extends StatelessWidget {
+class TrashApp extends StatefulWidget {
   const TrashApp({
     required this.data,
     this.compact = false,
     this.tablet = false,
+    this.trashEmpty = false,
+    this.onTrashEmptied,
     super.key,
   });
 
   final PortfolioData data;
   final bool compact;
   final bool tablet;
+  final bool trashEmpty;
+  final VoidCallback? onTrashEmptied;
+
+  @override
+  State<TrashApp> createState() => _TrashAppState();
+}
+
+class _TrashAppState extends State<TrashApp> {
+  static const List<_TrashItemData> _items = <_TrashItemData>[
+    _TrashItemData(
+      name: 'old-resume-draft.docx',
+      detail: 'Word document · 84 KB',
+      deleted: 'Today, 10:42',
+      icon: Icons.description_rounded,
+      color: Color(0xFF2468C8),
+    ),
+    _TrashItemData(
+      name: 'portfolio-preview.png',
+      detail: 'PNG image · 1.8 MB',
+      deleted: 'Yesterday, 18:16',
+      icon: Icons.image_rounded,
+      color: Color(0xFFB94ACE),
+    ),
+    _TrashItemData(
+      name: 'debug-session.log',
+      detail: 'Log file · 32 KB',
+      deleted: 'Sep 3, 21:05',
+      icon: Icons.terminal_rounded,
+      color: Color(0xFF5C6370),
+    ),
+  ];
+
+  late bool _empty;
+
+  @override
+  void initState() {
+    super.initState();
+    _empty = widget.trashEmpty;
+  }
+
+  @override
+  void didUpdateWidget(covariant TrashApp oldWidget) {
+    super.didUpdateWidget(oldWidget);
+    if (oldWidget.trashEmpty != widget.trashEmpty) {
+      _empty = widget.trashEmpty;
+    }
+  }
+
+  Future<void> _requestEmptyTrash() async {
+    final confirmed = await showDialog<bool>(
+      context: context,
+      builder: (context) => const _TrashConfirmationDialog(),
+    );
+    if (confirmed != true || !mounted || _empty) {
+      return;
+    }
+    setState(() => _empty = true);
+    widget.onTrashEmptied?.call();
+  }
 
   @override
   Widget build(BuildContext context) {
     return AppleAppSurface(
       key: const Key('trash-app'),
-      child: LayoutBuilder(
-        builder: (context, constraints) {
-          return SingleChildScrollView(
-            key: const Key('trash-scroll'),
-            physics: const BouncingScrollPhysics(
-              parent: AlwaysScrollableScrollPhysics(),
+      child: Column(
+        children: <Widget>[
+          Container(
+            key: const Key('trash-toolbar'),
+            constraints: const BoxConstraints(minHeight: 58),
+            padding: EdgeInsets.symmetric(
+              horizontal: widget.compact ? 16 : 22,
+              vertical: 8,
             ),
-            child: ConstrainedBox(
-              constraints: BoxConstraints(minHeight: constraints.maxHeight),
-              child: AppleEmptyState(
-                icon: Icons.delete_outline_rounded,
-                title: 'Trash is Empty',
-                message:
-                    'There are no deleted portfolio items for ${data.identity.englishName}.',
+            decoration: BoxDecoration(
+              color: AppleTheme.panel(context),
+              border: Border(
+                bottom: BorderSide(color: AppleTheme.separator(context)),
               ),
             ),
-          );
-        },
+            child: Row(
+              children: <Widget>[
+                Expanded(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    mainAxisSize: MainAxisSize.min,
+                    children: <Widget>[
+                      Text(
+                        'Recently Deleted',
+                        style: AppleTheme.title(context),
+                      ),
+                      Text(
+                        _empty
+                            ? 'No items'
+                            : '${_items.length} temporary items',
+                        style: AppleTheme.caption(context),
+                      ),
+                    ],
+                  ),
+                ),
+                FilledButton.tonalIcon(
+                  key: const Key('trash-empty-button'),
+                  onPressed: _empty ? null : _requestEmptyTrash,
+                  icon: const Icon(Icons.delete_sweep_rounded, size: 18),
+                  label: const Text('Empty'),
+                ),
+              ],
+            ),
+          ),
+          Expanded(
+            child: LayoutBuilder(
+              builder: (context, constraints) {
+                if (_empty) {
+                  return SingleChildScrollView(
+                    key: const Key('trash-scroll'),
+                    physics: const BouncingScrollPhysics(
+                      parent: AlwaysScrollableScrollPhysics(),
+                    ),
+                    child: ConstrainedBox(
+                      constraints: BoxConstraints(
+                        minHeight: constraints.maxHeight,
+                      ),
+                      child: AppleEmptyState(
+                        key: const Key('trash-empty-state'),
+                        icon: Icons.delete_outline_rounded,
+                        title: 'Trash is Empty',
+                        message:
+                            'There are no deleted portfolio items for '
+                            '${widget.data.identity.englishName}.',
+                      ),
+                    ),
+                  );
+                }
+
+                return ListView.separated(
+                  key: const Key('trash-scroll'),
+                  physics: const BouncingScrollPhysics(
+                    parent: AlwaysScrollableScrollPhysics(),
+                  ),
+                  padding: EdgeInsets.all(widget.compact ? 14 : 22),
+                  itemCount: _items.length,
+                  separatorBuilder: (_, _) => const SizedBox(height: 10),
+                  itemBuilder: (context, index) => _TrashItemRow(
+                    key: Key('trash-item-$index'),
+                    item: _items[index],
+                    compact: widget.compact,
+                  ),
+                );
+              },
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+class _TrashItemData {
+  const _TrashItemData({
+    required this.name,
+    required this.detail,
+    required this.deleted,
+    required this.icon,
+    required this.color,
+  });
+
+  final String name;
+  final String detail;
+  final String deleted;
+  final IconData icon;
+  final Color color;
+}
+
+class _TrashItemRow extends StatelessWidget {
+  const _TrashItemRow({required this.item, required this.compact, super.key});
+
+  final _TrashItemData item;
+  final bool compact;
+
+  @override
+  Widget build(BuildContext context) {
+    return AppleSurfaceCard(
+      radius: 15,
+      padding: EdgeInsets.symmetric(
+        horizontal: compact ? 14 : 18,
+        vertical: compact ? 12 : 14,
+      ),
+      child: Row(
+        children: <Widget>[
+          Container(
+            width: compact ? 42 : 48,
+            height: compact ? 42 : 48,
+            decoration: BoxDecoration(
+              color: item.color.withValues(alpha: 0.13),
+              borderRadius: BorderRadius.circular(12),
+            ),
+            child: Icon(item.icon, color: item.color),
+          ),
+          const SizedBox(width: 13),
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: <Widget>[
+                Text(
+                  item.name,
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
+                  style: AppleTheme.body(
+                    context,
+                  ).copyWith(fontWeight: FontWeight.w700),
+                ),
+                const SizedBox(height: 3),
+                Text(item.detail, style: AppleTheme.caption(context)),
+              ],
+            ),
+          ),
+          if (!compact) ...<Widget>[
+            const SizedBox(width: 12),
+            Text(item.deleted, style: AppleTheme.caption(context)),
+          ],
+        ],
+      ),
+    );
+  }
+}
+
+class _TrashConfirmationDialog extends StatelessWidget {
+  const _TrashConfirmationDialog();
+
+  @override
+  Widget build(BuildContext context) {
+    void close(bool confirmed) => Navigator.of(context).pop(confirmed);
+
+    return CallbackShortcuts(
+      bindings: <ShortcutActivator, VoidCallback>{
+        const SingleActivator(LogicalKeyboardKey.keyY): () => close(true),
+        const SingleActivator(LogicalKeyboardKey.keyN): () => close(false),
+      },
+      child: Focus(
+        autofocus: true,
+        child: AlertDialog(
+          key: const Key('trash-empty-dialog'),
+          title: const Text('휴지통을 비우겠습니까?'),
+          content: const Text('이 작업은 화면에서만 휴지통을 빈 상태로 전환합니다.'),
+          actions: <Widget>[
+            Semantics(
+              label: 'Cancel empty Trash',
+              button: true,
+              child: TextButton(
+                key: const Key('trash-empty-cancel'),
+                onPressed: () => close(false),
+                child: const Text('N'),
+              ),
+            ),
+            Semantics(
+              label: 'Confirm empty Trash',
+              button: true,
+              child: FilledButton(
+                key: const Key('trash-empty-confirm'),
+                onPressed: () => close(true),
+                child: const Text('Y'),
+              ),
+            ),
+          ],
+        ),
       ),
     );
   }
@@ -332,6 +576,7 @@ class GitHubApp extends StatelessWidget {
       destinationLabel: 'GitHub',
       uri: Uri.parse(data.githubUrl),
       data: data,
+      repositories: data.repositories,
       launcher: launcher,
       icon: Icons.code_rounded,
       colors: const <Color>[Color(0xFF50535A), Color(0xFF15161A)],
@@ -341,7 +586,16 @@ class GitHubApp extends StatelessWidget {
   }
 }
 
-class MailApp extends StatelessWidget {
+String _encodeQueryParameters(Map<String, String> parameters) {
+  return parameters.entries
+      .map(
+        (entry) =>
+            '${Uri.encodeComponent(entry.key)}=${Uri.encodeComponent(entry.value)}',
+      )
+      .join('&');
+}
+
+class MailApp extends StatefulWidget {
   const MailApp({
     required this.data,
     required this.launcher,
@@ -356,22 +610,188 @@ class MailApp extends StatelessWidget {
   final bool tablet;
 
   @override
+  State<MailApp> createState() => _MailAppState();
+}
+
+class _MailAppState extends State<MailApp> {
+  final TextEditingController _subjectController = TextEditingController();
+  final TextEditingController _bodyController = TextEditingController();
+  int _launchRequestGeneration = 0;
+  String? _feedback;
+  bool _succeeded = false;
+
+  @override
+  void didUpdateWidget(covariant MailApp oldWidget) {
+    super.didUpdateWidget(oldWidget);
+    if (oldWidget.data.email != widget.data.email ||
+        !identical(oldWidget.launcher, widget.launcher)) {
+      _launchRequestGeneration++;
+      _feedback = null;
+    }
+  }
+
+  @override
+  void dispose() {
+    _launchRequestGeneration++;
+    _subjectController.dispose();
+    _bodyController.dispose();
+    super.dispose();
+  }
+
+  Uri _composeUri() {
+    final subject = _subjectController.text.trim();
+    final body = _bodyController.text.trim();
+    if (subject.isEmpty && body.isEmpty) {
+      return Uri.parse(widget.data.mailUrl);
+    }
+    return Uri(
+      scheme: 'mailto',
+      path: widget.data.email.trim(),
+      query: _encodeQueryParameters(<String, String>{
+        if (subject.isNotEmpty) 'subject': subject,
+        if (body.isNotEmpty) 'body': body,
+      }),
+    );
+  }
+
+  Future<void> _launch() async {
+    final requestGeneration = ++_launchRequestGeneration;
+    var succeeded = false;
+    try {
+      succeeded = await widget.launcher.launch(_composeUri());
+    } catch (_) {
+      succeeded = false;
+    }
+    if (!mounted || requestGeneration != _launchRequestGeneration) {
+      return;
+    }
+    setState(() {
+      _succeeded = succeeded;
+      _feedback = succeeded ? 'Mail 앱을 열었습니다.' : 'Mail 링크를 열 수 없습니다.';
+    });
+  }
+
+  @override
   Widget build(BuildContext context) {
-    return _ExternalProfilePage(
-      rootKey: 'mail-app',
-      feedbackKey: 'mail-launch-feedback',
-      actionKey: 'mail-external-action',
-      title: 'Mail',
-      subtitle: 'Contact ${data.identity.englishName}',
-      actionLabel: 'Compose email',
-      destinationLabel: 'Mail',
-      uri: Uri.parse(data.mailUrl),
-      data: data,
-      launcher: launcher,
-      icon: Icons.mail_rounded,
-      colors: const <Color>[Color(0xFF62D0FF), Color(0xFF176CFF)],
-      compact: compact,
-      tablet: tablet,
+    final padding = widget.compact ? 16.0 : (widget.tablet ? 24.0 : 30.0);
+    return AppleAppSurface(
+      key: const Key('mail-app'),
+      child: ListView(
+        key: const Key('mail-app-scroll'),
+        padding: EdgeInsets.all(padding),
+        children: <Widget>[
+          Center(
+            child: ConstrainedBox(
+              constraints: const BoxConstraints(maxWidth: 720),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.stretch,
+                children: <Widget>[
+                  AppleSurfaceCard(
+                    padding: EdgeInsets.zero,
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.stretch,
+                      children: <Widget>[
+                        Padding(
+                          padding: const EdgeInsets.fromLTRB(18, 12, 10, 10),
+                          child: Row(
+                            children: <Widget>[
+                              Expanded(
+                                child: Text(
+                                  '새로운 메시지',
+                                  style: AppleTheme.title(context),
+                                ),
+                              ),
+                              IconButton.filled(
+                                key: const Key('mail-external-action'),
+                                onPressed: _launch,
+                                tooltip: '메일 앱에서 보내기',
+                                icon: const Icon(Icons.send_rounded),
+                              ),
+                            ],
+                          ),
+                        ),
+                        Divider(
+                          height: 1,
+                          color: AppleTheme.separator(context),
+                        ),
+                        Padding(
+                          padding: const EdgeInsets.symmetric(
+                            horizontal: 18,
+                            vertical: 13,
+                          ),
+                          child: Row(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: <Widget>[
+                              SizedBox(
+                                width: 76,
+                                child: Text(
+                                  '받는 사람',
+                                  style: AppleTheme.caption(context),
+                                ),
+                              ),
+                              Expanded(
+                                child: SelectableText(
+                                  widget.data.email,
+                                  style: AppleTheme.body(
+                                    context,
+                                  ).copyWith(fontWeight: FontWeight.w600),
+                                ),
+                              ),
+                            ],
+                          ),
+                        ),
+                        Divider(
+                          height: 1,
+                          color: AppleTheme.separator(context),
+                        ),
+                        TextField(
+                          key: const Key('mail-subject-input'),
+                          controller: _subjectController,
+                          textInputAction: TextInputAction.next,
+                          decoration: const InputDecoration(
+                            labelText: '제목',
+                            border: InputBorder.none,
+                            contentPadding: EdgeInsets.symmetric(
+                              horizontal: 18,
+                              vertical: 14,
+                            ),
+                          ),
+                        ),
+                        Divider(
+                          height: 1,
+                          color: AppleTheme.separator(context),
+                        ),
+                        TextField(
+                          key: const Key('mail-body-input'),
+                          controller: _bodyController,
+                          keyboardType: TextInputType.multiline,
+                          textInputAction: TextInputAction.newline,
+                          minLines: widget.compact ? 9 : 12,
+                          maxLines: null,
+                          decoration: const InputDecoration(
+                            hintText: '메시지를 입력하세요.',
+                            border: InputBorder.none,
+                            alignLabelWithHint: true,
+                            contentPadding: EdgeInsets.all(18),
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                  if (_feedback case final message?) ...<Widget>[
+                    const SizedBox(height: 14),
+                    AppleFeedbackBanner(
+                      key: const Key('mail-launch-feedback'),
+                      message: message,
+                      success: _succeeded,
+                    ),
+                  ],
+                ],
+              ),
+            ),
+          ),
+        ],
+      ),
     );
   }
 }
@@ -387,6 +807,7 @@ class _ExternalProfilePage extends StatefulWidget {
     required this.destinationLabel,
     required this.uri,
     required this.data,
+    this.repositories = const <PortfolioRepository>[],
     required this.launcher,
     required this.icon,
     required this.colors,
@@ -403,6 +824,7 @@ class _ExternalProfilePage extends StatefulWidget {
   final String destinationLabel;
   final Uri uri;
   final PortfolioData data;
+  final List<PortfolioRepository> repositories;
   final ExternalLauncher launcher;
   final IconData icon;
   final List<Color> colors;
@@ -422,17 +844,21 @@ class _ExternalProfilePageState extends State<_ExternalProfilePage> {
   void didUpdateWidget(covariant _ExternalProfilePage oldWidget) {
     super.didUpdateWidget(oldWidget);
     if (oldWidget.uri != widget.uri ||
+        oldWidget.repositories != widget.repositories ||
         !identical(oldWidget.launcher, widget.launcher)) {
       _launchRequestGeneration++;
       _feedback = null;
     }
   }
 
-  Future<void> _launch() async {
+  Future<void> _launch({Uri? target, String? rawTarget}) async {
     final requestGeneration = ++_launchRequestGeneration;
     var succeeded = false;
     try {
-      succeeded = await widget.launcher.launch(widget.uri);
+      final uri = rawTarget == null
+          ? target ?? widget.uri
+          : Uri.parse(rawTarget);
+      succeeded = await widget.launcher.launch(uri);
     } catch (_) {
       succeeded = false;
     }
@@ -513,7 +939,7 @@ class _ExternalProfilePageState extends State<_ExternalProfilePage> {
                         const SizedBox(height: 20),
                         FilledButton.icon(
                           key: Key(widget.actionKey),
-                          onPressed: _launch,
+                          onPressed: () => _launch(),
                           icon: Icon(
                             widget.title == 'Mail'
                                 ? Icons.edit_rounded
@@ -533,7 +959,39 @@ class _ExternalProfilePageState extends State<_ExternalProfilePage> {
                       success: _succeeded,
                     ),
                   ],
-                  const SizedBox(height: 18),
+                  if (widget.repositories.isNotEmpty) ...<Widget>[
+                    const SizedBox(height: 18),
+                    Column(
+                      key: const Key('github-repositories-section'),
+                      crossAxisAlignment: CrossAxisAlignment.stretch,
+                      children: <Widget>[
+                        Row(
+                          children: <Widget>[
+                            Expanded(
+                              child: Text(
+                                'Repositories',
+                                style: AppleTheme.title(context),
+                              ),
+                            ),
+                            Text(
+                              '${widget.repositories.length}',
+                              style: AppleTheme.caption(context),
+                            ),
+                          ],
+                        ),
+                        const SizedBox(height: 10),
+                        for (final repository
+                            in widget.repositories) ...<Widget>[
+                          _GitHubRepositoryCard(
+                            repository: repository,
+                            onPressed: () => _launch(rawTarget: repository.url),
+                          ),
+                          const SizedBox(height: 10),
+                        ],
+                      ],
+                    ),
+                  ],
+                  const SizedBox(height: 8),
                   AppleSurfaceCard(
                     radius: 17,
                     child: Column(
@@ -568,6 +1026,103 @@ class _ExternalProfilePageState extends State<_ExternalProfilePage> {
         ],
       ),
     );
+  }
+}
+
+class _GitHubRepositoryCard extends StatelessWidget {
+  const _GitHubRepositoryCard({
+    required this.repository,
+    required this.onPressed,
+  });
+
+  final PortfolioRepository repository;
+  final VoidCallback onPressed;
+
+  @override
+  Widget build(BuildContext context) {
+    final borderRadius = BorderRadius.circular(14);
+    return Material(
+      color: Colors.transparent,
+      child: InkWell(
+        key: Key('github-repository-${repository.name}'),
+        onTap: onPressed,
+        borderRadius: borderRadius,
+        child: Ink(
+          padding: const EdgeInsets.all(16),
+          decoration: BoxDecoration(
+            color: AppleTheme.panel(context),
+            borderRadius: borderRadius,
+            border: Border.all(color: AppleTheme.separator(context)),
+          ),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: <Widget>[
+              Row(
+                children: <Widget>[
+                  const Icon(
+                    Icons.book_outlined,
+                    size: 18,
+                    color: AppleTheme.blue,
+                  ),
+                  const SizedBox(width: 8),
+                  Expanded(
+                    child: Text(
+                      repository.name,
+                      style: AppleTheme.body(context).copyWith(
+                        color: AppleTheme.blue,
+                        fontWeight: FontWeight.w700,
+                      ),
+                    ),
+                  ),
+                  Container(
+                    padding: const EdgeInsets.symmetric(
+                      horizontal: 8,
+                      vertical: 3,
+                    ),
+                    decoration: BoxDecoration(
+                      borderRadius: BorderRadius.circular(99),
+                      border: Border.all(color: AppleTheme.separator(context)),
+                    ),
+                    child: Text('Public', style: AppleTheme.caption(context)),
+                  ),
+                ],
+              ),
+              const SizedBox(height: 9),
+              Text(repository.description, style: AppleTheme.body(context)),
+              const SizedBox(height: 12),
+              Row(
+                children: <Widget>[
+                  Container(
+                    width: 10,
+                    height: 10,
+                    decoration: BoxDecoration(
+                      color: _languageColor(repository.language),
+                      shape: BoxShape.circle,
+                    ),
+                  ),
+                  const SizedBox(width: 6),
+                  Text(repository.language, style: AppleTheme.caption(context)),
+                  const Spacer(),
+                  Icon(
+                    Icons.open_in_new_rounded,
+                    size: 17,
+                    color: AppleTheme.secondaryLabel(context),
+                  ),
+                ],
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+
+  Color _languageColor(String language) {
+    return switch (language.toLowerCase()) {
+      'dart' => const Color(0xFF00B4AB),
+      'javascript' => const Color(0xFFF1E05A),
+      _ => AppleTheme.blue,
+    };
   }
 }
 

@@ -12,6 +12,7 @@ class MacDock extends StatelessWidget {
     required this.runningApps,
     required this.activeApp,
     required this.onAppPressed,
+    this.trashEmpty = false,
     super.key,
   });
 
@@ -22,16 +23,23 @@ class MacDock extends StatelessWidget {
     PortfolioAppId.projects,
   ];
 
+  static const List<PortfolioAppId> utilityApps = <PortfolioAppId>[
+    PortfolioAppId.trash,
+  ];
+
   final Set<PortfolioAppId> runningApps;
   final PortfolioAppId? activeApp;
   final ValueChanged<PortfolioAppId> onAppPressed;
+  final bool trashEmpty;
 
   @override
   Widget build(BuildContext context) {
+    // Utility apps have a permanent position after the separator.
     final runningLaunchableApps = launchableApps
         .where(
           (appId) => runningApps.contains(appId) && !pinnedApps.contains(appId),
         )
+        .where((appId) => !utilityApps.contains(appId))
         .toList(growable: false);
     final theme = Theme.of(context);
 
@@ -63,12 +71,10 @@ class MacDock extends StatelessWidget {
                 crossAxisAlignment: CrossAxisAlignment.end,
                 children: <Widget>[
                   for (final appId in pinnedApps) _buildDockItem(appId),
-                  if (runningLaunchableApps.isNotEmpty)
-                    const _DockSeparator(
-                      key: Key('mac-dock-utility-separator'),
-                    ),
                   for (final appId in runningLaunchableApps)
                     _buildDockItem(appId),
+                  const _DockSeparator(key: Key('mac-dock-utility-separator')),
+                  for (final appId in utilityApps) _buildDockItem(appId),
                 ],
               ),
             ),
@@ -84,6 +90,7 @@ class MacDock extends StatelessWidget {
       appId: appId,
       running: runningApps.contains(appId),
       active: activeApp == appId,
+      trashEmpty: trashEmpty,
       onPressed: () => onAppPressed(appId),
     );
   }
@@ -95,10 +102,10 @@ class _DockSeparator extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Container(
-      width: 1,
+      width: 1.5,
       height: 50,
       margin: const EdgeInsets.symmetric(horizontal: 6),
-      color: Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.2),
+      color: Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.34),
     );
   }
 }
@@ -108,6 +115,7 @@ class _MacDockItem extends StatefulWidget {
     required this.appId,
     required this.running,
     required this.active,
+    required this.trashEmpty,
     required this.onPressed,
     super.key,
   });
@@ -115,6 +123,7 @@ class _MacDockItem extends StatefulWidget {
   final PortfolioAppId appId;
   final bool running;
   final bool active;
+  final bool trashEmpty;
   final VoidCallback onPressed;
 
   @override
@@ -144,6 +153,9 @@ class _MacDockItemState extends State<_MacDockItem> {
       label: 'Open or restore $label',
       button: true,
       selected: widget.active,
+      value: appId == PortfolioAppId.trash
+          ? (widget.trashEmpty ? 'Empty' : 'Contains items')
+          : null,
       onTap: widget.onPressed,
       child: FocusableActionDetector(
         focusNode: _focusNode,
@@ -201,9 +213,14 @@ class _MacDockItemState extends State<_MacDockItem> {
                                 AppleAppArtworkFrame(
                                   appId: appId,
                                   size: 49,
+                                  foregroundColor:
+                                      appId == PortfolioAppId.github
+                                      ? Colors.black
+                                      : null,
                                   frameKey: Key(
                                     'dock-app-artwork-frame-${appId.name}',
                                   ),
+                                  trashEmpty: widget.trashEmpty,
                                 ),
                                 if (_showFocus)
                                   Positioned.fill(

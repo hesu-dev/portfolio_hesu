@@ -48,16 +48,26 @@ void main() {
       });
     }
 
-    for (final surface in _IconSurface.values) {
-      testWidgets('${surface.label}의 Projects와 Trash에는 사각 frame 효과나 clip이 없다', (
+    for (final surface in const <_IconSurface>[
+      _IconSurface.desktop,
+      _IconSurface.dock,
+    ]) {
+      testWidgets('${surface.label}의 투명 실루엣에는 사각 frame 효과나 clip이 없다', (
         tester,
       ) async {
         await _pumpSurface(tester, surface);
 
-        for (final appId in const <PortfolioAppId>[
-          PortfolioAppId.projects,
-          PortfolioAppId.trash,
-        ]) {
+        final transparentApps = surface == _IconSurface.desktop
+            ? const <PortfolioAppId>[
+                PortfolioAppId.projects,
+                PortfolioAppId.github,
+              ]
+            : const <PortfolioAppId>[
+                PortfolioAppId.projects,
+                PortfolioAppId.github,
+                PortfolioAppId.trash,
+              ];
+        for (final appId in transparentApps) {
           final launcher = find.byKey(_launcherKey(surface, appId));
           final frame = find.descendant(
             of: launcher,
@@ -91,13 +101,48 @@ void main() {
       });
     }
 
-    testWidgets('desktop Trash는 50px 전체 painter를 비클리핑으로 노출한다', (tester) async {
-      await _pumpSurface(tester, _IconSurface.desktop);
+    for (final surface in const <_IconSurface>[
+      _IconSurface.iPad,
+      _IconSurface.iPhone,
+    ]) {
+      testWidgets('${surface.label}의 Projects, GitHub, Trash는 흰색 라운드 타일이다', (
+        tester,
+      ) async {
+        await _pumpSurface(tester, surface);
+
+        for (final appId in const <PortfolioAppId>[
+          PortfolioAppId.projects,
+          PortfolioAppId.github,
+          PortfolioAppId.trash,
+        ]) {
+          final launcher = find.byKey(_launcherKey(surface, appId));
+          final frame = find.descendant(
+            of: launcher,
+            matching: find.byType(AppleAppArtworkFrame),
+          );
+          final container = tester.widget<Container>(
+            find.descendant(of: frame, matching: find.byType(Container)).first,
+          );
+          final decoration = container.decoration! as BoxDecoration;
+          expect(decoration.color, Colors.white, reason: appId.name);
+          expect(decoration.borderRadius, isNotNull, reason: appId.name);
+          expect(decoration.boxShadow, isEmpty, reason: appId.name);
+          expect(
+            find.descendant(of: frame, matching: find.byType(ClipRRect)),
+            findsOneWidget,
+            reason: '${surface.label} ${appId.name} rounded tile clip',
+          );
+        }
+      });
+    }
+
+    testWidgets('Dock Trash는 49px 전체 painter를 비클리핑으로 노출한다', (tester) async {
+      await _pumpSurface(tester, _IconSurface.dock);
 
       final desktopFrame = find.byKey(
-        const Key('desktop-app-artwork-frame-trash'),
+        const Key('dock-app-artwork-frame-trash'),
       );
-      final desktopLauncher = find.byKey(const Key('desktop-app-trash'));
+      final desktopLauncher = find.byKey(const Key('dock-app-trash'));
       expect(desktopFrame, findsOneWidget);
       final sharedFrame = find.descendant(
         of: desktopLauncher,
@@ -110,7 +155,7 @@ void main() {
         matching: find.byType(CustomPaint),
       );
       expect(paint, findsOneWidget);
-      expect(tester.getSize(paint), const Size.square(50));
+      expect(tester.getSize(paint), const Size.square(49));
       expect(
         find.descendant(of: sharedFrame, matching: find.byType(ClipRRect)),
         findsNothing,
@@ -122,9 +167,7 @@ void main() {
       }
     });
 
-    testWidgets('720px 높이에서도 desktop Trash 아이콘과 라벨이 그리드에 잘리지 않는다', (
-      tester,
-    ) async {
+    testWidgets('720px 높이에서도 Trash는 그리드가 아닌 Dock 오른쪽에 보인다', (tester) async {
       await _pumpSurface(
         tester,
         _IconSurface.desktop,
@@ -133,23 +176,20 @@ void main() {
 
       final grid = find.byKey(const Key('mac-desktop-icons'));
       final trash = find.byKey(const Key('desktop-app-trash'));
-      final artwork = find.byKey(const Key('desktop-app-artwork-frame-trash'));
-      final label = find.descendant(of: trash, matching: find.text('Trash'));
+      final dockTrash = find.byKey(const Key('dock-app-trash'));
+      final artwork = find.byKey(const Key('dock-app-artwork-frame-trash'));
 
       expect(grid, findsOneWidget);
-      expect(trash, findsOneWidget);
+      expect(trash, findsNothing);
+      expect(dockTrash, findsOneWidget);
       expect(artwork, findsOneWidget);
-      expect(label, findsOneWidget);
-      final gridRect = tester.getRect(grid);
-      expect(gridRect.contains(tester.getRect(artwork).topLeft), isTrue);
-      expect(gridRect.contains(tester.getRect(artwork).bottomRight), isTrue);
-      expect(gridRect.contains(tester.getRect(label).bottomRight), isTrue);
+      expect(tester.getRect(dockTrash).bottom, lessThanOrEqualTo(720));
     });
   });
 }
 
 List<PortfolioAppId> _appsFor(_IconSurface surface) => switch (surface) {
-  _IconSurface.desktop => portfolioLauncherAppIds,
+  _IconSurface.desktop => portfolioMacDesktopLauncherAppIds,
   _IconSurface.iPad || _IconSurface.iPhone => AppleHomeGrid.apps,
   _IconSurface.dock => MacDock.launchableApps,
 };

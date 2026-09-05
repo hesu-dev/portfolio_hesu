@@ -3,6 +3,7 @@ import 'dart:ui' show PointerDeviceKind;
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_test/flutter_test.dart';
+import 'package:flutter_svg/flutter_svg.dart';
 import 'package:portfolio_hesu/portfolio/apps/portfolio_app_content.dart';
 import 'package:portfolio_hesu/portfolio/data/portfolio_data.dart';
 import 'package:portfolio_hesu/portfolio/mobile/apple_mobile_shell.dart';
@@ -10,6 +11,7 @@ import 'package:portfolio_hesu/portfolio/models/portfolio_app_id.dart';
 import 'package:portfolio_hesu/portfolio/services/external_launcher.dart';
 import 'package:portfolio_hesu/portfolio/theme/apple_theme.dart';
 import 'package:portfolio_hesu/portfolio/theme/portfolio_theme_controller.dart';
+import 'package:portfolio_hesu/portfolio/widgets/apple_app_artwork.dart';
 import 'package:portfolio_hesu/portfolio/widgets/adaptive_portfolio_shell.dart';
 
 void main() {
@@ -55,6 +57,78 @@ void main() {
       expect(find.byKey(const Key('mobile-dock-about')), findsNothing);
       expect(find.byKey(const Key('mobile-dock-trash')), findsNothing);
       expect(find.byKey(const Key('mac-dock')), findsNothing);
+    });
+
+    testWidgets(
+      'iPhone and iPad give Projects, GitHub, and Trash white rounded tiles',
+      (tester) async {
+        for (final size in const <Size>[Size(390, 844), Size(834, 1194)]) {
+          for (final brightness in Brightness.values) {
+            await tester.pumpWidget(const SizedBox.shrink());
+            await _pumpShell(tester, size: size, brightness: brightness);
+
+            for (final appId in const <PortfolioAppId>[
+              PortfolioAppId.projects,
+              PortfolioAppId.github,
+              PortfolioAppId.trash,
+            ]) {
+              final reason = '$size ${brightness.name} ${appId.name}';
+              final decoration = _launcherFrameDecoration(
+                tester,
+                find.byKey(Key('home-app-${appId.name}')),
+              );
+              expect(decoration.color, Colors.white, reason: reason);
+              expect(decoration.borderRadius, isNotNull, reason: reason);
+              expect(decoration.boxShadow, isEmpty, reason: reason);
+            }
+
+            final githubSvg = tester.widget<SvgPicture>(
+              find.descendant(
+                of: find.byKey(const Key('home-app-github')),
+                matching: find.byKey(const Key('apple-app-artwork-github-svg')),
+              ),
+            );
+            expect(
+              (githubSvg.bytesLoader as SvgAssetLoader).theme?.currentColor,
+              Colors.black,
+              reason: '$size ${brightness.name} GitHub foreground',
+            );
+
+            final dockProjectsDecoration = _launcherFrameDecoration(
+              tester,
+              find.byKey(const Key('mobile-dock-projects')),
+            );
+            expect(
+              dockProjectsDecoration.color,
+              Colors.white,
+              reason: '$size ${brightness.name}',
+            );
+            expect(dockProjectsDecoration.borderRadius, isNotNull);
+            expect(dockProjectsDecoration.boxShadow, isEmpty);
+          }
+        }
+      },
+    );
+
+    testWidgets('dark mobile GitHub stays black on its white tile', (
+      tester,
+    ) async {
+      await _pumpShell(
+        tester,
+        size: const Size(390, 844),
+        brightness: Brightness.dark,
+      );
+
+      final githubSvg = tester.widget<SvgPicture>(
+        find.descendant(
+          of: find.byKey(const Key('home-app-github')),
+          matching: find.byKey(const Key('apple-app-artwork-github-svg')),
+        ),
+      );
+      expect(
+        (githubSvg.bytesLoader as SvgAssetLoader).theme?.currentColor,
+        Colors.black,
+      );
     });
 
     testWidgets('iPhone과 iPad는 모든 툴팁 효과를 숨기고 Mac은 유지한다', (tester) async {
@@ -262,6 +336,47 @@ void main() {
       }
     });
 
+    testWidgets(
+      'Projects bottom navigation matches the home Dock height and position',
+      (tester) async {
+        for (final scenario in const <({Size size, double bottomInset})>[
+          (size: Size(390, 844), bottomInset: 0),
+          (size: Size(390, 844), bottomInset: 34),
+          (size: Size(834, 1194), bottomInset: 0),
+          (size: Size(834, 1194), bottomInset: 20),
+        ]) {
+          await tester.pumpWidget(const SizedBox.shrink());
+          await _pumpShell(
+            tester,
+            size: scenario.size,
+            viewPadding: EdgeInsets.only(bottom: scenario.bottomInset),
+          );
+
+          final homeDockRect = tester.getRect(
+            find.byKey(const Key('mobile-dock')),
+          );
+
+          await tester.tap(find.byKey(const Key('mobile-dock-projects')));
+          await tester.pumpAndSettle();
+
+          final projectsDockRect = tester.getRect(
+            find.byKey(const Key('projects-finder-mobile-dock')),
+          );
+          final reason = '${scenario.size} bottom=${scenario.bottomInset}';
+          expect(
+            projectsDockRect.height,
+            closeTo(homeDockRect.height, 0.1),
+            reason: '$reason height',
+          );
+          expect(
+            projectsDockRect.bottom,
+            closeTo(homeDockRect.bottom, 0.1),
+            reason: '$reason vertical position',
+          );
+        }
+      },
+    );
+
     testWidgets('opens the separate Introduction app on iPhone and iPad', (
       tester,
     ) async {
@@ -404,7 +519,7 @@ void main() {
           find.byKey(const Key('mobile-back-close-terminal')),
         );
         expect(closeSize, const Size(44, 44));
-        expect(find.text(r'포트폴리오: ~$'), findsOneWidget);
+        expect(find.text(r'portfolio: ~$'), findsOneWidget);
         expect(find.byKey(const Key('terminal-submit')), findsNothing);
         final input = tester.widget<TextField>(
           find.byKey(const Key('terminal-input')),
@@ -612,7 +727,7 @@ void main() {
         await tester.pumpAndSettle();
 
         expect(find.byKey(const Key('terminal-app')), findsOneWidget);
-        expect(find.text(r'포트폴리오: ~$'), findsOneWidget);
+        expect(find.text(r'portfolio: ~$'), findsOneWidget);
         expect(find.byKey(const Key('terminal-submit')), findsNothing);
         expect(
           tester
@@ -625,7 +740,7 @@ void main() {
       }
     });
 
-    testWidgets('keeps Trash content visible without a duplicate title row', (
+    testWidgets('keeps Trash items visible without a duplicate title row', (
       tester,
     ) async {
       for (final size in const <Size>[Size(600, 400), Size(1023, 600)]) {
@@ -644,7 +759,9 @@ void main() {
         final trashScroll = find.byKey(const Key('trash-scroll'));
         expect(trashScroll, findsOneWidget);
         expect(find.byType(AppleToolbar), findsNothing);
-        expect(find.text('Trash is Empty'), findsOneWidget);
+        expect(find.byKey(const Key('trash-item-0')), findsOneWidget);
+        expect(find.byKey(const Key('trash-empty-button')), findsOneWidget);
+        expect(find.text('Trash is Empty'), findsNothing);
         await tester.drag(trashScroll, const Offset(0, -80));
         await tester.pumpAndSettle();
         expect(tester.takeException(), isNull, reason: '$size');
@@ -674,6 +791,20 @@ void main() {
       }
     });
   });
+}
+
+BoxDecoration _launcherFrameDecoration(WidgetTester tester, Finder launcher) {
+  final frame = find.descendant(
+    of: launcher,
+    matching: find.byType(AppleAppArtworkFrame),
+  );
+  expect(frame, findsOneWidget);
+  final frameContainer = find.descendant(
+    of: frame,
+    matching: find.byType(Container),
+  );
+  return tester.widget<Container>(frameContainer.first).decoration!
+      as BoxDecoration;
 }
 
 Future<void> _scrollHomeIconIntoView(

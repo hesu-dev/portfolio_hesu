@@ -37,12 +37,13 @@ The iPad and iPhone shells use safe-area insets, status bars, app grids, translu
 - **Projects / Safari:** sidebar project selector, detail report, stack chips, store/research/source links.
 - **Terminal:** `help`, `whoami`, `ls`, `cat skills.md`, `git status`, `git log`, `clear`, and unknown-command feedback.
 - **This Mac / Finder:** concise system-style overview of the portfolio and available apps.
-- **Trash:** empty-state window.
-- **GitHub / Mail:** external actions tied only to Min He-su's addresses.
+- **Trash:** temporary-item list, confirmation dialog, and session-only filled/empty visual state shared with launcher artwork.
+- **GitHub:** profile action plus three repository cards that open their verified GitHub URLs.
+- **Mail:** compose surface with recipient, subject, body, and an explicit `mailto:` send action.
 
 ## iPad apps
 
-The iPad shell presents a spacious home grid, a date/profile widget, and a floating Dock. Apps open as large rounded tablet surfaces with persistent navigation where useful. Project selection uses a master-detail layout when space permits, while narrow split views fall back to stacked cards. The shell remains recognizably iPadOS in both portrait and landscape orientations.
+The iPad shell presents a spacious home grid and a floating Dock. Apps open as large rounded tablet surfaces with persistent navigation where useful. Photos provides a populated responsive library and album filters. The shell remains recognizably iPadOS in both portrait and landscape orientations.
 
 ## iPhone apps
 

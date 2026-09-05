@@ -10,7 +10,7 @@ import 'package:portfolio_hesu/portfolio/theme/portfolio_theme_controller.dart';
 import 'package:portfolio_hesu/portfolio/data/portfolio_data.dart';
 
 void main() {
-  test('desktop and mobile expose distinct ordered launcher catalogs', () {
+  test('macOS and mobile expose distinct ordered launcher catalogs', () {
     expect(portfolioLauncherAppIds.map((appId) => appId.name), <String>[
       'about',
       'introduction',
@@ -34,6 +34,19 @@ void main() {
       'settings',
       'trash',
     ]);
+    expect(
+      portfolioMacDesktopLauncherAppIds.map((appId) => appId.name),
+      <String>[
+        'about',
+        'introduction',
+        'skills',
+        'projects',
+        'terminal',
+        'github',
+        'mail',
+        'settings',
+      ],
+    );
     expect(MacDock.launchableApps.map((appId) => appId.name), <String>[
       'about',
       'introduction',
@@ -49,6 +62,7 @@ void main() {
       'about',
       'projects',
     ]);
+    expect(MacDock.utilityApps.map((appId) => appId.name), <String>['trash']);
     expect(AppleMobileDock.apps.map((appId) => appId.name), <String>[
       'profile',
       'projects',
@@ -103,6 +117,8 @@ void main() {
 
       expect(find.byKey(const Key('desktop-app-projects')), findsOneWidget);
       expect(find.byKey(const Key('desktop-app-thisMac')), findsNothing);
+      expect(find.byKey(const Key('desktop-app-trash')), findsNothing);
+      expect(find.byKey(const Key('dock-app-trash')), findsOneWidget);
       expect(find.text('포트폴리오'), findsOneWidget);
       expect(find.text('Projects'), findsNothing);
       expect(find.text('프로젝트'), findsNothing);

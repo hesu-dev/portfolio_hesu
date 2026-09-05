@@ -88,7 +88,11 @@ const List<_AppScrollTarget> _publicAppScrollTargets = <_AppScrollTarget>[
     Key('introduction-scroll'),
     height: 180,
   ),
-  _AppScrollTarget(PortfolioAppId.projects, Key('projects-collection-scroll')),
+  _AppScrollTarget(
+    PortfolioAppId.projects,
+    Key('projects-collection-scroll'),
+    mobileHeight: 360,
+  ),
   _AppScrollTarget(PortfolioAppId.skills, Key('skills-list')),
   _AppScrollTarget(
     PortfolioAppId.settings,
@@ -117,11 +121,17 @@ class _AdaptiveLayout {
 }
 
 class _AppScrollTarget {
-  const _AppScrollTarget(this.appId, this.scrollKey, {this.height = 260});
+  const _AppScrollTarget(
+    this.appId,
+    this.scrollKey, {
+    this.height = 260,
+    this.mobileHeight,
+  });
 
   final PortfolioAppId appId;
   final Key scrollKey;
   final double height;
+  final double? mobileHeight;
 }
 
 Future<void> _pumpPortfolio(WidgetTester tester) async {
@@ -144,7 +154,10 @@ Future<void> _pumpAppContent(
   final themeController = PortfolioThemeController();
   addTearDown(themeController.dispose);
   tester.view.devicePixelRatio = 1;
-  tester.view.physicalSize = Size(layout.width, target.height);
+  final targetHeight = layout.compact || layout.tablet
+      ? target.mobileHeight ?? target.height
+      : target.height;
+  tester.view.physicalSize = Size(layout.width, targetHeight);
   addTearDown(tester.view.resetDevicePixelRatio);
   addTearDown(tester.view.resetPhysicalSize);
 
@@ -181,7 +194,7 @@ Future<void> _expectTouchAndMouseScroll(
   Finder? mouseDragStartBelow,
 }) async {
   expect(scrollTarget, findsOneWidget, reason: reason);
-  final scrollableFinder = find.descendant(
+  final verticalScrollables = find.descendant(
     of: scrollTarget,
     matching: find.byWidgetPredicate(
       (widget) =>
@@ -191,6 +204,7 @@ Future<void> _expectTouchAndMouseScroll(
       description: 'vertical Scrollable',
     ),
   );
+  final scrollableFinder = verticalScrollables.first;
   expect(scrollableFinder, findsOneWidget, reason: reason);
   final position = tester.state<ScrollableState>(scrollableFinder).position;
   expect(position.maxScrollExtent, greaterThan(0), reason: reason);

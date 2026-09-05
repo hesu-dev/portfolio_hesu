@@ -74,6 +74,8 @@ void main() {
         );
         expect(find.text(entry.value), findsAtLeastNWidgets(1));
       }
+      expect(find.byKey(const Key('desktop-app-trash')), findsNothing);
+      expect(find.byKey(const Key('dock-app-trash')), findsOneWidget);
       expect(
         find.byKey(const Key('desktop-discoverability-hint')),
         findsOneWidget,
@@ -446,7 +448,8 @@ void main() {
       'window title bar keeps the app title without duplicate artwork',
       (tester) async {
         await _pumpPortfolio(tester);
-        await _openDesktopApp(tester, PortfolioAppId.trash);
+        await tester.tap(find.byKey(const Key('dock-app-trash')));
+        await tester.pumpAndSettle();
 
         final titleBar = find.byKey(const Key('mac-window-titlebar-trash'));
         expect(titleBar, findsOneWidget);
@@ -469,7 +472,10 @@ void main() {
 
       final titleBar = find.byKey(const Key('mac-window-titlebar-terminal'));
       expect(
-        find.descendant(of: titleBar, matching: find.text('터미널 - 포트폴리오 zsh')),
+        find.descendant(
+          of: titleBar,
+          matching: find.text('Terminal - Portfolio zsh'),
+        ),
         findsOneWidget,
       );
       expect(
@@ -527,7 +533,7 @@ void main() {
         await tester.tap(find.byKey(const Key('project-selector-3')));
         await tester.pumpAndSettle();
 
-        expect(find.text(r'포트폴리오: ~$ skills'), findsOneWidget);
+        expect(find.text(r'portfolio: ~$ skills'), findsOneWidget);
         expect(
           tester
               .widget<Text>(find.byKey(const Key('project-detail-title')))
@@ -552,7 +558,7 @@ void main() {
           find.byKey(const Key('mac-window-active-terminal')),
           findsOneWidget,
         );
-        expect(find.text(r'포트폴리오: ~$ skills'), findsOneWidget);
+        expect(find.text(r'portfolio: ~$ skills'), findsOneWidget);
         expect(
           tester
               .widget<Text>(find.byKey(const Key('project-detail-title')))
@@ -613,7 +619,7 @@ void main() {
         await tester.pumpAndSettle();
 
         expect(find.byKey(const Key('mac-window-terminal')), findsOneWidget);
-        expect(find.text(r'포트폴리오: ~$ skills'), findsOneWidget);
+        expect(find.text(r'portfolio: ~$ skills'), findsOneWidget);
         semantics.dispose();
       },
     );
@@ -702,14 +708,23 @@ void main() {
 
         expect(find.byKey(const Key('dock-app-about')), findsOneWidget);
         expect(find.byKey(const Key('dock-app-projects')), findsOneWidget);
-        expect(find.byKey(const Key('dock-app-trash')), findsNothing);
+        expect(find.byKey(const Key('dock-app-trash')), findsOneWidget);
+        expect(
+          find.byKey(const Key('mac-dock-utility-separator')),
+          findsOneWidget,
+        );
         for (final appId in _launchableDockApps) {
           expect(
             find.byKey(Key('dock-app-${appId.name}')),
-            _pinnedDockApps.contains(appId) ? findsOneWidget : findsNothing,
+            _persistentDockApps.contains(appId) ? findsOneWidget : findsNothing,
           );
           expect(find.byKey(Key('dock-running-${appId.name}')), findsNothing);
-          expect(find.byKey(Key('desktop-app-${appId.name}')), findsOneWidget);
+          expect(
+            find.byKey(Key('desktop-app-${appId.name}')),
+            _desktopLauncherApps.contains(appId)
+                ? findsOneWidget
+                : findsNothing,
+          );
         }
       },
     );
@@ -795,16 +810,16 @@ void main() {
       },
     );
 
-    testWidgets('shows every launchable app only while open or minimized', (
+    testWidgets('shows desktop apps in Dock only while open or minimized', (
       tester,
     ) async {
       await _pumpPortfolio(tester, size: const Size(1024, 700));
 
-      for (final appId in _launchableDockApps) {
-        final pinned = _pinnedDockApps.contains(appId);
+      for (final appId in _desktopLauncherApps) {
+        final persistent = _persistentDockApps.contains(appId);
         expect(
           find.byKey(Key('dock-app-${appId.name}')),
-          pinned ? findsOneWidget : findsNothing,
+          persistent ? findsOneWidget : findsNothing,
         );
 
         await _openDesktopApp(tester, appId);
@@ -828,12 +843,47 @@ void main() {
         await tester.pumpAndSettle();
         expect(
           find.byKey(Key('dock-app-${appId.name}')),
-          pinned ? findsOneWidget : findsNothing,
+          persistent ? findsOneWidget : findsNothing,
         );
         expect(find.byKey(Key('dock-running-${appId.name}')), findsNothing);
         expect(find.byKey(Key('desktop-app-${appId.name}')), findsOneWidget);
       }
     });
+
+    testWidgets(
+      'keeps Trash fixed while only its running dot follows lifecycle',
+      (tester) async {
+        await _pumpPortfolio(tester, size: const Size(1024, 700));
+
+        expect(find.byKey(const Key('desktop-app-trash')), findsNothing);
+        expect(find.byKey(const Key('dock-app-trash')), findsOneWidget);
+        expect(find.byKey(const Key('dock-running-trash')), findsNothing);
+
+        await tester.tap(find.byKey(const Key('dock-app-trash')));
+        await tester.pumpAndSettle();
+        expect(find.byKey(const Key('mac-window-trash')), findsOneWidget);
+        expect(find.byKey(const Key('dock-app-trash')), findsOneWidget);
+        expect(find.byKey(const Key('dock-running-trash')), findsOneWidget);
+
+        await tester.tap(find.byKey(const Key('window-minimize-trash')));
+        await tester.pumpAndSettle();
+        expect(find.byKey(const Key('mac-window-trash')), findsNothing);
+        expect(find.byKey(const Key('dock-app-trash')), findsOneWidget);
+        expect(find.byKey(const Key('dock-running-trash')), findsOneWidget);
+
+        await tester.tap(find.byKey(const Key('dock-app-trash')));
+        await tester.pumpAndSettle();
+        expect(find.byKey(const Key('mac-window-trash')), findsOneWidget);
+        expect(find.byKey(const Key('dock-app-trash')), findsOneWidget);
+        expect(find.byKey(const Key('dock-running-trash')), findsOneWidget);
+
+        await tester.tap(find.byKey(const Key('window-close-trash')));
+        await tester.pumpAndSettle();
+        expect(find.byKey(const Key('mac-window-trash')), findsNothing);
+        expect(find.byKey(const Key('dock-app-trash')), findsOneWidget);
+        expect(find.byKey(const Key('dock-running-trash')), findsNothing);
+      },
+    );
 
     testWidgets('keeps running apps in a stable canonical Dock order', (
       tester,
@@ -854,14 +904,15 @@ void main() {
 
       final centers = <double>[
         for (final appId in _launchableDockApps)
-          if (_pinnedDockApps.contains(appId) || runningApps.contains(appId))
+          if (_persistentDockApps.contains(appId) ||
+              runningApps.contains(appId))
             tester.getCenter(find.byKey(Key('dock-app-${appId.name}'))).dx,
       ];
       expect(centers, orderedEquals(centers.toList()..sort()));
       for (final appId in _launchableDockApps) {
         expect(
           find.byKey(Key('dock-app-${appId.name}')),
-          _pinnedDockApps.contains(appId) || runningApps.contains(appId)
+          _persistentDockApps.contains(appId) || runningApps.contains(appId)
               ? findsOneWidget
               : findsNothing,
         );
@@ -1027,14 +1078,25 @@ const Map<PortfolioAppId, String> _labels = <PortfolioAppId, String>{
   PortfolioAppId.settings: '설정',
   PortfolioAppId.github: 'GitHub',
   PortfolioAppId.mail: 'Mail',
-  PortfolioAppId.trash: 'Trash',
 };
 
 const List<PortfolioAppId> _launchableDockApps = portfolioLauncherAppIds;
 
-const List<PortfolioAppId> _pinnedDockApps = <PortfolioAppId>[
+const List<PortfolioAppId> _desktopLauncherApps = <PortfolioAppId>[
+  PortfolioAppId.about,
+  PortfolioAppId.introduction,
+  PortfolioAppId.skills,
+  PortfolioAppId.projects,
+  PortfolioAppId.terminal,
+  PortfolioAppId.github,
+  PortfolioAppId.mail,
+  PortfolioAppId.settings,
+];
+
+const List<PortfolioAppId> _persistentDockApps = <PortfolioAppId>[
   PortfolioAppId.about,
   PortfolioAppId.projects,
+  PortfolioAppId.trash,
 ];
 
 const PortfolioData _customPortfolioData = PortfolioData.constant(

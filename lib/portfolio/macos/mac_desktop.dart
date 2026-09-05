@@ -20,19 +20,24 @@ class MacDesktop extends StatefulWidget {
     required this.data,
     required this.externalLauncher,
     required this.themeController,
+    this.trashEmpty = false,
+    this.onTrashEmptied,
     Key? key,
   }) : super(key: key ?? const Key('mac-shell'));
 
   final PortfolioData data;
   final ExternalLauncher externalLauncher;
   final PortfolioThemeController themeController;
+  final bool trashEmpty;
+  final VoidCallback? onTrashEmptied;
 
   @override
   State<MacDesktop> createState() => _MacDesktopState();
 }
 
 class _MacDesktopState extends State<MacDesktop> {
-  static const List<PortfolioAppId> _desktopApps = portfolioLauncherAppIds;
+  static const List<PortfolioAppId> _desktopApps =
+      portfolioMacDesktopLauncherAppIds;
 
   final Map<PortfolioAppId, MacWindowState> _windows =
       <PortfolioAppId, MacWindowState>{};
@@ -211,6 +216,7 @@ class _MacDesktopState extends State<MacDesktop> {
                           key: const Key('mac-dock-widget'),
                           runningApps: _windows.keys.toSet(),
                           activeApp: activeApp,
+                          trashEmpty: widget.trashEmpty,
                           onAppPressed: _openApp,
                         ),
                       ),
@@ -266,8 +272,8 @@ class _MacDesktopState extends State<MacDesktop> {
   }
 
   Widget _buildDesktopIcons() {
-    // Nine launchers render as five rows. Keep enough room for the final
-    // Trash label while still clearing the Dock on the minimum desktop size.
+    // Eight launchers render as four rows while clearing the Dock on the
+    // minimum desktop size. Trash lives in the Dock's utility area.
     final availableHeight = (_viewport.height - 158).clamp(360.0, 560.0);
     return Positioned(
       top: 48,
@@ -362,6 +368,8 @@ class _MacDesktopState extends State<MacDesktop> {
           onMaximize: () => _toggleMaximize(appId),
           onDrag: (delta) => _dragWindow(appId, delta),
           onOpenApp: _openApp,
+          trashEmpty: widget.trashEmpty,
+          onTrashEmptied: widget.onTrashEmptied,
         ),
       ),
     );
@@ -403,6 +411,7 @@ class _MacDesktopIconState extends State<_MacDesktopIcon> {
       appId: appId,
       size: 50,
       frameKey: Key('desktop-app-artwork-frame-${appId.name}'),
+      foregroundColor: appId == PortfolioAppId.github ? Colors.black : null,
     );
     final labelText = Text(
       label,

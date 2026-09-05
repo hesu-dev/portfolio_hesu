@@ -12,6 +12,27 @@ void main() {
       expect(portfolioData.allUrls, everyElement(isNot(contains('juah'))));
     });
 
+    test('contains three verified public GitHub repositories', () {
+      const repositories = <String, String>{
+        'portfolio_hesu': 'https://github.com/hesu-dev/portfolio_hesu',
+        'chrome_extension': 'https://github.com/hesu-dev/chrome_extension',
+        'code_study': 'https://github.com/hesu-dev/code_study',
+      };
+
+      expect(
+        portfolioData.repositories.map((repository) => repository.name),
+        repositories.keys,
+      );
+      expect(
+        portfolioData.repositories.map((repository) => repository.url),
+        repositories.values,
+      );
+      expect(portfolioData.allUrls, containsAll(repositories.values));
+      for (final name in repositories.keys) {
+        expect(portfolioData.allSearchableText, contains(name));
+      }
+    });
+
     test('contains the six Min He-su portfolio projects', () {
       expect(
         portfolioData.projects.map((project) => project.title),

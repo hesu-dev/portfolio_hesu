@@ -344,6 +344,7 @@ class _ProjectsAppState extends State<ProjectsApp> {
               destinations: _mobileDestinations,
               selectedId: location.id,
               onSelected: _selectLocationById,
+              tablet: widget.tablet,
             )
           : null,
       bodyBuilder: (context, compactLayout) =>
@@ -431,7 +432,7 @@ class _ProjectFolderGrid extends StatelessWidget {
           child: SizedBox(
             width: constraints.maxWidth,
             child: Wrap(
-              alignment: WrapAlignment.center,
+              alignment: WrapAlignment.start,
               spacing: spacing,
               runSpacing: spacing,
               children: <Widget>[
@@ -585,7 +586,8 @@ class _FinderProjectCollection extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return Center(
+    return Align(
+      alignment: Alignment.topLeft,
       child: ConstrainedBox(
         constraints: const BoxConstraints(maxWidth: 760),
         child: _ProjectFolderGrid(
@@ -846,9 +848,9 @@ class _DesktopApplicationsDirectory extends StatelessWidget {
         crossAxisSpacing: compact ? 6 : 10,
         mainAxisSpacing: compact ? 8 : 12,
       ),
-      itemCount: portfolioLauncherAppIds.length,
+      itemCount: portfolioMacDesktopLauncherAppIds.length,
       itemBuilder: (context, index) {
-        final appId = portfolioLauncherAppIds[index];
+        final appId = portfolioMacDesktopLauncherAppIds[index];
         return _DesktopApplicationTile(
           appId: appId,
           compact: compact,
@@ -878,6 +880,9 @@ class _DesktopApplicationTile extends StatelessWidget {
         appId: appId,
         compact: compact,
         size: compact ? 52 : 58,
+        artworkForegroundColor: appId == PortfolioAppId.github
+            ? Colors.black
+            : null,
         onTap: onOpen,
       ),
     );

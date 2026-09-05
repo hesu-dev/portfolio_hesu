@@ -653,7 +653,7 @@ void main() {
       await tester.enterText(find.byKey(const Key('terminal-input')), 'help');
       await tester.testTextInput.receiveAction(TextInputAction.send);
       await tester.pumpAndSettle();
-      expect(find.text(r'포트폴리오: ~$ help'), findsNWidgets(2));
+      expect(find.text(r'portfolio: ~$ help'), findsNWidgets(2));
 
       await _openDesktopApp(tester, PortfolioAppId.settings);
       await tester.tap(find.byKey(const Key('theme-dark')));
@@ -661,7 +661,7 @@ void main() {
 
       expect(find.byKey(const Key('mac-window-terminal')), findsOneWidget);
       expect(find.byKey(const Key('mac-window-settings')), findsOneWidget);
-      expect(find.text(r'포트폴리오: ~$ help'), findsNWidgets(2));
+      expect(find.text(r'portfolio: ~$ help'), findsNWidgets(2));
       expect(controller.preference, PortfolioThemePreference.dark);
     });
 

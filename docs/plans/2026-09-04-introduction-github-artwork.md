@@ -124,7 +124,7 @@ Expected: PASS.
 
 **Files:**
 - Create or replace: `assets/icons/microsoft-word.png`
-- Create or replace: `assets/icons/github.png`
+- Create or replace: `assets/icons/github.svg`
 - Modify: `pubspec.yaml`
 - Modify: `test/portfolio/apple_app_artwork_test.dart`
 - Modify: `lib/portfolio/widgets/apple_app_artwork.dart`
@@ -134,16 +134,16 @@ Expected: PASS.
 Add or update tests that verify:
 
 - `assets/icons/microsoft-word.png` decodes to exactly 512×476 and uses an RGBA PNG payload.
-- `assets/icons/github.png` decodes to exactly 320×320.
+- `assets/icons/github.svg` uses a 24×24 viewBox and contains no background rectangle.
 - Introduction renders `assets/icons/microsoft-word.png` through `Image.asset` with `BoxFit.contain` and high-quality filtering.
 - The Word image has a stable `apple-app-artwork-introduction-image` key.
 - Only Introduction receives an inset of `size * 0.06`, exposed by `apple-app-artwork-introduction-inset`.
 - `AppleAppArtwork.colorsFor(PortfolioAppId.introduction)` returns a fully transparent palette.
-- GitHub renders `assets/icons/github.png` instead of `Icons.code_rounded`.
+- GitHub renders `assets/icons/github.svg` instead of `Icons.code_rounded`.
 - Profile still uses `CustomPaint`, its original Instagram-inspired palette, and no `Image`.
 - About still uses `CustomPaint`, its original blue palette, and no `Image`.
 
-Keep the normalized shared launcher frame around Introduction and GitHub. A transparent Introduction palette does not make it a Projects/Trash-style transparent-frame silhouette.
+Keep the normalized shared launcher frame around Introduction. Render GitHub as a Projects/Trash-style transparent-frame silhouette so the SVG does not receive an opaque tile or square shadow.
 
 **Step 2: Run the focused artwork tests to verify they fail**
 
@@ -156,7 +156,7 @@ Expected: FAIL if Introduction is missing, if Word is still assigned to Profile/
 Place the final supplied files at:
 
 - `assets/icons/microsoft-word.png` — 512×476, 8-bit RGBA.
-- `assets/icons/github.png` — 320×320 supplied GitHub image.
+- `assets/icons/github.svg` — supplied 24×24, transparent-background GitHub vector.
 
 Register both exact paths under `flutter.assets` in `pubspec.yaml`. Keep them under `assets/icons`; do not recreate the retired `assets/image` directory.
 
@@ -170,7 +170,7 @@ Update `AppleAppArtwork` so that:
 - `assetPathFor(introduction)` returns the Word path and `assetPathFor(github)` returns the GitHub path.
 - Introduction's palette is two transparent colors; Profile/About retain their original palettes.
 - `_buildAssetArtwork` applies a 6% inset only to Introduction and does not add an opaque backing behind its RGBA pixels.
-- GitHub retains the backing appropriate for its supplied non-alpha image.
+- GitHub resolves `currentColor` without adding a background rectangle. Mac desktop and Mac Dock always use an opaque black mark; iPhone and iPad use the same black mark inside their white rounded launcher tile.
 - `_AppleAppArtworkPainter.paint` routes Profile to `_drawProfile`, About to `_drawAbout`, and rejects Introduction/GitHub because their images are rendered outside the painter.
 
 If the earlier incorrect implementation removed `_drawProfile` or `_drawAbout`, restore both methods rather than approximating new artwork.
@@ -248,18 +248,18 @@ Expected: PASS; GitHub opens its internal app first and launches `portfolioData.
 
 **Files:**
 - Verify: `assets/icons/microsoft-word.png`
-- Verify: `assets/icons/github.png`
+- Verify: `assets/icons/github.svg`
 - Verify: all modified Dart, YAML, and test files
 
 **Step 1: Verify the asset metadata**
 
-Run: `file assets/icons/microsoft-word.png assets/icons/github.png`
+Run: `file assets/icons/microsoft-word.png assets/icons/github.svg`
 
-Expected: Word reports `512 x 476` and `RGBA`; GitHub reports `320 x 320`.
+Expected: Word reports `512 x 476` and `RGBA`; GitHub reports an SVG document.
 
-Run: `sips -g pixelWidth -g pixelHeight -g hasAlpha assets/icons/microsoft-word.png assets/icons/github.png`
+Run: `sips -g pixelWidth -g pixelHeight -g hasAlpha assets/icons/microsoft-word.png`
 
-Expected: Word reports 512×476 with alpha; GitHub reports 320×320.
+Expected: Word reports 512×476 with alpha. Separately verify that GitHub's SVG uses `viewBox="0 0 24 24"` and has no background `<rect>`.
 
 **Step 2: Format only the touched Dart files**
 

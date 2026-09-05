@@ -4,7 +4,9 @@ import 'package:flutter/material.dart';
 
 import '../models/portfolio_app_id.dart';
 import '../theme/apple_theme.dart';
+import '../widgets/apple_app_artwork.dart';
 import '../widgets/apple_app_icon.dart';
+import 'apple_mobile_dock_geometry.dart';
 
 class AppleMobileDock extends StatelessWidget {
   const AppleMobileDock({
@@ -34,7 +36,10 @@ class AppleMobileDock extends StatelessWidget {
           filter: ImageFilter.blur(sigmaX: 26, sigmaY: 26),
           child: Container(
             key: const Key('mobile-dock'),
-            constraints: BoxConstraints(maxWidth: tablet ? 540 : 318),
+            constraints: BoxConstraints(
+              maxWidth: tablet ? 540 : 318,
+              minHeight: AppleMobileDockGeometry.height(tablet: tablet),
+            ),
             padding: EdgeInsets.symmetric(
               horizontal: tablet ? 12 : 9,
               vertical: tablet ? 7 : 6,
@@ -66,6 +71,7 @@ class AppleMobileDock extends StatelessWidget {
                     showLabel: false,
                     size: tablet ? 54 : 49,
                     selected: activeApp == appId,
+                    artworkSurface: AppleAppArtworkSurface.mobile,
                     onTap: () => onOpen(appId),
                   ),
               ],

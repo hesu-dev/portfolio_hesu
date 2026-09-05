@@ -4,6 +4,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter/semantics.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_test/flutter_test.dart';
+import 'package:flutter_svg/flutter_svg.dart';
 import 'package:portfolio_hesu/portfolio/data/portfolio_data.dart';
 import 'package:portfolio_hesu/portfolio/macos/mac_desktop.dart';
 import 'package:portfolio_hesu/portfolio/mobile/apple_mobile_shell.dart';
@@ -140,21 +141,40 @@ void main() {
       expect(gradient.colors.every((color) => color.a == 0), isTrue);
     });
 
-    testWidgets('uses the supplied GitHub artwork instead of a generic glyph', (
-      tester,
-    ) async {
+    testWidgets('uses the supplied transparent GitHub SVG', (tester) async {
       await _pumpArtwork(tester, PortfolioAppId.github);
 
       final artwork = find.byKey(const Key('apple-app-artwork-github'));
-      final imageFinder = find.descendant(
+      final svgFinder = find.descendant(
         of: artwork,
-        matching: find.byKey(const Key('apple-app-artwork-github-image')),
+        matching: find.byKey(const Key('apple-app-artwork-github-svg')),
       );
-      expect(imageFinder, findsOneWidget);
-      final image = tester.widget<Image>(imageFinder);
-      expect(image.image, isA<AssetImage>());
-      expect((image.image as AssetImage).assetName, 'assets/icons/github.png');
-      expect(image.fit, BoxFit.contain);
+      expect(svgFinder, findsOneWidget);
+      final svg = tester.widget<SvgPicture>(svgFinder);
+      final loader = svg.bytesLoader as SvgAssetLoader;
+      expect(svg.fit, BoxFit.contain);
+      expect(svg.width, 72);
+      expect(svg.height, 72);
+      expect(loader.assetName, 'assets/icons/github.svg');
+      expect(svg.colorFilter, isNull);
+      expect(
+        loader.theme,
+        SvgTheme(
+          currentColor: AppleTheme.primaryLabel(tester.element(artwork)),
+        ),
+      );
+      expect(
+        AppleAppArtwork.assetPathFor(PortfolioAppId.github),
+        'assets/icons/github.svg',
+      );
+      expect(
+        AppleAppArtwork.usesTransparentFrame(PortfolioAppId.github),
+        isTrue,
+      );
+      expect(
+        find.descendant(of: artwork, matching: find.byType(Image)),
+        findsNothing,
+      );
       expect(
         find.descendant(of: artwork, matching: find.byType(Icon)),
         findsNothing,
@@ -166,19 +186,43 @@ void main() {
       expect(tester.takeException(), isNull);
     });
 
-    test(
-      'bundles the supplied image payload sizes and decoded dimensions',
-      () async {
-        final word = await rootBundle.load('assets/icons/microsoft-word.png');
-        final github = await rootBundle.load('assets/icons/github.png');
+    testWidgets('keeps the GitHub mark opaque on dark app surfaces', (
+      tester,
+    ) async {
+      await tester.pumpWidget(
+        MaterialApp(
+          theme: AppleTheme.dark(),
+          home: const Center(
+            child: AppleAppArtwork(appId: PortfolioAppId.github, size: 72),
+          ),
+        ),
+      );
+      await tester.pumpAndSettle();
 
-        expect(word.lengthInBytes, 32999);
-        expect(github.lengthInBytes, 10608);
-        expect(await _decodeImageSize(word), const Size(512, 476));
-        expect(await _decodeTopLeftAlpha(word), 0);
-        expect(await _decodeImageSize(github), const Size(320, 320));
-      },
-    );
+      final svg = tester.widget<SvgPicture>(
+        find.byKey(const Key('apple-app-artwork-github-svg')),
+      );
+      final loader = svg.bytesLoader as SvgAssetLoader;
+      final svgTheme = loader.theme;
+      expect(svg.colorFilter, isNull);
+      expect(svgTheme, isNotNull);
+      expect(svgTheme!.currentColor, const Color(0xFFF5F5F7));
+      expect(svgTheme.currentColor.a, 1);
+    });
+
+    test('bundles the supplied Word bitmap and GitHub SVG', () async {
+      final word = await rootBundle.load('assets/icons/microsoft-word.png');
+      final github = await rootBundle.loadString('assets/icons/github.svg');
+
+      expect(word.lengthInBytes, 32999);
+      expect(await _decodeImageSize(word), const Size(512, 476));
+      expect(await _decodeTopLeftAlpha(word), 0);
+      expect(github, contains('viewBox="0 0 24 24"'));
+      expect(github, contains('fill="currentColor"'));
+      expect(github, contains('<path'));
+      expect(github, isNot(contains('<rect')));
+      expect(github, isNot(contains('opacity="0')));
+    });
 
     testWidgets(
       'renders Projects as a large folder silhouette on a transparent canvas',
@@ -319,38 +363,78 @@ void main() {
       expect(decoration.boxShadow, isEmpty);
     });
 
-    testWidgets('does not add a square shadow behind Projects app artwork', (
+    testWidgets('keeps the desktop GitHub mark black in both themes', (
       tester,
     ) async {
-      await tester.pumpWidget(
-        MaterialApp(
-          theme: AppleTheme.light(),
-          home: Material(
-            child: Center(
-              child: AppleAppIcon(
-                appId: PortfolioAppId.projects,
-                showLabel: false,
-                onTap: () {},
+      await _setViewport(tester, const Size(1440, 900));
+      for (final preference in PortfolioThemePreference.values) {
+        final themeController = PortfolioThemeController(initial: preference);
+        addTearDown(themeController.dispose);
+        await tester.pumpWidget(const SizedBox.shrink());
+        await tester.pumpWidget(
+          MaterialApp(
+            theme: preference == PortfolioThemePreference.light
+                ? AppleTheme.light()
+                : AppleTheme.dark(),
+            home: MacDesktop(
+              data: portfolioData,
+              externalLauncher: _FakeLauncher(),
+              themeController: themeController,
+            ),
+          ),
+        );
+        await tester.pumpAndSettle();
+
+        final desktopGitHub = find.byKey(const Key('desktop-app-github'));
+        final svg = tester.widget<SvgPicture>(
+          find.descendant(
+            of: desktopGitHub,
+            matching: find.byKey(const Key('apple-app-artwork-github-svg')),
+          ),
+        );
+        final loader = svg.bytesLoader as SvgAssetLoader;
+        final svgTheme = loader.theme;
+        expect(svg.colorFilter, isNull, reason: preference.name);
+        expect(svgTheme, isNotNull, reason: preference.name);
+        expect(svgTheme!.currentColor, Colors.black, reason: preference.name);
+        expect(svgTheme.currentColor.a, 1, reason: preference.name);
+      }
+    });
+
+    testWidgets('does not add a default shadow below any app artwork', (
+      tester,
+    ) async {
+      for (final appId in PortfolioAppId.values) {
+        await tester.pumpWidget(
+          MaterialApp(
+            theme: AppleTheme.light(),
+            home: Material(
+              child: Center(
+                child: AppleAppIcon(
+                  appId: appId,
+                  showLabel: false,
+                  onTap: () {},
+                ),
               ),
             ),
           ),
-        ),
-      );
+        );
 
-      final tile = find.byKey(const Key('apple-app-icon-tile-projects'));
-      final sharedFrame = find.descendant(
-        of: tile,
-        matching: find.byType(AppleAppArtworkFrame),
-      );
-      expect(sharedFrame, findsOneWidget);
-      final frameContainer = find.descendant(
-        of: sharedFrame,
-        matching: find.byType(Container),
-      );
-      final decoration =
-          tester.widget<Container>(frameContainer.first).decoration!
-              as BoxDecoration;
-      expect(decoration.boxShadow, isEmpty);
+        final tile = find.byKey(Key('apple-app-icon-tile-${appId.name}'));
+        final sharedFrame = find.descendant(
+          of: tile,
+          matching: find.byType(AppleAppArtworkFrame),
+        );
+        expect(sharedFrame, findsOneWidget, reason: appId.name);
+        final frameContainer = find.descendant(
+          of: sharedFrame,
+          matching: find.byType(Container),
+        );
+        final decoration =
+            tester.widget<Container>(frameContainer.first).decoration!
+                as BoxDecoration;
+        expect(decoration.boxShadow, isEmpty, reason: appId.name);
+      }
     });
 
     testWidgets('keeps About, Introduction, and Mail on framed tiles', (
@@ -597,6 +681,7 @@ Future<void> _pumpArtwork(WidgetTester tester, PortfolioAppId appId) async {
       ),
     ),
   );
+  await tester.pumpAndSettle();
 }
 
 BoxDecoration _artworkDecoration(WidgetTester tester, PortfolioAppId appId) {

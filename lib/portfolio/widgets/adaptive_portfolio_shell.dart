@@ -6,7 +6,7 @@ import 'package:portfolio_hesu/portfolio/mobile/apple_mobile_shell.dart';
 import 'package:portfolio_hesu/portfolio/services/external_launcher.dart';
 import 'package:portfolio_hesu/portfolio/theme/portfolio_theme_controller.dart';
 
-class AdaptivePortfolioShell extends StatelessWidget {
+class AdaptivePortfolioShell extends StatefulWidget {
   const AdaptivePortfolioShell({
     required this.externalLauncher,
     required this.themeController,
@@ -23,8 +23,15 @@ class AdaptivePortfolioShell extends StatelessWidget {
   final PortfolioData data;
   final bool? mobilePlatformOverride;
 
+  @override
+  State<AdaptivePortfolioShell> createState() => _AdaptivePortfolioShellState();
+}
+
+class _AdaptivePortfolioShellState extends State<AdaptivePortfolioShell> {
+  bool _trashEmpty = false;
+
   bool get _mobilePlatform {
-    final override = mobilePlatformOverride;
+    final override = widget.mobilePlatformOverride;
     if (override != null) {
       return override;
     }
@@ -41,23 +48,27 @@ class AdaptivePortfolioShell extends StatelessWidget {
       builder: (context, constraints) {
         final width = constraints.maxWidth;
 
-        if (width >= macBreakpoint && !_mobilePlatform) {
+        if (width >= AdaptivePortfolioShell.macBreakpoint && !_mobilePlatform) {
           return MacDesktop(
-            data: data,
-            externalLauncher: externalLauncher,
-            themeController: themeController,
+            data: widget.data,
+            externalLauncher: widget.externalLauncher,
+            themeController: widget.themeController,
+            trashEmpty: _trashEmpty,
+            onTrashEmptied: _emptyTrash,
           );
         }
-        if (width >= iPadBreakpoint) {
+        if (width >= AdaptivePortfolioShell.iPadBreakpoint) {
           return TooltipVisibility(
             key: const Key('mobile-tooltip-visibility'),
             visible: false,
             child: AppleMobileShell(
               key: const Key('ipad-shell'),
-              data: data,
-              externalLauncher: externalLauncher,
-              themeController: themeController,
+              data: widget.data,
+              externalLauncher: widget.externalLauncher,
+              themeController: widget.themeController,
               tablet: true,
+              trashEmpty: _trashEmpty,
+              onTrashEmptied: _emptyTrash,
             ),
           );
         }
@@ -66,13 +77,22 @@ class AdaptivePortfolioShell extends StatelessWidget {
           visible: false,
           child: AppleMobileShell(
             key: const Key('iphone-shell'),
-            data: data,
-            externalLauncher: externalLauncher,
-            themeController: themeController,
+            data: widget.data,
+            externalLauncher: widget.externalLauncher,
+            themeController: widget.themeController,
             tablet: false,
+            trashEmpty: _trashEmpty,
+            onTrashEmptied: _emptyTrash,
           ),
         );
       },
     );
+  }
+
+  void _emptyTrash() {
+    if (_trashEmpty) {
+      return;
+    }
+    setState(() => _trashEmpty = true);
   }
 }

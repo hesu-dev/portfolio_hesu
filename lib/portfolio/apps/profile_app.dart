@@ -757,7 +757,10 @@ class _ProfileHistoryDetailState extends State<_ProfileHistoryDetail> {
                   children: <Widget>[
                     SizedBox(
                       width: constraints.maxWidth,
-                      height: constraints.maxHeight,
+                      height: math.min(
+                        constraints.maxHeight,
+                        _ProfileReelOverlay.heightFor(compact: widget.compact),
+                      ),
                       child: _ProfileReelOverlay(
                         compact: widget.compact,
                         liked: widget.liked,
@@ -817,6 +820,14 @@ class _ProfileReelOverlay extends StatelessWidget {
   final VoidCallback onToggleLike;
   final VoidCallback onComment;
   final VoidCallback onShare;
+
+  static double heightFor({required bool compact}) {
+    const actionSize = 48.0;
+    const actionSpacing = 4.0;
+    final actionTop = compact ? 90.0 : 116.0;
+    final bottomSpacing = compact ? 16.0 : 20.0;
+    return actionTop + (actionSize * 3) + (actionSpacing * 2) + bottomSpacing;
+  }
 
   @override
   Widget build(BuildContext context) {

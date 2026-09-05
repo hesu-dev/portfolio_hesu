@@ -1,6 +1,7 @@
 import 'dart:ui' as ui;
 
 import 'package:flutter/material.dart';
+import 'package:flutter_svg/flutter_svg.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:portfolio_hesu/portfolio/apps/projects_app.dart';
 import 'package:portfolio_hesu/portfolio/data/portfolio_data.dart';
@@ -80,7 +81,7 @@ void main() {
     );
 
     testWidgets(
-      'iCloud Drive is empty and 데스크탑 reuses the shared app catalog',
+      'iCloud Drive is empty and 데스크탑 mirrors Mac desktop launchers',
       (tester) async {
         PortfolioAppId? openedApp;
         await _pumpProjects(
@@ -109,13 +110,17 @@ void main() {
           find.byKey(const Key('projects-desktop-app-grid')),
           findsOneWidget,
         );
-        for (final appId in portfolioLauncherAppIds) {
+        for (final appId in portfolioMacDesktopLauncherAppIds) {
           expect(
             find.byKey(Key('projects-desktop-app-${appId.name}')),
             findsOneWidget,
             reason: appId.name,
           );
         }
+        expect(
+          find.byKey(const Key('projects-desktop-app-trash')),
+          findsNothing,
+        );
 
         await tester.tap(
           find.byKey(Key('projects-desktop-app-${PortfolioAppId.mail.name}')),
@@ -124,6 +129,36 @@ void main() {
         expect(openedApp, PortfolioAppId.mail);
       },
     );
+
+    testWidgets('데스크탑 location keeps GitHub artwork black in dark mode', (
+      tester,
+    ) async {
+      await _pumpProjects(
+        tester,
+        size: const Size(900, 650),
+        brightness: Brightness.dark,
+      );
+
+      await tester.tap(
+        find.byKey(const Key('projects-finder-location-desktop')),
+      );
+      await tester.pumpAndSettle();
+
+      final githubTile = find.byKey(
+        Key('projects-desktop-app-${PortfolioAppId.github.name}'),
+      );
+      final picture = tester.widget<SvgPicture>(
+        find.descendant(
+          of: githubTile,
+          matching: find.byKey(const Key('apple-app-artwork-github-svg')),
+        ),
+      );
+
+      expect(
+        (picture.bytesLoader as SvgAssetLoader).theme?.currentColor,
+        Colors.black,
+      );
+    });
 
     testWidgets('회사 and 개인 프로젝트 share one folder and detail component', (
       tester,

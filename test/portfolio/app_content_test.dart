@@ -280,7 +280,7 @@ void main() {
       }
     });
 
-    testWidgets('Photos placeholder is scrollable in light and dark modes', (
+    testWidgets('Photos gallery is scrollable in light and dark modes', (
       tester,
     ) async {
       final photos = PortfolioAppId.values.singleWhere(
@@ -1110,7 +1110,7 @@ void main() {
         compact: true,
       );
 
-      expect(find.text(r'포트폴리오: ~$ help'), findsOneWidget);
+      expect(find.text(r'portfolio: ~$ help'), findsOneWidget);
       expect(find.text('flutter run'), findsOneWidget);
       expect(find.text('포트폴리오 개발 서버 실행'), findsOneWidget);
 
@@ -1140,7 +1140,7 @@ void main() {
       await tester.pumpAndSettle();
       expect(find.textContaining('Min He-su'), findsNothing);
       expect(find.textContaining('command not found'), findsNothing);
-      expect(find.text(r'포트폴리오: ~$ help'), findsNothing);
+      expect(find.text(r'portfolio: ~$ help'), findsNothing);
       expect(find.byKey(const Key('terminal-output')), findsOneWidget);
       expect(
         find.descendant(
@@ -1204,8 +1204,8 @@ void main() {
           inInclusiveRange(0, 12),
         );
         expect(find.text('portfolio — zsh'), findsNothing);
-        expect(find.text(r'포트폴리오: ~$'), findsOneWidget);
-        expect(find.text(r'포트폴리오: ~$ help'), findsOneWidget);
+        expect(find.text(r'portfolio: ~$'), findsOneWidget);
+        expect(find.text(r'portfolio: ~$ help'), findsOneWidget);
         expect(find.byKey(const Key('terminal-submit')), findsNothing);
         final input = tester.widget<TextField>(
           find.byKey(const Key('terminal-input')),
@@ -1225,7 +1225,7 @@ void main() {
         final decoration = inputSurface.decoration! as BoxDecoration;
         expect(decoration.border, isNull);
         expect(
-          (tester.getCenter(find.text(r'포트폴리오: ~$')).dy -
+          (tester.getCenter(find.text(r'portfolio: ~$')).dy -
                   tester.getCenter(find.byKey(const Key('terminal-input'))).dy)
               .abs(),
           lessThan(1),
@@ -1318,7 +1318,7 @@ void main() {
         englishName: 'Ada Lovelace',
         email: 'ada.dev@example.com',
       );
-      const prompt = r'포트폴리오: ~$';
+      const prompt = r'portfolio: ~$';
       await _pumpApp(
         tester,
         appId: PortfolioAppId.terminal,
@@ -1362,7 +1362,7 @@ void main() {
         compact: true,
       );
 
-      expect(find.text(r'포트폴리오: ~$'), findsOneWidget);
+      expect(find.text(r'portfolio: ~$'), findsOneWidget);
       expect(find.textContaining('invalid email'), findsNothing);
     });
 
@@ -1385,6 +1385,156 @@ void main() {
       expect(launcher.launched, <Uri>[Uri.parse(portfolioData.githubUrl)]);
       expect(find.byKey(const Key('github-launch-feedback')), findsOneWidget);
       expect(find.textContaining('열 수 없습니다'), findsOneWidget);
+      expect(tester.takeException(), isNull);
+    });
+
+    testWidgets('GitHub lists three repositories with their actual links', (
+      tester,
+    ) async {
+      final launcher = _FakeExternalLauncher();
+      const repositories = <String, String>{
+        'portfolio_hesu': 'https://github.com/hesu-dev/portfolio_hesu',
+        'chrome_extension': 'https://github.com/hesu-dev/chrome_extension',
+        'code_study': 'https://github.com/hesu-dev/code_study',
+      };
+      await _pumpApp(
+        tester,
+        appId: PortfolioAppId.github,
+        launcher: launcher,
+        size: const Size(390, 700),
+        compact: true,
+      );
+
+      expect(find.byKey(const Key('github-external-action')), findsOneWidget);
+      expect(launcher.launched, isEmpty);
+      for (final repository in repositories.entries) {
+        final card = find.byKey(Key('github-repository-${repository.key}'));
+        expect(card, findsOneWidget);
+        expect(find.text(repository.key), findsOneWidget);
+        await tester.ensureVisible(card);
+        await tester.tap(card);
+        await tester.pumpAndSettle();
+      }
+
+      expect(
+        launcher.launched,
+        repositories.values.map(Uri.parse).toList(growable: false),
+      );
+      expect(find.byKey(const Key('github-launch-feedback')), findsOneWidget);
+      expect(tester.takeException(), isNull);
+    });
+
+    testWidgets('GitHub hides the repository section when no repos exist', (
+      tester,
+    ) async {
+      final launcher = _FakeExternalLauncher();
+      await _pumpApp(
+        tester,
+        appId: PortfolioAppId.github,
+        launcher: launcher,
+        data: _dataWithRepositories(const <PortfolioRepository>[]),
+        size: const Size(390, 700),
+        compact: true,
+      );
+
+      expect(find.text('Repositories'), findsNothing);
+      expect(
+        find.byKey(const Key('github-repositories-section')),
+        findsNothing,
+      );
+      expect(tester.takeException(), isNull);
+    });
+
+    testWidgets('GitHub reports malformed repository links as launch failure', (
+      tester,
+    ) async {
+      final launcher = _FakeExternalLauncher();
+      const malformedRepository = PortfolioRepository(
+        name: 'broken_repository',
+        description: 'Malformed URL fixture',
+        language: 'Dart',
+        url: 'https://github.com:abc/broken_repository',
+      );
+      await _pumpApp(
+        tester,
+        appId: PortfolioAppId.github,
+        launcher: launcher,
+        data: _dataWithRepositories(const <PortfolioRepository>[
+          malformedRepository,
+        ]),
+        size: const Size(390, 700),
+        compact: true,
+      );
+
+      final card = find.byKey(const Key('github-repository-broken_repository'));
+      await tester.ensureVisible(card);
+      await tester.tap(card);
+      await tester.pumpAndSettle();
+
+      expect(launcher.launched, isEmpty);
+      expect(find.byKey(const Key('github-launch-feedback')), findsOneWidget);
+      expect(find.text('GitHub 링크를 열 수 없습니다.'), findsOneWidget);
+      expect(tester.takeException(), isNull);
+    });
+
+    testWidgets('Mail composes subject and body into a mailto launch', (
+      tester,
+    ) async {
+      final launcher = _FakeExternalLauncher();
+      await _pumpApp(
+        tester,
+        appId: PortfolioAppId.mail,
+        launcher: launcher,
+        size: const Size(390, 700),
+        compact: true,
+      );
+
+      expect(find.text(portfolioData.email), findsAtLeastNWidgets(1));
+      expect(launcher.launched, isEmpty);
+      final subjectInput = find.byKey(const Key('mail-subject-input'));
+      final bodyInput = find.byKey(const Key('mail-body-input'));
+      expect(subjectInput, findsOneWidget);
+      expect(bodyInput, findsOneWidget);
+      await tester.enterText(subjectInput, '포트폴리오 문의 & 미팅');
+      await tester.enterText(bodyInput, '안녕하세요?\nFlutter 프로젝트를 제안드립니다.');
+      await tester.ensureVisible(find.byKey(const Key('mail-external-action')));
+      await tester.tap(find.byKey(const Key('mail-external-action')));
+      await tester.pumpAndSettle();
+
+      expect(launcher.launched, hasLength(1));
+      final mail = launcher.launched.single;
+      expect(mail.scheme, 'mailto');
+      expect(Uri.decodeComponent(mail.path), portfolioData.email);
+      expect(mail.queryParameters, <String, String>{
+        'subject': '포트폴리오 문의 & 미팅',
+        'body': '안녕하세요?\nFlutter 프로젝트를 제안드립니다.',
+      });
+      expect(mail.toString(), contains('%20'));
+      expect(mail.toString(), contains('%26'));
+      expect(mail.toString(), contains('%0A'));
+      expect(mail.toString(), isNot(contains('+')));
+      expect(find.byKey(const Key('mail-launch-feedback')), findsOneWidget);
+      expect(find.text('Mail 앱을 열었습니다.'), findsOneWidget);
+      expect(tester.takeException(), isNull);
+    });
+
+    testWidgets('Mail keeps the empty compose action compatible', (
+      tester,
+    ) async {
+      final launcher = _FakeExternalLauncher();
+      await _pumpApp(
+        tester,
+        appId: PortfolioAppId.mail,
+        launcher: launcher,
+        size: const Size(390, 700),
+        compact: true,
+      );
+
+      await tester.ensureVisible(find.byKey(const Key('mail-external-action')));
+      await tester.tap(find.byKey(const Key('mail-external-action')));
+      await tester.pumpAndSettle();
+
+      expect(launcher.launched, <Uri>[Uri.parse(portfolioData.mailUrl)]);
       expect(tester.takeException(), isNull);
     });
 
@@ -1617,6 +1767,19 @@ PortfolioData _dataWithGithubUrl(String githubUrl) {
     education: portfolioData.education,
     skillGroups: portfolioData.skillGroups,
     projects: portfolioData.projects,
+  );
+}
+
+PortfolioData _dataWithRepositories(
+  Iterable<PortfolioRepository> repositories,
+) {
+  return PortfolioData(
+    identity: portfolioData.identity,
+    experiences: portfolioData.experiences,
+    education: portfolioData.education,
+    skillGroups: portfolioData.skillGroups,
+    projects: portfolioData.projects,
+    repositories: repositories,
   );
 }
 
