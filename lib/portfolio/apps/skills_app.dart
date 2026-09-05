@@ -8,28 +8,35 @@ class SkillsApp extends StatefulWidget {
   const SkillsApp({
     required this.data,
     this.compact = false,
+    this.mobile = false,
     this.tablet = false,
+    this.now,
     super.key,
   });
 
   final PortfolioData data;
   final bool compact;
+  final bool mobile;
   final bool tablet;
+  final DateTime Function()? now;
 
   @override
   State<SkillsApp> createState() => _SkillsAppState();
 }
 
 class _SkillsAppState extends State<SkillsApp> {
-  static const double _wideBreakpoint = 680;
-
   int _selectedIndex = 0;
+  int? _mobileSelectedIndex;
 
   @override
   void didUpdateWidget(covariant SkillsApp oldWidget) {
     super.didUpdateWidget(oldWidget);
     if (_selectedIndex >= widget.data.skillGroups.length) {
       _selectedIndex = 0;
+    }
+    if (_mobileSelectedIndex case final selectedIndex?
+        when selectedIndex >= widget.data.skillGroups.length) {
+      _mobileSelectedIndex = null;
     }
   }
 
@@ -38,6 +45,14 @@ class _SkillsAppState extends State<SkillsApp> {
       return;
     }
     setState(() => _selectedIndex = index);
+  }
+
+  void _openMobileCategory(int index) {
+    setState(() => _mobileSelectedIndex = index);
+  }
+
+  void _closeMobileCategory() {
+    setState(() => _mobileSelectedIndex = null);
   }
 
   @override
@@ -50,13 +65,9 @@ class _SkillsAppState extends State<SkillsApp> {
               title: 'No skill groups yet',
               message: 'Skill categories will appear here.',
             )
-          : LayoutBuilder(
-              builder: (context, constraints) {
-                final wide =
-                    !widget.compact && constraints.maxWidth >= _wideBreakpoint;
-                return wide ? _buildWide(context) : _buildCompact(context);
-              },
-            ),
+          : widget.mobile && !widget.tablet
+          ? _buildCompact(context)
+          : _buildWide(context),
     );
   }
 
@@ -85,6 +96,7 @@ class _SkillsAppState extends State<SkillsApp> {
               ),
               group: widget.data.skillGroups[_selectedIndex],
               compact: false,
+              now: (widget.now ?? DateTime.now)(),
             ),
           ),
         ),
@@ -94,8 +106,13 @@ class _SkillsAppState extends State<SkillsApp> {
 
   Widget _buildCompact(BuildContext context) {
     return _MobileSkillsView(
+      certifications: widget.data.certifications,
       groups: widget.data.skillGroups,
       dark: AppleTheme.isDark(context),
+      selectedIndex: _mobileSelectedIndex,
+      now: (widget.now ?? DateTime.now)(),
+      onChannelSelected: _openMobileCategory,
+      onBack: _closeMobileCategory,
     );
   }
 }
@@ -356,142 +373,174 @@ class _CategoryButton extends StatelessWidget {
 }
 
 class _MobileSkillsView extends StatelessWidget {
-  const _MobileSkillsView({required this.groups, required this.dark});
+  const _MobileSkillsView({
+    required this.certifications,
+    required this.groups,
+    required this.dark,
+    required this.selectedIndex,
+    required this.now,
+    required this.onChannelSelected,
+    required this.onBack,
+  });
 
+  final List<String> certifications;
   final List<PortfolioSkillGroup> groups;
   final bool dark;
+  final int? selectedIndex;
+  final DateTime now;
+  final ValueChanged<int> onChannelSelected;
+  final VoidCallback onBack;
 
   @override
   Widget build(BuildContext context) {
     final background = dark ? const Color(0xFF1A1D21) : const Color(0xFFF7F7F8);
-    final primary = dark ? const Color(0xFFF8F8F8) : const Color(0xFF1D1C1D);
-    final secondary = dark ? const Color(0xFFB5B7BA) : const Color(0xFF616061);
-    final channels = <({PortfolioSkillGroup group, String skill})>[
-      for (final group in groups)
-        for (final skill in group.skills) (group: group, skill: skill),
-    ];
 
     return ColoredBox(
       key: const Key('skills-mobile-surface'),
       color: background,
-      child: SingleChildScrollView(
-        key: const Key('skills-list'),
-        physics: const BouncingScrollPhysics(
-          parent: AlwaysScrollableScrollPhysics(),
-        ),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.stretch,
-          children: <Widget>[
-            Padding(
-              padding: const EdgeInsets.fromLTRB(18, 18, 18, 10),
-              child: Text(
-                'Portfolio Skills',
-                style: TextStyle(
-                  color: primary,
-                  fontSize: 23,
-                  fontWeight: FontWeight.w800,
+      child: selectedIndex == null
+          ? _MobileSkillsChannelList(
+              certifications: certifications,
+              groups: groups,
+              dark: dark,
+              onChannelSelected: onChannelSelected,
+            )
+          : _MobileSkillChannelDetail(
+              group: groups[selectedIndex!],
+              dark: dark,
+              now: now,
+              onBack: onBack,
+            ),
+    );
+  }
+}
+
+class _MobileSkillsChannelList extends StatelessWidget {
+  const _MobileSkillsChannelList({
+    required this.certifications,
+    required this.groups,
+    required this.dark,
+    required this.onChannelSelected,
+  });
+
+  final List<String> certifications;
+  final List<PortfolioSkillGroup> groups;
+  final bool dark;
+  final ValueChanged<int> onChannelSelected;
+
+  @override
+  Widget build(BuildContext context) {
+    final primary = dark ? const Color(0xFFF8F8F8) : const Color(0xFF1D1C1D);
+    final secondary = dark ? const Color(0xFFB5B7BA) : const Color(0xFF616061);
+
+    return SingleChildScrollView(
+      key: const Key('skills-list'),
+      physics: const BouncingScrollPhysics(
+        parent: AlwaysScrollableScrollPhysics(),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.stretch,
+        children: <Widget>[
+          Padding(
+            padding: const EdgeInsets.fromLTRB(18, 18, 18, 10),
+            child: Text(
+              'Portfolio Skills',
+              maxLines: 1,
+              overflow: TextOverflow.ellipsis,
+              style: TextStyle(
+                color: primary,
+                fontSize: 23,
+                fontWeight: FontWeight.w800,
+              ),
+            ),
+          ),
+          SingleChildScrollView(
+            key: const Key('skills-mobile-certification-strip'),
+            scrollDirection: Axis.horizontal,
+            physics: const BouncingScrollPhysics(),
+            padding: const EdgeInsets.fromLTRB(18, 4, 18, 18),
+            child: Row(
+              children: <Widget>[
+                for (final certification in certifications.take(1))
+                  _MobileCertificationCard(
+                    certification: certification,
+                    dark: dark,
+                  ),
+              ],
+            ),
+          ),
+          Divider(
+            height: 1,
+            color: dark
+                ? Colors.white.withValues(alpha: 0.12)
+                : Colors.black.withValues(alpha: 0.1),
+          ),
+          Padding(
+            padding: const EdgeInsets.fromLTRB(18, 20, 18, 8),
+            child: Row(
+              children: <Widget>[
+                Text(
+                  '#',
+                  style: TextStyle(
+                    color: secondary,
+                    fontSize: 25,
+                    fontWeight: FontWeight.w500,
+                  ),
                 ),
-              ),
-            ),
-            SingleChildScrollView(
-              key: const Key('skills-mobile-summary-strip'),
-              scrollDirection: Axis.horizontal,
-              physics: const BouncingScrollPhysics(),
-              padding: const EdgeInsets.fromLTRB(18, 4, 18, 18),
-              child: Row(
-                children: <Widget>[
-                  for (final entry in groups.indexed) ...<Widget>[
-                    _MobileSkillSummaryCard(
-                      group: entry.$2,
-                      colorIndex: entry.$1,
-                      dark: dark,
-                    ),
-                    if (entry.$1 != groups.length - 1)
-                      const SizedBox(width: 12),
-                  ],
-                ],
-              ),
-            ),
-            Divider(
-              height: 1,
-              color: dark
-                  ? Colors.white.withValues(alpha: 0.12)
-                  : Colors.black.withValues(alpha: 0.1),
-            ),
-            Padding(
-              padding: const EdgeInsets.fromLTRB(18, 20, 18, 8),
-              child: Row(
-                children: <Widget>[
-                  Text(
-                    '#',
-                    style: TextStyle(
-                      color: secondary,
-                      fontSize: 25,
-                      fontWeight: FontWeight.w500,
-                    ),
+                const SizedBox(width: 10),
+                Text(
+                  '채널',
+                  style: TextStyle(
+                    color: primary,
+                    fontSize: 18,
+                    fontWeight: FontWeight.w800,
                   ),
-                  SizedBox(width: 10),
-                  Text(
-                    '채널',
-                    style: TextStyle(
-                      color: primary,
-                      fontSize: 18,
-                      fontWeight: FontWeight.w800,
-                    ),
+                ),
+              ],
+            ),
+          ),
+          Padding(
+            padding: const EdgeInsets.fromLTRB(10, 0, 10, 28),
+            child: Column(
+              key: const Key('skills-mobile-channel-list'),
+              children: <Widget>[
+                for (final entry in groups.indexed)
+                  _MobileSkillChannel(
+                    group: entry.$2,
+                    dark: dark,
+                    onTap: () => onChannelSelected(entry.$1),
                   ),
-                ],
-              ),
+              ],
             ),
-            Padding(
-              padding: const EdgeInsets.fromLTRB(10, 0, 10, 28),
-              child: Column(
-                key: const Key('skills-mobile-channel-list'),
-                children: <Widget>[
-                  for (final channel in channels)
-                    _MobileSkillChannel(
-                      group: channel.group,
-                      skill: channel.skill,
-                      dark: dark,
-                    ),
-                ],
-              ),
-            ),
-          ],
-        ),
+          ),
+        ],
       ),
     );
   }
 }
 
-class _MobileSkillSummaryCard extends StatelessWidget {
-  const _MobileSkillSummaryCard({
-    required this.group,
-    required this.colorIndex,
+class _MobileCertificationCard extends StatelessWidget {
+  const _MobileCertificationCard({
+    required this.certification,
     required this.dark,
   });
 
-  final PortfolioSkillGroup group;
-  final int colorIndex;
+  final String certification;
   final bool dark;
 
   @override
   Widget build(BuildContext context) {
-    const accents = <Color>[
-      Color(0xFF36C5F0),
-      Color(0xFF2EB67D),
-      Color(0xFFE01E5A),
-      Color(0xFFECB22E),
-    ];
-    final accent = accents[colorIndex % accents.length];
+    final primary = dark ? const Color(0xFFF8F8F8) : const Color(0xFF1D1C1D);
+    final secondary = dark ? const Color(0xFFB5B7BA) : const Color(0xFF616061);
 
     return Semantics(
-      label: '${group.title}, ${group.skills.length} skills',
+      key: Key('skills-mobile-certification-$certification'),
+      label: '자격증 $certification',
       readOnly: true,
       child: ExcludeSemantics(
         child: Container(
-          key: Key('skills-mobile-summary-${group.title}'),
-          width: 158,
-          constraints: const BoxConstraints(minHeight: 112),
+          width: 242,
+          constraints: const BoxConstraints(minHeight: 100),
           padding: const EdgeInsets.all(14),
           decoration: BoxDecoration(
             color: dark ? const Color(0xFF222529) : Colors.white,
@@ -500,33 +549,49 @@ class _MobileSkillSummaryCard extends StatelessWidget {
               color: dark ? const Color(0xFF45484C) : const Color(0xFFD8D8DC),
             ),
           ),
-          child: Column(
+          child: Row(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: <Widget>[
-              Icon(Icons.tag_rounded, color: accent, size: 24),
-              const SizedBox(height: 13),
-              Text(
-                group.title,
-                maxLines: 2,
-                overflow: TextOverflow.ellipsis,
-                style: TextStyle(
-                  color: dark
-                      ? const Color(0xFFF8F8F8)
-                      : const Color(0xFF1D1C1D),
-                  fontSize: 15,
-                  fontWeight: FontWeight.w700,
-                  height: 1.18,
+              Container(
+                width: 40,
+                height: 40,
+                decoration: const BoxDecoration(
+                  color: Color(0xFF2EB67D),
+                  shape: BoxShape.circle,
+                ),
+                child: const Icon(
+                  Icons.workspace_premium_rounded,
+                  color: Colors.white,
+                  size: 23,
                 ),
               ),
-              const SizedBox(height: 4),
-              Text(
-                '${group.skills.length}개 스킬',
-                style: TextStyle(
-                  color: dark
-                      ? const Color(0xFFB5B7BA)
-                      : const Color(0xFF616061),
-                  fontSize: 13,
-                  height: 1.2,
+              const SizedBox(width: 12),
+              Expanded(
+                child: Column(
+                  mainAxisSize: MainAxisSize.min,
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: <Widget>[
+                    Text(
+                      '자격증',
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
+                      style: TextStyle(
+                        color: secondary,
+                        fontSize: 13,
+                        fontWeight: FontWeight.w600,
+                      ),
+                    ),
+                    const SizedBox(height: 5),
+                    Text(
+                      certification,
+                      style: TextStyle(
+                        color: primary,
+                        fontSize: 17,
+                        fontWeight: FontWeight.w800,
+                        height: 1.25,
+                      ),
+                    ),
+                  ],
                 ),
               ),
             ],
@@ -540,36 +605,56 @@ class _MobileSkillSummaryCard extends StatelessWidget {
 class _MobileSkillChannel extends StatelessWidget {
   const _MobileSkillChannel({
     required this.group,
-    required this.skill,
     required this.dark,
+    required this.onTap,
   });
 
   final PortfolioSkillGroup group;
-  final String skill;
   final bool dark;
+  final VoidCallback onTap;
 
   @override
   Widget build(BuildContext context) {
+    final foreground = dark ? const Color(0xFFE7E8E9) : const Color(0xFF29272A);
+
     return Semantics(
-      key: Key('skill-item-$skill'),
-      label: '$skill, ${group.title} skill channel',
-      readOnly: true,
+      key: Key('skills-mobile-channel-${group.title}'),
+      label: '${group.title} 채널 열기',
+      button: true,
+      onTap: onTap,
       child: ExcludeSemantics(
-        child: Container(
-          key: Key('skills-mobile-channel-$skill'),
-          width: double.infinity,
-          constraints: const BoxConstraints(minHeight: 52),
-          alignment: Alignment.centerLeft,
-          padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 9),
-          child: Text(
-            '# $skill',
-            maxLines: 2,
-            overflow: TextOverflow.ellipsis,
-            style: TextStyle(
-              color: dark ? const Color(0xFFE7E8E9) : const Color(0xFF29272A),
-              fontSize: 17,
-              fontWeight: FontWeight.w600,
-              height: 1.25,
+        child: Material(
+          color: Colors.transparent,
+          child: InkWell(
+            onTap: onTap,
+            borderRadius: BorderRadius.circular(10),
+            child: Container(
+              width: double.infinity,
+              constraints: const BoxConstraints(minHeight: 52),
+              padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 9),
+              child: Row(
+                children: <Widget>[
+                  Expanded(
+                    child: Text(
+                      '# ${group.title}',
+                      style: TextStyle(
+                        color: foreground,
+                        fontSize: 17,
+                        fontWeight: FontWeight.w600,
+                        height: 1.25,
+                      ),
+                    ),
+                  ),
+                  const SizedBox(width: 8),
+                  Icon(
+                    Icons.chevron_right_rounded,
+                    color: dark
+                        ? const Color(0xFFB5B7BA)
+                        : const Color(0xFF616061),
+                    size: 22,
+                  ),
+                ],
+              ),
             ),
           ),
         ),
@@ -578,173 +663,368 @@ class _MobileSkillChannel extends StatelessWidget {
   }
 }
 
-class _SkillDetail extends StatelessWidget {
-  const _SkillDetail({required this.group, required this.compact, super.key});
+class _MobileSkillChannelDetail extends StatelessWidget {
+  const _MobileSkillChannelDetail({
+    required this.group,
+    required this.dark,
+    required this.now,
+    required this.onBack,
+  });
 
   final PortfolioSkillGroup group;
-  final bool compact;
+  final bool dark;
+  final DateTime now;
+  final VoidCallback onBack;
 
   @override
   Widget build(BuildContext context) {
-    return SingleChildScrollView(
-      key: const Key('skills-list'),
-      padding: EdgeInsets.fromLTRB(
-        compact ? 14 : 26,
-        compact ? 16 : 24,
-        compact ? 14 : 26,
-        28,
-      ),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.stretch,
-        children: <Widget>[
-          _ChannelHeader(group: group, compact: compact),
-          for (final entry in group.skills.indexed) ...<Widget>[
-            Divider(
-              height: compact ? 17 : 21,
-              color: AppleTheme.separator(context).withValues(alpha: 0.7),
-            ),
-            _SkillMessageRow(
-              group: group,
-              skill: entry.$2,
-              index: entry.$1,
-              compact: compact,
-            ),
-          ],
-        ],
-      ),
+    return Column(
+      key: const Key('skills-mobile-channel-detail'),
+      crossAxisAlignment: CrossAxisAlignment.stretch,
+      children: <Widget>[
+        Padding(
+          padding: const EdgeInsets.fromLTRB(10, 10, 16, 12),
+          child: _SkillChannelHeader(
+            group: group,
+            headerKey: const Key('skills-mobile-channel-header'),
+            leading: _MobileDetailBackButton(onBack: onBack),
+          ),
+        ),
+        Divider(
+          height: 1,
+          color: dark
+              ? Colors.white.withValues(alpha: 0.12)
+              : Colors.black.withValues(alpha: 0.1),
+        ),
+        Expanded(
+          child: _SkillActivityFeed(
+            group: group,
+            now: now,
+            scrollKey: const Key('skills-mobile-message-list'),
+            dateKey: const Key('skills-mobile-message-date'),
+            compact: true,
+          ),
+        ),
+      ],
     );
   }
 }
 
-class _ChannelHeader extends StatelessWidget {
-  const _ChannelHeader({required this.group, required this.compact});
+class _SkillActivityFeed extends StatelessWidget {
+  const _SkillActivityFeed({
+    required this.group,
+    required this.now,
+    required this.scrollKey,
+    required this.dateKey,
+    required this.compact,
+    this.leading,
+  });
 
   final PortfolioSkillGroup group;
+  final DateTime now;
+  final Key scrollKey;
+  final Key dateKey;
   final bool compact;
+  final Widget? leading;
 
   @override
   Widget build(BuildContext context) {
-    return Padding(
-      padding: EdgeInsets.only(bottom: compact ? 2 : 5),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: <Widget>[
-          Row(
-            children: <Widget>[
-              Icon(
-                Icons.tag_rounded,
-                size: compact ? 20 : 23,
-                color: AppleTheme.primaryLabel(context),
-              ),
+    final dark = AppleTheme.isDark(context);
+
+    return ListView(
+      key: scrollKey,
+      physics: const BouncingScrollPhysics(
+        parent: AlwaysScrollableScrollPhysics(),
+      ),
+      padding: EdgeInsets.fromLTRB(
+        compact ? 16 : 26,
+        compact ? 14 : 24,
+        compact ? 16 : 26,
+        28,
+      ),
+      children: <Widget>[
+        if (leading case final header?) ...<Widget>[
+          header,
+          Divider(
+            height: 21,
+            color: AppleTheme.separator(context).withValues(alpha: 0.7),
+          ),
+        ],
+        Container(
+          key: dateKey,
+          alignment: Alignment.center,
+          padding: const EdgeInsets.symmetric(vertical: 7),
+          child: Text(
+            '오늘 · ${now.year}년 ${now.month}월 ${now.day}일',
+            textAlign: TextAlign.center,
+            style: TextStyle(
+              color: dark ? const Color(0xFFB5B7BA) : const Color(0xFF616061),
+              fontSize: 13,
+              fontWeight: FontWeight.w700,
+            ),
+          ),
+        ),
+        const SizedBox(height: 14),
+        for (final entry in group.skills.indexed) ...<Widget>[
+          _SkillActivityMessage(group: group, skill: entry.$2, index: entry.$1),
+          if (entry.$1 != group.skills.length - 1) const SizedBox(height: 22),
+        ],
+      ],
+    );
+  }
+}
+
+class _SkillChannelHeader extends StatelessWidget {
+  const _SkillChannelHeader({
+    required this.group,
+    this.leading,
+    this.headerKey,
+  });
+
+  final PortfolioSkillGroup group;
+  final Widget? leading;
+  final Key? headerKey;
+
+  @override
+  Widget build(BuildContext context) {
+    final dark = AppleTheme.isDark(context);
+    final primary = dark ? const Color(0xFFF8F8F8) : const Color(0xFF1D1C1D);
+    final secondary = dark ? const Color(0xFFB5B7BA) : const Color(0xFF616061);
+    final hasLeading = leading != null;
+
+    return Column(
+      key: headerKey,
+      crossAxisAlignment: CrossAxisAlignment.stretch,
+      children: <Widget>[
+        Row(
+          crossAxisAlignment: CrossAxisAlignment.center,
+          children: <Widget>[
+            if (leading case final leading?) ...<Widget>[
+              leading,
               const SizedBox(width: 8),
-              Expanded(
-                child: Text(
-                  group.title,
-                  maxLines: 2,
-                  overflow: TextOverflow.ellipsis,
-                  style: Theme.of(context).textTheme.titleLarge?.copyWith(
-                    fontSize: compact ? 19 : 22,
-                    fontWeight: FontWeight.w800,
-                  ),
+            ],
+            Expanded(
+              child: Text(
+                '# ${group.title}',
+                maxLines: 2,
+                overflow: TextOverflow.ellipsis,
+                style: TextStyle(
+                  color: primary,
+                  fontSize: 19,
+                  fontWeight: FontWeight.w800,
+                  height: 1.18,
+                ),
+              ),
+            ),
+          ],
+        ),
+        Padding(
+          padding: EdgeInsets.only(left: hasLeading ? 52 : 0, top: 6),
+          child: Wrap(
+            spacing: 16,
+            runSpacing: 4,
+            children: <Widget>[
+              Text(
+                '1명의 멤버',
+                style: TextStyle(
+                  color: secondary,
+                  fontSize: 13,
+                  fontWeight: FontWeight.w600,
+                ),
+              ),
+              Text(
+                '1개의 탭',
+                style: TextStyle(
+                  color: secondary,
+                  fontSize: 13,
+                  fontWeight: FontWeight.w600,
                 ),
               ),
             ],
           ),
-          const SizedBox(height: 7),
-          Text(
-            '${group.skills.length} skills in this channel',
-            style: AppleTheme.caption(context),
+        ),
+      ],
+    );
+  }
+}
+
+class _MobileDetailBackButton extends StatelessWidget {
+  const _MobileDetailBackButton({required this.onBack});
+
+  final VoidCallback onBack;
+
+  @override
+  Widget build(BuildContext context) {
+    return Semantics(
+      key: const Key('skills-mobile-detail-back'),
+      label: '채널 목록으로 돌아가기',
+      button: true,
+      onTap: onBack,
+      child: ExcludeSemantics(
+        child: SizedBox.square(
+          dimension: 44,
+          child: IconButton(
+            onPressed: onBack,
+            padding: EdgeInsets.zero,
+            constraints: const BoxConstraints.tightFor(width: 44, height: 44),
+            icon: Icon(
+              Icons.arrow_back_ios_new_rounded,
+              color: AppleTheme.primaryLabel(context),
+              size: 20,
+            ),
           ),
-        ],
+        ),
       ),
     );
   }
 }
 
-class _SkillMessageRow extends StatelessWidget {
-  const _SkillMessageRow({
+class _SkillActivityMessage extends StatelessWidget {
+  const _SkillActivityMessage({
     required this.group,
     required this.skill,
     required this.index,
-    required this.compact,
   });
 
   final PortfolioSkillGroup group;
   final String skill;
   final int index;
-  final bool compact;
 
   @override
   Widget build(BuildContext context) {
-    final colors = <Color>[
-      const Color(0xFF1264A3),
-      const Color(0xFF611F69),
-      const Color(0xFF087F5B),
-      const Color(0xFFA44500),
+    const avatarColors = <Color>[
+      Color(0xFF1264A3),
+      Color(0xFF611F69),
+      Color(0xFF087F5B),
+      Color(0xFFA44500),
     ];
-    final color = colors[index % colors.length];
+    final dark = AppleTheme.isDark(context);
+    final primary = dark ? const Color(0xFFF8F8F8) : const Color(0xFF1D1C1D);
+    final secondary = dark ? const Color(0xFFB5B7BA) : const Color(0xFF616061);
 
     return Semantics(
       key: Key('skill-item-$skill'),
       container: true,
-      label: '$skill, ${group.title} skill',
+      explicitChildNodes: true,
+      label: '$skill, ${group.title} 채널 활동',
       readOnly: true,
-      child: ExcludeSemantics(
-        child: Container(
-          key: Key('skills-message-row-$skill'),
-          constraints: const BoxConstraints(minHeight: 52),
-          padding: EdgeInsets.symmetric(
-            horizontal: compact ? 2 : 6,
-            vertical: compact ? 3 : 5,
-          ),
-          child: Row(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: <Widget>[
-              Container(
-                width: 38,
-                height: 38,
-                alignment: Alignment.center,
-                decoration: BoxDecoration(
-                  color: color,
-                  borderRadius: BorderRadius.circular(10),
-                ),
-                child: Text(
-                  _firstCharacter(skill).toUpperCase(),
-                  style: const TextStyle(
-                    color: Colors.white,
-                    fontSize: 14,
-                    fontWeight: FontWeight.w800,
+      child: Container(
+        key: Key('skills-message-row-$skill'),
+        child: Row(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: <Widget>[
+            Semantics(
+              key: Key('skills-message-avatar-$skill'),
+              label: '$skill 프로필 사진',
+              image: true,
+              child: ExcludeSemantics(
+                child: Container(
+                  width: 42,
+                  height: 42,
+                  alignment: Alignment.center,
+                  decoration: BoxDecoration(
+                    color: avatarColors[index % avatarColors.length],
+                    shape: BoxShape.circle,
+                  ),
+                  child: Text(
+                    _firstCharacter(skill).toUpperCase(),
+                    style: const TextStyle(
+                      color: Colors.white,
+                      fontSize: 15,
+                      fontWeight: FontWeight.w800,
+                    ),
                   ),
                 ),
               ),
-              const SizedBox(width: 12),
-              Expanded(
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: <Widget>[
-                    Text(
-                      skill,
-                      maxLines: 2,
-                      overflow: TextOverflow.ellipsis,
-                      style: Theme.of(context).textTheme.titleMedium?.copyWith(
-                        fontSize: compact ? 15 : 16,
-                        fontWeight: FontWeight.w700,
+            ),
+            const SizedBox(width: 12),
+            Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: <Widget>[
+                  Wrap(
+                    crossAxisAlignment: WrapCrossAlignment.center,
+                    spacing: 8,
+                    runSpacing: 2,
+                    children: <Widget>[
+                      Text(
+                        skill,
+                        key: Key('skills-message-author-$skill'),
+                        style: TextStyle(
+                          color: primary,
+                          fontSize: 16,
+                          fontWeight: FontWeight.w800,
+                          height: 1.2,
+                        ),
                       ),
+                      Text(
+                        _messageTime(index),
+                        key: Key('skills-message-time-$skill'),
+                        style: TextStyle(
+                          color: secondary,
+                          fontSize: 12,
+                          fontWeight: FontWeight.w500,
+                        ),
+                      ),
+                    ],
+                  ),
+                  const SizedBox(height: 7),
+                  Text(
+                    _activityDescription(group, skill),
+                    key: Key('skills-message-content-$skill'),
+                    style: TextStyle(
+                      color: primary,
+                      fontSize: 15,
+                      height: 1.42,
                     ),
-                    const SizedBox(height: 3),
-                    Text(
-                      'Skill in ${group.title}',
-                      maxLines: 2,
-                      overflow: TextOverflow.ellipsis,
-                      style: AppleTheme.caption(context),
-                    ),
-                  ],
-                ),
+                  ),
+                ],
               ),
-            ],
-          ),
+            ),
+          ],
         ),
       ),
+    );
+  }
+}
+
+String _activityDescription(PortfolioSkillGroup group, String skill) {
+  final description = group.activityDescriptions[skill]?.trim();
+  if (description == null || description.isEmpty) {
+    return '$skill 관련 학습과 프로젝트 작업을 진행했습니다.';
+  }
+  return description;
+}
+
+String _messageTime(int index) {
+  final time = DateTime(2000, 1, 1, 9).add(Duration(minutes: index * 15));
+  final period = time.hour < 12 ? '오전' : '오후';
+  final hour = time.hour % 12 == 0 ? 12 : time.hour % 12;
+  final minute = time.minute.toString().padLeft(2, '0');
+  return '$hour:$minute $period';
+}
+
+class _SkillDetail extends StatelessWidget {
+  const _SkillDetail({
+    required this.group,
+    required this.compact,
+    required this.now,
+    super.key,
+  });
+
+  final PortfolioSkillGroup group;
+  final bool compact;
+  final DateTime now;
+
+  @override
+  Widget build(BuildContext context) {
+    return _SkillActivityFeed(
+      group: group,
+      now: now,
+      scrollKey: const Key('skills-list'),
+      dateKey: const Key('skills-message-date'),
+      compact: compact,
+      leading: _SkillChannelHeader(group: group),
     );
   }
 }

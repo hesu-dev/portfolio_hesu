@@ -113,6 +113,7 @@ class MobileAppSurface extends StatelessWidget {
                     themeController: themeController,
                     musicController: musicController,
                     compact: !tablet,
+                    mobile: true,
                     tablet: tablet,
                     finderWindowChrome: finderWindowChrome,
                     onOpenApp: onOpenApp,
