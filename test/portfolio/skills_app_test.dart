@@ -97,28 +97,39 @@ void main() {
       (name: 'desktop', size: const Size(900, 650), tablet: false),
       (name: 'tablet', size: const Size(600, 650), tablet: true),
     ]) {
-      testWidgets('keeps workspace icons at 200% on ${configuration.name}', (
-        tester,
-      ) async {
-        await _pumpSkills(
-          tester,
-          size: configuration.size,
-          data: _mobileData,
-          mobile: configuration.tablet,
-          tablet: configuration.tablet,
-          textScaler: const TextScaler.linear(2),
-        );
+      for (final brightness in Brightness.values) {
+        testWidgets(
+          'keeps workspace icons at 200% on ${configuration.name} ${brightness.name}',
+          (tester) async {
+            await _pumpSkills(
+              tester,
+              size: configuration.size,
+              data: _mobileData,
+              mobile: configuration.tablet,
+              tablet: configuration.tablet,
+              brightness: brightness,
+              textScaler: const TextScaler.linear(2),
+            );
 
-        expect(find.byKey(const Key('skills-workspace-icon')), findsOneWidget);
-        for (final group in _mobileData.skillGroups) {
-          expect(
-            find.byKey(Key('skills-workspace-group-icon-${group.title}')),
-            findsOneWidget,
-            reason: '${configuration.name}: ${group.title}',
-          );
-        }
-        expect(tester.takeException(), isNull, reason: configuration.name);
-      });
+            expect(
+              find.byKey(const Key('skills-workspace-icon')),
+              findsOneWidget,
+            );
+            for (final group in _mobileData.skillGroups) {
+              expect(
+                find.byKey(Key('skills-workspace-group-icon-${group.title}')),
+                findsOneWidget,
+                reason: '${configuration.name}: ${group.title}',
+              );
+            }
+            expect(
+              tester.takeException(),
+              isNull,
+              reason: '${configuration.name}: ${brightness.name}',
+            );
+          },
+        );
+      }
     }
 
     testWidgets('desktop channels use the dated activity message feed', (
