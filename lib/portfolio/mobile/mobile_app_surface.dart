@@ -13,7 +13,7 @@ import '../widgets/apple_mobile_navigation_header.dart';
 import 'apple_mobile_dock_geometry.dart';
 import 'mobile_back_close_button.dart';
 
-class MobileAppSurface extends StatelessWidget {
+class MobileAppSurface extends StatefulWidget {
   const MobileAppSurface({
     required this.appId,
     required this.data,
@@ -40,27 +40,49 @@ class MobileAppSurface extends StatelessWidget {
   final ValueChanged<PortfolioAppId>? onOpenApp;
 
   @override
+  State<MobileAppSurface> createState() => _MobileAppSurfaceState();
+}
+
+class _MobileAppSurfaceState extends State<MobileAppSurface> {
+  bool _photoDetailVisible = false;
+
+  @override
+  void didUpdateWidget(covariant MobileAppSurface oldWidget) {
+    super.didUpdateWidget(oldWidget);
+    if (oldWidget.appId != widget.appId) {
+      _photoDetailVisible = false;
+    }
+  }
+
+  void _handlePhotoDetailVisibilityChanged(bool visible) {
+    if (_photoDetailVisible == visible) {
+      return;
+    }
+    setState(() => _photoDetailVisible = visible);
+  }
+
+  @override
   Widget build(BuildContext context) {
-    final radius = tablet ? 28.0 : 0.0;
-    final label = AppleAppIcon.labelFor(appId);
-    final windowTitle = AppleAppIcon.windowTitleFor(appId);
-    final integratesFinderToolbar = appId == PortfolioAppId.projects;
-    final ownsNavigationHeader = appId == PortfolioAppId.profile;
+    final radius = widget.tablet ? 28.0 : 0.0;
+    final label = AppleAppIcon.labelFor(widget.appId);
+    final windowTitle = AppleAppIcon.windowTitleFor(widget.appId);
+    final integratesFinderToolbar = widget.appId == PortfolioAppId.projects;
+    final ownsNavigationHeader = widget.appId == PortfolioAppId.profile;
     final finderWindowChrome = integratesFinderToolbar
         ? AppleFinderWindowChrome(
             leadingControls: MobileBackCloseButton(
-              appId: appId,
+              appId: widget.appId,
               windowLabel: label,
-              onPressed: onClose,
+              onPressed: widget.onClose,
             ),
             mobileLeadingControlsBuilder: (canGoBack, onBack) =>
                 MobileBackCloseButton(
-                  appId: appId,
+                  appId: widget.appId,
                   windowLabel: label,
                   action: canGoBack
                       ? MobileBackCloseAction.back
                       : MobileBackCloseAction.close,
-                  onPressed: canGoBack ? onBack : onClose,
+                  onPressed: canGoBack ? onBack : widget.onClose,
                 ),
             onDragUpdate: (_) {},
             cursor: MouseCursor.defer,
@@ -68,20 +90,20 @@ class MobileAppSurface extends StatelessWidget {
         : null;
 
     return Padding(
-      padding: tablet
+      padding: widget.tablet
           ? const EdgeInsets.fromLTRB(24, 10, 24, 0)
           : EdgeInsets.zero,
       child: Container(
         key: const Key('mobile-app-surface'),
         decoration: BoxDecoration(
           borderRadius: BorderRadius.circular(radius),
-          border: tablet
+          border: widget.tablet
               ? Border.all(
                   color: Colors.white.withValues(alpha: 0.66),
                   width: AppleMobileDockGeometry.tabletAppSurfaceBorderWidth,
                 )
               : null,
-          boxShadow: tablet
+          boxShadow: widget.tablet
               ? <BoxShadow>[
                   BoxShadow(
                     color: Colors.black.withValues(alpha: 0.2),
@@ -99,27 +121,34 @@ class MobileAppSurface extends StatelessWidget {
             child: Column(
               children: <Widget>[
                 if (!integratesFinderToolbar && !ownsNavigationHeader)
-                  _MobileAppNavigationBar(
-                    appId: appId,
-                    label: label,
-                    title: windowTitle,
-                    onClose: onClose,
+                  SizedBox(
+                    key: const Key('mobile-app-navigation-slot'),
+                    child: _photoDetailVisible
+                        ? null
+                        : _MobileAppNavigationBar(
+                            appId: widget.appId,
+                            label: label,
+                            title: windowTitle,
+                            onClose: widget.onClose,
+                          ),
                   ),
                 Expanded(
                   child: PortfolioAppContent(
-                    appId: appId,
-                    data: data,
-                    launcher: launcher,
-                    themeController: themeController,
-                    musicController: musicController,
-                    compact: !tablet,
+                    appId: widget.appId,
+                    data: widget.data,
+                    launcher: widget.launcher,
+                    themeController: widget.themeController,
+                    musicController: widget.musicController,
+                    compact: !widget.tablet,
                     mobile: true,
-                    tablet: tablet,
+                    tablet: widget.tablet,
                     finderWindowChrome: finderWindowChrome,
-                    onOpenApp: onOpenApp,
-                    onClose: onClose,
-                    trashEmpty: trashEmpty,
-                    onTrashEmptied: onTrashEmptied,
+                    onOpenApp: widget.onOpenApp,
+                    onClose: widget.onClose,
+                    onPhotoDetailVisibilityChanged:
+                        _handlePhotoDetailVisibilityChanged,
+                    trashEmpty: widget.trashEmpty,
+                    onTrashEmptied: widget.onTrashEmptied,
                   ),
                 ),
               ],

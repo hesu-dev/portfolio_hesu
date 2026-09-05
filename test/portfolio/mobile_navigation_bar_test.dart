@@ -119,6 +119,66 @@ void main() {
     );
 
     testWidgets(
+      'Photos hides the shared title in detail and restores it in the gallery',
+      (tester) async {
+        for (final size in const <Size>[Size(390, 844), Size(834, 1194)]) {
+          await tester.pumpWidget(const SizedBox.shrink());
+          await _pumpSurface(tester, size: size, appId: PortfolioAppId.photos);
+
+          expect(
+            find.byKey(const Key('mobile-app-navigation-bar')),
+            findsOneWidget,
+            reason: '$size gallery header',
+          );
+          expect(
+            find.byKey(const Key('mobile-app-title')),
+            findsOneWidget,
+            reason: '$size gallery title',
+          );
+
+          await tester.tap(find.byKey(const Key('photos-photo-coffee')));
+          await tester.pumpAndSettle();
+
+          expect(
+            find.byKey(const Key('photos-detail-view')),
+            findsOneWidget,
+            reason: '$size detail',
+          );
+          expect(
+            find.byKey(const Key('mobile-app-navigation-bar')),
+            findsNothing,
+            reason: '$size detail header',
+          );
+          expect(
+            find.byKey(const Key('mobile-app-title')),
+            findsNothing,
+            reason: '$size detail title',
+          );
+
+          await tester.tap(find.byKey(const Key('photos-detail-close')));
+          await tester.pumpAndSettle();
+
+          expect(
+            find.byKey(const Key('photos-detail-view')),
+            findsNothing,
+            reason: '$size restored gallery',
+          );
+          expect(
+            find.byKey(const Key('mobile-app-navigation-bar')),
+            findsOneWidget,
+            reason: '$size restored header',
+          );
+          expect(
+            find.byKey(const Key('mobile-app-title')),
+            findsOneWidget,
+            reason: '$size restored title',
+          );
+          expect(tester.takeException(), isNull, reason: '$size');
+        }
+      },
+    );
+
+    testWidgets(
       'every non-Projects iPad app uses the shared back close header',
       (tester) async {
         for (final appId in PortfolioAppId.values.where(

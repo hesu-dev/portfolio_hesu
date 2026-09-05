@@ -32,6 +32,7 @@ class PortfolioAppContent extends StatelessWidget {
     this.finderWindowChrome,
     this.onOpenApp,
     this.onClose,
+    this.onPhotoDetailVisibilityChanged,
     this.trashEmpty = false,
     this.onTrashEmptied,
     super.key,
@@ -49,6 +50,7 @@ class PortfolioAppContent extends StatelessWidget {
   final AppleFinderWindowChrome? finderWindowChrome;
   final ValueChanged<PortfolioAppId>? onOpenApp;
   final VoidCallback? onClose;
+  final ValueChanged<bool>? onPhotoDetailVisibilityChanged;
   final bool trashEmpty;
   final VoidCallback? onTrashEmptied;
 
@@ -98,7 +100,11 @@ class PortfolioAppContent extends StatelessWidget {
         tablet: tablet,
         shortcutsEnabled: musicShortcutsEnabled,
       ),
-      PortfolioAppId.photos => PhotosApp(compact: compact, tablet: tablet),
+      PortfolioAppId.photos => PhotosApp(
+        compact: compact,
+        tablet: tablet,
+        onDetailVisibilityChanged: onPhotoDetailVisibilityChanged,
+      ),
       PortfolioAppId.settings => SettingsApp(
         data: data,
         themeController: themeController,

@@ -5,10 +5,16 @@ import '../theme/apple_theme.dart';
 import '../widgets/apple_selection_control.dart';
 
 class PhotosApp extends StatefulWidget {
-  const PhotosApp({this.compact = false, this.tablet = false, super.key});
+  const PhotosApp({
+    this.compact = false,
+    this.tablet = false,
+    this.onDetailVisibilityChanged,
+    super.key,
+  });
 
   final bool compact;
   final bool tablet;
+  final ValueChanged<bool>? onDetailVisibilityChanged;
 
   @override
   State<PhotosApp> createState() => _PhotosAppState();
@@ -18,6 +24,16 @@ class _PhotosAppState extends State<PhotosApp> {
   _PhotosTab _selectedTab = _PhotosTab.library;
   _PhotoAlbum _selectedAlbum = _PhotoAlbum.daily;
   _GalleryPhoto? _selectedPhoto;
+
+  void _openPhoto(_GalleryPhoto photo) {
+    setState(() => _selectedPhoto = photo);
+    widget.onDetailVisibilityChanged?.call(true);
+  }
+
+  void _closePhoto() {
+    setState(() => _selectedPhoto = null);
+    widget.onDetailVisibilityChanged?.call(false);
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -33,7 +49,7 @@ class _PhotosAppState extends State<PhotosApp> {
                 key: ValueKey<String>('photo-detail-${selectedPhoto.id}'),
                 photo: selectedPhoto,
                 compact: widget.compact,
-                onClose: () => setState(() => _selectedPhoto = null),
+                onClose: _closePhoto,
               )
             : LayoutBuilder(
                 key: const ValueKey<String>('photo-gallery'),
@@ -113,11 +129,7 @@ class _PhotosAppState extends State<PhotosApp> {
                             (context, index) => _PhotoThumbnail(
                               photo: visiblePhotos[index],
                               compact: widget.compact,
-                              onPressed: () {
-                                setState(
-                                  () => _selectedPhoto = visiblePhotos[index],
-                                );
-                              },
+                              onPressed: () => _openPhoto(visiblePhotos[index]),
                             ),
                             childCount: visiblePhotos.length,
                           ),
