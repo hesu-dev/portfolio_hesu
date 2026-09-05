@@ -107,12 +107,11 @@ void main() {
       _IconSurface.iPad,
       _IconSurface.iPhone,
     ]) {
-      testWidgets('${surface.label}의 Projects, GitHub, Trash는 흰색 라운드 타일이다', (
-        tester,
-      ) async {
+      testWidgets('${surface.label}의 투명 아트워크는 공통 반투명 타일을 쓴다', (tester) async {
         await _pumpSurface(tester, surface);
 
         for (final appId in const <PortfolioAppId>[
+          PortfolioAppId.introduction,
           PortfolioAppId.projects,
           PortfolioAppId.github,
           PortfolioAppId.trash,
@@ -126,13 +125,18 @@ void main() {
             find.descendant(of: frame, matching: find.byType(Container)).first,
           );
           final decoration = container.decoration! as BoxDecoration;
-          expect(decoration.color, Colors.white, reason: appId.name);
+          expect(
+            decoration.color,
+            Colors.white.withValues(alpha: 0.5),
+            reason: appId.name,
+          );
           expect(decoration.borderRadius, isNotNull, reason: appId.name);
           expect(decoration.boxShadow, isEmpty, reason: appId.name);
           expect(
             find.descendant(of: frame, matching: find.byType(ClipRRect)),
             findsOneWidget,
-            reason: '${surface.label} ${appId.name} rounded tile clip',
+            reason:
+                '${surface.label} ${appId.name} uses only the shared tile clip',
           );
         }
       });

@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 
 import '../theme/apple_theme.dart';
+import '../widgets/apple_clock_format.dart';
 
 /// Compact, platform-neutral rendering of the familiar iOS/iPadOS status area.
 class AppleStatusBar extends StatelessWidget {
@@ -11,7 +12,6 @@ class AppleStatusBar extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final minutes = now.minute.toString().padLeft(2, '0');
     final labelColor = AppleTheme.primaryLabel(context);
 
     return Semantics(
@@ -31,7 +31,7 @@ class AppleStatusBar extends StatelessWidget {
             children: <Widget>[
               Expanded(
                 child: Text(
-                  '${now.hour}:$minutes',
+                  formatApple12HourTime(now),
                   key: const Key('apple-status-time'),
                   maxLines: 1,
                   overflow: TextOverflow.fade,

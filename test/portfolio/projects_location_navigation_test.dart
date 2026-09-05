@@ -342,13 +342,9 @@ void main() {
                       .first
                       .decoration
                   as BoxDecoration;
+          final dock = find.byKey(const Key('projects-finder-mobile-dock'));
           final dockDecoration =
-              tester
-                      .widget<Container>(
-                        find.byKey(const Key('projects-finder-mobile-dock')),
-                      )
-                      .decoration
-                  as BoxDecoration;
+              tester.widget<Container>(dock).decoration as BoxDecoration;
           final title = tester.widget<Text>(
             find.descendant(
               of: find.byKey(const Key('projects-finder-current-location')),
@@ -362,7 +358,10 @@ void main() {
             greaterThanOrEqualTo(4.5),
           );
           toolbarColors[brightness] = toolbarDecoration.color!;
-          expect(dockDecoration.color, Colors.transparent);
+          expect(
+            dockDecoration.color,
+            AppleTheme.surface(tester.element(dock)).withValues(alpha: 0.42),
+          );
           expect(dockDecoration.border, isNotNull);
           expect(dockDecoration.boxShadow, isNotEmpty);
           expect(

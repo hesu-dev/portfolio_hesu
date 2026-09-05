@@ -1,3 +1,5 @@
+import 'dart:ui';
+
 import 'package:flutter/material.dart';
 
 import '../mobile/apple_mobile_dock_geometry.dart';
@@ -112,7 +114,8 @@ class AppleFinderScaffold extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final mobileLayout = mobileBottomNavigation != null;
+    final navigation = mobileBottomNavigation;
+    final mobileLayout = navigation != null;
     final leadingControls = mobileLayout
         ? windowChrome?.mobileLeadingControlsBuilder?.call(canGoBack, onBack) ??
               windowChrome?.leadingControls
@@ -141,7 +144,18 @@ class AppleFinderScaffold extends StatelessWidget {
           ),
           Expanded(
             child: mobileLayout
-                ? bodyBuilder(context, compact)
+                ? Stack(
+                    fit: StackFit.expand,
+                    children: <Widget>[
+                      bodyBuilder(context, compact),
+                      Positioned(
+                        left: 0,
+                        right: 0,
+                        bottom: 0,
+                        child: navigation,
+                      ),
+                    ],
+                  )
                 : LayoutBuilder(
                     builder: (context, constraints) {
                       final wide =
@@ -185,7 +199,6 @@ class AppleFinderScaffold extends StatelessWidget {
                     },
                   ),
           ),
-          if (mobileBottomNavigation case final navigation?) navigation,
         ],
       ),
     );
@@ -319,7 +332,7 @@ class AppleFinderToolbar extends StatelessWidget {
   }
 }
 
-class AppleFinderMobileNavigationBar extends StatelessWidget {
+class AppleFinderMobileNavigationBar extends StatefulWidget {
   const AppleFinderMobileNavigationBar({
     required this.keyPrefix,
     required this.destinations,
@@ -336,53 +349,204 @@ class AppleFinderMobileNavigationBar extends StatelessWidget {
   final bool tablet;
 
   @override
+  State<AppleFinderMobileNavigationBar> createState() =>
+      _AppleFinderMobileNavigationBarState();
+}
+
+class _AppleFinderMobileNavigationBarState
+    extends State<AppleFinderMobileNavigationBar>
+    with SingleTickerProviderStateMixin {
+  static const double _dockOpacity = 0.42;
+  static const double _pillRadius = 999;
+  static const Duration _movementDuration = Duration(milliseconds: 360);
+
+  late final AnimationController _selectionController;
+  late final Animation<double> _selectionScale;
+
+  @override
+  void initState() {
+    super.initState();
+    _selectionController = AnimationController(
+      vsync: this,
+      duration: _movementDuration,
+      value: 1,
+    );
+    _selectionScale = TweenSequence<double>(<TweenSequenceItem<double>>[
+      TweenSequenceItem<double>(
+        tween: Tween<double>(
+          begin: 1,
+          end: 1.08,
+        ).chain(CurveTween(curve: Curves.easeOutCubic)),
+        weight: 40,
+      ),
+      TweenSequenceItem<double>(
+        tween: Tween<double>(
+          begin: 1.08,
+          end: 1,
+        ).chain(CurveTween(curve: Curves.easeOutCubic)),
+        weight: 60,
+      ),
+    ]).animate(_selectionController);
+  }
+
+  @override
+  void didUpdateWidget(covariant AppleFinderMobileNavigationBar oldWidget) {
+    super.didUpdateWidget(oldWidget);
+    if (oldWidget.selectedId != widget.selectedId) {
+      _selectionController.forward(from: 0);
+    }
+  }
+
+  @override
+  void dispose() {
+    _selectionController.dispose();
+    super.dispose();
+  }
+
+  int get _selectedIndex {
+    final index = widget.destinations.indexWhere(
+      (destination) => destination.id == widget.selectedId,
+    );
+    return index < 0 ? 0 : index;
+  }
+
+  @override
   Widget build(BuildContext context) {
     final bottomClearance = AppleMobileDockGeometry.appBottomClearance(
-      tablet: tablet,
+      tablet: widget.tablet,
       safeAreaBottom: MediaQuery.paddingOf(context).bottom,
     );
-    return Padding(
-      padding: EdgeInsets.fromLTRB(12, 6, 12, bottomClearance),
-      child: Center(
-        child: ConstrainedBox(
-          constraints: const BoxConstraints(maxWidth: 520),
-          child: Container(
-            key: Key('$keyPrefix-mobile-dock'),
-            constraints: BoxConstraints(
-              minHeight: AppleMobileDockGeometry.height(tablet: tablet),
-            ),
-            padding: const EdgeInsets.all(5),
-            decoration: BoxDecoration(
-              color: Colors.transparent,
-              borderRadius: BorderRadius.circular(28),
-              border: Border.all(
-                color: AppleTheme.separator(context),
-                width: 0.8,
-              ),
-              boxShadow: <BoxShadow>[
-                BoxShadow(
-                  color: AppleTheme.subtleShadow(context),
-                  blurRadius: 18,
-                  offset: const Offset(0, 7),
+    final dockHeight = AppleMobileDockGeometry.height(tablet: widget.tablet);
+    return Stack(
+      children: <Widget>[
+        Positioned(
+          top: 6,
+          left: 0,
+          right: 0,
+          height: dockHeight,
+          child: IgnorePointer(
+            child: DecoratedBox(
+              key: Key('${widget.keyPrefix}-mobile-dock-backdrop-gradient'),
+              decoration: BoxDecoration(
+                gradient: LinearGradient(
+                  begin: Alignment.topCenter,
+                  end: Alignment.bottomCenter,
+                  colors: <Color>[
+                    Colors.white.withValues(alpha: 0),
+                    Colors.white.withValues(alpha: 0.4),
+                  ],
                 ),
-              ],
-            ),
-            child: Row(
-              children: <Widget>[
-                for (final destination in destinations)
-                  Expanded(
-                    child: _MobileFinderDestinationButton(
-                      controlKey: Key('$keyPrefix-location-${destination.id}'),
-                      destination: destination,
-                      selected: destination.id == selectedId,
-                      onPressed: () => onSelected(destination.id),
-                    ),
-                  ),
-              ],
+              ),
             ),
           ),
         ),
-      ),
+        Padding(
+          padding: EdgeInsets.fromLTRB(12, 6, 12, bottomClearance),
+          child: Center(
+            child: ConstrainedBox(
+              constraints: const BoxConstraints(maxWidth: 520),
+              child: RepaintBoundary(
+                child: ClipRRect(
+                  borderRadius: BorderRadius.circular(_pillRadius),
+                  child: BackdropFilter(
+                    filter: ImageFilter.blur(sigmaX: 22, sigmaY: 22),
+                    child: Container(
+                      key: Key('${widget.keyPrefix}-mobile-dock'),
+                      height: dockHeight,
+                      padding: const EdgeInsets.all(5),
+                      decoration: BoxDecoration(
+                        color: AppleTheme.surface(
+                          context,
+                        ).withValues(alpha: _dockOpacity),
+                        borderRadius: BorderRadius.circular(_pillRadius),
+                        border: Border.all(
+                          color: Colors.white.withValues(alpha: 0.48),
+                          width: 0.8,
+                        ),
+                        boxShadow: <BoxShadow>[
+                          BoxShadow(
+                            color: AppleTheme.subtleShadow(context),
+                            blurRadius: 18,
+                            offset: const Offset(0, 7),
+                          ),
+                        ],
+                      ),
+                      child: LayoutBuilder(
+                        builder: (context, constraints) {
+                          final destinationCount = widget.destinations.length;
+                          if (destinationCount == 0) {
+                            return const SizedBox.shrink();
+                          }
+                          final slotWidth =
+                              constraints.maxWidth / destinationCount;
+                          return Stack(
+                            fit: StackFit.expand,
+                            children: <Widget>[
+                              AnimatedPositioned(
+                                duration: _movementDuration,
+                                curve: Curves.easeOutCubic,
+                                left: slotWidth * _selectedIndex,
+                                top: 4,
+                                bottom: 4,
+                                width: slotWidth,
+                                child: IgnorePointer(
+                                  child: AnimatedBuilder(
+                                    animation: _selectionScale,
+                                    builder: (context, child) {
+                                      return Transform.scale(
+                                        key: Key(
+                                          '${widget.keyPrefix}-mobile-dock-selection-scale',
+                                        ),
+                                        scale: _selectionScale.value,
+                                        child: child,
+                                      );
+                                    },
+                                    child: DecoratedBox(
+                                      key: Key(
+                                        '${widget.keyPrefix}-mobile-dock-selection-indicator',
+                                      ),
+                                      decoration: BoxDecoration(
+                                        color: AppleTheme.selectionBackground(
+                                          context,
+                                          AppleTheme.blue,
+                                        ),
+                                        borderRadius: BorderRadius.circular(
+                                          _pillRadius,
+                                        ),
+                                      ),
+                                    ),
+                                  ),
+                                ),
+                              ),
+                              Row(
+                                children: <Widget>[
+                                  for (final destination in widget.destinations)
+                                    Expanded(
+                                      child: _MobileFinderDestinationButton(
+                                        controlKey: Key(
+                                          '${widget.keyPrefix}-location-${destination.id}',
+                                        ),
+                                        destination: destination,
+                                        selected:
+                                            destination.id == widget.selectedId,
+                                        onPressed: () =>
+                                            widget.onSelected(destination.id),
+                                      ),
+                                    ),
+                                ],
+                              ),
+                            ],
+                          );
+                        },
+                      ),
+                    ),
+                  ),
+                ),
+              ),
+            ),
+          ),
+        ),
+      ],
     );
   }
 }
@@ -410,34 +574,38 @@ class _MobileFinderDestinationButton extends StatelessWidget {
       semanticsLabel: 'Open ${destination.label}',
       selected: selected,
       onPressed: onPressed,
-      borderRadius: BorderRadius.circular(22),
+      borderRadius: BorderRadius.circular(999),
       child: SizedBox(
         width: double.infinity,
-        child: Container(
+        child: ConstrainedBox(
           constraints: const BoxConstraints(minHeight: 54),
-          padding: const EdgeInsets.symmetric(horizontal: 4, vertical: 6),
-          decoration: BoxDecoration(
-            color: selected
-                ? AppleTheme.selectionBackground(context, AppleTheme.blue)
-                : Colors.transparent,
-            borderRadius: BorderRadius.circular(22),
-          ),
-          child: Column(
-            mainAxisAlignment: MainAxisAlignment.center,
-            children: <Widget>[
-              Icon(destination.icon, color: foreground, size: 22),
-              const SizedBox(height: 3),
-              Text(
-                destination.label,
-                maxLines: 1,
-                overflow: TextOverflow.ellipsis,
-                style: Theme.of(context).textTheme.labelLarge?.copyWith(
-                  color: foreground,
-                  fontSize: 11,
-                  fontWeight: selected ? FontWeight.w700 : FontWeight.w600,
+          child: Padding(
+            padding: const EdgeInsets.symmetric(horizontal: 4, vertical: 4),
+            child: Column(
+              mainAxisAlignment: MainAxisAlignment.center,
+              children: <Widget>[
+                TweenAnimationBuilder<Color?>(
+                  tween: ColorTween(end: foreground),
+                  duration: const Duration(milliseconds: 180),
+                  builder: (context, color, child) =>
+                      Icon(destination.icon, color: color, size: 22),
                 ),
-              ),
-            ],
+                const SizedBox(height: 3),
+                AnimatedDefaultTextStyle(
+                  duration: const Duration(milliseconds: 180),
+                  style: Theme.of(context).textTheme.labelLarge!.copyWith(
+                    color: foreground,
+                    fontSize: 11,
+                    fontWeight: selected ? FontWeight.w700 : FontWeight.w600,
+                  ),
+                  child: Text(
+                    destination.label,
+                    maxLines: 1,
+                    overflow: TextOverflow.ellipsis,
+                  ),
+                ),
+              ],
+            ),
           ),
         ),
       ),

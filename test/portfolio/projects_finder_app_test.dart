@@ -171,7 +171,7 @@ void main() {
       expect(inlineTrafficLights, findsNothing);
     });
 
-    testWidgets('좁은 iPhone은 112px 2열 파일 목록과 별도 상세 뎁스를 스크롤한다', (tester) async {
+    testWidgets('좁은 iPhone은 가용 폭을 채운 2열과 별도 상세 뎁스를 스크롤한다', (tester) async {
       await _pumpProjects(
         tester,
         size: const Size(320, 480),
@@ -198,7 +198,7 @@ void main() {
           find.byKey(Key('projects-career-folder-$index')),
       ];
       for (final folder in folders) {
-        expect(tester.getSize(folder).width, 112);
+        expect(tester.getSize(folder).width, 140);
         expect(tester.getRect(folder).left, greaterThanOrEqualTo(0));
         expect(tester.getRect(folder).right, lessThanOrEqualTo(320));
         final label = find.descendant(
@@ -230,7 +230,7 @@ void main() {
       expect(tester.takeException(), isNull);
     });
 
-    testWidgets('넓은 iPhone은 112px 폴더를 가용 폭에 맞춰 조밀하게 배치한다', (tester) async {
+    testWidgets('넓은 iPhone은 열 너비를 균등하게 나눠 가용 폭을 채운다', (tester) async {
       for (final scenario in const <({double width, int columns})>[
         (width: 448, columns: 3),
         (width: 590, columns: 4),
@@ -246,10 +246,13 @@ void main() {
           for (var index = 0; index < 4; index++)
             find.byKey(Key('projects-career-folder-$index')),
         ];
+        final availableWidth = scenario.width - 32;
+        final expectedTileWidth =
+            (availableWidth - 8 * (scenario.columns - 1)) / scenario.columns;
         for (final folder in folders) {
           expect(
             tester.getSize(folder).width,
-            112,
+            closeTo(expectedTileWidth, 0.01),
             reason: '${scenario.width}',
           );
         }

@@ -7,6 +7,7 @@ import 'package:flutter/services.dart';
 import '../models/portfolio_app_id.dart';
 import '../theme/apple_theme.dart';
 import '../widgets/apple_app_icon.dart';
+import '../widgets/apple_clock_format.dart';
 import 'mac_window_state.dart';
 
 enum MacSystemPanel { none, systemMenu, controlCenter, notifications }
@@ -851,9 +852,7 @@ String _menuTime(DateTime time) {
 }
 
 String _largeTime(DateTime time) {
-  final hour = time.hour.toString().padLeft(2, '0');
-  final minute = time.minute.toString().padLeft(2, '0');
-  return '$hour:$minute';
+  return formatApple12HourTime(time);
 }
 
 String _longDate(DateTime time) {

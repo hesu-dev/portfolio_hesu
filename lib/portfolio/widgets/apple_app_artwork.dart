@@ -12,8 +12,10 @@ enum AppleAppArtworkSurface { desktop, mobile }
 ///
 /// App artwork owns its silhouette while this frame supplies only the backing
 /// appropriate to its launcher surface. Mobile transparent artwork receives a
-/// white rounded tile; desktop silhouettes remain unbacked.
+/// shared translucent rounded tile; desktop silhouettes remain unbacked.
 class AppleAppArtworkFrame extends StatelessWidget {
+  static const double mobileTileOpacity = 0.5;
+
   const AppleAppArtworkFrame({
     required this.appId,
     required this.size,
@@ -34,13 +36,13 @@ class AppleAppArtworkFrame extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final transparent = AppleAppArtwork.usesTransparentFrame(appId);
-    final mobileWhiteTile =
+    final mobileTranslucentTile =
         surface == AppleAppArtworkSurface.mobile &&
-        AppleAppArtwork.usesMobileWhiteTile(appId);
-    final rounded = !transparent || mobileWhiteTile;
+        AppleAppArtwork.usesMobileTranslucentTile(appId);
+    final rounded = !transparent || mobileTranslucentTile;
     final effectiveForegroundColor =
         foregroundColor ??
-        (mobileWhiteTile && appId == PortfolioAppId.github
+        (mobileTranslucentTile && appId == PortfolioAppId.github
             ? Colors.black
             : null);
     return Container(
@@ -48,11 +50,13 @@ class AppleAppArtworkFrame extends StatelessWidget {
       width: size,
       height: size,
       decoration: BoxDecoration(
-        color: mobileWhiteTile ? Colors.white : null,
+        color: mobileTranslucentTile
+            ? Colors.white.withValues(alpha: mobileTileOpacity)
+            : null,
         borderRadius: rounded ? BorderRadius.circular(size * 0.28) : null,
         boxShadow: const <BoxShadow>[],
       ),
-      child: mobileWhiteTile
+      child: mobileTranslucentTile
           ? ClipRRect(
               borderRadius: BorderRadius.circular(size * 0.28),
               child: Padding(
@@ -62,6 +66,7 @@ class AppleAppArtworkFrame extends StatelessWidget {
                   size: size,
                   foregroundColor: effectiveForegroundColor,
                   trashEmpty: trashEmpty,
+                  includeBackground: false,
                 ),
               ),
             )
@@ -92,6 +97,7 @@ class AppleAppArtwork extends StatelessWidget {
     required this.size,
     this.foregroundColor,
     this.trashEmpty = false,
+    this.includeBackground = true,
     super.key,
   }) : assert(size > 0);
 
@@ -99,6 +105,7 @@ class AppleAppArtwork extends StatelessWidget {
   final double size;
   final Color? foregroundColor;
   final bool trashEmpty;
+  final bool includeBackground;
 
   static bool usesBespokeArtwork(PortfolioAppId appId) => switch (appId) {
     PortfolioAppId.profile ||
@@ -129,12 +136,14 @@ class AppleAppArtwork extends StatelessWidget {
     _ => false,
   };
 
-  static bool usesMobileWhiteTile(PortfolioAppId appId) => switch (appId) {
-    PortfolioAppId.projects ||
-    PortfolioAppId.github ||
-    PortfolioAppId.trash => true,
-    _ => false,
-  };
+  static bool usesMobileTranslucentTile(PortfolioAppId appId) =>
+      switch (appId) {
+        PortfolioAppId.introduction ||
+        PortfolioAppId.projects ||
+        PortfolioAppId.github ||
+        PortfolioAppId.trash => true,
+        _ => false,
+      };
 
   static List<Color> colorsFor(PortfolioAppId appId) => switch (appId) {
     PortfolioAppId.profile => const <Color>[
@@ -234,7 +243,7 @@ class AppleAppArtwork extends StatelessWidget {
   Widget build(BuildContext context) {
     final radius = size * 0.28;
     final bespoke = usesBespokeArtwork(appId);
-    final transparentFrame = usesTransparentFrame(appId);
+    final transparentFrame = !includeBackground || usesTransparentFrame(appId);
     final assetPath = assetPathFor(appId);
 
     final Widget artwork = assetPath == null

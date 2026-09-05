@@ -62,7 +62,7 @@ void main() {
     });
 
     testWidgets(
-      'iPhone and iPad give Projects, GitHub, and Trash white rounded tiles',
+      'iPhone and iPad share a 50% translucent tile except for Photos',
       (tester) async {
         for (final size in const <Size>[Size(390, 844), Size(834, 1194)]) {
           for (final brightness in Brightness.values) {
@@ -70,6 +70,7 @@ void main() {
             await _pumpShell(tester, size: size, brightness: brightness);
 
             for (final appId in const <PortfolioAppId>[
+              PortfolioAppId.introduction,
               PortfolioAppId.projects,
               PortfolioAppId.github,
               PortfolioAppId.trash,
@@ -79,10 +80,24 @@ void main() {
                 tester,
                 find.byKey(Key('home-app-${appId.name}')),
               );
-              expect(decoration.color, Colors.white, reason: reason);
+              expect(
+                decoration.color,
+                Colors.white.withValues(alpha: 0.5),
+                reason: reason,
+              );
               expect(decoration.borderRadius, isNotNull, reason: reason);
               expect(decoration.boxShadow, isEmpty, reason: reason);
             }
+
+            final photosDecoration = _launcherFrameDecoration(
+              tester,
+              find.byKey(const Key('home-app-photos')),
+            );
+            expect(
+              photosDecoration.color,
+              isNull,
+              reason: '$size ${brightness.name} Photos stays excluded',
+            );
 
             final githubSvg = tester.widget<SvgPicture>(
               find.descendant(
@@ -102,7 +117,7 @@ void main() {
             );
             expect(
               dockProjectsDecoration.color,
-              Colors.white,
+              Colors.white.withValues(alpha: 0.5),
               reason: '$size ${brightness.name}',
             );
             expect(dockProjectsDecoration.borderRadius, isNotNull);
@@ -112,7 +127,7 @@ void main() {
       },
     );
 
-    testWidgets('dark mobile GitHub stays black on its white tile', (
+    testWidgets('dark mobile GitHub stays black on its translucent tile', (
       tester,
     ) async {
       await _pumpShell(
@@ -535,7 +550,7 @@ void main() {
   });
 
   group('iPad home and app surface', () {
-    testWidgets('refreshes status time without rendering a profile date', (
+    testWidgets('refreshes a 12-hour status time without a profile date', (
       tester,
     ) async {
       final clock = _MutableClock(DateTime(2026, 9, 3, 23, 59));
@@ -566,15 +581,15 @@ void main() {
       );
 
       expect(find.byKey(const Key('apple-status-time')), findsOneWidget);
-      expect(find.text('23:59'), findsOneWidget);
+      expect(find.text('11:59'), findsOneWidget);
       expect(find.text('Thursday, September 3'), findsNothing);
 
       clock.current = DateTime(2026, 9, 4);
       await tester.pump(const Duration(seconds: 1));
 
-      expect(find.text('0:00'), findsOneWidget);
+      expect(find.text('12:00'), findsOneWidget);
       expect(find.text('Friday, September 4'), findsNothing);
-      expect(find.text('23:59'), findsNothing);
+      expect(find.text('11:59'), findsNothing);
       expect(find.text('Thursday, September 3'), findsNothing);
 
       await tester.pumpWidget(const SizedBox.shrink());

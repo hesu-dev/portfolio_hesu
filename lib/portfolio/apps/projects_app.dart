@@ -1,6 +1,9 @@
+import 'dart:math' as math;
+
 import 'package:flutter/material.dart';
 
 import '../data/portfolio_data.dart';
+import '../mobile/apple_mobile_dock_geometry.dart';
 import '../models/portfolio_app_id.dart';
 import '../services/external_launcher.dart';
 import '../theme/apple_theme.dart';
@@ -347,14 +350,27 @@ class _ProjectsAppState extends State<ProjectsApp> {
               tablet: widget.tablet,
             )
           : null,
-      bodyBuilder: (context, compactLayout) =>
-          _buildLocation(destination, compact: compactLayout),
+      bodyBuilder: (context, compactLayout) {
+        final bottomContentInset = mobileLayout
+            ? AppleMobileDockGeometry.height(tablet: widget.tablet) +
+                  AppleMobileDockGeometry.appBottomClearance(
+                    tablet: widget.tablet,
+                    safeAreaBottom: MediaQuery.paddingOf(context).bottom,
+                  )
+            : 0.0;
+        return _buildLocation(
+          destination,
+          compact: compactLayout,
+          bottomContentInset: bottomContentInset,
+        );
+      },
     );
   }
 
   Widget _buildLocation(
     _ProjectsDestination destination, {
     required bool compact,
+    required double bottomContentInset,
   }) {
     final location = destination.location;
     final projectIndex = destination.projectIndex;
@@ -363,6 +379,7 @@ class _ProjectsAppState extends State<ProjectsApp> {
         project: widget.data.projects[projectIndex],
         projectIndex: projectIndex,
         compact: compact,
+        bottomContentInset: bottomContentInset,
         feedback: _launchFeedback,
         launchSucceeded: _launchSucceeded,
         pendingLaunches: _pendingLaunches.keys.toSet(),
@@ -378,16 +395,19 @@ class _ProjectsAppState extends State<ProjectsApp> {
         projects: _projectsForLocation(location),
         selectedIndex: _selectedProject[location],
         compact: compact,
+        bottomContentInset: bottomContentInset,
         onSelected: (index) => _selectProject(location, index),
       ),
-      _ProjectsLocation.iCloudDrive => const _ScrollableEmptyDirectory(
-        contentKey: Key('projects-icloud-empty'),
+      _ProjectsLocation.iCloudDrive => _ScrollableEmptyDirectory(
+        contentKey: const Key('projects-icloud-empty'),
         icon: Icons.cloud_outlined,
         title: 'iCloud Drive가 비어 있습니다',
         message: '연결된 파일이 생기면 이 위치에 표시됩니다.',
+        bottomContentInset: bottomContentInset,
       ),
       _ProjectsLocation.desktop => _DesktopApplicationsDirectory(
         compact: compact,
+        bottomContentInset: bottomContentInset,
         onOpenApp: widget.onOpenApp,
       ),
       _ProjectsLocation.career ||
@@ -398,6 +418,7 @@ class _ProjectsAppState extends State<ProjectsApp> {
         projects: _projectsForLocation(location),
         selectedIndex: _selectedProject[location],
         compact: compact,
+        bottomContentInset: bottomContentInset,
         onSelected: (index) => _selectProject(location, index),
       ),
     };
@@ -426,11 +447,26 @@ class _ProjectFolderGrid extends StatelessWidget {
       builder: (context, constraints) {
         const spacing = 8.0;
         const preferredTileWidth = 112.0;
-        final tileWidth = constraints.maxWidth.clamp(0.0, preferredTileWidth);
+        const minimumCompactTileWidth = 104.0;
+        const maximumCompactColumnCount = 4;
+        final availableWidth = constraints.maxWidth;
+        final columnBasis = compact
+            ? minimumCompactTileWidth
+            : preferredTileWidth;
+        final preferredColumnCount = math.max(
+          1,
+          ((availableWidth + spacing) / (columnBasis + spacing)).floor(),
+        );
+        final columnCount = compact
+            ? math.min(maximumCompactColumnCount, preferredColumnCount)
+            : preferredColumnCount;
+        final tileWidth = compact
+            ? (availableWidth - spacing * (columnCount - 1)) / columnCount
+            : availableWidth.clamp(0.0, preferredTileWidth);
         return Align(
           alignment: Alignment.topLeft,
           child: SizedBox(
-            width: constraints.maxWidth,
+            width: availableWidth,
             child: Wrap(
               alignment: WrapAlignment.start,
               spacing: spacing,
@@ -465,6 +501,7 @@ class _ProjectConnectionDirectory extends StatelessWidget {
     required this.projects,
     required this.selectedIndex,
     required this.compact,
+    required this.bottomContentInset,
     required this.onSelected,
     super.key,
   });
@@ -474,6 +511,7 @@ class _ProjectConnectionDirectory extends StatelessWidget {
   final List<_ProjectEntry> projects;
   final int? selectedIndex;
   final bool compact;
+  final double bottomContentInset;
   final ValueChanged<int> onSelected;
 
   @override
@@ -484,6 +522,7 @@ class _ProjectConnectionDirectory extends StatelessWidget {
         icon: Icons.folder_open_rounded,
         title: '$locationLabel 연결 준비 중',
         message: '분류 정보가 추가되면 이 위치에 프로젝트 폴더가 표시됩니다.',
+        bottomContentInset: bottomContentInset,
       );
     }
 
@@ -492,6 +531,7 @@ class _ProjectConnectionDirectory extends StatelessWidget {
       projects: projects,
       selectedIndex: selectedIndex,
       compact: compact,
+      bottomContentInset: bottomContentInset,
       onSelectProject: onSelected,
     );
   }
@@ -503,12 +543,14 @@ class _ScrollableEmptyDirectory extends StatelessWidget {
     required this.icon,
     required this.title,
     required this.message,
+    this.bottomContentInset = 0,
   });
 
   final Key contentKey;
   final IconData icon;
   final String title;
   final String message;
+  final double bottomContentInset;
 
   @override
   Widget build(BuildContext context) {
@@ -516,6 +558,7 @@ class _ScrollableEmptyDirectory extends StatelessWidget {
       builder: (context, constraints) {
         return SingleChildScrollView(
           physics: const BouncingScrollPhysics(),
+          padding: EdgeInsets.only(bottom: bottomContentInset),
           child: ConstrainedBox(
             constraints: BoxConstraints(minHeight: constraints.maxHeight),
             child: AppleEmptyState(
@@ -537,6 +580,7 @@ class _ProjectCollection extends StatelessWidget {
     required this.projects,
     required this.selectedIndex,
     required this.compact,
+    required this.bottomContentInset,
     required this.onSelectProject,
   });
 
@@ -544,6 +588,7 @@ class _ProjectCollection extends StatelessWidget {
   final List<_ProjectEntry> projects;
   final int? selectedIndex;
   final bool compact;
+  final double bottomContentInset;
   final ValueChanged<int> onSelectProject;
 
   @override
@@ -554,7 +599,7 @@ class _ProjectCollection extends StatelessWidget {
         compact ? 16 : 30,
         compact ? 16 : 24,
         compact ? 16 : 30,
-        24,
+        24 + bottomContentInset,
       ),
       children: <Widget>[
         _FinderProjectCollection(
@@ -607,6 +652,7 @@ class _ProjectDetail extends StatelessWidget {
     required this.project,
     required this.projectIndex,
     required this.compact,
+    required this.bottomContentInset,
     required this.feedback,
     required this.launchSucceeded,
     required this.pendingLaunches,
@@ -616,6 +662,7 @@ class _ProjectDetail extends StatelessWidget {
   final PortfolioProject project;
   final int projectIndex;
   final bool compact;
+  final double bottomContentInset;
   final String? feedback;
   final bool launchSucceeded;
   final Set<Uri> pendingLaunches;
@@ -625,7 +672,12 @@ class _ProjectDetail extends StatelessWidget {
   Widget build(BuildContext context) {
     return ListView(
       key: const Key('projects-detail-scroll'),
-      padding: EdgeInsets.all(compact ? 16 : 30),
+      padding: EdgeInsets.fromLTRB(
+        compact ? 16 : 30,
+        compact ? 16 : 30,
+        compact ? 16 : 30,
+        (compact ? 16 : 30) + bottomContentInset,
+      ),
       children: <Widget>[
         _SelectedProjectDetail(
           project: project,
@@ -830,17 +882,24 @@ class _ProjectActions extends StatelessWidget {
 class _DesktopApplicationsDirectory extends StatelessWidget {
   const _DesktopApplicationsDirectory({
     required this.compact,
+    required this.bottomContentInset,
     required this.onOpenApp,
   });
 
   final bool compact;
+  final double bottomContentInset;
   final ValueChanged<PortfolioAppId>? onOpenApp;
 
   @override
   Widget build(BuildContext context) {
     return GridView.builder(
       key: const Key('projects-desktop-app-grid'),
-      padding: EdgeInsets.all(compact ? 16 : 24),
+      padding: EdgeInsets.fromLTRB(
+        compact ? 16 : 24,
+        compact ? 16 : 24,
+        compact ? 16 : 24,
+        (compact ? 16 : 24) + bottomContentInset,
+      ),
       physics: const BouncingScrollPhysics(),
       gridDelegate: SliverGridDelegateWithMaxCrossAxisExtent(
         maxCrossAxisExtent: compact ? 118 : 132,
