@@ -431,7 +431,7 @@ BoxDecoration _decorationAt(WidgetTester tester, Key key) {
 
 Finder get _windowTitleFinder => find.descendant(
   of: find.byKey(const Key('mac-window-titlebar-surface-skills')),
-  matching: find.text('Skills'),
+  matching: find.text('스킬'),
 );
 
 Text _windowTitle(WidgetTester tester) =>

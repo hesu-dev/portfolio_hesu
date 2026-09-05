@@ -311,9 +311,9 @@ void main() {
       final window = find.byKey(const Key('mac-window-about'));
       final originalRect = tester.getRect(window);
 
-      expect(find.bySemanticsLabel('Close About window'), findsOneWidget);
-      expect(find.bySemanticsLabel('Minimize About window'), findsOneWidget);
-      expect(find.bySemanticsLabel('Maximize About window'), findsOneWidget);
+      expect(find.bySemanticsLabel('Close 프로필 window'), findsOneWidget);
+      expect(find.bySemanticsLabel('Minimize 프로필 window'), findsOneWidget);
+      expect(find.bySemanticsLabel('Maximize 프로필 window'), findsOneWidget);
 
       await tester.tap(find.byKey(const Key('window-minimize-about')));
       await tester.pumpAndSettle();
@@ -395,7 +395,7 @@ void main() {
                 ? 'Close'
                 : control == 'minimize'
                 ? 'Minimize'
-                : 'Maximize'} About window',
+                : 'Maximize'} 프로필 window',
           ),
           findsOneWidget,
         );
@@ -438,7 +438,7 @@ void main() {
       await _focusWindowControl(tester, 'maximize', PortfolioAppId.about);
       await tester.sendKeyEvent(LogicalKeyboardKey.space);
       await tester.pumpAndSettle();
-      expect(find.bySemanticsLabel('Restore About window'), findsOneWidget);
+      expect(find.bySemanticsLabel('Restore 프로필 window'), findsOneWidget);
 
       await _focusWindowControl(tester, 'close', PortfolioAppId.about);
       await tester.sendKeyEvent(LogicalKeyboardKey.enter);
@@ -460,7 +460,7 @@ void main() {
           findsNothing,
         );
         expect(
-          find.descendant(of: titleBar, matching: find.text('Trash')),
+          find.descendant(of: titleBar, matching: find.text('휴지통')),
           findsOneWidget,
         );
       },
@@ -602,7 +602,7 @@ void main() {
           find.byKey(const Key('mac-window-terminal'), skipOffstage: false),
           findsOneWidget,
         );
-        expect(find.bySemanticsLabel('Close Terminal window'), findsNothing);
+        expect(find.bySemanticsLabel('Close 터미널 window'), findsNothing);
         expect(
           tester
               .widget<EditableText>(
@@ -1030,7 +1030,7 @@ void main() {
       await tester.tap(find.byKey(const Key('window-minimize-skills')));
       await tester.pumpAndSettle();
 
-      expect(find.bySemanticsLabel('Open or restore Skills'), findsOneWidget);
+      expect(find.bySemanticsLabel('Open or restore 스킬'), findsOneWidget);
       await _focusDockApp(tester, PortfolioAppId.skills);
       await tester.sendKeyEvent(LogicalKeyboardKey.enter);
       await tester.pumpAndSettle();
@@ -1072,15 +1072,15 @@ void main() {
 }
 
 const Map<PortfolioAppId, String> _labels = <PortfolioAppId, String>{
-  PortfolioAppId.about: 'About',
+  PortfolioAppId.about: '프로필',
   PortfolioAppId.introduction: '자기소개',
-  PortfolioAppId.skills: 'Skills',
+  PortfolioAppId.skills: '스킬',
   PortfolioAppId.projects: '포트폴리오',
-  PortfolioAppId.terminal: 'Terminal',
-  PortfolioAppId.music: 'Music',
+  PortfolioAppId.terminal: '터미널',
+  PortfolioAppId.music: '배경음',
   PortfolioAppId.settings: '설정',
-  PortfolioAppId.github: 'GitHub',
-  PortfolioAppId.mail: 'Mail',
+  PortfolioAppId.github: 'git',
+  PortfolioAppId.mail: '이메일',
 };
 
 const List<PortfolioAppId> _launchableDockApps = portfolioLauncherAppIds;

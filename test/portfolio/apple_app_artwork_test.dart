@@ -567,12 +567,12 @@ void main() {
         ),
       );
 
-      expect(find.bySemanticsLabel('Open About'), findsOneWidget);
+      expect(find.bySemanticsLabel('Open 프로필'), findsOneWidget);
       final semanticsNode = tester.getSemantics(
         find.byKey(const Key('apple-app-icon-about')),
       );
       final semanticsData = semanticsNode.getSemanticsData();
-      expect(semanticsData.label, 'Open About');
+      expect(semanticsData.label, 'Open 프로필');
       expect(semanticsData.flagsCollection.isButton, isTrue);
       expect(semanticsData.hasAction(SemanticsAction.tap), isTrue);
 

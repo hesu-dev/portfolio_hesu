@@ -1,3 +1,5 @@
+import 'dart:ui' show PointerDeviceKind;
+
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_svg/flutter_svg.dart';
@@ -107,6 +109,58 @@ void main() {
     final decoration = dock.decoration! as BoxDecoration;
     expect(decoration.border, isNull);
     expect(decoration.color!.a, closeTo(0.48, 0.001));
+  });
+
+  testWidgets('Dock centers artwork and separator with equal vertical gaps', (
+    tester,
+  ) async {
+    await _pumpDock(
+      tester,
+      runningApps: const <PortfolioAppId>{PortfolioAppId.about},
+      activeApp: PortfolioAppId.about,
+    );
+
+    final dockRect = tester.getRect(find.byKey(const Key('mac-dock')));
+    for (final appId in _persistentApps) {
+      final artworkRect = tester.getRect(
+        find.byKey(Key('dock-app-artwork-frame-${appId.name}')),
+      );
+      expect(
+        artworkRect.top - dockRect.top,
+        closeTo(dockRect.bottom - artworkRect.bottom, 1),
+        reason: '${appId.name} artwork must be vertically centered',
+      );
+    }
+
+    final separatorRect = tester.getRect(
+      find.byKey(const Key('mac-dock-utility-separator')),
+    );
+    expect(
+      separatorRect.top - dockRect.top,
+      closeTo(dockRect.bottom - separatorRect.bottom, 1),
+    );
+    final activeArtworkRect = tester.getRect(
+      find.byKey(const Key('dock-app-artwork-frame-about')),
+    );
+    final runningDotRect = tester.getRect(
+      find.byKey(const Key('dock-running-about')),
+    );
+    expect(runningDotRect.top, greaterThanOrEqualTo(activeArtworkRect.bottom));
+
+    final mouse = await tester.createGesture(kind: PointerDeviceKind.mouse);
+    await mouse.addPointer(location: Offset.zero);
+    addTearDown(mouse.removePointer);
+    await mouse.moveTo(
+      tester.getCenter(find.byKey(const Key('dock-app-about'))),
+    );
+    await tester.pumpAndSettle();
+    expect(
+      tester
+          .getRect(find.byKey(const Key('dock-app-artwork-frame-about')))
+          .center
+          .dy,
+      closeTo(activeArtworkRect.center.dy - 6, 0.1),
+    );
   });
 
   testWidgets('Dock keeps folder, GitHub, and Trash frames transparent', (

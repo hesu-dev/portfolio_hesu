@@ -115,6 +115,17 @@ void main() {
               tester,
               find.byKey(const Key('mobile-dock-projects')),
             );
+            final dockProjectsFrame = tester.widget<AppleAppArtworkFrame>(
+              find.descendant(
+                of: find.byKey(const Key('mobile-dock-projects')),
+                matching: find.byType(AppleAppArtworkFrame),
+              ),
+            );
+            expect(
+              dockProjectsFrame.surface,
+              AppleAppArtworkSurface.mobile,
+              reason: '$size ${brightness.name}',
+            );
             expect(
               dockProjectsDecoration.color,
               Colors.white.withValues(alpha: 0.5),
@@ -122,6 +133,33 @@ void main() {
             );
             expect(dockProjectsDecoration.borderRadius, isNotNull);
             expect(dockProjectsDecoration.boxShadow, isEmpty);
+          }
+        }
+      },
+    );
+
+    testWidgets(
+      'iPhone and iPad Dock center artwork with equal vertical gaps',
+      (tester) async {
+        for (final size in const <Size>[Size(390, 844), Size(834, 1194)]) {
+          await tester.pumpWidget(const SizedBox.shrink());
+          await _pumpShell(tester, size: size);
+
+          final dockRect = tester.getRect(find.byKey(const Key('mobile-dock')));
+          for (final appId in const <PortfolioAppId>[
+            PortfolioAppId.profile,
+            PortfolioAppId.projects,
+          ]) {
+            final frameRect = tester.getRect(
+              _launcherFrameFinder(
+                find.byKey(Key('mobile-dock-${appId.name}')),
+              ),
+            );
+            expect(
+              frameRect.top - dockRect.top,
+              closeTo(dockRect.bottom - frameRect.bottom, 0.1),
+              reason: '$size ${appId.name}',
+            );
           }
         }
       },
@@ -531,7 +569,7 @@ void main() {
         await tester.pumpAndSettle();
 
         expect(find.byKey(const Key('terminal-app')), findsOneWidget);
-        expect(find.bySemanticsLabel('Close Terminal window'), findsOneWidget);
+        expect(find.bySemanticsLabel('Close 터미널 window'), findsOneWidget);
         final closeSize = tester.getSize(
           find.byKey(const Key('mobile-back-close-terminal')),
         );
@@ -812,17 +850,17 @@ void main() {
 }
 
 BoxDecoration _launcherFrameDecoration(WidgetTester tester, Finder launcher) {
+  return tester.widget<Container>(_launcherFrameFinder(launcher)).decoration!
+      as BoxDecoration;
+}
+
+Finder _launcherFrameFinder(Finder launcher) {
   final frame = find.descendant(
     of: launcher,
     matching: find.byType(AppleAppArtworkFrame),
   );
   expect(frame, findsOneWidget);
-  final frameContainer = find.descendant(
-    of: frame,
-    matching: find.byType(Container),
-  );
-  return tester.widget<Container>(frameContainer.first).decoration!
-      as BoxDecoration;
+  return find.descendant(of: frame, matching: find.byType(Container)).first;
 }
 
 Future<void> _scrollHomeIconIntoView(

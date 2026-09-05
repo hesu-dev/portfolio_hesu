@@ -37,12 +37,41 @@ void main() {
             tester.widget<DecoratedBox>(indicator).decoration as BoxDecoration;
         final indicatorRadius =
             indicatorDecoration.borderRadius! as BorderRadius;
+        final dockBorder = dockDecoration.border! as Border;
+        final selectedButton = find.byKey(
+          const Key('test-finder-location-career'),
+        );
+        final selectedInkWell = tester.widget<InkWell>(
+          find.descendant(of: selectedButton, matching: find.byType(InkWell)),
+        );
 
         expect(dockRadius.topLeft, const Radius.circular(999));
         expect(indicatorRadius.topLeft, const Radius.circular(999));
         expect(
           dockDecoration.color,
           AppleTheme.surface(tester.element(dock)).withValues(alpha: 0.42),
+        );
+        expect(dockBorder.top.color, Colors.white.withValues(alpha: 0.64));
+        expect(
+          indicatorDecoration.color,
+          AppleTheme.finderSelectionBackground(tester.element(indicator)),
+        );
+        expect(
+          tester
+              .widget<Icon>(
+                find.descendant(
+                  of: selectedButton,
+                  matching: find.byType(Icon),
+                ),
+              )
+              .color,
+          AppleTheme.blue,
+        );
+        expect(
+          selectedInkWell.overlayColor?.resolve(<WidgetState>{
+            WidgetState.hovered,
+          }),
+          Colors.transparent,
         );
         expect(gradient.begin, Alignment.topCenter);
         expect(gradient.end, Alignment.bottomCenter);
@@ -78,6 +107,7 @@ void main() {
         final scale = find.byKey(
           const Key('test-finder-mobile-dock-selection-scale'),
         );
+        final dock = find.byKey(const Key('test-finder-mobile-dock'));
         for (final targetId in const <String>['personal', 'recent']) {
           final initialCenter = tester.getCenter(indicator);
           final targetCenter = tester.getCenter(
@@ -86,7 +116,7 @@ void main() {
 
           await tester.tap(find.byKey(Key('test-finder-location-$targetId')));
           await tester.pump();
-          await tester.pump(const Duration(milliseconds: 144));
+          await tester.pump(const Duration(milliseconds: 168));
 
           final movingCenter = tester.getCenter(indicator);
           final movingScale = tester
@@ -104,7 +134,19 @@ void main() {
                   : initialCenter.dx,
             ),
           );
-          expect(movingScale, closeTo(1.08, 0.001));
+          expect(movingScale, closeTo(1.12, 0.005));
+
+          await tester.pump(const Duration(milliseconds: 152));
+
+          final landingRect = tester.getRect(indicator);
+          final dockRect = tester.getRect(dock);
+          final landingScale = tester
+              .widget<Transform>(scale)
+              .transform
+              .storage[0];
+          expect(landingScale, lessThan(1));
+          expect(landingRect.left, greaterThanOrEqualTo(dockRect.left));
+          expect(landingRect.right, lessThanOrEqualTo(dockRect.right));
 
           await tester.pumpAndSettle();
 

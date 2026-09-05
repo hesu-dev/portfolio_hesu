@@ -42,18 +42,18 @@ class AppleAppIcon extends StatefulWidget {
 
   static String labelFor(PortfolioAppId appId) => switch (appId) {
     PortfolioAppId.profile => '프로필',
-    PortfolioAppId.about => 'About',
+    PortfolioAppId.about => '프로필',
     PortfolioAppId.introduction => '자기소개',
-    PortfolioAppId.skills => 'Skills',
+    PortfolioAppId.skills => '스킬',
     PortfolioAppId.projects => '포트폴리오',
-    PortfolioAppId.terminal => 'Terminal',
-    PortfolioAppId.music => 'Music',
+    PortfolioAppId.terminal => '터미널',
+    PortfolioAppId.music => '배경음',
     PortfolioAppId.photos => '사진',
     PortfolioAppId.settings => '설정',
     PortfolioAppId.thisMac => '프로젝트',
-    PortfolioAppId.trash => 'Trash',
-    PortfolioAppId.github => 'GitHub',
-    PortfolioAppId.mail => 'Mail',
+    PortfolioAppId.trash => '휴지통',
+    PortfolioAppId.github => 'git',
+    PortfolioAppId.mail => '이메일',
   };
 
   static String windowTitleFor(PortfolioAppId appId) => switch (appId) {
@@ -228,20 +228,23 @@ class _AppleAppIconState extends State<AppleAppIcon> {
                         ),
                       ),
                     ],
-                    SizedBox(
-                      height: 7,
-                      child: running
-                          ? Container(
-                              key: Key('apple-app-icon-running-${appId.name}'),
-                              width: 4.5,
-                              height: 4.5,
-                              decoration: BoxDecoration(
-                                color: AppleTheme.primaryLabel(context),
-                                shape: BoxShape.circle,
-                              ),
-                            )
-                          : null,
-                    ),
+                    if (showLabel || running)
+                      SizedBox(
+                        height: 7,
+                        child: running
+                            ? Container(
+                                key: Key(
+                                  'apple-app-icon-running-${appId.name}',
+                                ),
+                                width: 4.5,
+                                height: 4.5,
+                                decoration: BoxDecoration(
+                                  color: AppleTheme.primaryLabel(context),
+                                  shape: BoxShape.circle,
+                                ),
+                              )
+                            : null,
+                      ),
                   ],
                 ),
               ),

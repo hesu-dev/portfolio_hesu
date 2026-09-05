@@ -350,7 +350,7 @@ void main() {
       );
 
       final closeButton = find.byKey(const Key('mobile-back-close-about'));
-      expect(find.bySemanticsLabel('Close About window'), findsOneWidget);
+      expect(find.bySemanticsLabel('Close 프로필 window'), findsOneWidget);
       expect(tester.getSize(closeButton), const Size(44, 44));
       final semanticsData = tester.getSemantics(closeButton).getSemanticsData();
       expect(semanticsData.flagsCollection.isButton, isTrue);

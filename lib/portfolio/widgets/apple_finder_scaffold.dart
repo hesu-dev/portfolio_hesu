@@ -358,7 +358,7 @@ class _AppleFinderMobileNavigationBarState
     with SingleTickerProviderStateMixin {
   static const double _dockOpacity = 0.42;
   static const double _pillRadius = 999;
-  static const Duration _movementDuration = Duration(milliseconds: 360);
+  static const Duration _movementDuration = Duration(milliseconds: 480);
 
   late final AnimationController _selectionController;
   late final Animation<double> _selectionScale;
@@ -375,16 +375,23 @@ class _AppleFinderMobileNavigationBarState
       TweenSequenceItem<double>(
         tween: Tween<double>(
           begin: 1,
-          end: 1.08,
+          end: 1.12,
         ).chain(CurveTween(curve: Curves.easeOutCubic)),
-        weight: 40,
+        weight: 35,
       ),
       TweenSequenceItem<double>(
         tween: Tween<double>(
-          begin: 1.08,
-          end: 1,
+          begin: 1.12,
+          end: 0.98,
         ).chain(CurveTween(curve: Curves.easeOutCubic)),
-        weight: 60,
+        weight: 35,
+      ),
+      TweenSequenceItem<double>(
+        tween: Tween<double>(
+          begin: 0.98,
+          end: 1,
+        ).chain(CurveTween(curve: Curves.easeOutBack)),
+        weight: 30,
       ),
     ]).animate(_selectionController);
   }
@@ -460,7 +467,7 @@ class _AppleFinderMobileNavigationBarState
                         ).withValues(alpha: _dockOpacity),
                         borderRadius: BorderRadius.circular(_pillRadius),
                         border: Border.all(
-                          color: Colors.white.withValues(alpha: 0.48),
+                          color: Colors.white.withValues(alpha: 0.64),
                           width: 0.8,
                         ),
                         boxShadow: <BoxShadow>[
@@ -484,7 +491,7 @@ class _AppleFinderMobileNavigationBarState
                             children: <Widget>[
                               AnimatedPositioned(
                                 duration: _movementDuration,
-                                curve: Curves.easeOutCubic,
+                                curve: Curves.easeInOutCubicEmphasized,
                                 left: slotWidth * _selectedIndex,
                                 top: 4,
                                 bottom: 4,
@@ -506,10 +513,10 @@ class _AppleFinderMobileNavigationBarState
                                         '${widget.keyPrefix}-mobile-dock-selection-indicator',
                                       ),
                                       decoration: BoxDecoration(
-                                        color: AppleTheme.selectionBackground(
-                                          context,
-                                          AppleTheme.blue,
-                                        ),
+                                        color:
+                                            AppleTheme.finderSelectionBackground(
+                                              context,
+                                            ),
                                         borderRadius: BorderRadius.circular(
                                           _pillRadius,
                                         ),
@@ -575,6 +582,7 @@ class _MobileFinderDestinationButton extends StatelessWidget {
       selected: selected,
       onPressed: onPressed,
       borderRadius: BorderRadius.circular(999),
+      overlayColor: const WidgetStatePropertyAll<Color>(Colors.transparent),
       child: SizedBox(
         width: double.infinity,
         child: ConstrainedBox(
@@ -855,9 +863,7 @@ class AppleFinderFolderTile extends StatelessWidget {
   Widget build(BuildContext context) {
     final tileHeight = compact ? 154.0 : 166.0;
     final folderSize = compact ? 50.0 : 58.0;
-    final selectedArtworkColor = AppleTheme.isDark(context)
-        ? const Color(0xFF3A3A3A)
-        : const Color(0xFFE2E2E2);
+    final selectedArtworkColor = AppleTheme.finderSelectionBackground(context);
 
     return AppleSelectionControl(
       semanticsLabel: semanticsLabel,

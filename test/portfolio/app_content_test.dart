@@ -38,18 +38,18 @@ void main() {
 
       const expectedLabels = <String, String>{
         'profile': '프로필',
-        'about': 'About',
+        'about': '프로필',
         'introduction': '자기소개',
-        'skills': 'Skills',
+        'skills': '스킬',
         'projects': '포트폴리오',
-        'terminal': 'Terminal',
-        'music': 'Music',
+        'terminal': '터미널',
+        'music': '배경음',
         'photos': '사진',
         'settings': '설정',
         'thisMac': '프로젝트',
-        'trash': 'Trash',
-        'github': 'GitHub',
-        'mail': 'Mail',
+        'trash': '휴지통',
+        'github': 'git',
+        'mail': '이메일',
       };
 
       for (final entry in expectedLabels.entries) {
@@ -67,6 +67,10 @@ void main() {
       await tester.tap(find.byKey(const Key('apple-app-icon-about')));
       await tester.pump();
       expect(tapped, <PortfolioAppId>[PortfolioAppId.about]);
+      expect(
+        AppleAppIcon.windowTitleFor(PortfolioAppId.terminal),
+        AppleAppIcon.terminalWindowTitle,
+      );
     });
 
     testWidgets('exposes selection, running, compact, and semantics states', (
@@ -132,7 +136,7 @@ void main() {
         find.byKey(const Key('apple-app-icon-focus-about')),
         findsOneWidget,
       );
-      expect(find.bySemanticsLabel('Open About'), findsOneWidget);
+      expect(find.bySemanticsLabel('Open 프로필'), findsOneWidget);
       final node = tester.getSemantics(
         find.byKey(const Key('apple-app-icon-about')),
       );

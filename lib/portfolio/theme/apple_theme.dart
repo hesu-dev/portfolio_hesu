@@ -182,6 +182,9 @@ abstract final class AppleTheme {
     );
   }
 
+  static Color finderSelectionBackground(BuildContext context) =>
+      isDark(context) ? const Color(0xFF3A3A3A) : const Color(0xFFE2E2E2);
+
   static Color selectionForeground(BuildContext context) =>
       primaryLabel(context);
 

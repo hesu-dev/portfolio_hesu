@@ -68,7 +68,7 @@ class MacDock extends StatelessWidget {
               padding: const EdgeInsets.symmetric(horizontal: 9, vertical: 6),
               child: Row(
                 mainAxisSize: MainAxisSize.min,
-                crossAxisAlignment: CrossAxisAlignment.end,
+                crossAxisAlignment: CrossAxisAlignment.center,
                 children: <Widget>[
                   for (final appId in pinnedApps) _buildDockItem(appId),
                   for (final appId in runningLaunchableApps)
@@ -200,7 +200,7 @@ class _MacDockItemState extends State<_MacDockItem> {
                       AnimatedPositioned(
                         duration: const Duration(milliseconds: 150),
                         curve: Curves.easeOutCubic,
-                        bottom: lifted ? 10 : 4,
+                        bottom: lifted ? 16 : 10,
                         child: AnimatedScale(
                           duration: const Duration(milliseconds: 150),
                           curve: Curves.easeOutCubic,
