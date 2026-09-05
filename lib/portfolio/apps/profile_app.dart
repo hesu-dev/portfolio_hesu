@@ -17,6 +17,7 @@ class ProfileApp extends StatefulWidget {
     required this.launcher,
     this.compact = false,
     this.tablet = false,
+    this.onOpenApp,
     this.onClose,
     super.key,
   });
@@ -25,6 +26,7 @@ class ProfileApp extends StatefulWidget {
   final ExternalLauncher launcher;
   final bool compact;
   final bool tablet;
+  final ValueChanged<PortfolioAppId>? onOpenApp;
   final VoidCallback? onClose;
 
   @override
@@ -36,6 +38,7 @@ class _ProfileAppState extends State<ProfileApp> {
   final Set<_ProfileHistoryKind> _likedHistory = <_ProfileHistoryKind>{};
   _ProfileHistoryKind? _selectedHistoryKind;
   double _rootScrollOffset = 0;
+  bool _following = false;
 
   @override
   void didUpdateWidget(covariant ProfileApp oldWidget) {
@@ -118,6 +121,41 @@ class _ProfileAppState extends State<ProfileApp> {
     setState(() => _selectedHistoryKind = kind);
   }
 
+  void _showProfileFeed() {
+    if (_selectedHistoryKind != null) {
+      setState(() => _selectedHistoryKind = null);
+      _scheduleRootScrollRestore();
+      return;
+    }
+    if (_rootScrollController.hasClients) {
+      _rootScrollController.animateTo(
+        0,
+        duration: const Duration(milliseconds: 320),
+        curve: Curves.easeOutCubic,
+      );
+    }
+  }
+
+  void _openCareerReel() {
+    if (widget.data.experiences.isNotEmpty) {
+      _openHistory(_ProfileHistoryKind.experience);
+    } else if (widget.data.education.isNotEmpty) {
+      _openHistory(_ProfileHistoryKind.education);
+    }
+  }
+
+  VoidCallback? _openAppAction(PortfolioAppId appId) {
+    final onOpenApp = widget.onOpenApp;
+    if (onOpenApp == null) {
+      return null;
+    }
+    return () => onOpenApp(appId);
+  }
+
+  void _toggleFollowing() {
+    setState(() => _following = !_following);
+  }
+
   void _toggleHistoryLike(_ProfileHistoryKind kind) {
     setState(() {
       if (!_likedHistory.remove(kind)) {
@@ -139,50 +177,233 @@ class _ProfileAppState extends State<ProfileApp> {
   Widget build(BuildContext context) {
     final selectedHistoryKind = _selectedHistoryKind;
     final label = AppleAppIcon.labelFor(PortfolioAppId.profile);
+    final onOpenMail = _openAppAction(PortfolioAppId.mail);
+    final onOpenProjects = _openAppAction(PortfolioAppId.projects);
+    final onOpenSettings = _openAppAction(PortfolioAppId.settings);
+    final content = Column(
+      children: <Widget>[
+        AppleMobileNavigationHeader(
+          key: const Key('mobile-app-navigation-bar'),
+          keyPrefix: 'mobile-app-profile',
+          title: AppleAppIcon.windowTitleFor(PortfolioAppId.profile),
+          titleKey: const Key('mobile-app-title'),
+          moreKey: const Key('mobile-app-more-profile'),
+          leading: MobileBackCloseButton(
+            appId: PortfolioAppId.profile,
+            windowLabel: label,
+            action: selectedHistoryKind != null
+                ? MobileBackCloseAction.back
+                : MobileBackCloseAction.close,
+            onPressed: _handleLeadingAction,
+          ),
+        ),
+        Expanded(
+          child: selectedHistoryKind == null
+              ? _ProfileFeed(
+                  data: widget.data,
+                  compact: widget.compact,
+                  tablet: widget.tablet,
+                  following: _following,
+                  scrollController: _rootScrollController,
+                  onToggleFollowing: _toggleFollowing,
+                  onMessage: onOpenMail,
+                  onOpenCareerProjects: onOpenProjects,
+                  onOpenHistory: _openHistory,
+                )
+              : _ProfileHistoryDetail(
+                  data: widget.data,
+                  launcher: widget.launcher,
+                  kind: selectedHistoryKind,
+                  liked: _likedHistory.contains(selectedHistoryKind),
+                  onToggleLike: () => _toggleHistoryLike(selectedHistoryKind),
+                  compact: widget.compact,
+                  tablet: widget.tablet,
+                ),
+        ),
+      ],
+    );
 
     return SizedBox.expand(
       key: const Key('profile-app'),
       child: ColoredBox(
         key: const Key('profile-background'),
         color: AppleTheme.canvas(context),
-        child: Column(
-          children: <Widget>[
-            AppleMobileNavigationHeader(
-              key: const Key('mobile-app-navigation-bar'),
-              keyPrefix: 'mobile-app-profile',
-              title: AppleAppIcon.windowTitleFor(PortfolioAppId.profile),
-              titleKey: const Key('mobile-app-title'),
-              moreKey: const Key('mobile-app-more-profile'),
-              leading: MobileBackCloseButton(
-                appId: PortfolioAppId.profile,
-                windowLabel: label,
-                action: selectedHistoryKind != null
-                    ? MobileBackCloseAction.back
-                    : MobileBackCloseAction.close,
-                onPressed: _handleLeadingAction,
+        child: widget.tablet
+            ? Row(
+                children: <Widget>[
+                  _ProfileSidebar(
+                    showingReel: selectedHistoryKind != null,
+                    onShowProfile: _showProfileFeed,
+                    onShowReels: _openCareerReel,
+                    onOpenProjects: onOpenProjects,
+                    onOpenMail: onOpenMail,
+                    onOpenSettings: onOpenSettings,
+                  ),
+                  Expanded(child: content),
+                ],
+              )
+            : content,
+      ),
+    );
+  }
+}
+
+class _ProfileSidebar extends StatelessWidget {
+  const _ProfileSidebar({
+    required this.showingReel,
+    required this.onShowProfile,
+    required this.onShowReels,
+    required this.onOpenProjects,
+    required this.onOpenMail,
+    required this.onOpenSettings,
+  });
+
+  final bool showingReel;
+  final VoidCallback onShowProfile;
+  final VoidCallback onShowReels;
+  final VoidCallback? onOpenProjects;
+  final VoidCallback? onOpenMail;
+  final VoidCallback? onOpenSettings;
+
+  @override
+  Widget build(BuildContext context) {
+    return DecoratedBox(
+      key: const Key('profile-sidebar'),
+      decoration: BoxDecoration(
+        color: AppleTheme.surface(context).withValues(alpha: 0.96),
+        border: Border(
+          right: BorderSide(color: AppleTheme.separator(context), width: 0.8),
+        ),
+      ),
+      child: SizedBox(
+        width: 72,
+        child: CustomScrollView(
+          key: const Key('profile-sidebar-scroll'),
+          primary: false,
+          slivers: <Widget>[
+            SliverPadding(
+              padding: const EdgeInsets.fromLTRB(10, 10, 10, 0),
+              sliver: SliverList.list(
+                children: <Widget>[
+                  const ExcludeSemantics(
+                    child: SizedBox(
+                      height: 52,
+                      child: Icon(Icons.camera_alt_outlined, size: 27),
+                    ),
+                  ),
+                  const SizedBox(height: 8),
+                  _ProfileSidebarAction(
+                    actionKey: const Key('profile-sidebar-home-action'),
+                    label: '프로필 홈',
+                    icon: Icons.home_outlined,
+                    selectedIcon: Icons.home_rounded,
+                    selected: !showingReel,
+                    onTap: onShowProfile,
+                  ),
+                  const SizedBox(height: 6),
+                  _ProfileSidebarAction(
+                    actionKey: const Key('profile-sidebar-reels-action'),
+                    label: '릴스 보기',
+                    icon: Icons.smart_display_outlined,
+                    selectedIcon: Icons.smart_display_rounded,
+                    selected: showingReel,
+                    onTap: onShowReels,
+                  ),
+                  const SizedBox(height: 6),
+                  _ProfileSidebarAction(
+                    actionKey: const Key('profile-sidebar-projects-action'),
+                    label: '회사 포트폴리오 열기',
+                    icon: Icons.work_outline_rounded,
+                    selectedIcon: Icons.work_rounded,
+                    onTap: onOpenProjects,
+                  ),
+                  const SizedBox(height: 6),
+                  _ProfileSidebarAction(
+                    actionKey: const Key('profile-sidebar-message-action'),
+                    label: '이메일 열기',
+                    icon: Icons.send_outlined,
+                    selectedIcon: Icons.send_rounded,
+                    onTap: onOpenMail,
+                  ),
+                ],
               ),
             ),
-            Expanded(
-              child: selectedHistoryKind == null
-                  ? _ProfileFeed(
-                      data: widget.data,
-                      compact: widget.compact,
-                      tablet: widget.tablet,
-                      scrollController: _rootScrollController,
-                      onOpenHistory: _openHistory,
-                    )
-                  : _ProfileHistoryDetail(
-                      data: widget.data,
-                      launcher: widget.launcher,
-                      kind: selectedHistoryKind,
-                      liked: _likedHistory.contains(selectedHistoryKind),
-                      onToggleLike: () =>
-                          _toggleHistoryLike(selectedHistoryKind),
-                      compact: widget.compact,
-                      tablet: widget.tablet,
+            SliverFillRemaining(
+              hasScrollBody: false,
+              child: Padding(
+                padding: const EdgeInsets.fromLTRB(10, 18, 10, 10),
+                child: Column(
+                  mainAxisAlignment: MainAxisAlignment.end,
+                  children: <Widget>[
+                    Divider(height: 1, color: AppleTheme.separator(context)),
+                    const SizedBox(height: 14),
+                    _ProfileSidebarAction(
+                      actionKey: const Key('profile-sidebar-settings-action'),
+                      label: '설정 열기',
+                      icon: Icons.menu_rounded,
+                      selectedIcon: Icons.menu_rounded,
+                      onTap: onOpenSettings,
                     ),
+                  ],
+                ),
+              ),
             ),
           ],
+        ),
+      ),
+    );
+  }
+}
+
+class _ProfileSidebarAction extends StatelessWidget {
+  const _ProfileSidebarAction({
+    required this.actionKey,
+    required this.label,
+    required this.icon,
+    required this.selectedIcon,
+    required this.onTap,
+    this.selected = false,
+  });
+
+  final Key actionKey;
+  final String label;
+  final IconData icon;
+  final IconData selectedIcon;
+  final VoidCallback? onTap;
+  final bool selected;
+
+  @override
+  Widget build(BuildContext context) {
+    return Semantics(
+      key: actionKey,
+      label: label,
+      button: true,
+      selected: selected,
+      enabled: onTap != null,
+      onTap: onTap,
+      excludeSemantics: true,
+      child: ExcludeSemantics(
+        child: Material(
+          color: selected
+              ? AppleTheme.finderSelectionBackground(context)
+              : Colors.transparent,
+          borderRadius: BorderRadius.circular(14),
+          child: InkWell(
+            onTap: onTap,
+            borderRadius: BorderRadius.circular(14),
+            child: SizedBox.square(
+              dimension: 48,
+              child: Icon(
+                selected ? selectedIcon : icon,
+                size: 25,
+                color: selected
+                    ? AppleTheme.blue
+                    : onTap == null
+                    ? AppleTheme.secondaryLabel(context).withValues(alpha: 0.5)
+                    : AppleTheme.primaryLabel(context),
+              ),
+            ),
+          ),
         ),
       ),
     );
@@ -194,14 +415,22 @@ class _ProfileFeed extends StatelessWidget {
     required this.data,
     required this.compact,
     required this.tablet,
+    required this.following,
     required this.scrollController,
+    required this.onToggleFollowing,
+    required this.onMessage,
+    required this.onOpenCareerProjects,
     required this.onOpenHistory,
   });
 
   final PortfolioData data;
   final bool compact;
   final bool tablet;
+  final bool following;
   final ScrollController scrollController;
+  final VoidCallback onToggleFollowing;
+  final VoidCallback? onMessage;
+  final VoidCallback? onOpenCareerProjects;
   final ValueChanged<_ProfileHistoryKind> onOpenHistory;
 
   @override
@@ -229,12 +458,19 @@ class _ProfileFeed extends StatelessWidget {
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.stretch,
                   children: <Widget>[
-                    _ProfileSummary(data: data, compact: compact),
+                    _ProfileSummary(
+                      data: data,
+                      compact: compact,
+                      following: following,
+                      onToggleFollowing: onToggleFollowing,
+                      onMessage: onMessage,
+                    ),
                     SizedBox(height: compact ? 28 : 34),
                     Divider(height: 1, color: AppleTheme.separator(context)),
                     SizedBox(height: compact ? 3 : 4),
                     _ProfileHistoryGrid(
                       data: data,
+                      onOpenCareerProjects: onOpenCareerProjects,
                       onOpenHistory: onOpenHistory,
                     ),
                   ],
@@ -249,10 +485,19 @@ class _ProfileFeed extends StatelessWidget {
 }
 
 class _ProfileSummary extends StatelessWidget {
-  const _ProfileSummary({required this.data, required this.compact});
+  const _ProfileSummary({
+    required this.data,
+    required this.compact,
+    required this.following,
+    required this.onToggleFollowing,
+    required this.onMessage,
+  });
 
   final PortfolioData data;
   final bool compact;
+  final bool following;
+  final VoidCallback onToggleFollowing;
+  final VoidCallback? onMessage;
 
   @override
   Widget build(BuildContext context) {
@@ -260,47 +505,103 @@ class _ProfileSummary extends StatelessWidget {
         (data.experiences.isNotEmpty ? 1 : 0) +
         (data.education.isNotEmpty ? 1 : 0);
 
-    return Column(
-      key: const Key('profile-summary'),
+    final stats = Row(
+      key: const Key('profile-stats'),
       crossAxisAlignment: CrossAxisAlignment.start,
       children: <Widget>[
-        Row(
-          crossAxisAlignment: CrossAxisAlignment.center,
-          children: <Widget>[
-            _ProfileAvatar(monogram: data.monogram, compact: compact),
-            SizedBox(width: compact ? 18 : 28),
-            Expanded(
-              child: Row(
-                key: const Key('profile-stats'),
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: <Widget>[
-                  Expanded(
-                    child: _ProfileStat(
-                      value: '$postCount개',
-                      label: '게시물',
-                      semanticsLabel: '게시물 $postCount개',
-                    ),
-                  ),
-                  Expanded(
-                    child: _ProfileStat(
-                      value: '$_profileCareerYears년',
-                      label: '경력',
-                      semanticsLabel: '경력 $_profileCareerYears년',
-                    ),
-                  ),
-                  Expanded(
-                    child: _ProfileStat(
-                      value: '${data.education.length}번',
-                      label: '교육',
-                      semanticsLabel: '교육 ${data.education.length}번',
-                    ),
-                  ),
-                ],
-              ),
-            ),
-          ],
+        Expanded(
+          child: _ProfileStat(
+            value: '$postCount개',
+            label: '게시물',
+            semanticsLabel: '게시물 $postCount개',
+          ),
         ),
-        SizedBox(height: compact ? 18 : 24),
+        Expanded(
+          child: _ProfileStat(
+            value: '$_profileCareerYears년',
+            label: '경력',
+            semanticsLabel: '경력 $_profileCareerYears년',
+          ),
+        ),
+        Expanded(
+          child: _ProfileStat(
+            value: '${data.education.length}번',
+            label: '교육',
+            semanticsLabel: '교육 ${data.education.length}번',
+          ),
+        ),
+      ],
+    );
+    final identity = _ProfileIdentity(data: data);
+    final actions = _ProfilePrimaryActions(
+      following: following,
+      onToggleFollowing: onToggleFollowing,
+      onMessage: onMessage,
+    );
+
+    return LayoutBuilder(
+      key: const Key('profile-summary'),
+      builder: (context, constraints) {
+        final wide = constraints.maxWidth >= 560;
+        if (wide) {
+          return Row(
+            key: const Key('profile-summary-wide'),
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: <Widget>[
+              Padding(
+                padding: const EdgeInsets.only(top: 4),
+                child: _ProfileAvatar(monogram: data.monogram, compact: false),
+              ),
+              const SizedBox(width: 34),
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.stretch,
+                  children: <Widget>[
+                    identity,
+                    const SizedBox(height: 18),
+                    stats,
+                    const SizedBox(height: 20),
+                    actions,
+                  ],
+                ),
+              ),
+            ],
+          );
+        }
+
+        return Column(
+          key: const Key('profile-summary-narrow'),
+          crossAxisAlignment: CrossAxisAlignment.stretch,
+          children: <Widget>[
+            Row(
+              crossAxisAlignment: CrossAxisAlignment.center,
+              children: <Widget>[
+                _ProfileAvatar(monogram: data.monogram, compact: compact),
+                SizedBox(width: compact ? 18 : 24),
+                Expanded(child: stats),
+              ],
+            ),
+            SizedBox(height: compact ? 18 : 24),
+            identity,
+            SizedBox(height: compact ? 18 : 22),
+            actions,
+          ],
+        );
+      },
+    );
+  }
+}
+
+class _ProfileIdentity extends StatelessWidget {
+  const _ProfileIdentity({required this.data});
+
+  final PortfolioData data;
+
+  @override
+  Widget build(BuildContext context) {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: <Widget>[
         Text(
           data.identity.name,
           style: Theme.of(context).textTheme.titleLarge?.copyWith(
@@ -310,11 +611,19 @@ class _ProfileSummary extends StatelessWidget {
         ),
         const SizedBox(height: 3),
         Text(
-          data.identity.englishName,
+          _profileHandle,
+          key: const Key('profile-handle'),
           style: Theme.of(context).textTheme.titleMedium?.copyWith(
-            color: AppleTheme.secondaryLabel(context),
-            fontWeight: FontWeight.w600,
+            color: AppleTheme.primaryLabel(context),
+            fontWeight: FontWeight.w700,
           ),
+        ),
+        const SizedBox(height: 3),
+        Text(
+          data.identity.englishName,
+          style: AppleTheme.caption(
+            context,
+          ).copyWith(color: AppleTheme.secondaryLabel(context)),
         ),
         const SizedBox(height: 10),
         Text(
@@ -332,6 +641,119 @@ class _ProfileSummary extends StatelessWidget {
           ).copyWith(color: AppleTheme.primaryLabel(context), height: 1.55),
         ),
       ],
+    );
+  }
+}
+
+class _ProfilePrimaryActions extends StatelessWidget {
+  const _ProfilePrimaryActions({
+    required this.following,
+    required this.onToggleFollowing,
+    required this.onMessage,
+  });
+
+  final bool following;
+  final VoidCallback onToggleFollowing;
+  final VoidCallback? onMessage;
+
+  @override
+  Widget build(BuildContext context) {
+    final follow = _ProfileActionButton(
+      actionKey: const Key('profile-follow-action'),
+      label: following ? '팔로우 취소' : '팔로우',
+      visibleLabel: following ? '팔로잉' : '팔로우',
+      primary: !following,
+      onTap: onToggleFollowing,
+    );
+    final message = _ProfileActionButton(
+      actionKey: const Key('profile-message-action'),
+      label: '메시지 보내기',
+      visibleLabel: '메시지 보내기',
+      onTap: onMessage,
+    );
+
+    return LayoutBuilder(
+      builder: (context, constraints) {
+        final scale = MediaQuery.textScalerOf(context).scale(1);
+        final vertical = constraints.maxWidth < 280 || scale > 1.45;
+        if (vertical) {
+          return Column(
+            key: const Key('profile-actions-vertical'),
+            crossAxisAlignment: CrossAxisAlignment.stretch,
+            children: <Widget>[follow, const SizedBox(height: 8), message],
+          );
+        }
+        return Row(
+          key: const Key('profile-actions-horizontal'),
+          children: <Widget>[
+            Expanded(child: follow),
+            const SizedBox(width: 10),
+            Expanded(child: message),
+          ],
+        );
+      },
+    );
+  }
+}
+
+class _ProfileActionButton extends StatelessWidget {
+  const _ProfileActionButton({
+    required this.actionKey,
+    required this.label,
+    required this.visibleLabel,
+    required this.onTap,
+    this.primary = false,
+  });
+
+  final Key actionKey;
+  final String label;
+  final String visibleLabel;
+  final VoidCallback? onTap;
+  final bool primary;
+
+  @override
+  Widget build(BuildContext context) {
+    final background = primary
+        ? AppleTheme.buttonBlue
+        : AppleTheme.panel(context);
+    final foreground = primary
+        ? Colors.white
+        : AppleTheme.primaryLabel(context);
+    return Semantics(
+      key: actionKey,
+      label: label,
+      button: true,
+      enabled: onTap != null,
+      onTap: onTap,
+      excludeSemantics: true,
+      child: ExcludeSemantics(
+        child: FilledButton(
+          onPressed: onTap,
+          style: FilledButton.styleFrom(
+            minimumSize: const Size(0, 44),
+            padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
+            backgroundColor: background,
+            foregroundColor: foreground,
+            shape: RoundedRectangleBorder(
+              borderRadius: BorderRadius.circular(10),
+              side: BorderSide(
+                color: primary
+                    ? AppleTheme.buttonBlue
+                    : AppleTheme.separator(context),
+                width: 0.8,
+              ),
+            ),
+          ),
+          child: Text(
+            visibleLabel,
+            maxLines: 1,
+            overflow: TextOverflow.ellipsis,
+            textScaler: MediaQuery.textScalerOf(
+              context,
+            ).clamp(maxScaleFactor: 1.6),
+          ),
+        ),
+      ),
     );
   }
 }
@@ -449,9 +871,14 @@ class _ProfileStat extends StatelessWidget {
 }
 
 class _ProfileHistoryGrid extends StatelessWidget {
-  const _ProfileHistoryGrid({required this.data, required this.onOpenHistory});
+  const _ProfileHistoryGrid({
+    required this.data,
+    required this.onOpenCareerProjects,
+    required this.onOpenHistory,
+  });
 
   final PortfolioData data;
+  final VoidCallback? onOpenCareerProjects;
   final ValueChanged<_ProfileHistoryKind> onOpenHistory;
 
   @override
@@ -488,6 +915,9 @@ class _ProfileHistoryGrid extends StatelessWidget {
                   title: '경력',
                   summary: '경력 ${data.experiences.length}개',
                   kind: _ProfileHistoryKind.experience,
+                  linkActionKey: const Key('profile-career-projects-link'),
+                  linkActionLabel: '포트폴리오 회사 열기',
+                  onLinkTap: onOpenCareerProjects,
                   onTap: () => onOpenHistory(_ProfileHistoryKind.experience),
                 ),
               ),
@@ -517,14 +947,20 @@ class _ProfileHistoryCard extends StatelessWidget {
     required this.summary,
     required this.kind,
     required this.onTap,
+    this.linkActionKey,
+    this.linkActionLabel,
+    this.onLinkTap,
     super.key,
-  });
+  }) : assert(onLinkTap == null || linkActionLabel != null);
 
   final String label;
   final String title;
   final String summary;
   final _ProfileHistoryKind kind;
   final VoidCallback onTap;
+  final Key? linkActionKey;
+  final String? linkActionLabel;
+  final VoidCallback? onLinkTap;
 
   @override
   Widget build(BuildContext context) {
@@ -537,137 +973,186 @@ class _ProfileHistoryCard extends StatelessWidget {
         : AppleTheme.red;
     final seed = kind == _ProfileHistoryKind.experience ? 0 : 1;
     final dark = AppleTheme.isDark(context);
+    final linked = onLinkTap != null;
 
     return Semantics(
       label: label,
       button: true,
       onTap: onTap,
-      excludeSemantics: true,
+      container: true,
+      explicitChildNodes: true,
       child: AspectRatio(
         aspectRatio: 1,
-        child: ExcludeSemantics(
-          child: Material(
-            color: Colors.transparent,
-            child: InkWell(
-              onTap: onTap,
-              child: Ink(
-                decoration: BoxDecoration(
-                  gradient: LinearGradient(
-                    begin: Alignment.topLeft,
-                    end: Alignment.bottomRight,
-                    colors: <Color>[
-                      Color.alphaBlend(
-                        accent.withValues(alpha: dark ? 0.72 : 0.58),
-                        AppleTheme.panel(context),
-                      ),
-                      Color.alphaBlend(
-                        companion.withValues(alpha: dark ? 0.58 : 0.44),
-                        AppleTheme.surface(context),
-                      ),
-                    ],
-                  ),
-                ),
-                child: Stack(
-                  fit: StackFit.expand,
-                  children: <Widget>[
-                    CustomPaint(
-                      painter: _ProfileArtworkPainter(
-                        accent: accent,
-                        companion: companion,
-                        seed: seed,
-                      ),
-                    ),
-                    Positioned(
-                      top: 6,
-                      left: 7,
-                      right: 7,
-                      height: 40,
-                      child: Column(
-                        key: Key('profile-history-post-meta-$kindName'),
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: <Widget>[
-                          Container(
-                            padding: const EdgeInsets.symmetric(
-                              horizontal: 6,
-                              vertical: 3,
-                            ),
-                            decoration: BoxDecoration(
-                              color: Colors.black.withValues(alpha: 0.34),
-                              borderRadius: BorderRadius.circular(999),
-                            ),
-                            child: Text(
-                              title,
-                              maxLines: 1,
-                              textScaler: MediaQuery.textScalerOf(
-                                context,
-                              ).clamp(maxScaleFactor: 1),
-                              style: AppleTheme.caption(context).copyWith(
-                                color: Colors.white,
-                                fontWeight: FontWeight.w800,
-                              ),
-                            ),
+        child: Stack(
+          fit: StackFit.expand,
+          children: <Widget>[
+            ExcludeSemantics(
+              child: Material(
+                color: Colors.transparent,
+                child: InkWell(
+                  onTap: onTap,
+                  child: Ink(
+                    decoration: BoxDecoration(
+                      gradient: LinearGradient(
+                        begin: Alignment.topLeft,
+                        end: Alignment.bottomRight,
+                        colors: <Color>[
+                          Color.alphaBlend(
+                            accent.withValues(alpha: dark ? 0.72 : 0.58),
+                            AppleTheme.panel(context),
                           ),
-                          const SizedBox(height: 2),
-                          Text(
-                            summary,
-                            maxLines: 1,
-                            overflow: TextOverflow.ellipsis,
-                            textScaler: MediaQuery.textScalerOf(
-                              context,
-                            ).clamp(maxScaleFactor: 1),
-                            style: AppleTheme.caption(context).copyWith(
-                              color: Colors.white,
-                              fontSize: 9,
-                              fontWeight: FontWeight.w700,
-                              letterSpacing: -0.2,
-                              shadows: const <Shadow>[
-                                Shadow(color: Color(0x99000000), blurRadius: 4),
-                              ],
-                            ),
+                          Color.alphaBlend(
+                            companion.withValues(alpha: dark ? 0.58 : 0.44),
+                            AppleTheme.surface(context),
                           ),
                         ],
                       ),
                     ),
-                    Positioned(
-                      left: 0,
-                      right: 0,
-                      bottom: 0,
-                      height: 46,
-                      child: Container(
-                        key: Key('profile-history-post-title-$kindName'),
-                        width: double.infinity,
-                        alignment: Alignment.bottomLeft,
-                        padding: const EdgeInsets.fromLTRB(8, 8, 8, 5),
-                        decoration: BoxDecoration(
-                          gradient: LinearGradient(
-                            begin: Alignment.topCenter,
-                            end: Alignment.bottomCenter,
-                            colors: <Color>[
-                              Colors.transparent,
-                              Colors.black.withValues(alpha: 0.74),
+                    child: Stack(
+                      fit: StackFit.expand,
+                      children: <Widget>[
+                        CustomPaint(
+                          painter: _ProfileArtworkPainter(
+                            accent: accent,
+                            companion: companion,
+                            seed: seed,
+                          ),
+                        ),
+                        Positioned(
+                          top: 6,
+                          left: 7,
+                          right: linked ? 44 : 7,
+                          height: 40,
+                          child: Column(
+                            key: Key('profile-history-post-meta-$kindName'),
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: <Widget>[
+                              Container(
+                                padding: const EdgeInsets.symmetric(
+                                  horizontal: 6,
+                                  vertical: 3,
+                                ),
+                                decoration: BoxDecoration(
+                                  color: Colors.black.withValues(alpha: 0.34),
+                                  borderRadius: BorderRadius.circular(999),
+                                ),
+                                child: Text(
+                                  title,
+                                  maxLines: 1,
+                                  textScaler: MediaQuery.textScalerOf(
+                                    context,
+                                  ).clamp(maxScaleFactor: 1),
+                                  style: AppleTheme.caption(context).copyWith(
+                                    color: Colors.white,
+                                    fontWeight: FontWeight.w800,
+                                  ),
+                                ),
+                              ),
+                              const SizedBox(height: 2),
+                              Text(
+                                summary,
+                                maxLines: 1,
+                                overflow: TextOverflow.ellipsis,
+                                textScaler: MediaQuery.textScalerOf(
+                                  context,
+                                ).clamp(maxScaleFactor: 1),
+                                style: AppleTheme.caption(context).copyWith(
+                                  color: Colors.white,
+                                  fontSize: 9,
+                                  fontWeight: FontWeight.w700,
+                                  letterSpacing: -0.2,
+                                  shadows: const <Shadow>[
+                                    Shadow(
+                                      color: Color(0x99000000),
+                                      blurRadius: 4,
+                                    ),
+                                  ],
+                                ),
+                              ),
                             ],
                           ),
                         ),
-                        child: Text(
-                          title,
-                          maxLines: 2,
-                          overflow: TextOverflow.ellipsis,
-                          textScaler: MediaQuery.textScalerOf(
-                            context,
-                          ).clamp(maxScaleFactor: 1.25),
-                          style: AppleTheme.caption(context).copyWith(
-                            color: Colors.white,
-                            fontWeight: FontWeight.w800,
-                            height: 1.12,
+                        Positioned(
+                          left: 0,
+                          right: 0,
+                          bottom: 0,
+                          height: 46,
+                          child: Container(
+                            key: Key('profile-history-post-title-$kindName'),
+                            width: double.infinity,
+                            alignment: Alignment.bottomLeft,
+                            padding: const EdgeInsets.fromLTRB(8, 8, 8, 5),
+                            decoration: BoxDecoration(
+                              gradient: LinearGradient(
+                                begin: Alignment.topCenter,
+                                end: Alignment.bottomCenter,
+                                colors: <Color>[
+                                  Colors.transparent,
+                                  Colors.black.withValues(alpha: 0.74),
+                                ],
+                              ),
+                            ),
+                            child: Text(
+                              title,
+                              maxLines: 2,
+                              overflow: TextOverflow.ellipsis,
+                              textScaler: MediaQuery.textScalerOf(
+                                context,
+                              ).clamp(maxScaleFactor: 1.25),
+                              style: AppleTheme.caption(context).copyWith(
+                                color: Colors.white,
+                                fontWeight: FontWeight.w800,
+                                height: 1.12,
+                              ),
+                            ),
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                ),
+              ),
+            ),
+            if (linked)
+              Positioned(
+                top: 0,
+                right: 0,
+                width: 44,
+                height: 44,
+                child: Semantics(
+                  key: linkActionKey,
+                  label: linkActionLabel,
+                  button: true,
+                  onTap: onLinkTap,
+                  excludeSemantics: true,
+                  child: ExcludeSemantics(
+                    child: Material(
+                      color: Colors.transparent,
+                      child: InkWell(
+                        onTap: onLinkTap,
+                        customBorder: const CircleBorder(),
+                        child: Center(
+                          child: DecoratedBox(
+                            decoration: BoxDecoration(
+                              color: Colors.black.withValues(alpha: 0.48),
+                              shape: BoxShape.circle,
+                            ),
+                            child: const SizedBox.square(
+                              dimension: 26,
+                              child: Icon(
+                                Icons.arrow_outward_rounded,
+                                color: Colors.white,
+                                size: 16,
+                              ),
+                            ),
                           ),
                         ),
                       ),
                     ),
-                  ],
+                  ),
                 ),
               ),
-            ),
-          ),
+          ],
         ),
       ),
     );
@@ -1486,6 +1971,7 @@ class _ProfileArtworkPainter extends CustomPainter {
 
 enum _ProfileHistoryKind { experience, education }
 
+const String _profileHandle = '@min_hesu';
 const int _profileCareerYears = 3;
 
 const List<Color> _profileAccents = <Color>[

@@ -26,6 +26,7 @@ class PortfolioAppContent extends StatelessWidget {
     required this.themeController,
     required this.musicController,
     this.compact = false,
+    this.mobile = false,
     this.tablet = false,
     this.musicShortcutsEnabled = true,
     this.finderWindowChrome,
@@ -42,6 +43,7 @@ class PortfolioAppContent extends StatelessWidget {
   final PortfolioThemeController themeController;
   final MusicController musicController;
   final bool compact;
+  final bool mobile;
   final bool tablet;
   final bool musicShortcutsEnabled;
   final AppleFinderWindowChrome? finderWindowChrome;
@@ -58,6 +60,7 @@ class PortfolioAppContent extends StatelessWidget {
         launcher: launcher,
         compact: compact,
         tablet: tablet,
+        onOpenApp: onOpenApp,
         onClose: onClose,
       ),
       PortfolioAppId.about => AboutApp(
@@ -73,6 +76,7 @@ class PortfolioAppContent extends StatelessWidget {
       PortfolioAppId.skills => SkillsApp(
         data: data,
         compact: compact,
+        mobile: mobile,
         tablet: tablet,
       ),
       PortfolioAppId.projects => ProjectsApp(
