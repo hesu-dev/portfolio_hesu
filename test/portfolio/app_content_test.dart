@@ -652,7 +652,7 @@ void main() {
         expect(find.text(readingLog.period), findsOneWidget);
         expect(find.text(readingLog.description), findsOneWidget);
         for (final technology in readingLog.technologies) {
-          expect(find.text(technology), findsOneWidget);
+          expect(find.text('#$technology'), findsOneWidget);
         }
         expect(tester.takeException(), isNull);
       },

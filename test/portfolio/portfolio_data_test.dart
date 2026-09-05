@@ -331,4 +331,208 @@ void main() {
       'settings',
     ]);
   });
+
+  group('project case-study content', () {
+    test('exposes the narrative labels in portfolio reading order', () {
+      expect(
+        PortfolioProjectSectionKind.values.map((kind) => kind.label),
+        <String>['업무', '문제', '원인', '측정', '해결', '평가', '비고'],
+      );
+    });
+
+    test('derives a numeric display year without inventing one', () {
+      final datedProject = PortfolioProject(
+        title: 'Dated project',
+        description: 'Description',
+        period: '2023.06 - 2024.02',
+        technologies: const <String>[],
+        links: const <PortfolioProjectLink>[],
+      );
+      final undatedProject = PortfolioProject(
+        title: 'Undated project',
+        description: 'Description',
+        period: '설계 중',
+        technologies: const <String>[],
+        links: const <PortfolioProjectLink>[],
+      );
+
+      expect(datedProject.displayYear, '2023');
+      expect(undatedProject.displayYear, isNull);
+    });
+
+    test('defensively copies every runtime case-study collection', () {
+      final sourceHighlights = <String>['First highlight'];
+      final sourceSections = <PortfolioProjectSection>[
+        const PortfolioProjectSection(
+          kind: PortfolioProjectSectionKind.work,
+          body: 'Designed the application.',
+        ),
+      ];
+      final sourceNodes = <String>['Client', 'API'];
+      final architecture = PortfolioProjectArchitecture(
+        title: 'System architecture',
+        description: 'Request flow',
+        nodes: sourceNodes,
+      );
+      final project = PortfolioProject(
+        title: 'Case study',
+        description: 'Description',
+        period: '2026',
+        technologies: const <String>['Flutter'],
+        links: const <PortfolioProjectLink>[],
+        highlights: sourceHighlights,
+        architecture: architecture,
+        sections: sourceSections,
+      );
+
+      sourceHighlights.add('Reference highlight');
+      sourceSections.clear();
+      sourceNodes.add('Database');
+
+      expect(project.highlights, <String>['First highlight']);
+      expect(project.sections, hasLength(1));
+      expect(project.architecture!.nodes, <String>['Client', 'API']);
+      expect(
+        project.architecture!.presentation,
+        PortfolioArchitecturePresentation.components,
+      );
+      expect(
+        () => project.highlights.add('Another highlight'),
+        throwsUnsupportedError,
+      );
+      expect(() => project.sections.clear(), throwsUnsupportedError);
+      expect(
+        () => project.architecture!.nodes.add('Another node'),
+        throwsUnsupportedError,
+      );
+    });
+
+    test('adds case-study copy to searchable portfolio text', () {
+      const project = PortfolioProject.constant(
+        title: 'Searchable project',
+        description: 'Description',
+        period: '2026',
+        technologies: <String>['Flutter'],
+        links: <PortfolioProjectLink>[],
+        highlights: <String>['SEARCHABLE_HIGHLIGHT'],
+        architecture: PortfolioProjectArchitecture.constant(
+          title: 'SEARCHABLE_ARCHITECTURE',
+          description: 'SEARCHABLE_ARCHITECTURE_DESCRIPTION',
+          nodes: <String>['SEARCHABLE_NODE'],
+        ),
+        sections: <PortfolioProjectSection>[
+          PortfolioProjectSection(
+            kind: PortfolioProjectSectionKind.solution,
+            body: 'SEARCHABLE_SOLUTION',
+          ),
+        ],
+      );
+      const data = PortfolioData.constant(
+        identity: PortfolioIdentity(
+          name: 'Test',
+          englishName: 'Test User',
+          email: 'test@example.com',
+          githubUrl: 'https://example.com',
+          headline: 'Headline',
+          biography: 'Biography',
+        ),
+        experiences: <PortfolioExperience>[],
+        education: <PortfolioEducation>[],
+        skillGroups: <PortfolioSkillGroup>[],
+        projects: <PortfolioProject>[project],
+      );
+
+      for (final fragment in <String>[
+        'SEARCHABLE_HIGHLIGHT',
+        'SEARCHABLE_ARCHITECTURE',
+        'SEARCHABLE_ARCHITECTURE_DESCRIPTION',
+        'SEARCHABLE_NODE',
+        'SEARCHABLE_SOLUTION',
+      ]) {
+        expect(data.allSearchableText, contains(fragment), reason: fragment);
+      }
+    });
+
+    test('gives every portfolio project verified work and highlights', () {
+      for (final project in portfolioData.projects) {
+        expect(project.highlights, isNotEmpty, reason: project.title);
+        expect(
+          project.sections.map((section) => section.kind),
+          contains(PortfolioProjectSectionKind.work),
+          reason: project.title,
+        );
+        expect(
+          project.sections.map((section) => section.kind.index),
+          orderedEquals(
+            project.sections.map((section) => section.kind.index).toList()
+              ..sort(),
+          ),
+          reason: project.title,
+        );
+      }
+    });
+
+    test('documents only the verified ReadingLog app and extension flow', () {
+      final project = portfolioData.projects.singleWhere(
+        (project) => project.title == 'ReadingLog',
+      );
+
+      expect(project.architecture, isNotNull);
+      expect(
+        project.architecture!.presentation,
+        PortfolioArchitecturePresentation.flow,
+      );
+      expect(project.architecture!.nodes, <String>[
+        '채팅 로그',
+        'Chrome 확장 프로그램',
+        'JSON 내보내기',
+        'ReadingLog 앱',
+      ]);
+      expect(
+        project.sections.map((section) => section.kind),
+        <PortfolioProjectSectionKind>[
+          PortfolioProjectSectionKind.work,
+          PortfolioProjectSectionKind.solution,
+        ],
+      );
+    });
+
+    test('marks PersonaChat as measured design work rather than a launch', () {
+      final project = portfolioData.projects.singleWhere(
+        (project) => project.title == 'PersonaChat AI Character Chat',
+      );
+
+      expect(project.architecture, isNotNull);
+      expect(
+        project.architecture!.presentation,
+        PortfolioArchitecturePresentation.components,
+      );
+      expect(
+        project.sections
+            .singleWhere(
+              (section) =>
+                  section.kind == PortfolioProjectSectionKind.measurement,
+            )
+            .body,
+        allOf(contains('2026-07-12'), contains('19개 활성 공고')),
+      );
+      expect(
+        project.sections
+            .singleWhere(
+              (section) =>
+                  section.kind == PortfolioProjectSectionKind.evaluation,
+            )
+            .body,
+        contains('설계 단계'),
+      );
+      expect(
+        project.sections
+            .singleWhere(
+              (section) => section.kind == PortfolioProjectSectionKind.note,
+            )
+            .body,
+        contains('출시 성과가 아닌'),
+      );
+    });
+  });
 }

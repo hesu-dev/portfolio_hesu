@@ -92,6 +92,58 @@ class PortfolioRepository {
   Uri get uri => Uri.parse(url);
 }
 
+enum PortfolioProjectSectionKind {
+  work('업무'),
+  problem('문제'),
+  cause('원인'),
+  measurement('측정'),
+  solution('해결'),
+  evaluation('평가'),
+  note('비고');
+
+  const PortfolioProjectSectionKind(this.label);
+
+  final String label;
+}
+
+class PortfolioProjectSection {
+  const PortfolioProjectSection({required this.kind, required this.body});
+
+  final PortfolioProjectSectionKind kind;
+  final String body;
+}
+
+enum PortfolioArchitecturePresentation { components, flow }
+
+class PortfolioProjectArchitecture {
+  factory PortfolioProjectArchitecture({
+    required String title,
+    required String description,
+    required Iterable<String> nodes,
+    PortfolioArchitecturePresentation presentation =
+        PortfolioArchitecturePresentation.components,
+  }) {
+    return PortfolioProjectArchitecture.constant(
+      title: title,
+      description: description,
+      nodes: List<String>.unmodifiable(nodes),
+      presentation: presentation,
+    );
+  }
+
+  const PortfolioProjectArchitecture.constant({
+    required this.title,
+    required this.description,
+    required this.nodes,
+    this.presentation = PortfolioArchitecturePresentation.components,
+  });
+
+  final String title;
+  final String description;
+  final List<String> nodes;
+  final PortfolioArchitecturePresentation presentation;
+}
+
 enum PortfolioProjectCategory { career, personal }
 
 class PortfolioProject {
@@ -102,6 +154,10 @@ class PortfolioProject {
     required Iterable<String> technologies,
     required Iterable<PortfolioProjectLink> links,
     PortfolioProjectCategory category = PortfolioProjectCategory.career,
+    Iterable<String> highlights = const <String>[],
+    PortfolioProjectArchitecture? architecture,
+    Iterable<PortfolioProjectSection> sections =
+        const <PortfolioProjectSection>[],
   }) {
     return PortfolioProject.constant(
       title: title,
@@ -110,6 +166,9 @@ class PortfolioProject {
       technologies: List<String>.unmodifiable(technologies),
       links: List<PortfolioProjectLink>.unmodifiable(links),
       category: category,
+      highlights: List<String>.unmodifiable(highlights),
+      architecture: architecture,
+      sections: List<PortfolioProjectSection>.unmodifiable(sections),
     );
   }
 
@@ -123,6 +182,9 @@ class PortfolioProject {
     required this.technologies,
     required this.links,
     this.category = PortfolioProjectCategory.career,
+    this.highlights = const <String>[],
+    this.architecture,
+    this.sections = const <PortfolioProjectSection>[],
   });
 
   final String title;
@@ -131,6 +193,12 @@ class PortfolioProject {
   final List<String> technologies;
   final List<PortfolioProjectLink> links;
   final PortfolioProjectCategory category;
+  final List<String> highlights;
+  final PortfolioProjectArchitecture? architecture;
+  final List<PortfolioProjectSection> sections;
+
+  String? get displayYear =>
+      RegExp(r'(?:19|20)\d{2}').firstMatch(period)?.group(0);
 }
 
 class PortfolioData {
@@ -209,6 +277,16 @@ class PortfolioData {
       project.description,
       project.period,
       ...project.technologies,
+      ...project.highlights,
+      if (project.architecture case final architecture?) ...<String>[
+        architecture.title,
+        architecture.description,
+        ...architecture.nodes,
+      ],
+      for (final section in project.sections) ...<String>[
+        section.kind.label,
+        section.body,
+      ],
       for (final link in project.links) link.label,
     ],
     for (final repository in repositories) ...<String>[
@@ -373,6 +451,28 @@ const portfolioData = PortfolioData.constant(
       description: '채팅 로그 리더기 앱 기획 및 개발, 파싱용 Chrome 확장 프로그램 개발',
       period: '2026.02 - 2026.05',
       technologies: <String>['Flutter', 'Dart', 'JavaScript'],
+      highlights: <String>[
+        '모바일 앱과 파싱용 Chrome 확장 프로그램을 함께 기획·개발',
+        'Google Play·App Store·Chrome Web Store에 각각 배포',
+        '로그 추출과 모바일 열람을 하나의 사용자 흐름으로 연결',
+      ],
+      architecture: PortfolioProjectArchitecture.constant(
+        title: '로그 추출부터 모바일 열람까지',
+        description: '브라우저에서 채팅 로그를 구조화된 파일로 내보내고 Flutter 앱에서 다시 읽는 흐름입니다.',
+        presentation: PortfolioArchitecturePresentation.flow,
+        nodes: <String>['채팅 로그', 'Chrome 확장 프로그램', 'JSON 내보내기', 'ReadingLog 앱'],
+      ),
+      sections: <PortfolioProjectSection>[
+        PortfolioProjectSection(
+          kind: PortfolioProjectSectionKind.work,
+          body: '채팅 로그 리더기 앱 기획 및 개발, 파싱용 Chrome 확장 프로그램 개발',
+        ),
+        PortfolioProjectSection(
+          kind: PortfolioProjectSectionKind.solution,
+          body:
+              'Chrome 확장 프로그램은 로그 파싱과 JSON 내보내기를, Flutter 앱은 가져온 로그의 모바일 열람 경험을 담당하도록 역할을 분리했습니다.',
+        ),
+      ],
       links: <PortfolioProjectLink>[
         PortfolioProjectLink(
           label: 'Google Play',
@@ -399,6 +499,57 @@ const portfolioData = PortfolioData.constant(
           'Flutter 실무형 포트폴리오 프로젝트 설계',
       period: '2026.07 - 설계',
       technologies: <String>['Flutter', 'Riverpod', 'Firebase', 'IAP', 'AI'],
+      highlights: <String>[
+        '인증·검색·AI 채팅·크레딧 결제를 하나의 제품 흐름으로 설계',
+        'Firebase·LLM adapter·서버 영수증 검증과 크레딧 원장을 분리',
+        '단위·위젯·E2E 테스트와 CI 범위를 구현 전에 정의',
+      ],
+      architecture: PortfolioProjectArchitecture.constant(
+        title: '기능과 서버 책임을 분리한 구성 요소',
+        description: '서로 연결되는 클라이언트·인증·데이터·AI·결제 검증의 책임을 구성 요소별로 나누었습니다.',
+        presentation: PortfolioArchitecturePresentation.components,
+        nodes: <String>[
+          'Flutter 앱',
+          'Firebase Auth · Firestore · Storage',
+          'Cloud API · 영수증 검증 · Credit Ledger',
+          'LLM Provider · Search Index',
+        ],
+      ),
+      sections: <PortfolioProjectSection>[
+        PortfolioProjectSection(
+          kind: PortfolioProjectSectionKind.work,
+          body:
+              'SNS 로그인, 캐릭터 생성/검색, AI 채팅, 이벤트 이미지, 크레딧 결제를 포함한 Flutter 실무형 포트폴리오 프로젝트 설계',
+        ),
+        PortfolioProjectSection(
+          kind: PortfolioProjectSectionKind.problem,
+          body:
+              '화면 구현만으로는 인증, 상태관리, API, 실시간 처리, 결제, 테스트처럼 Flutter 실무에서 함께 요구되는 역량을 보여주기 어려웠습니다.',
+        ),
+        PortfolioProjectSection(
+          kind: PortfolioProjectSectionKind.cause,
+          body:
+              '요구 역량이 로그인·탐색·채팅·결제·운영에 흩어져 있어 이를 연결하는 end-to-end 사용자 흐름이 필요했습니다.',
+        ),
+        PortfolioProjectSection(
+          kind: PortfolioProjectSectionKind.measurement,
+          body:
+              '2026-07-12 기준 Flutter 검색 결과 19개 활성 공고의 반복 키워드와 로그인부터 결제까지 이어지는 7단계 핵심 사용자 흐름을 설계 기준으로 삼았습니다.',
+        ),
+        PortfolioProjectSection(
+          kind: PortfolioProjectSectionKind.solution,
+          body:
+              'SNS 인증, 캐릭터 CRUD·검색, AI 스트리밍 채팅, 이벤트 이미지, 크레딧 결제를 연결하고 클라이언트와 서버의 책임을 분리했습니다.',
+        ),
+        PortfolioProjectSection(
+          kind: PortfolioProjectSectionKind.evaluation,
+          body: '현재 설계 단계이며 아키텍처, 데이터 모델, 테스트 전략과 4주 구현 마일스톤까지 정의했습니다.',
+        ),
+        PortfolioProjectSection(
+          kind: PortfolioProjectSectionKind.note,
+          body: '스토어 출시 성과가 아닌 구현 전 설계 산출물이며, 실제 구현 결과와 지표는 개발 후 갱신합니다.',
+        ),
+      ],
       links: <PortfolioProjectLink>[],
     ),
     PortfolioProject.constant(
@@ -407,6 +558,17 @@ const portfolioData = PortfolioData.constant(
       description: '기계 점검 안전 설비 보고서 작성 앱 기획 및 개발',
       period: '2023.06 - 2024.02',
       technologies: <String>['Flutter', 'Dart', 'Node.js'],
+      highlights: <String>[
+        '기계 점검·안전 설비 보고서 작성 앱을 기획하고 개발',
+        'Flutter·Dart 앱과 Node.js 기술 구성 사용',
+        'Google Play와 App Store에 공개',
+      ],
+      sections: <PortfolioProjectSection>[
+        PortfolioProjectSection(
+          kind: PortfolioProjectSectionKind.work,
+          body: '기계 점검 안전 설비 보고서 작성 앱 기획 및 개발',
+        ),
+      ],
       links: <PortfolioProjectLink>[
         PortfolioProjectLink(
           label: 'Google Play',
@@ -426,6 +588,17 @@ const portfolioData = PortfolioData.constant(
       description: '범부처통합연구지원시스템 R&D 참여: 3D 증강현실 기반 교량 점검 시스템 개발',
       period: '2022.12 - 2023.12',
       technologies: <String>['React', 'Unity', 'MySQL'],
+      highlights: <String>[
+        '범부처통합연구지원시스템 R&D에 참여',
+        '3D 증강현실 기반 교량 점검 시스템 개발',
+        '연구 결과를 논문 링크로 공개',
+      ],
+      sections: <PortfolioProjectSection>[
+        PortfolioProjectSection(
+          kind: PortfolioProjectSectionKind.work,
+          body: '범부처통합연구지원시스템 R&D 참여: 3D 증강현실 기반 교량 점검 시스템 개발',
+        ),
+      ],
       links: <PortfolioProjectLink>[
         PortfolioProjectLink(
           label: 'Research paper',
@@ -440,6 +613,17 @@ const portfolioData = PortfolioData.constant(
       description: 'AI-beaver 애플리케이션 개발 및 유지보수',
       period: '2021.12',
       technologies: <String>['PHP', 'Flutter', 'Dart'],
+      highlights: <String>[
+        'AI-beaver 애플리케이션 개발과 유지보수 참여',
+        'PHP·Flutter·Dart 기술 구성 사용',
+        'Google Play 공개 서비스 유지보수',
+      ],
+      sections: <PortfolioProjectSection>[
+        PortfolioProjectSection(
+          kind: PortfolioProjectSectionKind.work,
+          body: 'AI-beaver 애플리케이션 개발 및 유지보수',
+        ),
+      ],
       links: <PortfolioProjectLink>[
         PortfolioProjectLink(
           label: 'Google Play',
@@ -454,6 +638,17 @@ const portfolioData = PortfolioData.constant(
       description: 'HiddenTag 애플리케이션 페이지 유지보수',
       period: '2020.12 - 2021.07',
       technologies: <String>['Java', 'Apache'],
+      highlights: <String>[
+        'HiddenTag 애플리케이션 페이지 유지보수',
+        'Java·Apache 기반 환경에서 작업',
+        'Google Play와 App Store에서 운영 중인 서비스 경험',
+      ],
+      sections: <PortfolioProjectSection>[
+        PortfolioProjectSection(
+          kind: PortfolioProjectSectionKind.work,
+          body: 'HiddenTag 애플리케이션 페이지 유지보수',
+        ),
+      ],
       links: <PortfolioProjectLink>[
         PortfolioProjectLink(
           label: 'Google Play',

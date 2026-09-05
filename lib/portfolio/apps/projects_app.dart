@@ -714,101 +714,27 @@ class _SelectedProjectDetail extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final sections = _orderedProjectSections(project);
+    final highlights = project.highlights
+        .where((highlight) => highlight.trim().isNotEmpty)
+        .toList(growable: false);
+    final technologies = project.technologies
+        .map((technology) => technology.trim())
+        .where((technology) => technology.isNotEmpty)
+        .toList(growable: false);
     return Center(
       child: ConstrainedBox(
-        constraints: const BoxConstraints(maxWidth: 760),
+        constraints: const BoxConstraints(maxWidth: 820),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.stretch,
           children: <Widget>[
-            Row(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: <Widget>[
-                Container(
-                  width: compact ? 48 : 58,
-                  height: compact ? 48 : 58,
-                  decoration: BoxDecoration(
-                    gradient: const LinearGradient(
-                      begin: Alignment.topLeft,
-                      end: Alignment.bottomRight,
-                      colors: <Color>[Color(0xFF69D5FF), Color(0xFF1675F8)],
-                    ),
-                    borderRadius: BorderRadius.circular(compact ? 14 : 17),
-                    boxShadow: <BoxShadow>[
-                      BoxShadow(
-                        color: AppleTheme.blue.withValues(alpha: 0.2),
-                        blurRadius: 18,
-                        offset: const Offset(0, 7),
-                      ),
-                    ],
-                  ),
-                  child: const Icon(
-                    Icons.folder_open_rounded,
-                    color: Colors.white,
-                  ),
-                ),
-                const SizedBox(width: 15),
-                Expanded(
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: <Widget>[
-                      Text(
-                        project.title,
-                        key: const Key('project-detail-title'),
-                        style: compact
-                            ? Theme.of(context).textTheme.titleLarge
-                            : Theme.of(context).textTheme.headlineSmall,
-                      ),
-                      const SizedBox(height: 7),
-                      ApplePill(
-                        label: project.period,
-                        icon: Icons.calendar_month_rounded,
-                        color: AppleTheme.indigo,
-                      ),
-                    ],
-                  ),
-                ),
-              ],
-            ),
+            _ProjectCaseStudyHeader(project: project, compact: compact),
             SizedBox(height: compact ? 20 : 28),
             _ProjectActions(
               project: project,
               projectIndex: projectIndex,
               pendingLaunches: pendingLaunches,
               onOpenLink: onOpenLink,
-            ),
-            SizedBox(height: compact ? 16 : 20),
-            AppleSurfaceCard(
-              radius: 17,
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: <Widget>[
-                  Text('Project overview', style: AppleTheme.title(context)),
-                  const SizedBox(height: 10),
-                  Text(
-                    project.description,
-                    style: Theme.of(context).textTheme.bodyLarge,
-                  ),
-                ],
-              ),
-            ),
-            SizedBox(height: compact ? 16 : 20),
-            AppleSurfaceCard(
-              radius: 17,
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: <Widget>[
-                  Text('Technology stack', style: AppleTheme.title(context)),
-                  const SizedBox(height: 12),
-                  Wrap(
-                    spacing: 8,
-                    runSpacing: 8,
-                    children: <Widget>[
-                      for (final technology in project.technologies)
-                        ApplePill(label: technology),
-                    ],
-                  ),
-                ],
-              ),
             ),
             if (feedback case final message?) ...<Widget>[
               const SizedBox(height: 14),
@@ -818,9 +744,513 @@ class _SelectedProjectDetail extends StatelessWidget {
                 success: launchSucceeded,
               ),
             ],
+            if (technologies.isNotEmpty) ...<Widget>[
+              SizedBox(height: compact ? 16 : 20),
+              Semantics(
+                container: true,
+                explicitChildNodes: true,
+                child: AppleSurfaceCard(
+                  key: const Key('project-technologies'),
+                  radius: 17,
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: <Widget>[
+                      Semantics(
+                        header: true,
+                        child: Text(
+                          '사용 언어 · 기술',
+                          key: const Key('project-technologies-heading'),
+                          style: AppleTheme.title(context),
+                        ),
+                      ),
+                      const SizedBox(height: 12),
+                      Wrap(
+                        spacing: 8,
+                        runSpacing: 8,
+                        children: <Widget>[
+                          for (final entry in technologies.indexed)
+                            Semantics(
+                              key: Key('project-technology-${entry.$1}'),
+                              label: '사용 기술 ${entry.$2}',
+                              excludeSemantics: true,
+                              child: ApplePill(label: '#${entry.$2}'),
+                            ),
+                        ],
+                      ),
+                    ],
+                  ),
+                ),
+              ),
+            ],
+            if (project.architecture case final architecture?) ...<Widget>[
+              SizedBox(height: compact ? 16 : 20),
+              _ProjectArchitectureCard(
+                architecture: architecture,
+                compact: compact,
+              ),
+            ],
+            if (highlights.isNotEmpty) ...<Widget>[
+              SizedBox(height: compact ? 16 : 20),
+              _ProjectHighlightsCard(highlights: highlights),
+            ],
+            if (sections.isNotEmpty) ...<Widget>[
+              SizedBox(height: compact ? 16 : 20),
+              _ProjectNarrativeCard(sections: sections, compact: compact),
+            ],
           ],
         ),
       ),
+    );
+  }
+}
+
+List<PortfolioProjectSection> _orderedProjectSections(
+  PortfolioProject project,
+) {
+  final sections = project.sections
+      .where((section) => section.body.trim().isNotEmpty)
+      .toList(growable: true);
+  if (sections.isEmpty && project.description.trim().isNotEmpty) {
+    sections.add(
+      PortfolioProjectSection(
+        kind: PortfolioProjectSectionKind.work,
+        body: project.description,
+      ),
+    );
+  }
+  sections.sort((left, right) => left.kind.index.compareTo(right.kind.index));
+  return List<PortfolioProjectSection>.unmodifiable(sections);
+}
+
+class _ProjectCaseStudyHeader extends StatelessWidget {
+  const _ProjectCaseStudyHeader({required this.project, required this.compact});
+
+  final PortfolioProject project;
+  final bool compact;
+
+  @override
+  Widget build(BuildContext context) {
+    final year = project.displayYear;
+    final yearBadge = year == null
+        ? null
+        : Semantics(
+            label: '프로젝트 시작 연도 $year',
+            excludeSemantics: true,
+            child: Container(
+              key: const Key('project-detail-year'),
+              constraints: const BoxConstraints(minWidth: 74, minHeight: 74),
+              padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
+              decoration: BoxDecoration(
+                gradient: const LinearGradient(
+                  begin: Alignment.topLeft,
+                  end: Alignment.bottomRight,
+                  colors: <Color>[Color(0xFF0066CC), Color(0xFF003E80)],
+                ),
+                borderRadius: BorderRadius.circular(20),
+                boxShadow: <BoxShadow>[
+                  BoxShadow(
+                    color: AppleTheme.buttonBlue.withValues(alpha: 0.22),
+                    blurRadius: 20,
+                    offset: const Offset(0, 8),
+                  ),
+                ],
+              ),
+              child: Column(
+                mainAxisSize: MainAxisSize.min,
+                children: <Widget>[
+                  Text(
+                    year,
+                    textAlign: TextAlign.center,
+                    style: Theme.of(context).textTheme.titleLarge?.copyWith(
+                      color: Colors.white,
+                      fontWeight: FontWeight.w800,
+                    ),
+                  ),
+                  Text(
+                    'YEAR',
+                    style: Theme.of(context).textTheme.labelSmall?.copyWith(
+                      color: Colors.white,
+                      fontWeight: FontWeight.w700,
+                      letterSpacing: 1.1,
+                    ),
+                  ),
+                ],
+              ),
+            ),
+          );
+    final title = Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: <Widget>[
+        Semantics(
+          header: true,
+          child: Text(
+            project.title,
+            key: const Key('project-detail-title'),
+            style: compact
+                ? Theme.of(context).textTheme.titleLarge
+                : Theme.of(context).textTheme.headlineSmall,
+          ),
+        ),
+        const SizedBox(height: 9),
+        ApplePill(
+          label: project.period,
+          icon: Icons.calendar_month_rounded,
+          color: AppleTheme.indigo,
+        ),
+      ],
+    );
+
+    return LayoutBuilder(
+      builder: (context, constraints) {
+        final stacked = compact || constraints.maxWidth < 460;
+        return Semantics(
+          container: true,
+          explicitChildNodes: true,
+          child: stacked
+              ? Column(
+                  key: const Key('project-detail-header'),
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: <Widget>[
+                    if (yearBadge case final badge?) ...<Widget>[
+                      badge,
+                      const SizedBox(height: 16),
+                    ],
+                    title,
+                  ],
+                )
+              : Row(
+                  key: const Key('project-detail-header'),
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: <Widget>[
+                    if (yearBadge case final badge?) ...<Widget>[
+                      badge,
+                      const SizedBox(width: 18),
+                    ],
+                    Expanded(child: title),
+                  ],
+                ),
+        );
+      },
+    );
+  }
+}
+
+class _ProjectArchitectureCard extends StatelessWidget {
+  const _ProjectArchitectureCard({
+    required this.architecture,
+    required this.compact,
+  });
+
+  final PortfolioProjectArchitecture architecture;
+  final bool compact;
+
+  @override
+  Widget build(BuildContext context) {
+    final nodes = architecture.nodes
+        .where((node) => node.trim().isNotEmpty)
+        .toList(growable: false);
+    final semanticPrefix =
+        architecture.presentation == PortfolioArchitecturePresentation.flow
+        ? '아키텍처 흐름'
+        : '아키텍처 구성 요소';
+    return Semantics(
+      container: true,
+      explicitChildNodes: true,
+      child: AppleSurfaceCard(
+        key: const Key('project-architecture'),
+        radius: 17,
+        color: Color.alphaBlend(
+          AppleTheme.blue.withValues(
+            alpha: AppleTheme.isDark(context) ? 0.1 : 0.05,
+          ),
+          AppleTheme.surface(context),
+        ),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: <Widget>[
+            Semantics(
+              header: true,
+              child: Text(architecture.title, style: AppleTheme.title(context)),
+            ),
+            if (architecture.description.trim().isNotEmpty) ...<Widget>[
+              const SizedBox(height: 8),
+              Text(
+                architecture.description,
+                style: AppleTheme.body(
+                  context,
+                ).copyWith(color: AppleTheme.secondaryLabel(context)),
+              ),
+            ],
+            if (nodes.isNotEmpty) ...<Widget>[
+              const SizedBox(height: 18),
+              Semantics(
+                label: '$semanticPrefix: ${nodes.join(', ')}',
+                excludeSemantics: true,
+                child: LayoutBuilder(
+                  builder: (context, constraints) {
+                    if (architecture.presentation ==
+                        PortfolioArchitecturePresentation.components) {
+                      return _buildComponents(nodes, constraints);
+                    }
+                    return _buildFlow(nodes, constraints);
+                  },
+                ),
+              ),
+            ],
+          ],
+        ),
+      ),
+    );
+  }
+
+  Widget _buildFlow(List<String> nodes, BoxConstraints constraints) {
+    final vertical = compact || constraints.maxWidth < 480;
+    if (vertical) {
+      return Column(
+        children: <Widget>[
+          for (final entry in nodes.indexed) ...<Widget>[
+            SizedBox(
+              width: double.infinity,
+              child: _ArchitectureNode(index: entry.$1, label: entry.$2),
+            ),
+            if (entry.$1 < nodes.length - 1)
+              const Padding(
+                padding: EdgeInsets.symmetric(vertical: 5),
+                child: Icon(
+                  Icons.arrow_downward_rounded,
+                  size: 18,
+                  color: AppleTheme.blue,
+                ),
+              ),
+          ],
+        ],
+      );
+    }
+    return Row(
+      crossAxisAlignment: CrossAxisAlignment.center,
+      children: <Widget>[
+        for (final entry in nodes.indexed) ...<Widget>[
+          Expanded(
+            child: _ArchitectureNode(index: entry.$1, label: entry.$2),
+          ),
+          if (entry.$1 < nodes.length - 1)
+            const Padding(
+              padding: EdgeInsets.symmetric(horizontal: 5),
+              child: Icon(
+                Icons.arrow_forward_rounded,
+                size: 18,
+                color: AppleTheme.blue,
+              ),
+            ),
+        ],
+      ],
+    );
+  }
+
+  Widget _buildComponents(List<String> nodes, BoxConstraints constraints) {
+    final singleColumn = compact || constraints.maxWidth < 480;
+    final nodeWidth = singleColumn
+        ? constraints.maxWidth
+        : (constraints.maxWidth - 10) / 2;
+    return Wrap(
+      spacing: 10,
+      runSpacing: 10,
+      children: <Widget>[
+        for (final entry in nodes.indexed)
+          SizedBox(
+            width: nodeWidth,
+            child: _ArchitectureNode(index: entry.$1, label: entry.$2),
+          ),
+      ],
+    );
+  }
+}
+
+class _ArchitectureNode extends StatelessWidget {
+  const _ArchitectureNode({required this.index, required this.label});
+
+  final int index;
+  final String label;
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      key: Key('project-architecture-node-$index'),
+      constraints: const BoxConstraints(minHeight: 62),
+      alignment: Alignment.center,
+      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 12),
+      decoration: BoxDecoration(
+        color: AppleTheme.surface(context),
+        borderRadius: BorderRadius.circular(14),
+        border: Border.all(color: AppleTheme.blue.withValues(alpha: 0.22)),
+      ),
+      child: Text(
+        label,
+        textAlign: TextAlign.center,
+        style: Theme.of(
+          context,
+        ).textTheme.labelLarge?.copyWith(fontWeight: FontWeight.w700),
+      ),
+    );
+  }
+}
+
+class _ProjectHighlightsCard extends StatelessWidget {
+  const _ProjectHighlightsCard({required this.highlights});
+
+  final List<String> highlights;
+
+  @override
+  Widget build(BuildContext context) {
+    return Semantics(
+      container: true,
+      explicitChildNodes: true,
+      child: AppleSurfaceCard(
+        key: const Key('project-highlights'),
+        radius: 17,
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: <Widget>[
+            Semantics(
+              header: true,
+              child: Text('핵심 포인트', style: AppleTheme.title(context)),
+            ),
+            const SizedBox(height: 12),
+            for (final entry in highlights.indexed) ...<Widget>[
+              Semantics(
+                container: true,
+                label: '${entry.$1 + 1}. ${entry.$2}',
+                excludeSemantics: true,
+                child: Row(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: <Widget>[
+                    Container(
+                      key: Key('project-highlight-index-${entry.$1}'),
+                      constraints: const BoxConstraints(
+                        minWidth: 24,
+                        minHeight: 24,
+                      ),
+                      padding: const EdgeInsets.symmetric(
+                        horizontal: 7,
+                        vertical: 3,
+                      ),
+                      alignment: Alignment.center,
+                      decoration: BoxDecoration(
+                        color: AppleTheme.buttonBlue,
+                        borderRadius: BorderRadius.circular(8),
+                      ),
+                      child: Text(
+                        '${entry.$1 + 1}',
+                        style: Theme.of(context).textTheme.labelSmall?.copyWith(
+                          color: Colors.white,
+                          fontWeight: FontWeight.w800,
+                        ),
+                      ),
+                    ),
+                    const SizedBox(width: 10),
+                    Expanded(
+                      child: Text(
+                        entry.$2,
+                        style: Theme.of(context).textTheme.bodyLarge,
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+              if (entry.$1 < highlights.length - 1) const SizedBox(height: 11),
+            ],
+          ],
+        ),
+      ),
+    );
+  }
+}
+
+class _ProjectNarrativeCard extends StatelessWidget {
+  const _ProjectNarrativeCard({required this.sections, required this.compact});
+
+  final List<PortfolioProjectSection> sections;
+  final bool compact;
+
+  @override
+  Widget build(BuildContext context) {
+    return Semantics(
+      container: true,
+      explicitChildNodes: true,
+      child: AppleSurfaceCard(
+        key: const Key('project-narrative'),
+        radius: 17,
+        padding: EdgeInsets.all(compact ? 17 : 22),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: <Widget>[
+            Semantics(
+              header: true,
+              child: Text('프로젝트 회고', style: AppleTheme.title(context)),
+            ),
+            const SizedBox(height: 8),
+            for (final entry in sections.indexed) ...<Widget>[
+              if (entry.$1 > 0)
+                Divider(height: 1, color: AppleTheme.separator(context)),
+              _ProjectNarrativeRow(section: entry.$2, compact: compact),
+            ],
+          ],
+        ),
+      ),
+    );
+  }
+}
+
+class _ProjectNarrativeRow extends StatelessWidget {
+  const _ProjectNarrativeRow({required this.section, required this.compact});
+
+  final PortfolioProjectSection section;
+  final bool compact;
+
+  @override
+  Widget build(BuildContext context) {
+    final keyPrefix = 'project-section-${section.kind.name}';
+    final accent = AppleTheme.isDark(context)
+        ? const Color(0xFF73B5FF)
+        : AppleTheme.buttonBlue;
+    final label = Semantics(
+      header: true,
+      child: Text(
+        section.kind.label,
+        key: Key('$keyPrefix-label'),
+        style: Theme.of(context).textTheme.titleMedium?.copyWith(
+          color: accent,
+          fontWeight: FontWeight.w800,
+        ),
+      ),
+    );
+    final body = Text(
+      section.body,
+      key: Key('$keyPrefix-body'),
+      style: Theme.of(context).textTheme.bodyLarge,
+    );
+
+    return LayoutBuilder(
+      key: Key(keyPrefix),
+      builder: (context, constraints) {
+        final stacked = compact || constraints.maxWidth < 480;
+        return Padding(
+          padding: const EdgeInsets.symmetric(vertical: 15),
+          child: stacked
+              ? Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: <Widget>[label, const SizedBox(height: 8), body],
+                )
+              : Row(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: <Widget>[
+                    SizedBox(width: 92, child: label),
+                    const SizedBox(width: 16),
+                    Expanded(child: body),
+                  ],
+                ),
+        );
+      },
     );
   }
 }
@@ -840,40 +1270,55 @@ class _ProjectActions extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return AppleSurfaceCard(
-      radius: 17,
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: <Widget>[
-          Text('Actions', style: AppleTheme.title(context)),
-          const SizedBox(height: 6),
-          Text(
-            project.links.isEmpty
-                ? 'This project is currently documented as a portfolio case study.'
-                : 'Open a verified project destination in a new app or tab.',
-            style: AppleTheme.body(
-              context,
-            ).copyWith(color: AppleTheme.secondaryLabel(context)),
-          ),
-          if (project.links.isNotEmpty) ...<Widget>[
-            const SizedBox(height: 13),
-            Wrap(
-              spacing: 9,
-              runSpacing: 9,
-              children: <Widget>[
-                for (final entry in project.links.indexed)
-                  OutlinedButton.icon(
-                    key: Key('project-link-$projectIndex-${entry.$1}'),
-                    onPressed: pendingLaunches.contains(entry.$2.uri)
-                        ? null
-                        : () => onOpenLink(entry.$2),
-                    icon: const Icon(Icons.open_in_new_rounded, size: 17),
-                    label: Text(entry.$2.label),
-                  ),
-              ],
+    return Semantics(
+      container: true,
+      explicitChildNodes: true,
+      child: AppleSurfaceCard(
+        key: const Key('project-actions'),
+        radius: 17,
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: <Widget>[
+            Semantics(
+              header: true,
+              child: Text(
+                '프로젝트 링크',
+                key: const Key('project-actions-heading'),
+                style: AppleTheme.title(context),
+              ),
             ),
+            const SizedBox(height: 6),
+            Text(
+              project.links.isEmpty
+                  ? '현재 공개된 외부 링크가 없습니다.'
+                  : '스토어와 공개 문서를 외부에서 열어 프로젝트를 확인할 수 있습니다.',
+              style: AppleTheme.body(
+                context,
+              ).copyWith(color: AppleTheme.secondaryLabel(context)),
+            ),
+            if (project.links.isNotEmpty) ...<Widget>[
+              const SizedBox(height: 13),
+              Wrap(
+                spacing: 9,
+                runSpacing: 9,
+                children: <Widget>[
+                  for (final entry in project.links.indexed)
+                    OutlinedButton.icon(
+                      key: Key('project-link-$projectIndex-${entry.$1}'),
+                      style: OutlinedButton.styleFrom(
+                        minimumSize: const Size(0, 44),
+                      ),
+                      onPressed: pendingLaunches.contains(entry.$2.uri)
+                          ? null
+                          : () => onOpenLink(entry.$2),
+                      icon: const Icon(Icons.open_in_new_rounded, size: 17),
+                      label: Text(entry.$2.label),
+                    ),
+                ],
+              ),
+            ],
           ],
-        ],
+        ),
       ),
     );
   }
