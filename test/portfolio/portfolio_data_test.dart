@@ -48,6 +48,37 @@ void main() {
       expect(portfolioData.projects, hasLength(6));
     });
 
+    test('contains only the verified information engineer certification', () {
+      expect(portfolioData.certifications, <String>['정보처리기사']);
+      expect(portfolioData.allSearchableText, contains('정보처리기사'));
+    });
+
+    test('contains activity copy for every portfolio skill', () {
+      for (final group in portfolioData.skillGroups) {
+        expect(
+          group.activityDescriptions.keys,
+          containsAll(group.skills),
+          reason: group.title,
+        );
+        for (final skill in group.skills) {
+          expect(
+            group.activityDescriptions[skill],
+            isNotEmpty,
+            reason: '$skill in ${group.title}',
+          );
+          expect(
+            portfolioData.allSearchableText,
+            contains(group.activityDescriptions[skill]),
+            reason: skill,
+          );
+        }
+      }
+      expect(
+        portfolioData.skillGroups.first.activityDescriptions['Flutter'],
+        contains('Flutter 개인 프로젝트 어플 개발'),
+      );
+    });
+
     test('uses the confirmed current Flutter career copy', () {
       final currentRole = portfolioData.experiences.first;
 
@@ -166,6 +197,15 @@ void main() {
         throwsUnsupportedError,
       );
       expect(
+        () => portfolioData.skillGroups.first.activityDescriptions['Flutter'] =
+            'Reference content',
+        throwsUnsupportedError,
+      );
+      expect(
+        () => portfolioData.certifications.add('Reference certification'),
+        throwsUnsupportedError,
+      );
+      expect(
         () => portfolioData.projects.first.links.clear(),
         throwsUnsupportedError,
       );
@@ -175,18 +215,31 @@ void main() {
       );
     });
 
-    test('skill groups defensively copy mutable runtime skills', () {
+    test('skill groups defensively copy mutable runtime content', () {
       final sourceSkills = <String>['Flutter', 'Dart'];
+      final sourceActivities = <String, String>{
+        'Flutter': 'MOBILE_SKILL_ACTIVITY',
+      };
       final skillGroup = PortfolioSkillGroup(
         title: 'Development',
         skills: sourceSkills,
+        activityDescriptions: sourceActivities,
       );
 
       sourceSkills.add('Reference content');
+      sourceActivities['Flutter'] = 'Mutated activity';
 
       expect(skillGroup.skills, <String>['Flutter', 'Dart']);
       expect(
+        skillGroup.activityDescriptions['Flutter'],
+        'MOBILE_SKILL_ACTIVITY',
+      );
+      expect(
         () => skillGroup.skills.add('Another skill'),
+        throwsUnsupportedError,
+      );
+      expect(
+        () => skillGroup.activityDescriptions['Dart'] = 'Another activity',
         throwsUnsupportedError,
       );
     });
@@ -229,27 +282,32 @@ void main() {
       final sourceSkillGroups = <PortfolioSkillGroup>[
         portfolioData.skillGroups.first,
       ];
+      final sourceCertifications = <String>['TEST_CERTIFICATION'];
       final sourceProjects = <PortfolioProject>[portfolioData.projects.first];
       final data = PortfolioData(
         identity: portfolioData.identity,
         experiences: sourceExperiences,
         education: sourceEducation,
         skillGroups: sourceSkillGroups,
+        certifications: sourceCertifications,
         projects: sourceProjects,
       );
 
       sourceExperiences.clear();
       sourceEducation.clear();
       sourceSkillGroups.clear();
+      sourceCertifications.clear();
       sourceProjects.clear();
 
       expect(data.experiences, hasLength(1));
       expect(data.education, hasLength(1));
       expect(data.skillGroups, hasLength(1));
+      expect(data.certifications, <String>['TEST_CERTIFICATION']);
       expect(data.projects, hasLength(1));
       expect(() => data.experiences.clear(), throwsUnsupportedError);
       expect(() => data.education.clear(), throwsUnsupportedError);
       expect(() => data.skillGroups.clear(), throwsUnsupportedError);
+      expect(() => data.certifications.clear(), throwsUnsupportedError);
       expect(() => data.projects.clear(), throwsUnsupportedError);
     });
 
@@ -290,6 +348,9 @@ void main() {
       const skillGroup = PortfolioSkillGroup.constant(
         title: 'Development',
         skills: <String>['Flutter', 'Dart'],
+        activityDescriptions: <String, String>{
+          'Flutter': 'Flutter application development',
+        },
       );
       const project = PortfolioProject.constant(
         title: 'Project',
@@ -303,6 +364,7 @@ void main() {
         experiences: <PortfolioExperience>[experience],
         education: <PortfolioEducation>[education],
         skillGroups: <PortfolioSkillGroup>[skillGroup],
+        certifications: <String>['Information Engineer'],
         projects: <PortfolioProject>[project],
       );
 
@@ -310,6 +372,7 @@ void main() {
       expect(experience.role, 'Developer');
       expect(education.link, same(projectLink));
       expect(data.skillGroups.single, same(skillGroup));
+      expect(data.certifications.single, 'Information Engineer');
       expect(data.projects.single, same(project));
     });
   });

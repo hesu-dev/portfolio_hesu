@@ -48,10 +48,14 @@ class PortfolioSkillGroup {
   factory PortfolioSkillGroup({
     required String title,
     required Iterable<String> skills,
+    Map<String, String> activityDescriptions = const <String, String>{},
   }) {
     return PortfolioSkillGroup.constant(
       title: title,
       skills: List<String>.unmodifiable(skills),
+      activityDescriptions: Map<String, String>.unmodifiable(
+        activityDescriptions,
+      ),
     );
   }
 
@@ -61,10 +65,12 @@ class PortfolioSkillGroup {
   const PortfolioSkillGroup.constant({
     required this.title,
     required this.skills,
+    this.activityDescriptions = const <String, String>{},
   });
 
   final String title;
   final List<String> skills;
+  final Map<String, String> activityDescriptions;
 }
 
 class PortfolioProjectLink {
@@ -208,6 +214,7 @@ class PortfolioData {
     required Iterable<PortfolioEducation> education,
     required Iterable<PortfolioSkillGroup> skillGroups,
     required Iterable<PortfolioProject> projects,
+    Iterable<String> certifications = const <String>[],
     Iterable<PortfolioRepository> repositories = const <PortfolioRepository>[],
   }) {
     return PortfolioData.constant(
@@ -216,6 +223,7 @@ class PortfolioData {
       education: List<PortfolioEducation>.unmodifiable(education),
       skillGroups: List<PortfolioSkillGroup>.unmodifiable(skillGroups),
       projects: List<PortfolioProject>.unmodifiable(projects),
+      certifications: List<String>.unmodifiable(certifications),
       repositories: List<PortfolioRepository>.unmodifiable(repositories),
     );
   }
@@ -229,6 +237,7 @@ class PortfolioData {
     required this.education,
     required this.skillGroups,
     required this.projects,
+    this.certifications = const <String>[],
     this.repositories = const <PortfolioRepository>[],
   });
 
@@ -237,6 +246,7 @@ class PortfolioData {
   final List<PortfolioEducation> education;
   final List<PortfolioSkillGroup> skillGroups;
   final List<PortfolioProject> projects;
+  final List<String> certifications;
   final List<PortfolioRepository> repositories;
 
   String get name => identity.name;
@@ -271,7 +281,12 @@ class PortfolioData {
       item.period,
       if (item.link case final link?) link.label,
     ],
-    for (final group in skillGroups) ...<String>[group.title, ...group.skills],
+    for (final group in skillGroups) ...<String>[
+      group.title,
+      ...group.skills,
+      ...group.activityDescriptions.values,
+    ],
+    ...certifications,
     for (final project in projects) ...<String>[
       project.title,
       project.description,
@@ -410,18 +425,35 @@ const portfolioData = PortfolioData.constant(
       period: '2009.03 - 2011.02',
     ),
   ],
+  certifications: <String>['정보처리기사'],
   skillGroups: <PortfolioSkillGroup>[
     PortfolioSkillGroup.constant(
       title: 'Development',
       skills: <String>['Flutter', 'Dart', 'React', 'Java'],
+      activityDescriptions: <String, String>{
+        'Flutter': '금일 업무 보고\nFlutter 개인 프로젝트 어플 개발',
+        'Dart': 'Dart 비동기 로직과 상태 관리 기능 개발',
+        'React': 'React 기반 웹 서비스 화면 기획 및 개발',
+        'Java': 'Java/JSP 애플리케이션 개발 및 유지보수',
+      },
     ),
     PortfolioSkillGroup.constant(
       title: 'Collaboration',
       skills: <String>['Notion', 'Slack', 'Trello'],
+      activityDescriptions: <String, String>{
+        'Notion': '프로젝트 문서와 업무 기록 정리',
+        'Slack': '팀 커뮤니케이션과 업무 진행 상황 공유',
+        'Trello': '업무 보드 구성과 일정 관리',
+      },
     ),
     PortfolioSkillGroup.constant(
       title: 'Design & UI/UX',
       skills: <String>['Figma', 'Adobe Photoshop', 'Adobe Illustrator'],
+      activityDescriptions: <String, String>{
+        'Figma': 'UI/UX 화면 설계와 프로토타입 제작',
+        'Adobe Photoshop': '이미지 편집과 그래픽 에셋 제작',
+        'Adobe Illustrator': '벡터 그래픽과 아이콘 제작',
+      },
     ),
   ],
   repositories: <PortfolioRepository>[
