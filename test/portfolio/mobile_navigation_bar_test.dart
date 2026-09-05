@@ -128,13 +128,18 @@ void main() {
           await _pumpSurface(tester, size: const Size(834, 1194), appId: appId);
 
           final close = find.byKey(Key('mobile-back-close-${appId.name}'));
+          final navigationBar = find.byKey(
+            const Key('mobile-app-navigation-bar'),
+          );
+          final title = find.byKey(const Key('mobile-app-title'));
 
           expect(find.byType(MacTrafficControls), findsNothing);
           expect(close, findsOneWidget);
           expect(tester.getSize(close), const Size(44, 44));
           expect(
-            tester.getCenter(find.byKey(const Key('mobile-app-title'))).dx,
-            closeTo(834 / 2, 0.01),
+            tester.getCenter(title).dx,
+            closeTo(tester.getRect(navigationBar).center.dx, 0.01),
+            reason: '${appId.name} title must center in its header area',
           );
           expect(
             find.byKey(Key('mobile-app-more-${appId.name}')),
