@@ -291,23 +291,23 @@ class TrashApp extends StatefulWidget {
 class _TrashAppState extends State<TrashApp> {
   static const List<_TrashItemData> _items = <_TrashItemData>[
     _TrashItemData(
-      name: 'old-resume-draft.docx',
-      detail: 'Word document · 84 KB',
-      deleted: 'Today, 10:42',
+      name: '이전-이력서-초안.docx',
+      detail: '워드 문서 · 84KB',
+      deleted: '오늘 오전 10:42',
       icon: Icons.description_rounded,
       color: Color(0xFF2468C8),
     ),
     _TrashItemData(
-      name: 'portfolio-preview.png',
-      detail: 'PNG image · 1.8 MB',
-      deleted: 'Yesterday, 18:16',
+      name: '포트폴리오-미리보기.png',
+      detail: 'PNG 이미지 · 1.8MB',
+      deleted: '어제 오후 6:16',
       icon: Icons.image_rounded,
       color: Color(0xFFB94ACE),
     ),
     _TrashItemData(
-      name: 'debug-session.log',
-      detail: 'Log file · 32 KB',
-      deleted: 'Sep 3, 21:05',
+      name: '디버그-기록.log',
+      detail: '로그 파일 · 32KB',
+      deleted: '9월 3일 오후 9:05',
       icon: Icons.terminal_rounded,
       color: Color(0xFF5C6370),
     ),
@@ -349,11 +349,8 @@ class _TrashAppState extends State<TrashApp> {
         children: <Widget>[
           Container(
             key: const Key('trash-toolbar'),
-            constraints: const BoxConstraints(minHeight: 58),
-            padding: EdgeInsets.symmetric(
-              horizontal: widget.compact ? 16 : 22,
-              vertical: 8,
-            ),
+            constraints: const BoxConstraints(minHeight: 48),
+            padding: EdgeInsets.symmetric(horizontal: widget.compact ? 16 : 22),
             decoration: BoxDecoration(
               color: AppleTheme.panel(context),
               border: Border(
@@ -362,73 +359,46 @@ class _TrashAppState extends State<TrashApp> {
             ),
             child: Row(
               children: <Widget>[
-                Expanded(
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    mainAxisSize: MainAxisSize.min,
-                    children: <Widget>[
-                      Text(
-                        'Recently Deleted',
-                        style: AppleTheme.title(context),
-                      ),
-                      Text(
-                        _empty
-                            ? 'No items'
-                            : '${_items.length} temporary items',
-                        style: AppleTheme.caption(context),
-                      ),
-                    ],
-                  ),
-                ),
-                FilledButton.tonalIcon(
+                const Spacer(),
+                FilledButton(
                   key: const Key('trash-empty-button'),
                   onPressed: _empty ? null : _requestEmptyTrash,
-                  icon: const Icon(Icons.delete_sweep_rounded, size: 18),
-                  label: const Text('Empty'),
+                  style: FilledButton.styleFrom(
+                    backgroundColor: const Color(0xFF6E6E73),
+                    foregroundColor: Colors.white,
+                    disabledBackgroundColor: AppleTheme.separator(context),
+                    disabledForegroundColor: AppleTheme.secondaryLabel(context),
+                    minimumSize: const Size(0, 32),
+                    padding: const EdgeInsets.symmetric(horizontal: 12),
+                    visualDensity: VisualDensity.standard,
+                    tapTargetSize: MaterialTapTargetSize.padded,
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(8),
+                    ),
+                    textStyle: const TextStyle(
+                      fontSize: 13,
+                      fontWeight: FontWeight.w600,
+                    ),
+                  ),
+                  child: const Text('비우기'),
                 ),
               ],
             ),
           ),
           Expanded(
-            child: LayoutBuilder(
-              builder: (context, constraints) {
-                if (_empty) {
-                  return SingleChildScrollView(
-                    key: const Key('trash-scroll'),
-                    physics: const BouncingScrollPhysics(
-                      parent: AlwaysScrollableScrollPhysics(),
-                    ),
-                    child: ConstrainedBox(
-                      constraints: BoxConstraints(
-                        minHeight: constraints.maxHeight,
-                      ),
-                      child: AppleEmptyState(
-                        key: const Key('trash-empty-state'),
-                        icon: Icons.delete_outline_rounded,
-                        title: 'Trash is Empty',
-                        message:
-                            'There are no deleted portfolio items for '
-                            '${widget.data.identity.englishName}.',
-                      ),
-                    ),
-                  );
-                }
-
-                return ListView.separated(
-                  key: const Key('trash-scroll'),
-                  physics: const BouncingScrollPhysics(
-                    parent: AlwaysScrollableScrollPhysics(),
-                  ),
-                  padding: EdgeInsets.all(widget.compact ? 14 : 22),
-                  itemCount: _items.length,
-                  separatorBuilder: (_, _) => const SizedBox(height: 10),
-                  itemBuilder: (context, index) => _TrashItemRow(
-                    key: Key('trash-item-$index'),
-                    item: _items[index],
-                    compact: widget.compact,
-                  ),
-                );
-              },
+            child: ListView.separated(
+              key: const Key('trash-scroll'),
+              physics: const BouncingScrollPhysics(
+                parent: AlwaysScrollableScrollPhysics(),
+              ),
+              padding: EdgeInsets.all(widget.compact ? 14 : 22),
+              itemCount: _empty ? 0 : _items.length,
+              separatorBuilder: (_, _) => const SizedBox(height: 10),
+              itemBuilder: (context, index) => _TrashItemRow(
+                key: Key('trash-item-$index'),
+                item: _items[index],
+                compact: widget.compact,
+              ),
             ),
           ),
         ],
@@ -523,25 +493,18 @@ class _TrashConfirmationDialog extends StatelessWidget {
         child: AlertDialog(
           key: const Key('trash-empty-dialog'),
           title: const Text('휴지통을 비우겠습니까?'),
-          content: const Text('이 작업은 화면에서만 휴지통을 빈 상태로 전환합니다.'),
+          content: const Text('모든 파일이 삭제됩니다.'),
+          actionsAlignment: MainAxisAlignment.spaceBetween,
           actions: <Widget>[
-            Semantics(
-              label: 'Cancel empty Trash',
-              button: true,
-              child: TextButton(
-                key: const Key('trash-empty-cancel'),
-                onPressed: () => close(false),
-                child: const Text('N'),
-              ),
+            TextButton(
+              key: const Key('trash-empty-cancel'),
+              onPressed: () => close(false),
+              child: const Text('아니오'),
             ),
-            Semantics(
-              label: 'Confirm empty Trash',
-              button: true,
-              child: FilledButton(
-                key: const Key('trash-empty-confirm'),
-                onPressed: () => close(true),
-                child: const Text('Y'),
-              ),
+            FilledButton(
+              key: const Key('trash-empty-confirm'),
+              onPressed: () => close(true),
+              child: const Text('네'),
             ),
           ],
         ),
