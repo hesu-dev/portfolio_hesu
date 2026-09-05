@@ -44,8 +44,10 @@ void main() {
             find.byKey(target.scrollKey),
             reason: '${layout.name} ${target.appId.name}',
             mouseDragStartBelow:
-                layout.compact && target.appId == PortfolioAppId.skills
-                ? find.byKey(const Key('skills-mobile-summary-strip'))
+                layout.mobile &&
+                    !layout.tablet &&
+                    target.appId == PortfolioAppId.skills
+                ? find.byKey(const Key('skills-mobile-certification-strip'))
                 : null,
           );
           if (target.appId == PortfolioAppId.projects) {
@@ -67,6 +69,36 @@ void main() {
               reason: '${layout.name} projects detail',
             );
           }
+          if (target.appId == PortfolioAppId.skills &&
+              layout.mobile &&
+              !layout.tablet) {
+            final listScrollable = tester.state<ScrollableState>(
+              find
+                  .descendant(
+                    of: find.byKey(const Key('skills-list')),
+                    matching: find.byWidgetPredicate(
+                      (widget) =>
+                          widget is Scrollable &&
+                          (widget.axisDirection == AxisDirection.down ||
+                              widget.axisDirection == AxisDirection.up),
+                    ),
+                  )
+                  .first,
+            );
+            listScrollable.position.jumpTo(0);
+            await tester.pump();
+            final development = find.byKey(
+              const Key('skills-mobile-channel-Development'),
+            );
+            await tester.ensureVisible(development);
+            await tester.tap(development);
+            await tester.pumpAndSettle();
+            await _expectTouchAndMouseScroll(
+              tester,
+              find.byKey(const Key('skills-mobile-message-list')),
+              reason: '${layout.name} skills detail',
+            );
+          }
           expect(
             tester.takeException(),
             isNull,
@@ -79,9 +111,27 @@ void main() {
 }
 
 const List<_AdaptiveLayout> _adaptiveLayouts = <_AdaptiveLayout>[
-  _AdaptiveLayout(name: 'iPhone', width: 390, compact: true, tablet: false),
-  _AdaptiveLayout(name: 'iPad', width: 834, compact: false, tablet: true),
-  _AdaptiveLayout(name: 'Desktop', width: 1100, compact: false, tablet: false),
+  _AdaptiveLayout(
+    name: 'iPhone',
+    width: 390,
+    compact: true,
+    mobile: true,
+    tablet: false,
+  ),
+  _AdaptiveLayout(
+    name: 'iPad',
+    width: 834,
+    compact: false,
+    mobile: true,
+    tablet: true,
+  ),
+  _AdaptiveLayout(
+    name: 'Desktop',
+    width: 1100,
+    compact: false,
+    mobile: false,
+    tablet: false,
+  ),
 ];
 
 const List<_AppScrollTarget> _publicAppScrollTargets = <_AppScrollTarget>[
@@ -115,12 +165,14 @@ class _AdaptiveLayout {
     required this.name,
     required this.width,
     required this.compact,
+    required this.mobile,
     required this.tablet,
   });
 
   final String name;
   final double width;
   final bool compact;
+  final bool mobile;
   final bool tablet;
 }
 
@@ -180,6 +232,7 @@ Future<void> _pumpAppContent(
               : const <MusicTrack>[],
         ),
         compact: layout.compact,
+        mobile: layout.mobile,
         tablet: layout.tablet,
       ),
     ),

@@ -412,11 +412,27 @@ void main() {
     testWidgets(
       'app bodies omit the duplicate icon and title toolbar on every form factor',
       (tester) async {
-        for (final scenario in const <({Size size, bool compact, bool tablet})>[
-          (size: Size(360, 640), compact: true, tablet: false),
-          (size: Size(834, 900), compact: false, tablet: true),
-          (size: Size(1024, 700), compact: false, tablet: false),
-        ]) {
+        for (final scenario
+            in const <({Size size, bool compact, bool mobile, bool tablet})>[
+              (
+                size: Size(360, 640),
+                compact: true,
+                mobile: true,
+                tablet: false,
+              ),
+              (
+                size: Size(834, 900),
+                compact: false,
+                mobile: true,
+                tablet: true,
+              ),
+              (
+                size: Size(1024, 700),
+                compact: false,
+                mobile: false,
+                tablet: false,
+              ),
+            ]) {
           for (final appId in const <PortfolioAppId>[
             PortfolioAppId.introduction,
             PortfolioAppId.skills,
@@ -432,6 +448,7 @@ void main() {
               launcher: _FakeExternalLauncher(),
               size: scenario.size,
               compact: scenario.compact,
+              mobile: scenario.mobile,
               tablet: scenario.tablet,
             );
 
@@ -553,7 +570,7 @@ void main() {
       expect(tester.takeException(), isNull);
     });
 
-    testWidgets('compact skills exposes every skill as one channel list', (
+    testWidgets('compact skills opens one of three group channels as detail', (
       tester,
     ) async {
       await _pumpApp(
@@ -562,17 +579,34 @@ void main() {
         launcher: _FakeExternalLauncher(),
         size: const Size(360, 600),
         compact: true,
+        mobile: true,
       );
 
       expect(
         find.byKey(const Key('skills-mobile-channel-list')),
         findsOneWidget,
       );
-      expect(find.text('# Flutter'), findsOneWidget);
-      expect(find.text('# Notion'), findsOneWidget);
-      expect(find.text('# Slack'), findsOneWidget);
+      expect(find.text('정보처리기사'), findsOneWidget);
+      expect(find.text('# Development'), findsOneWidget);
+      expect(find.text('# Collaboration'), findsOneWidget);
+      expect(find.text('# Design & UI/UX'), findsOneWidget);
+      expect(find.text('# Flutter'), findsNothing);
+      expect(find.text('# Notion'), findsNothing);
+
+      await tester.tap(
+        find.byKey(const Key('skills-mobile-channel-Development')),
+      );
+      await tester.pumpAndSettle();
+
+      expect(
+        find.byKey(const Key('skills-mobile-channel-detail')),
+        findsOneWidget,
+      );
+      expect(find.text('# Development'), findsOneWidget);
+      expect(find.text('1명의 멤버'), findsOneWidget);
+      expect(find.text('1개의 탭'), findsOneWidget);
       expect(find.byKey(const Key('skill-item-Flutter')), findsOneWidget);
-      expect(find.byKey(const Key('skill-item-Notion')), findsOneWidget);
+      expect(find.byKey(const Key('skill-item-Notion')), findsNothing);
       expect(tester.takeException(), isNull);
     });
 
@@ -1610,34 +1644,43 @@ void main() {
       },
     );
 
-    testWidgets(
-      'all apps avoid RenderFlex overflow in compact and wide bounds',
-      (tester) async {
-        final launcher = _FakeExternalLauncher();
+    testWidgets('all apps avoid RenderFlex overflow in compact and wide bounds', (
+      tester,
+    ) async {
+      final launcher = _FakeExternalLauncher();
 
-        for (final size in const <Size>[Size(360, 600), Size(900, 650)]) {
-          for (final appId in PortfolioAppId.values) {
-            await _pumpApp(
-              tester,
-              appId: appId,
-              launcher: launcher,
-              size: size,
-              compact: size.width < 600,
-              tablet: size.width >= 600 && size.width < 1024,
-            );
-            await tester.pumpAndSettle();
+      for (final scenario
+          in const <({Size size, bool compact, bool mobile, bool tablet})>[
+            (size: Size(360, 600), compact: true, mobile: true, tablet: false),
+            (
+              size: Size(900, 650),
+              compact: false,
+              mobile: false,
+              tablet: false,
+            ),
+          ]) {
+        for (final appId in PortfolioAppId.values) {
+          await _pumpApp(
+            tester,
+            appId: appId,
+            launcher: launcher,
+            size: scenario.size,
+            compact: scenario.compact,
+            mobile: scenario.mobile,
+            tablet: scenario.tablet,
+          );
+          await tester.pumpAndSettle();
 
-            final exception = tester.takeException();
-            expect(
-              exception,
-              isNull,
-              reason:
-                  '${appId.name} at ${size.width}x${size.height}: $exception',
-            );
-          }
+          final exception = tester.takeException();
+          expect(
+            exception,
+            isNull,
+            reason:
+                '${appId.name} at ${scenario.size.width}x${scenario.size.height}: $exception',
+          );
         }
-      },
-    );
+      }
+    });
   });
 }
 
@@ -1678,6 +1721,7 @@ Future<void> _pumpApp(
   required Size size,
   PortfolioData data = portfolioData,
   bool compact = false,
+  bool mobile = false,
   bool tablet = false,
   Brightness brightness = Brightness.light,
   TextScaler textScaler = TextScaler.noScaling,
@@ -1713,6 +1757,7 @@ Future<void> _pumpApp(
           themeController: themeController,
           musicController: createTestMusicController(),
           compact: compact,
+          mobile: mobile,
           tablet: tablet,
         ),
       ),

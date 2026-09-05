@@ -490,6 +490,7 @@ void main() {
         expect(content.data, same(data));
         expect(content.launcher, same(launcher));
         expect(content.compact, isTrue);
+        expect(content.mobile, isTrue);
         expect(content.tablet, isFalse);
       },
     );
@@ -528,7 +529,7 @@ void main() {
       tester,
     ) async {
       for (final scenario in <(PortfolioAppId, String)>[
-        (PortfolioAppId.skills, 'skills-mobile-summary-Development'),
+        (PortfolioAppId.skills, 'skills-mobile-channel-Development'),
         (PortfolioAppId.projects, 'project-selector-2'),
       ]) {
         await tester.pumpWidget(const SizedBox.shrink());
@@ -745,6 +746,7 @@ void main() {
         expect(content.data, same(data));
         expect(content.launcher, same(launcher));
         expect(content.compact, isFalse);
+        expect(content.mobile, isTrue);
         expect(content.tablet, isTrue);
       },
     );
