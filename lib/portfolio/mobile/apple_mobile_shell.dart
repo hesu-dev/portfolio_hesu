@@ -4,6 +4,7 @@ import 'package:flutter/material.dart';
 
 import '../data/portfolio_data.dart';
 import '../models/portfolio_app_id.dart';
+import '../music/music_controller.dart';
 import '../services/external_launcher.dart';
 import '../theme/portfolio_theme_controller.dart';
 import 'apple_home_grid.dart';
@@ -21,6 +22,7 @@ class AppleMobileShell extends StatefulWidget {
     required this.data,
     required this.externalLauncher,
     required this.themeController,
+    required this.musicController,
     required this.tablet,
     this.trashEmpty = false,
     this.onTrashEmptied,
@@ -32,6 +34,7 @@ class AppleMobileShell extends StatefulWidget {
   final PortfolioData data;
   final ExternalLauncher externalLauncher;
   final PortfolioThemeController themeController;
+  final MusicController musicController;
   final bool tablet;
   final bool trashEmpty;
   final VoidCallback? onTrashEmptied;
@@ -196,6 +199,8 @@ class _AppleMobileShellState extends State<AppleMobileShell> {
                                                     widget.externalLauncher,
                                                 themeController:
                                                     widget.themeController,
+                                                musicController:
+                                                    widget.musicController,
                                                 tablet: widget.tablet,
                                                 trashEmpty: widget.trashEmpty,
                                                 onTrashEmptied:

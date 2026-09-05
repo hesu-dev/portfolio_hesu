@@ -5,10 +5,13 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:portfolio_hesu/portfolio/apps/portfolio_app_content.dart';
 import 'package:portfolio_hesu/portfolio/data/portfolio_data.dart';
 import 'package:portfolio_hesu/portfolio/models/portfolio_app_id.dart';
+import 'package:portfolio_hesu/portfolio/music/music_track.dart';
 import 'package:portfolio_hesu/portfolio/portfolio_app.dart';
 import 'package:portfolio_hesu/portfolio/services/external_launcher.dart';
 import 'package:portfolio_hesu/portfolio/theme/apple_theme.dart';
 import 'package:portfolio_hesu/portfolio/theme/portfolio_theme_controller.dart';
+
+import 'support/music_test_controller.dart';
 
 void main() {
   group('Portfolio scroll behavior', () {
@@ -100,6 +103,7 @@ const List<_AppScrollTarget> _publicAppScrollTargets = <_AppScrollTarget>[
     height: 180,
   ),
   _AppScrollTarget(PortfolioAppId.terminal, Key('terminal-transcript')),
+  _AppScrollTarget(PortfolioAppId.music, Key('music-scroll'), height: 180),
   _AppScrollTarget(PortfolioAppId.photos, Key('photos-scroll'), height: 180),
   _AppScrollTarget(PortfolioAppId.trash, Key('trash-scroll'), height: 180),
   _AppScrollTarget(PortfolioAppId.github, Key('github-app-scroll')),
@@ -170,6 +174,11 @@ Future<void> _pumpAppContent(
         data: portfolioData,
         launcher: CallbackExternalLauncher((_) async => true),
         themeController: themeController,
+        musicController: createTestMusicController(
+          tracks: target.appId == PortfolioAppId.music
+              ? _scrollMusicTracks
+              : const <MusicTrack>[],
+        ),
         compact: layout.compact,
         tablet: layout.tablet,
       ),
@@ -177,6 +186,12 @@ Future<void> _pumpAppContent(
   );
   await tester.pumpAndSettle();
 }
+
+const _scrollMusicTracks = <MusicTrack>[
+  MusicTrack(assetPath: 'assets/music/01-first.mp3', title: 'First Song'),
+  MusicTrack(assetPath: 'assets/music/02-second.mp3', title: 'Second Song'),
+  MusicTrack(assetPath: 'assets/music/03-third.mp3', title: 'Third Song'),
+];
 
 Future<void> _fillTerminalTranscript(WidgetTester tester) async {
   for (var index = 0; index < 4; index++) {

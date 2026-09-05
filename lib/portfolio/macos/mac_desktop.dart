@@ -5,6 +5,7 @@ import 'package:flutter/services.dart';
 
 import '../data/portfolio_data.dart';
 import '../models/portfolio_app_id.dart';
+import '../music/music_controller.dart';
 import '../services/external_launcher.dart';
 import '../theme/portfolio_theme_controller.dart';
 import '../widgets/apple_app_artwork.dart';
@@ -20,6 +21,7 @@ class MacDesktop extends StatefulWidget {
     required this.data,
     required this.externalLauncher,
     required this.themeController,
+    required this.musicController,
     this.trashEmpty = false,
     this.onTrashEmptied,
     Key? key,
@@ -28,6 +30,7 @@ class MacDesktop extends StatefulWidget {
   final PortfolioData data;
   final ExternalLauncher externalLauncher;
   final PortfolioThemeController themeController;
+  final MusicController musicController;
   final bool trashEmpty;
   final VoidCallback? onTrashEmptied;
 
@@ -272,7 +275,7 @@ class _MacDesktopState extends State<MacDesktop> {
   }
 
   Widget _buildDesktopIcons() {
-    // Eight launchers render as four rows while clearing the Dock on the
+    // Launchers render in a compact two-column grid while clearing the Dock on the
     // minimum desktop size. Trash lives in the Dock's utility area.
     final availableHeight = (_viewport.height - 158).clamp(360.0, 560.0);
     return Positioned(
@@ -360,6 +363,7 @@ class _MacDesktopState extends State<MacDesktop> {
           data: widget.data,
           launcher: widget.externalLauncher,
           themeController: widget.themeController,
+          musicController: widget.musicController,
           active: active,
           maximized: window.maximized,
           onFocus: () => _focusApp(appId),

@@ -3,6 +3,7 @@ import 'package:flutter/material.dart';
 import 'package:portfolio_hesu/portfolio/data/portfolio_data.dart';
 import 'package:portfolio_hesu/portfolio/macos/mac_desktop.dart';
 import 'package:portfolio_hesu/portfolio/mobile/apple_mobile_shell.dart';
+import 'package:portfolio_hesu/portfolio/music/music_controller.dart';
 import 'package:portfolio_hesu/portfolio/services/external_launcher.dart';
 import 'package:portfolio_hesu/portfolio/theme/portfolio_theme_controller.dart';
 
@@ -10,6 +11,7 @@ class AdaptivePortfolioShell extends StatefulWidget {
   const AdaptivePortfolioShell({
     required this.externalLauncher,
     required this.themeController,
+    required this.musicController,
     this.data = portfolioData,
     this.mobilePlatformOverride,
     super.key,
@@ -20,6 +22,7 @@ class AdaptivePortfolioShell extends StatefulWidget {
 
   final ExternalLauncher externalLauncher;
   final PortfolioThemeController themeController;
+  final MusicController musicController;
   final PortfolioData data;
   final bool? mobilePlatformOverride;
 
@@ -53,6 +56,7 @@ class _AdaptivePortfolioShellState extends State<AdaptivePortfolioShell> {
             data: widget.data,
             externalLauncher: widget.externalLauncher,
             themeController: widget.themeController,
+            musicController: widget.musicController,
             trashEmpty: _trashEmpty,
             onTrashEmptied: _emptyTrash,
           );
@@ -66,6 +70,7 @@ class _AdaptivePortfolioShellState extends State<AdaptivePortfolioShell> {
               data: widget.data,
               externalLauncher: widget.externalLauncher,
               themeController: widget.themeController,
+              musicController: widget.musicController,
               tablet: true,
               trashEmpty: _trashEmpty,
               onTrashEmptied: _emptyTrash,
@@ -80,6 +85,7 @@ class _AdaptivePortfolioShellState extends State<AdaptivePortfolioShell> {
             data: widget.data,
             externalLauncher: widget.externalLauncher,
             themeController: widget.themeController,
+            musicController: widget.musicController,
             tablet: false,
             trashEmpty: _trashEmpty,
             onTrashEmptied: _emptyTrash,

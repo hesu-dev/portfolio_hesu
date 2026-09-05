@@ -106,6 +106,7 @@ class AppleAppArtwork extends StatelessWidget {
     PortfolioAppId.skills ||
     PortfolioAppId.projects ||
     PortfolioAppId.terminal ||
+    PortfolioAppId.music ||
     PortfolioAppId.photos ||
     PortfolioAppId.mail ||
     PortfolioAppId.settings ||
@@ -158,6 +159,7 @@ class AppleAppArtwork extends StatelessWidget {
       Color(0xFF42454D),
       Color(0xFF111216),
     ],
+    PortfolioAppId.music => const <Color>[Color(0xFFFF375F), Color(0xFFB5179E)],
     PortfolioAppId.photos => const <Color>[
       Color(0xFFFF3B30),
       Color(0xFFFF9500),
@@ -336,6 +338,8 @@ class _AppleAppArtworkPainter extends CustomPainter {
         _drawProjects(canvas, size);
       case PortfolioAppId.terminal:
         _drawTerminal(canvas, size);
+      case PortfolioAppId.music:
+        _drawMusic(canvas, size);
       case PortfolioAppId.photos:
         _drawPhotos(canvas, size);
       case PortfolioAppId.mail:
@@ -584,6 +588,53 @@ class _AppleAppArtworkPainter extends CustomPainter {
     )..layout();
     prompt.paint(canvas, Offset(size.width * 0.17, size.height * 0.34));
     prompt.dispose();
+  }
+
+  void _drawMusic(Canvas canvas, Size size) {
+    final unit = size.shortestSide;
+    final note = Paint()
+      ..color = Colors.white
+      ..style = PaintingStyle.fill;
+
+    final beam = Path()
+      ..moveTo(size.width * 0.35, size.height * 0.28)
+      ..lineTo(size.width * 0.72, size.height * 0.2)
+      ..lineTo(size.width * 0.72, size.height * 0.32)
+      ..lineTo(size.width * 0.35, size.height * 0.4)
+      ..close();
+    canvas.drawPath(beam, note);
+
+    final stem = Paint()
+      ..color = Colors.white
+      ..style = PaintingStyle.stroke
+      ..strokeWidth = unit * 0.075
+      ..strokeCap = StrokeCap.round;
+    canvas.drawLine(
+      Offset(size.width * 0.37, size.height * 0.34),
+      Offset(size.width * 0.37, size.height * 0.69),
+      stem,
+    );
+    canvas.drawLine(
+      Offset(size.width * 0.7, size.height * 0.27),
+      Offset(size.width * 0.7, size.height * 0.61),
+      stem,
+    );
+    canvas.drawOval(
+      Rect.fromCenter(
+        center: Offset(size.width * 0.29, size.height * 0.72),
+        width: unit * 0.25,
+        height: unit * 0.18,
+      ),
+      note,
+    );
+    canvas.drawOval(
+      Rect.fromCenter(
+        center: Offset(size.width * 0.62, size.height * 0.64),
+        width: unit * 0.25,
+        height: unit * 0.18,
+      ),
+      note,
+    );
   }
 
   void _drawPhotos(Canvas canvas, Size size) {

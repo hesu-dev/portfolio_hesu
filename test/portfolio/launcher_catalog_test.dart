@@ -9,6 +9,8 @@ import 'package:portfolio_hesu/portfolio/services/external_launcher.dart';
 import 'package:portfolio_hesu/portfolio/theme/portfolio_theme_controller.dart';
 import 'package:portfolio_hesu/portfolio/data/portfolio_data.dart';
 
+import 'support/music_test_controller.dart';
+
 void main() {
   test('macOS and mobile expose distinct ordered launcher catalogs', () {
     expect(portfolioLauncherAppIds.map((appId) => appId.name), <String>[
@@ -17,6 +19,7 @@ void main() {
       'skills',
       'projects',
       'terminal',
+      'music',
       'github',
       'mail',
       'settings',
@@ -28,6 +31,7 @@ void main() {
       'skills',
       'projects',
       'terminal',
+      'music',
       'photos',
       'github',
       'mail',
@@ -42,6 +46,7 @@ void main() {
         'skills',
         'projects',
         'terminal',
+        'music',
         'github',
         'mail',
         'settings',
@@ -53,6 +58,7 @@ void main() {
       'skills',
       'projects',
       'terminal',
+      'music',
       'github',
       'mail',
       'settings',
@@ -90,6 +96,7 @@ void main() {
       expect(find.byKey(const Key('home-app-about')), findsNothing);
       expect(find.byKey(const Key('home-app-profile')), findsOneWidget);
       expect(find.byKey(const Key('home-app-introduction')), findsOneWidget);
+      expect(find.byKey(const Key('home-app-music')), findsOneWidget);
       expect(find.byKey(const Key('home-app-photos')), findsOneWidget);
     },
   );
@@ -110,12 +117,14 @@ void main() {
             data: portfolioData,
             externalLauncher: const _FakeLauncher(),
             themeController: themeController,
+            musicController: createTestMusicController(),
           ),
         ),
       );
       await tester.pump();
 
       expect(find.byKey(const Key('desktop-app-projects')), findsOneWidget);
+      expect(find.byKey(const Key('desktop-app-music')), findsOneWidget);
       expect(find.byKey(const Key('desktop-app-thisMac')), findsNothing);
       expect(find.byKey(const Key('desktop-app-trash')), findsNothing);
       expect(find.byKey(const Key('dock-app-trash')), findsOneWidget);

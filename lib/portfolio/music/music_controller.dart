@@ -13,7 +13,7 @@ class MusicController extends ChangeNotifier {
     required Iterable<MusicTrack> tracks,
     MusicPlaybackFactory playbackFactory = createMusicPlayback,
     MusicSessionStore? sessionStore,
-  }) : tracks = List<MusicTrack>.unmodifiable(tracks),
+  }) : _tracks = List<MusicTrack>.unmodifiable(tracks),
        _playbackFactory = playbackFactory,
        _sessionStore = sessionStore ?? createMusicSessionStore() {
     _restore();
@@ -21,7 +21,7 @@ class MusicController extends ChangeNotifier {
 
   static const playbackErrorMessage = '음악을 재생할 수 없습니다.';
 
-  final List<MusicTrack> tracks;
+  List<MusicTrack> _tracks;
   final MusicPlaybackFactory _playbackFactory;
   final MusicSessionStore _sessionStore;
 
@@ -29,6 +29,7 @@ class MusicController extends ChangeNotifier {
   StreamSubscription<void>? _completionSubscription;
   Future<void> _commandQueue = Future<void>.value();
   MusicTrack? _loadedTrack;
+  int? _pendingRestoredIndex;
   int _commandGeneration = 0;
   int _currentIndex = 0;
   MusicPlaybackMode _mode = MusicPlaybackMode.queue;
@@ -39,6 +40,7 @@ class MusicController extends ChangeNotifier {
   MusicNavigationDirection? _navigationDirection;
   bool _disposed = false;
 
+  List<MusicTrack> get tracks => _tracks;
   int get currentIndex => _currentIndex;
   MusicTrack? get currentTrack => tracks.isEmpty ? null : tracks[_currentIndex];
   MusicPlaybackMode get mode => _mode;
@@ -76,6 +78,33 @@ class MusicController extends ChangeNotifier {
   Future<void> next() => _navigate(MusicNavigationDirection.next);
 
   Future<void> previous() => _navigate(MusicNavigationDirection.previous);
+
+  /// Replaces the bootstrap asset list without creating or starting playback.
+  void replaceTracks(Iterable<MusicTrack> tracks) {
+    if (_disposed) return;
+
+    final previousPath = currentTrack?.assetPath;
+    final nextTracks = List<MusicTrack>.unmodifiable(tracks);
+    var nextIndex = 0;
+    if (previousPath != null) {
+      final matchingIndex = nextTracks.indexWhere(
+        (track) => track.assetPath == previousPath,
+      );
+      if (matchingIndex >= 0) nextIndex = matchingIndex;
+    } else if (_pendingRestoredIndex case final restoredIndex?
+        when restoredIndex >= 0 && restoredIndex < nextTracks.length) {
+      nextIndex = restoredIndex;
+    }
+
+    _tracks = nextTracks;
+    _currentIndex = nextTracks.isEmpty ? 0 : nextIndex;
+    _pendingRestoredIndex = null;
+    if (_loadedTrack != null && !nextTracks.contains(_loadedTrack)) {
+      _loadedTrack = null;
+    }
+    _persist();
+    _notify();
+  }
 
   Future<void> select(int index) async {
     if (index < 0 || index >= tracks.length || index == _currentIndex) return;
@@ -200,7 +229,10 @@ class MusicController extends ChangeNotifier {
     try {
       final state = _sessionStore.read();
       if (state == null) return;
-      if (state.currentIndex >= 0 && state.currentIndex < tracks.length) {
+      if (tracks.isEmpty && state.currentIndex >= 0) {
+        _pendingRestoredIndex = state.currentIndex;
+      } else if (state.currentIndex >= 0 &&
+          state.currentIndex < tracks.length) {
         _currentIndex = state.currentIndex;
       }
       _mode = state.mode;
@@ -255,8 +287,9 @@ class MusicController extends ChangeNotifier {
     required MusicPlayback? playback,
     required Future<void> pendingCommands,
   }) async {
+    Future<void>? cancellation;
     try {
-      await subscription?.cancel();
+      cancellation = subscription?.cancel();
     } catch (_) {
       // The controller is already disposed, so teardown is best effort.
     }
@@ -269,6 +302,11 @@ class MusicController extends ChangeNotifier {
       await playback?.dispose();
     } catch (_) {
       // A platform teardown failure must not escape ChangeNotifier.dispose().
+    }
+    try {
+      await cancellation;
+    } catch (_) {
+      // Subscription teardown is best effort after the player is released.
     }
   }
 }

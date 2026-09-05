@@ -11,6 +11,8 @@ import 'package:portfolio_hesu/portfolio/services/external_launcher.dart';
 import 'package:portfolio_hesu/portfolio/theme/apple_theme.dart';
 import 'package:portfolio_hesu/portfolio/theme/portfolio_theme_controller.dart';
 
+import 'support/music_test_controller.dart';
+
 void main() {
   group('모바일 Instagram형 프로필 앱', () {
     testWidgets('iPhone과 iPad는 About과 분리된 프로필 앱을 연다', (tester) async {
@@ -1260,6 +1262,7 @@ Future<void> _pumpProfileShell(
           data: data,
           externalLauncher: launcher ?? _RecordingLauncher(),
           themeController: themeController,
+          musicController: createTestMusicController(),
           tablet: tablet,
         ),
       ),

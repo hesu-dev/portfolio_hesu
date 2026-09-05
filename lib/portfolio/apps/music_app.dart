@@ -15,19 +15,56 @@ class MusicApp extends StatefulWidget {
     required this.controller,
     this.compact = false,
     this.tablet = false,
+    this.shortcutsEnabled = true,
     super.key,
   });
 
   final MusicController controller;
   final bool compact;
   final bool tablet;
+  final bool shortcutsEnabled;
 
   @override
   State<MusicApp> createState() => _MusicAppState();
 }
 
 class _MusicAppState extends State<MusicApp> {
+  final FocusNode _shortcutFocusNode = FocusNode(
+    debugLabel: 'music-player-shortcuts',
+  );
   double _horizontalDrag = 0;
+
+  @override
+  void initState() {
+    super.initState();
+    _scheduleShortcutFocus();
+  }
+
+  @override
+  void didUpdateWidget(MusicApp oldWidget) {
+    super.didUpdateWidget(oldWidget);
+    if (!oldWidget.shortcutsEnabled && widget.shortcutsEnabled) {
+      _scheduleShortcutFocus();
+    } else if (oldWidget.shortcutsEnabled && !widget.shortcutsEnabled) {
+      _shortcutFocusNode.unfocus();
+    }
+  }
+
+  void _scheduleShortcutFocus() {
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (mounted &&
+          widget.shortcutsEnabled &&
+          _shortcutFocusNode.canRequestFocus) {
+        _shortcutFocusNode.requestFocus();
+      }
+    });
+  }
+
+  @override
+  void dispose() {
+    _shortcutFocusNode.dispose();
+    super.dispose();
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -38,9 +75,13 @@ class _MusicAppState extends State<MusicApp> {
         builder: (context, _) {
           final controller = widget.controller;
           return Focus(
-            autofocus: true,
+            focusNode: _shortcutFocusNode,
+            canRequestFocus: widget.shortcutsEnabled,
+            descendantsAreFocusable: widget.shortcutsEnabled,
             onKeyEvent: (node, event) {
-              if (!node.hasPrimaryFocus || event is! KeyDownEvent) {
+              if (!widget.shortcutsEnabled ||
+                  !node.hasPrimaryFocus ||
+                  event is! KeyDownEvent) {
                 return KeyEventResult.ignored;
               }
               if (controller.tracks.isEmpty) {

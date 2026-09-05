@@ -2,11 +2,13 @@ import 'package:flutter/widgets.dart';
 
 import '../data/portfolio_data.dart';
 import '../models/portfolio_app_id.dart';
+import '../music/music_controller.dart';
 import '../services/external_launcher.dart';
 import '../theme/portfolio_theme_controller.dart';
 import '../widgets/apple_finder_scaffold.dart';
 import 'about_app.dart';
 import 'introduction_app.dart';
+import 'music_app.dart';
 import 'photos_app.dart';
 import 'profile_app.dart';
 import 'projects_app.dart';
@@ -22,8 +24,10 @@ class PortfolioAppContent extends StatelessWidget {
     required this.data,
     required this.launcher,
     required this.themeController,
+    required this.musicController,
     this.compact = false,
     this.tablet = false,
+    this.musicShortcutsEnabled = true,
     this.finderWindowChrome,
     this.onOpenApp,
     this.onClose,
@@ -36,8 +40,10 @@ class PortfolioAppContent extends StatelessWidget {
   final PortfolioData data;
   final ExternalLauncher launcher;
   final PortfolioThemeController themeController;
+  final MusicController musicController;
   final bool compact;
   final bool tablet;
+  final bool musicShortcutsEnabled;
   final AppleFinderWindowChrome? finderWindowChrome;
   final ValueChanged<PortfolioAppId>? onOpenApp;
   final VoidCallback? onClose;
@@ -81,6 +87,12 @@ class PortfolioAppContent extends StatelessWidget {
         data: data,
         compact: compact,
         tablet: tablet,
+      ),
+      PortfolioAppId.music => MusicApp(
+        controller: musicController,
+        compact: compact,
+        tablet: tablet,
+        shortcutsEnabled: musicShortcutsEnabled,
       ),
       PortfolioAppId.photos => PhotosApp(compact: compact, tablet: tablet),
       PortfolioAppId.settings => SettingsApp(

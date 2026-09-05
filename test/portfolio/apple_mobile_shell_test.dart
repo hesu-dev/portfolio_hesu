@@ -14,6 +14,8 @@ import 'package:portfolio_hesu/portfolio/theme/portfolio_theme_controller.dart';
 import 'package:portfolio_hesu/portfolio/widgets/apple_app_artwork.dart';
 import 'package:portfolio_hesu/portfolio/widgets/adaptive_portfolio_shell.dart';
 
+import 'support/music_test_controller.dart';
+
 void main() {
   group('adaptive Apple mobile shells', () {
     testWidgets('selects exact iPhone, iPad, and Mac breakpoint boundaries', (
@@ -554,6 +556,7 @@ void main() {
               data: portfolioData,
               externalLauncher: _RecordingLauncher(),
               themeController: themeController,
+              musicController: createTestMusicController(),
               tablet: true,
               now: clock.call,
               clockTickInterval: const Duration(seconds: 1),
@@ -841,6 +844,7 @@ const List<String> _allAppNames = <String>[
   'skills',
   'projects',
   'terminal',
+  'music',
   'photos',
   'github',
   'mail',
@@ -916,6 +920,7 @@ Future<void> _pumpShell(
           data: data,
           externalLauncher: launcher ?? _RecordingLauncher(),
           themeController: themeController,
+          musicController: createTestMusicController(),
           mobilePlatformOverride: mobilePlatformOverride,
         ),
       ),

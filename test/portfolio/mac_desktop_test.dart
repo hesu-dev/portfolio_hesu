@@ -16,6 +16,8 @@ import 'package:portfolio_hesu/portfolio/theme/portfolio_theme_controller.dart';
 import 'package:portfolio_hesu/portfolio/widgets/adaptive_portfolio_shell.dart';
 import 'package:portfolio_hesu/portfolio/widgets/apple_app_artwork.dart';
 
+import 'support/music_test_controller.dart';
+
 void main() {
   group('macOS adaptive shell', () {
     testWidgets('fills representative 1024 and 1440 desktop viewports', (
@@ -1075,6 +1077,7 @@ const Map<PortfolioAppId, String> _labels = <PortfolioAppId, String>{
   PortfolioAppId.skills: 'Skills',
   PortfolioAppId.projects: '포트폴리오',
   PortfolioAppId.terminal: 'Terminal',
+  PortfolioAppId.music: 'Music',
   PortfolioAppId.settings: '설정',
   PortfolioAppId.github: 'GitHub',
   PortfolioAppId.mail: 'Mail',
@@ -1088,6 +1091,7 @@ const List<PortfolioAppId> _desktopLauncherApps = <PortfolioAppId>[
   PortfolioAppId.skills,
   PortfolioAppId.projects,
   PortfolioAppId.terminal,
+  PortfolioAppId.music,
   PortfolioAppId.github,
   PortfolioAppId.mail,
   PortfolioAppId.settings,
@@ -1159,6 +1163,7 @@ Future<void> _pumpThemedDesktop(
         data: portfolioData,
         externalLauncher: _FakeLauncher(),
         themeController: themeController,
+        musicController: createTestMusicController(),
       ),
     ),
   );
@@ -1267,6 +1272,7 @@ Future<void> _pumpAdaptivePortfolio(
         externalLauncher: _FakeLauncher(),
         data: data,
         themeController: themeController,
+        musicController: createTestMusicController(),
       ),
     ),
   );

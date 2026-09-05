@@ -12,6 +12,8 @@ import 'package:portfolio_hesu/portfolio/theme/portfolio_theme_controller.dart';
 import 'package:portfolio_hesu/portfolio/widgets/apple_app_artwork.dart';
 import 'package:portfolio_hesu/portfolio/widgets/apple_mobile_navigation_header.dart';
 
+import 'support/music_test_controller.dart';
+
 void main() {
   group('mobile app navigation bar', () {
     testWidgets(
@@ -481,6 +483,7 @@ class _SurfaceHarnessState extends State<_SurfaceHarness> {
       data: widget.data,
       launcher: widget.launcher,
       themeController: widget.themeController,
+      musicController: createTestMusicController(),
       tablet: widget.tablet,
       onClose: () => setState(() => _open = false),
     );

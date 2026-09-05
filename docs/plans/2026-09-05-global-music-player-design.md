@@ -17,11 +17,15 @@ last track to the first. The alternate `repeat one` mode loops only the active
 track. Browser tab mute remains a browser-level control and requires no custom
 override.
 
-The controller talks to a small `MusicPlaybackPort` rather than directly to a
+The controller talks to a small `MusicPlayback` interface rather than directly to a
 plugin. The web/runtime adapter lazily creates an `audioplayers` player on the
 first playback gesture, while tests use a deterministic fake. This boundary is
 also the future replacement point for native background playback and lock
 screen controls.
+
+The project pins the compatible `audioplayers` 6.7 line because its current
+Flutter 3.38 toolchain does not satisfy the Flutter 3.44 minimum required by
+`audioplayers` 6.8. Upgrading Flutter can unlock the newer plugin line later.
 
 ## Assets and session state
 

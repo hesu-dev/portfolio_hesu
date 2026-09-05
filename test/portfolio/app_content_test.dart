@@ -13,6 +13,8 @@ import 'package:portfolio_hesu/portfolio/theme/apple_theme.dart';
 import 'package:portfolio_hesu/portfolio/theme/portfolio_theme_controller.dart';
 import 'package:portfolio_hesu/portfolio/widgets/apple_app_icon.dart';
 
+import 'support/music_test_controller.dart';
+
 void main() {
   group('AppleAppIcon', () {
     testWidgets('maps every portfolio app to a stable label and key', (
@@ -41,6 +43,7 @@ void main() {
         'skills': 'Skills',
         'projects': '포트폴리오',
         'terminal': 'Terminal',
+        'music': 'Music',
         'photos': '사진',
         'settings': '설정',
         'thisMac': '프로젝트',
@@ -254,6 +257,7 @@ void main() {
         'skills': 'skills-app',
         'projects': 'projects-app',
         'terminal': 'terminal-app',
+        'music': 'music-app',
         'photos': 'photos-app',
         'settings': 'settings-app',
         'thisMac': 'this-mac-app',
@@ -412,6 +416,7 @@ void main() {
           for (final appId in const <PortfolioAppId>[
             PortfolioAppId.introduction,
             PortfolioAppId.skills,
+            PortfolioAppId.music,
             PortfolioAppId.photos,
             PortfolioAppId.trash,
             PortfolioAppId.github,
@@ -1702,6 +1707,7 @@ Future<void> _pumpApp(
           data: data,
           launcher: launcher,
           themeController: themeController,
+          musicController: createTestMusicController(),
           compact: compact,
           tablet: tablet,
         ),

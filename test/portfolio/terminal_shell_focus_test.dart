@@ -7,6 +7,8 @@ import 'package:portfolio_hesu/portfolio/services/external_launcher.dart';
 import 'package:portfolio_hesu/portfolio/theme/apple_theme.dart';
 import 'package:portfolio_hesu/portfolio/theme/portfolio_theme_controller.dart';
 
+import 'support/music_test_controller.dart';
+
 void main() {
   for (final scenario in const <({Size size, bool tablet, String name})>[
     (size: Size(390, 844), tablet: false, name: 'iPhone'),
@@ -27,6 +29,7 @@ void main() {
             data: portfolioData,
             externalLauncher: CallbackExternalLauncher((_) async => true),
             themeController: themeController,
+            musicController: createTestMusicController(),
             tablet: scenario.tablet,
           ),
         ),

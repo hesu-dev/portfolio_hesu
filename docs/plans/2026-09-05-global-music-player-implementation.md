@@ -8,6 +8,9 @@
 
 **Tech Stack:** Flutter, Dart, `audioplayers`, `package:web`, Flutter `AssetManifest`, widget/unit tests.
 
+**Compatibility note:** Use `audioplayers: ^6.7.1` with the repository's
+Flutter 3.38 toolchain. Version 6.8 requires Flutter 3.44 or newer.
+
 ---
 
 ### Task 1: Build the music domain and web persistence

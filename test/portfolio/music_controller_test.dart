@@ -4,6 +4,8 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:portfolio_hesu/portfolio/music/music_controller.dart';
 import 'package:portfolio_hesu/portfolio/music/music_playback.dart';
 import 'package:portfolio_hesu/portfolio/music/music_session_store.dart';
+import 'package:portfolio_hesu/portfolio/music/music_session_store_stub.dart'
+    as stub;
 import 'package:portfolio_hesu/portfolio/music/music_track.dart';
 
 void main() {
@@ -21,6 +23,7 @@ void main() {
           factoryCalls += 1;
           return _FakePlayback();
         },
+        sessionStore: _FakeSessionStore(),
       );
 
       expect(controller.isPlaying, isFalse);
@@ -76,11 +79,45 @@ void main() {
       controller.dispose();
     });
 
+    test(
+      'loading tracks applies a pending session selection without autoplay',
+      () {
+        var factoryCalls = 0;
+        final controller = MusicController(
+          tracks: const <MusicTrack>[],
+          playbackFactory: () {
+            factoryCalls += 1;
+            return _FakePlayback();
+          },
+          sessionStore: _FakeSessionStore(
+            const MusicSessionState(
+              currentIndex: 1,
+              mode: MusicPlaybackMode.repeatOne,
+              volume: 0.4,
+            ),
+          ),
+        );
+
+        controller.replaceTracks(tracks);
+
+        expect(controller.tracks, tracks);
+        expect(controller.currentIndex, 1);
+        expect(controller.currentTrack, tracks[1]);
+        expect(controller.mode, MusicPlaybackMode.repeatOne);
+        expect(controller.volume, 0.4);
+        expect(controller.isPlaying, isFalse);
+        expect(factoryCalls, 0);
+
+        controller.dispose();
+      },
+    );
+
     test('play starts the selected track after user action', () async {
       final playback = _FakePlayback();
       final controller = MusicController(
         tracks: tracks,
         playbackFactory: () => playback,
+        sessionStore: _FakeSessionStore(),
       );
 
       await controller.play();
@@ -97,6 +134,7 @@ void main() {
       final controller = MusicController(
         tracks: tracks,
         playbackFactory: () => playback,
+        sessionStore: _FakeSessionStore(),
       );
 
       await controller.play();
@@ -117,6 +155,7 @@ void main() {
       final controller = MusicController(
         tracks: tracks,
         playbackFactory: () => playback,
+        sessionStore: _FakeSessionStore(),
       );
 
       final playFuture = controller.play();
@@ -139,6 +178,7 @@ void main() {
       final controller = MusicController(
         tracks: tracks,
         playbackFactory: () => playback,
+        sessionStore: _FakeSessionStore(),
       );
 
       final playFuture = controller.play();
@@ -160,6 +200,7 @@ void main() {
         final controller = MusicController(
           tracks: tracks,
           playbackFactory: () => playback,
+          sessionStore: _FakeSessionStore(),
         );
 
         final playFuture = controller.play();
@@ -187,6 +228,7 @@ void main() {
         final controller = MusicController(
           tracks: tracks,
           playbackFactory: () => playback,
+          sessionStore: _FakeSessionStore(),
         );
 
         final playFuture = controller.play();
@@ -210,6 +252,7 @@ void main() {
         final controller = MusicController(
           tracks: tracks,
           playbackFactory: () => playback,
+          sessionStore: _FakeSessionStore(),
         );
         await controller.play();
 
@@ -238,6 +281,7 @@ void main() {
       final controller = MusicController(
         tracks: tracks,
         playbackFactory: () => playback,
+        sessionStore: _FakeSessionStore(),
       );
       controller.setMode(MusicPlaybackMode.repeatOne);
       await controller.play();
@@ -257,6 +301,7 @@ void main() {
       final controller = MusicController(
         tracks: tracks,
         playbackFactory: _FakePlayback.new,
+        sessionStore: _FakeSessionStore(),
       );
 
       await controller.previous();
@@ -275,6 +320,7 @@ void main() {
       final controller = MusicController(
         tracks: tracks,
         playbackFactory: () => playback,
+        sessionStore: _FakeSessionStore(),
       );
 
       await controller.next();
@@ -327,6 +373,7 @@ void main() {
       final controller = MusicController(
         tracks: tracks,
         playbackFactory: () => playback,
+        sessionStore: _FakeSessionStore(),
       );
 
       await controller.play();
@@ -348,6 +395,7 @@ void main() {
       final controller = MusicController(
         tracks: tracks,
         playbackFactory: () => playback,
+        sessionStore: _FakeSessionStore(),
       );
 
       await controller.play();
@@ -368,6 +416,7 @@ void main() {
       final controller = MusicController(
         tracks: tracks.take(1).toList(),
         playbackFactory: _FakePlayback.new,
+        sessionStore: _FakeSessionStore(),
       );
 
       await controller.next();
@@ -406,8 +455,8 @@ void main() {
       controller.dispose();
     });
 
-    test('the non-web default store retains state for its lifetime', () {
-      final store = createMusicSessionStore();
+    test('the non-web memory store retains state for its lifetime', () {
+      final store = stub.createPlatformMusicSessionStore();
       const state = MusicSessionState(
         currentIndex: 1,
         mode: MusicPlaybackMode.repeatOne,
@@ -424,6 +473,7 @@ void main() {
       final controller = MusicController(
         tracks: tracks,
         playbackFactory: () => playback,
+        sessionStore: _FakeSessionStore(),
       );
 
       await controller.play();
@@ -443,6 +493,7 @@ void main() {
         final controller = MusicController(
           tracks: tracks,
           playbackFactory: () => playback,
+          sessionStore: _FakeSessionStore(),
         );
 
         await controller.play();

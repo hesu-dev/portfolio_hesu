@@ -25,6 +25,7 @@ void main() {
       final controller = MusicController(
         tracks: const <MusicTrack>[],
         playbackFactory: _FakePlayback.new,
+        sessionStore: _FakeSessionStore(),
       );
       addTearDown(controller.dispose);
 
@@ -54,6 +55,7 @@ void main() {
         final controller = MusicController(
           tracks: tracks,
           playbackFactory: _FakePlayback.new,
+          sessionStore: _FakeSessionStore(),
         );
         addTearDown(controller.dispose);
 
@@ -88,6 +90,7 @@ void main() {
       final controller = MusicController(
         tracks: tracks,
         playbackFactory: () => playback,
+        sessionStore: _FakeSessionStore(),
       );
       addTearDown(controller.dispose);
       addTearDown(playback.dispose);
@@ -121,6 +124,7 @@ void main() {
       final controller = MusicController(
         tracks: tracks,
         playbackFactory: _FakePlayback.new,
+        sessionStore: _FakeSessionStore(),
       );
       addTearDown(controller.dispose);
       await _pumpMusic(tester, controller: controller);
@@ -157,6 +161,7 @@ void main() {
       final controller = MusicController(
         tracks: tracks,
         playbackFactory: () => playback,
+        sessionStore: _FakeSessionStore(),
       );
       addTearDown(controller.dispose);
       addTearDown(playback.dispose);
@@ -196,6 +201,7 @@ void main() {
       final controller = MusicController(
         tracks: tracks,
         playbackFactory: () => playback,
+        sessionStore: _FakeSessionStore(),
       );
       addTearDown(controller.dispose);
       addTearDown(playback.dispose);
@@ -215,6 +221,33 @@ void main() {
       expect(playback.playedTracks, <MusicTrack>[tracks[0]]);
     });
 
+    testWidgets('announces a safe playback error without leaking details', (
+      tester,
+    ) async {
+      final playback = _FakePlayback(playError: StateError('device details'));
+      final controller = MusicController(
+        tracks: tracks,
+        playbackFactory: () => playback,
+        sessionStore: _FakeSessionStore(),
+      );
+      addTearDown(controller.dispose);
+      addTearDown(playback.dispose);
+      final semantics = tester.ensureSemantics();
+      await _pumpMusic(tester, controller: controller);
+
+      await tester.tap(find.byKey(const Key('music-play-pause')));
+      await tester.pumpAndSettle();
+
+      expect(find.text(MusicController.playbackErrorMessage), findsOneWidget);
+      expect(find.textContaining('device details'), findsNothing);
+      expect(controller.isPlaying, isFalse);
+      final banner = tester
+          .getSemantics(find.byType(AppleFeedbackBanner))
+          .getSemanticsData();
+      expect(banner.flagsCollection.isLiveRegion, isTrue);
+      semantics.dispose();
+    });
+
     testWidgets(
       'focused controls keep their standard Space and arrow actions',
       (tester) async {
@@ -222,6 +255,7 @@ void main() {
         final controller = MusicController(
           tracks: tracks,
           playbackFactory: () => playback,
+          sessionStore: _FakeSessionStore(),
         );
         addTearDown(controller.dispose);
         addTearDown(playback.dispose);
@@ -265,6 +299,7 @@ void main() {
       final controller = MusicController(
         tracks: tracks.take(1),
         playbackFactory: _FakePlayback.new,
+        sessionStore: _FakeSessionStore(),
       );
       addTearDown(controller.dispose);
       await _pumpMusic(tester, controller: controller);
@@ -343,6 +378,7 @@ void main() {
           final controller = MusicController(
             tracks: tracks,
             playbackFactory: _FakePlayback.new,
+            sessionStore: _FakeSessionStore(),
           );
           await _pumpMusic(
             tester,
@@ -385,6 +421,9 @@ void main() {
 }
 
 class _FakePlayback implements MusicPlayback {
+  _FakePlayback({this.playError});
+
+  final Object? playError;
   final List<MusicTrack> playedTracks = <MusicTrack>[];
 
   @override
@@ -398,6 +437,9 @@ class _FakePlayback implements MusicPlayback {
 
   @override
   Future<void> play(MusicTrack track) async {
+    if (playError case final error?) {
+      throw error;
+    }
     playedTracks.add(track);
   }
 
@@ -406,6 +448,16 @@ class _FakePlayback implements MusicPlayback {
 
   @override
   Future<void> setVolume(double volume) async {}
+}
+
+class _FakeSessionStore implements MusicSessionStore {
+  MusicSessionState? _state;
+
+  @override
+  MusicSessionState? read() => _state;
+
+  @override
+  void write(MusicSessionState state) => _state = state;
 }
 
 IconButton _transportButton(WidgetTester tester, Key key) {

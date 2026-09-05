@@ -15,6 +15,8 @@ import 'package:portfolio_hesu/portfolio/theme/portfolio_theme_controller.dart';
 import 'package:portfolio_hesu/portfolio/widgets/apple_app_artwork.dart';
 import 'package:portfolio_hesu/portfolio/widgets/apple_app_icon.dart';
 
+import 'support/music_test_controller.dart';
+
 void main() {
   group('Apple app artwork', () {
     testWidgets(
@@ -88,6 +90,37 @@ void main() {
         );
       },
     );
+
+    testWidgets('draws Music as code-native red and pink note artwork', (
+      tester,
+    ) async {
+      await _pumpArtwork(tester, PortfolioAppId.music);
+
+      final artwork = find.byKey(const Key('apple-app-artwork-music'));
+      expect(artwork, findsOneWidget);
+      expect(
+        find.descendant(of: artwork, matching: find.byType(CustomPaint)),
+        findsOneWidget,
+      );
+      expect(
+        find.descendant(of: artwork, matching: find.byType(Icon)),
+        findsNothing,
+      );
+      expect(AppleAppArtwork.assetPathFor(PortfolioAppId.music), isNull);
+      expect(
+        AppleAppArtwork.colorsFor(
+          PortfolioAppId.music,
+        ).map((color) => color.toARGB32()),
+        containsAll(<int>[
+          const Color(0xFFFF375F).toARGB32(),
+          const Color(0xFFB5179E).toARGB32(),
+        ]),
+      );
+      expect(
+        _artworkDecoration(tester, PortfolioAppId.music).boxShadow,
+        isNull,
+      );
+    });
 
     testWidgets('uses the supplied Word artwork only for Introduction', (
       tester,
@@ -348,6 +381,7 @@ void main() {
             data: portfolioData,
             externalLauncher: _FakeLauncher(),
             themeController: themeController,
+            musicController: createTestMusicController(),
           ),
         ),
       );
@@ -380,6 +414,7 @@ void main() {
               data: portfolioData,
               externalLauncher: _FakeLauncher(),
               themeController: themeController,
+              musicController: createTestMusicController(),
             ),
           ),
         );
@@ -573,6 +608,7 @@ void main() {
             data: portfolioData,
             externalLauncher: _FakeLauncher(),
             themeController: themeController,
+            musicController: createTestMusicController(),
           ),
         ),
       );
@@ -610,6 +646,7 @@ void main() {
               data: portfolioData,
               externalLauncher: _FakeLauncher(),
               themeController: themeController,
+              musicController: createTestMusicController(),
               tablet: false,
               now: _fixedNow,
             ),
@@ -645,6 +682,7 @@ const List<PortfolioAppId> _bespokeApps = <PortfolioAppId>[
   PortfolioAppId.skills,
   PortfolioAppId.projects,
   PortfolioAppId.terminal,
+  PortfolioAppId.music,
   PortfolioAppId.photos,
   PortfolioAppId.mail,
   PortfolioAppId.settings,

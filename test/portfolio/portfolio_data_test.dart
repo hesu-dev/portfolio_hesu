@@ -322,6 +322,7 @@ void main() {
       'skills',
       'projects',
       'terminal',
+      'music',
       'photos',
       'thisMac',
       'trash',

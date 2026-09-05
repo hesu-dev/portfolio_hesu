@@ -3,6 +3,7 @@ import 'package:flutter/material.dart';
 import '../apps/portfolio_app_content.dart';
 import '../data/portfolio_data.dart';
 import '../models/portfolio_app_id.dart';
+import '../music/music_controller.dart';
 import '../services/external_launcher.dart';
 import '../theme/apple_theme.dart';
 import '../theme/portfolio_theme_controller.dart';
@@ -18,6 +19,7 @@ class MobileAppSurface extends StatelessWidget {
     required this.data,
     required this.launcher,
     required this.themeController,
+    required this.musicController,
     required this.tablet,
     required this.onClose,
     this.trashEmpty = false,
@@ -30,6 +32,7 @@ class MobileAppSurface extends StatelessWidget {
   final PortfolioData data;
   final ExternalLauncher launcher;
   final PortfolioThemeController themeController;
+  final MusicController musicController;
   final bool tablet;
   final VoidCallback onClose;
   final bool trashEmpty;
@@ -108,6 +111,7 @@ class MobileAppSurface extends StatelessWidget {
                     data: data,
                     launcher: launcher,
                     themeController: themeController,
+                    musicController: musicController,
                     compact: !tablet,
                     tablet: tablet,
                     finderWindowChrome: finderWindowChrome,

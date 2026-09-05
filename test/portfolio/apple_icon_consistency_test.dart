@@ -10,6 +10,8 @@ import 'package:portfolio_hesu/portfolio/theme/apple_theme.dart';
 import 'package:portfolio_hesu/portfolio/theme/portfolio_theme_controller.dart';
 import 'package:portfolio_hesu/portfolio/widgets/apple_app_artwork.dart';
 
+import 'support/music_test_controller.dart';
+
 void main() {
   group('Apple 아이콘 프레임 일관성', () {
     for (final surface in _IconSurface.values) {
@@ -237,6 +239,7 @@ Future<void> _pumpSurface(
       data: portfolioData,
       externalLauncher: const _FakeLauncher(),
       themeController: themeController,
+      musicController: createTestMusicController(),
     ),
     _IconSurface.iPad => AppleHomeGrid(
       data: portfolioData,

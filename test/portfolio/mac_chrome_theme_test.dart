@@ -8,6 +8,8 @@ import 'package:portfolio_hesu/portfolio/services/external_launcher.dart';
 import 'package:portfolio_hesu/portfolio/theme/apple_theme.dart';
 import 'package:portfolio_hesu/portfolio/theme/portfolio_theme_controller.dart';
 
+import 'support/music_test_controller.dart';
+
 void main() {
   group('macOS window chrome theme', () {
     testWidgets('preserves the light chrome and renders readable dark glass', (
@@ -348,6 +350,7 @@ Future<void> _pumpWindow(
           data: portfolioData,
           launcher: CallbackExternalLauncher((_) async => true),
           themeController: themeController,
+          musicController: createTestMusicController(),
           active: active,
           maximized: false,
           onFocus: () {},
