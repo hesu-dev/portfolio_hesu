@@ -77,6 +77,28 @@ class MusicController extends ChangeNotifier {
 
   Future<void> previous() => _navigate(MusicNavigationDirection.previous);
 
+  Future<void> select(int index) async {
+    if (index < 0 || index >= tracks.length || index == _currentIndex) return;
+
+    _navigationDirection = index > _currentIndex
+        ? MusicNavigationDirection.next
+        : MusicNavigationDirection.previous;
+    _navigationRevision += 1;
+    _currentIndex = index;
+    _persist();
+    final generation = ++_commandGeneration;
+    final track = currentTrack;
+    _notify();
+
+    if (_isPlaying && track != null) {
+      await _enqueueStart(track, generation: generation, restart: true);
+    } else {
+      await _enqueue(generation, () async {
+        await _playback?.pause();
+      });
+    }
+  }
+
   void setMode(MusicPlaybackMode mode) {
     if (_mode == mode) return;
     _mode = mode;
@@ -109,6 +131,10 @@ class MusicController extends ChangeNotifier {
 
     if (_isPlaying && track != null) {
       await _enqueueStart(track, generation: generation, restart: true);
+    } else {
+      await _enqueue(generation, () async {
+        await _playback?.pause();
+      });
     }
   }
 

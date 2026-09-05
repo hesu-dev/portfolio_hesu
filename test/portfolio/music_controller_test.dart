@@ -295,6 +295,75 @@ void main() {
       await playback.dispose();
     });
 
+    test('select changes the track and restarts only while playing', () async {
+      final store = _FakeSessionStore();
+      final playback = _FakePlayback();
+      final controller = MusicController(
+        tracks: tracks,
+        playbackFactory: () => playback,
+        sessionStore: store,
+      );
+
+      await controller.select(1);
+      expect(controller.currentIndex, 1);
+      expect(controller.navigationRevision, 1);
+      expect(controller.navigationDirection, MusicNavigationDirection.next);
+      expect(playback.playedTracks, isEmpty);
+
+      await controller.play();
+      await controller.select(0);
+      expect(controller.currentIndex, 0);
+      expect(controller.navigationRevision, 2);
+      expect(controller.navigationDirection, MusicNavigationDirection.previous);
+      expect(playback.playedTracks, <MusicTrack>[tracks[1], tracks[0]]);
+      expect(store.state?.currentIndex, 0);
+
+      controller.dispose();
+      await playback.dispose();
+    });
+
+    test('navigation after an unawaited pause still pauses playback', () async {
+      final playback = _FakePlayback();
+      final controller = MusicController(
+        tracks: tracks,
+        playbackFactory: () => playback,
+      );
+
+      await controller.play();
+      final pauseFuture = controller.pause();
+      final navigationFuture = controller.next();
+      await Future.wait(<Future<void>>[pauseFuture, navigationFuture]);
+
+      expect(controller.currentIndex, 1);
+      expect(controller.isPlaying, isFalse);
+      expect(playback.pauseCalls, 1);
+      expect(playback.playedTracks, <MusicTrack>[tracks[0]]);
+
+      controller.dispose();
+      await playback.dispose();
+    });
+
+    test('selection after an unawaited pause still pauses playback', () async {
+      final playback = _FakePlayback();
+      final controller = MusicController(
+        tracks: tracks,
+        playbackFactory: () => playback,
+      );
+
+      await controller.play();
+      final pauseFuture = controller.pause();
+      final selectionFuture = controller.select(1);
+      await Future.wait(<Future<void>>[pauseFuture, selectionFuture]);
+
+      expect(controller.currentIndex, 1);
+      expect(controller.isPlaying, isFalse);
+      expect(playback.pauseCalls, 1);
+      expect(playback.playedTracks, <MusicTrack>[tracks[0]]);
+
+      controller.dispose();
+      await playback.dispose();
+    });
+
     test('every navigation changes revision even with one track', () async {
       final controller = MusicController(
         tracks: tracks.take(1).toList(),
