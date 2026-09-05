@@ -1,5 +1,5 @@
 import 'dart:ui' show PointerDeviceKind;
-import 'dart:ui' as ui show SemanticsAction;
+import 'dart:ui' as ui show SemanticsAction, Tristate;
 
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
@@ -54,6 +54,300 @@ void main() {
         expect(find.bySemanticsLabel('Close 프로필 window'), findsOneWidget);
       }
 
+      semantics.dispose();
+    });
+
+    testWidgets('인스타그램형 프로필 요약을 보이고 사이드바는 iPad에만 둔다', (tester) async {
+      final semantics = tester.ensureSemantics();
+
+      for (final scenario in const <(String, Size, bool)>[
+        ('iPhone', Size(390, 844), false),
+        ('iPad', Size(834, 1194), true),
+      ]) {
+        await tester.pumpWidget(const SizedBox.shrink());
+        await _pumpProfileShell(tester, size: scenario.$2, tablet: scenario.$3);
+        await _openProfile(tester);
+
+        final profile = find.byKey(const Key('profile-app'));
+        expect(
+          find.descendant(of: profile, matching: find.text('민희수')),
+          findsOneWidget,
+          reason: scenario.$1,
+        );
+        expect(
+          find.descendant(
+            of: profile,
+            matching: find.byKey(const Key('profile-handle')),
+          ),
+          findsOneWidget,
+          reason: scenario.$1,
+        );
+        expect(
+          find.descendant(of: profile, matching: find.text('@min_hesu')),
+          findsOneWidget,
+          reason: scenario.$1,
+        );
+        _expectButtonSemantics(
+          tester,
+          find.byKey(const Key('profile-follow-action')),
+          label: '팔로우',
+        );
+        _expectButtonSemantics(
+          tester,
+          find.byKey(const Key('profile-message-action')),
+          label: '메시지 보내기',
+        );
+        expect(
+          find.byKey(const Key('profile-sidebar')),
+          scenario.$3 ? findsOneWidget : findsNothing,
+          reason: scenario.$1,
+        );
+        expect(
+          find.byKey(const Key('profile-sidebar-reels-action')),
+          scenario.$3 ? findsOneWidget : findsNothing,
+          reason: scenario.$1,
+        );
+        if (scenario.$3) {
+          final profileRect = tester.getRect(profile);
+          final sidebarRect = tester.getRect(
+            find.byKey(const Key('profile-sidebar')),
+          );
+          expect(sidebarRect.width, closeTo(72, 0.1));
+          expect(sidebarRect.top, closeTo(profileRect.top, 0.1));
+          expect(sidebarRect.bottom, closeTo(profileRect.bottom, 0.1));
+          expect(
+            tester
+                .getRect(
+                  find.byKey(const Key('profile-sidebar-settings-action')),
+                )
+                .bottom,
+            greaterThan(profileRect.bottom - 72),
+          );
+        }
+        expect(
+          find.byKey(const Key('profile-suggested-friends')),
+          findsNothing,
+          reason: scenario.$1,
+        );
+        expect(find.text('추천 친구'), findsNothing, reason: scenario.$1);
+      }
+
+      semantics.dispose();
+    });
+
+    testWidgets('독립 프로필은 연결 콜백이 없는 이동 제어를 비활성화한다', (tester) async {
+      final semantics = tester.ensureSemantics();
+      await _pumpStandaloneProfile(
+        tester,
+        size: const Size(834, 1194),
+        tablet: true,
+      );
+
+      for (final actionKey in const <Key>[
+        Key('profile-message-action'),
+        Key('profile-sidebar-projects-action'),
+        Key('profile-sidebar-message-action'),
+        Key('profile-sidebar-settings-action'),
+      ]) {
+        final semanticsData = tester
+            .getSemantics(find.byKey(actionKey))
+            .getSemanticsData();
+        expect(semanticsData.flagsCollection.isEnabled, ui.Tristate.isFalse);
+        expect(semanticsData.hasAction(ui.SemanticsAction.tap), isFalse);
+      }
+      expect(
+        find.byKey(const Key('profile-career-projects-link')),
+        findsNothing,
+      );
+
+      semantics.dispose();
+    });
+
+    testWidgets('팔로우 버튼은 팔로잉 상태를 두 번 토글한다', (tester) async {
+      final semantics = tester.ensureSemantics();
+      await _pumpProfileShell(
+        tester,
+        size: const Size(390, 844),
+        tablet: false,
+      );
+      await _openProfile(tester);
+
+      final follow = find.byKey(const Key('profile-follow-action'));
+      _expectButtonSemantics(tester, follow, label: '팔로우');
+      expect(
+        find.descendant(of: follow, matching: find.text('팔로우')),
+        findsOneWidget,
+      );
+
+      await tester.tap(follow);
+      await tester.pumpAndSettle();
+
+      _expectButtonSemantics(tester, follow, label: '팔로우 취소');
+      expect(
+        find.descendant(of: follow, matching: find.text('팔로잉')),
+        findsOneWidget,
+      );
+
+      await tester.tap(follow);
+      await tester.pumpAndSettle();
+
+      _expectButtonSemantics(tester, follow, label: '팔로우');
+      expect(
+        find.descendant(of: follow, matching: find.text('팔로우')),
+        findsOneWidget,
+      );
+      semantics.dispose();
+    });
+
+    testWidgets('메시지 보내기는 메일 앱을 열고 닫으면 프로필로 돌아온다', (tester) async {
+      final semantics = tester.ensureSemantics();
+
+      for (final scenario in const <(String, Size, bool)>[
+        ('iPhone', Size(390, 844), false),
+        ('iPad', Size(834, 1194), true),
+      ]) {
+        await tester.pumpWidget(const SizedBox.shrink());
+        await _pumpProfileShell(tester, size: scenario.$2, tablet: scenario.$3);
+        await _openProfile(tester);
+
+        await tester.tap(find.byKey(const Key('profile-message-action')));
+        await tester.pumpAndSettle();
+
+        expect(
+          find.byKey(const Key('mail-app')),
+          findsOneWidget,
+          reason: scenario.$1,
+        );
+        expect(
+          find.byKey(const Key('profile-app')),
+          findsOneWidget,
+          reason: scenario.$1,
+        );
+        await tester.tap(find.byKey(const Key('mobile-back-close-mail')));
+        await tester.pumpAndSettle();
+        expect(
+          find.byKey(const Key('mail-app')),
+          findsNothing,
+          reason: scenario.$1,
+        );
+        expect(
+          find.byKey(const Key('profile-app')),
+          findsOneWidget,
+          reason: scenario.$1,
+        );
+      }
+
+      semantics.dispose();
+    });
+
+    testWidgets('경력 갤러리는 포트폴리오 회사를 열고 닫으면 프로필로 돌아온다', (tester) async {
+      final semantics = tester.ensureSemantics();
+
+      for (final scenario in const <(String, Size, bool)>[
+        ('iPhone', Size(390, 844), false),
+        ('iPad', Size(834, 1194), true),
+      ]) {
+        await tester.pumpWidget(const SizedBox.shrink());
+        await _pumpProfileShell(
+          tester,
+          size: scenario.$2,
+          tablet: scenario.$3,
+          data: _injectedProfileData(),
+        );
+        await _openProfile(tester);
+
+        final career = find.byKey(const Key('profile-history-post-experience'));
+        await _ensureCardBuilt(tester, career);
+        _expectButtonSemantics(tester, career, label: '경력 게시물 열기');
+        final companyLink = find.byKey(
+          const Key('profile-career-projects-link'),
+        );
+        _expectButtonSemantics(tester, companyLink, label: '포트폴리오 회사 열기');
+        final linkRect = tester.getRect(companyLink);
+        expect(linkRect.width, greaterThanOrEqualTo(44));
+        expect(linkRect.height, greaterThanOrEqualTo(44));
+        await tester.ensureVisible(career);
+        await tester.tap(companyLink);
+        await tester.pumpAndSettle();
+
+        expect(
+          find.byKey(const Key('projects-app')),
+          findsOneWidget,
+          reason: scenario.$1,
+        );
+        expect(
+          tester
+              .getSemantics(
+                find.byKey(const Key('projects-finder-location-career')),
+              )
+              .getSemanticsData()
+              .flagsCollection
+              .isSelected,
+          ui.Tristate.isTrue,
+          reason: scenario.$1,
+        );
+        await tester.tap(find.byKey(const Key('mobile-back-close-projects')));
+        await tester.pumpAndSettle();
+        expect(find.byKey(const Key('projects-app')), findsNothing);
+        expect(find.byKey(const Key('profile-app')), findsOneWidget);
+        expect(find.byKey(const Key('profile-history-grid')), findsOneWidget);
+      }
+
+      semantics.dispose();
+    });
+
+    testWidgets('iPhone 경력 카드 본체는 기존 릴스와 경력 답글을 유지한다', (tester) async {
+      final data = _injectedProfileData();
+      await _pumpProfileShell(
+        tester,
+        size: const Size(390, 844),
+        tablet: false,
+        data: data,
+      );
+      await _openProfile(tester);
+
+      await _openHistoryCard(
+        tester,
+        const Key('profile-history-post-experience'),
+      );
+
+      expect(find.byKey(const Key('profile-history-detail')), findsOneWidget);
+      expect(find.byKey(const Key('projects-app')), findsNothing);
+      expect(
+        find.byKey(const Key('profile-reel-reply-item-experience-0')),
+        findsOneWidget,
+      );
+    });
+
+    testWidgets('iPad 사이드바 Reels는 경력 상세를 열고 뒤로 가기를 유지한다', (tester) async {
+      final semantics = tester.ensureSemantics();
+      final data = _injectedProfileData();
+      await _pumpProfileShell(
+        tester,
+        size: const Size(834, 1194),
+        tablet: true,
+        data: data,
+      );
+      await _openProfile(tester);
+
+      await _openCareerReelFromSidebar(tester);
+
+      expect(find.byKey(const Key('profile-history-detail')), findsOneWidget);
+      expect(find.byKey(const Key('projects-app')), findsNothing);
+      expect(
+        find.descendant(
+          of: find.byKey(const Key('profile-reel-info')),
+          matching: find.text('경력'),
+        ),
+        findsOneWidget,
+      );
+      expect(find.byKey(const Key('profile-sidebar')), findsOneWidget);
+
+      await tester.tap(find.byKey(const Key('mobile-back-close-profile')));
+      await tester.pumpAndSettle();
+      expect(find.byKey(const Key('profile-history-detail')), findsNothing);
+      expect(find.byKey(const Key('profile-history-grid')), findsOneWidget);
+      expect(find.byKey(const Key('profile-sidebar')), findsOneWidget);
       semantics.dispose();
     });
 
@@ -203,7 +497,7 @@ void main() {
       await _openProfile(tester);
       await _openHistoryCard(
         tester,
-        const Key('profile-history-post-experience'),
+        const Key('profile-history-post-education'),
       );
 
       _expectReelTemplate(tester, data: data);
@@ -226,14 +520,14 @@ void main() {
         await _openProfile(tester);
         await _openHistoryCard(
           tester,
-          const Key('profile-history-post-experience'),
+          const Key('profile-history-post-education'),
         );
 
         final detail = find.byKey(const Key('profile-history-detail'));
         final overlay = find.byKey(const Key('profile-reel-overlay'));
         final thread = find.byKey(const Key('profile-reel-reply-thread'));
         final firstReply = find.byKey(
-          const Key('profile-reel-reply-item-experience-0'),
+          const Key('profile-reel-reply-item-education-0'),
         );
         final shareAction = find.byKey(const Key('profile-reel-share-action'));
         final detailRect = tester.getRect(detail);
@@ -312,7 +606,7 @@ void main() {
         await _openProfile(tester);
         await _openHistoryCard(
           tester,
-          const Key('profile-history-post-experience'),
+          const Key('profile-history-post-education'),
         );
 
         final overlay = find.byKey(const Key('profile-reel-overlay'));
@@ -395,7 +689,7 @@ void main() {
       await _openProfile(tester);
       await _openHistoryCard(
         tester,
-        const Key('profile-history-post-experience'),
+        const Key('profile-history-post-education'),
       );
 
       final detail = find.byKey(const Key('profile-history-detail'));
@@ -473,15 +767,12 @@ void main() {
       final semantics = tester.ensureSemantics();
       await _pumpProfileShell(
         tester,
-        size: const Size(390, 844),
-        tablet: false,
+        size: const Size(834, 1194),
+        tablet: true,
         data: _injectedProfileData(),
       );
       await _openProfile(tester);
-      await _openHistoryCard(
-        tester,
-        const Key('profile-history-post-experience'),
-      );
+      await _openCareerReelFromSidebar(tester);
 
       var likeAction = find.byKey(const Key('profile-reel-like-action'));
       await tester.tap(likeAction);
@@ -490,10 +781,7 @@ void main() {
 
       await tester.tap(find.byKey(const Key('mobile-back-close-profile')));
       await tester.pumpAndSettle();
-      await _openHistoryCard(
-        tester,
-        const Key('profile-history-post-experience'),
-      );
+      await _openCareerReelFromSidebar(tester);
 
       likeAction = find.byKey(const Key('profile-reel-like-action'));
       _expectButtonSemantics(tester, likeAction, label: '좋아요 취소');
@@ -528,15 +816,12 @@ void main() {
       final original = _injectedProfileData();
       await _pumpProfileShell(
         tester,
-        size: const Size(390, 844),
-        tablet: false,
+        size: const Size(834, 1194),
+        tablet: true,
         data: original,
       );
       await _openProfile(tester);
-      await _openHistoryCard(
-        tester,
-        const Key('profile-history-post-experience'),
-      );
+      await _openCareerReelFromSidebar(tester);
 
       final profileState = tester.state(find.byType(ProfileApp));
       var likeAction = find.byKey(const Key('profile-reel-like-action'));
@@ -576,8 +861,8 @@ void main() {
 
       await _pumpProfileShell(
         tester,
-        size: const Size(390, 844),
-        tablet: false,
+        size: const Size(834, 1194),
+        tablet: true,
         data: identicalHistory,
       );
 
@@ -601,8 +886,8 @@ void main() {
 
       await _pumpProfileShell(
         tester,
-        size: const Size(390, 844),
-        tablet: false,
+        size: const Size(834, 1194),
+        tablet: true,
         data: changedHistory,
       );
 
@@ -619,10 +904,7 @@ void main() {
           .position;
       expect(feedPosition.pixels, closeTo(0, 0.5));
 
-      await _openHistoryCard(
-        tester,
-        const Key('profile-history-post-experience'),
-      );
+      await _openCareerReelFromSidebar(tester);
       likeAction = find.byKey(const Key('profile-reel-like-action'));
       _expectButtonSemantics(tester, likeAction, label: '좋아요');
       expect(
@@ -646,7 +928,7 @@ void main() {
       await _openProfile(tester);
       await _openHistoryCard(
         tester,
-        const Key('profile-history-post-experience'),
+        const Key('profile-history-post-education'),
       );
 
       final detail = find.byKey(const Key('profile-history-detail'));
@@ -711,15 +993,12 @@ void main() {
       final data = _injectedProfileData();
       await _pumpProfileShell(
         tester,
-        size: const Size(390, 844),
-        tablet: false,
+        size: const Size(834, 1194),
+        tablet: true,
         data: data,
       );
       await _openProfile(tester);
-      await _openHistoryCard(
-        tester,
-        const Key('profile-history-post-experience'),
-      );
+      await _openCareerReelFromSidebar(tester);
 
       final detail = find.byKey(const Key('profile-history-detail'));
       final overlay = find.byKey(const Key('profile-reel-overlay'));
@@ -990,7 +1269,7 @@ void main() {
 
         await _openHistoryCard(
           tester,
-          const Key('profile-history-post-experience'),
+          const Key('profile-history-post-education'),
         );
         expect(
           find.byKey(const Key('mobile-app-navigation-bar')),
@@ -1092,6 +1371,7 @@ void main() {
     testWidgets('라이트와 다크의 iPhone·iPad 200% 피드와 상세가 넘치지 않는다', (tester) async {
       for (final formFactor in const <(Size, bool)>[
         (Size(320, 480), false),
+        (Size(600, 720), true),
         (Size(834, 620), true),
       ]) {
         final backgroundColors = <Brightness, Color>{};
@@ -1148,10 +1428,14 @@ void main() {
             reason: '${formFactor.$1} $brightness feed',
           );
 
-          await _openHistoryCard(
-            tester,
-            const Key('profile-history-post-experience'),
-          );
+          if (formFactor.$2) {
+            await _openCareerReelFromSidebar(tester);
+          } else {
+            await _openHistoryCard(
+              tester,
+              const Key('profile-history-post-education'),
+            );
+          }
           expect(
             find.byKey(const Key('profile-history-detail')),
             findsOneWidget,
@@ -1172,21 +1456,25 @@ void main() {
             reason: '${formFactor.$1} $brightness detail',
           );
 
-          await tester.tap(find.byKey(const Key('mobile-back-close-profile')));
-          await tester.pumpAndSettle();
-          await _openHistoryCard(
-            tester,
-            const Key('profile-history-post-education'),
-          );
-          expect(
-            find.byKey(const Key('profile-history-detail')),
-            findsOneWidget,
-          );
-          expect(
-            tester.takeException(),
-            isNull,
-            reason: '${formFactor.$1} $brightness education detail',
-          );
+          if (formFactor.$2) {
+            await tester.tap(
+              find.byKey(const Key('mobile-back-close-profile')),
+            );
+            await tester.pumpAndSettle();
+            await _openHistoryCard(
+              tester,
+              const Key('profile-history-post-education'),
+            );
+            expect(
+              find.byKey(const Key('profile-history-detail')),
+              findsOneWidget,
+            );
+            expect(
+              tester.takeException(),
+              isNull,
+              reason: '${formFactor.$1} $brightness education detail',
+            );
+          }
         }
         expect(
           backgroundColors[Brightness.light],
@@ -1214,10 +1502,14 @@ void main() {
           const Key('profile-scroll'),
           reason: '${scenario.$1} feed',
         );
-        await _openHistoryCard(
-          tester,
-          const Key('profile-history-post-experience'),
-        );
+        if (scenario.$3) {
+          await _openCareerReelFromSidebar(tester);
+        } else {
+          await _openHistoryCard(
+            tester,
+            const Key('profile-history-post-education'),
+          );
+        }
         await _expectTouchAndMouseScroll(
           tester,
           const Key('profile-history-detail-scroll'),
@@ -1263,6 +1555,33 @@ Future<void> _pumpProfileShell(
           externalLauncher: launcher ?? _RecordingLauncher(),
           themeController: themeController,
           musicController: createTestMusicController(),
+          tablet: tablet,
+        ),
+      ),
+    ),
+  );
+  await tester.pumpAndSettle();
+}
+
+Future<void> _pumpStandaloneProfile(
+  WidgetTester tester, {
+  required Size size,
+  required bool tablet,
+}) async {
+  tester.view.devicePixelRatio = 1;
+  tester.view.physicalSize = size;
+  addTearDown(tester.view.resetDevicePixelRatio);
+  addTearDown(tester.view.resetPhysicalSize);
+
+  await tester.pumpWidget(
+    MaterialApp(
+      theme: AppleTheme.light(),
+      darkTheme: AppleTheme.dark(),
+      home: MediaQuery(
+        data: MediaQueryData(size: size),
+        child: ProfileApp(
+          data: portfolioData,
+          launcher: _RecordingLauncher(),
           tablet: tablet,
         ),
       ),
@@ -1384,6 +1703,14 @@ Future<void> _openHistoryCard(WidgetTester tester, Key cardKey) async {
   await tester.pumpAndSettle();
 }
 
+Future<void> _openCareerReelFromSidebar(WidgetTester tester) async {
+  final reelsAction = find.byKey(const Key('profile-sidebar-reels-action'));
+  expect(find.byKey(const Key('profile-sidebar')), findsOneWidget);
+  expect(reelsAction, findsOneWidget);
+  await tester.tap(reelsAction);
+  await tester.pumpAndSettle();
+}
+
 Future<void> _ensureCardBuilt(WidgetTester tester, Finder card) async {
   final scrollable = _scrollableInside(const Key('profile-scroll'));
   final position = tester.state<ScrollableState>(scrollable).position;
@@ -1424,10 +1751,11 @@ Future<void> _expectTouchAndMouseScroll(
 
   position.jumpTo(0);
   await tester.pump();
-  final center = tester.getCenter(target);
+  final targetRect = tester.getRect(target);
+  final dragStart = Offset(targetRect.left + 8, targetRect.center.dy);
   final mouse = await tester.createGesture(kind: PointerDeviceKind.mouse);
-  await mouse.addPointer(location: center);
-  await mouse.down(center);
+  await mouse.addPointer(location: dragStart);
+  await mouse.down(dragStart);
   await mouse.moveBy(const Offset(0, -180));
   await mouse.up();
   await tester.pumpAndSettle();
