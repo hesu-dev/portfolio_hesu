@@ -4,6 +4,10 @@ import '../data/portfolio_data.dart';
 import '../terminal/terminal_engine.dart';
 import '../theme/apple_theme.dart';
 
+const _terminalLineRevealDuration = Duration(milliseconds: 500);
+const _terminalLinePauseDuration = Duration(milliseconds: 300);
+const _terminalLineTravel = 5.0;
+
 class TerminalApp extends StatefulWidget {
   const TerminalApp({
     required this.data,
@@ -25,6 +29,8 @@ class _TerminalAppState extends State<TerminalApp> {
   final FocusNode _focusNode = FocusNode();
   final ScrollController _scrollController = ScrollController();
   late final List<_TerminalLine> _transcript;
+  int _activeRevealBatch = 0;
+  bool _inputVisible = false;
 
   late TerminalEngine _engine;
 
@@ -35,14 +41,27 @@ class _TerminalAppState extends State<TerminalApp> {
     super.initState();
     _engine = TerminalEngine(widget.data);
     _transcript = <_TerminalLine>[
-      _TerminalLine('$_prompt help', isCommand: true),
-      ..._linesFor(_engine.execute('help')),
+      _TerminalLine(
+        '$_prompt help',
+        isCommand: true,
+        revealBatch: _activeRevealBatch,
+        revealOrder: 0,
+      ),
+      ..._linesFor(
+        _engine.execute('help'),
+        revealBatch: _activeRevealBatch,
+        revealOrderStart: 1,
+      ),
     ];
-    WidgetsBinding.instance.addPostFrameCallback((_) {
-      if (mounted) {
-        _focusNode.requestFocus();
-      }
-    });
+  }
+
+  @override
+  void didChangeDependencies() {
+    super.didChangeDependencies();
+    if (MediaQuery.disableAnimationsOf(context) && !_inputVisible) {
+      _inputVisible = true;
+      _restoreInputAfterReveal(_activeRevealBatch);
+    }
   }
 
   @override
@@ -59,7 +78,10 @@ class _TerminalAppState extends State<TerminalApp> {
     _controller.clear();
 
     if (result.clear) {
-      setState(_transcript.clear);
+      setState(() {
+        _transcript.clear();
+        _inputVisible = true;
+      });
       _focusNode.requestFocus();
       WidgetsBinding.instance.addPostFrameCallback((_) {
         if (_scrollController.hasClients) {
@@ -73,30 +95,70 @@ class _TerminalAppState extends State<TerminalApp> {
       return;
     }
 
+    final disableAnimations = MediaQuery.disableAnimationsOf(context);
     setState(() {
+      _activeRevealBatch++;
+      _inputVisible = disableAnimations;
       _transcript.add(
-        _TerminalLine('$_prompt ${input.trim()}', isCommand: true),
+        _TerminalLine(
+          '$_prompt ${input.trim()}',
+          isCommand: true,
+          revealBatch: _activeRevealBatch,
+          revealOrder: 0,
+        ),
       );
-      _transcript.addAll(_linesFor(result));
+      _transcript.addAll(
+        _linesFor(result, revealBatch: _activeRevealBatch, revealOrderStart: 1),
+      );
     });
-    _focusNode.requestFocus();
-    WidgetsBinding.instance.addPostFrameCallback((_) {
-      if (_scrollController.hasClients) {
-        _scrollController.jumpTo(_scrollController.position.maxScrollExtent);
-      }
-    });
+    if (disableAnimations) {
+      _restoreInputAfterReveal(_activeRevealBatch);
+    }
   }
 
-  Iterable<_TerminalLine> _linesFor(TerminalResult result) sync* {
+  Iterable<_TerminalLine> _linesFor(
+    TerminalResult result, {
+    required int revealBatch,
+    required int revealOrderStart,
+  }) sync* {
+    var revealOrder = revealOrderStart;
     if (result.helpEntries.isNotEmpty) {
       for (final entry in result.helpEntries) {
-        yield _TerminalLine.help(entry);
+        yield _TerminalLine.help(
+          entry,
+          revealBatch: revealBatch,
+          revealOrder: revealOrder++,
+        );
       }
       return;
     }
     for (final line in result.lines) {
-      yield _TerminalLine(line);
+      yield _TerminalLine(
+        line,
+        revealBatch: revealBatch,
+        revealOrder: revealOrder++,
+      );
     }
+  }
+
+  void _completeReveal(int revealBatch) {
+    if (!mounted || revealBatch != _activeRevealBatch || _inputVisible) {
+      return;
+    }
+    setState(() => _inputVisible = true);
+    _restoreInputAfterReveal(revealBatch);
+  }
+
+  void _restoreInputAfterReveal(int revealBatch) {
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (!mounted || revealBatch != _activeRevealBatch || !_inputVisible) {
+        return;
+      }
+      _focusNode.requestFocus();
+      if (_scrollController.hasClients) {
+        _scrollController.jumpTo(_scrollController.position.maxScrollExtent);
+      }
+    });
   }
 
   @override
@@ -120,7 +182,13 @@ class _TerminalAppState extends State<TerminalApp> {
       child: TextFieldTapRegion(
         child: Listener(
           behavior: HitTestBehavior.opaque,
-          onPointerDown: (_) => _focusNode.requestFocus(),
+          onPointerDown: (_) {
+            if (!_inputVisible) {
+              _completeReveal(_activeRevealBatch);
+              return;
+            }
+            _focusNode.requestFocus();
+          },
           child: Scrollbar(
             controller: _scrollController,
             thumbVisibility: !widget.compact,
@@ -142,37 +210,58 @@ class _TerminalAppState extends State<TerminalApp> {
                       crossAxisAlignment: CrossAxisAlignment.stretch,
                       children: <Widget>[
                         for (final entry in _transcript.indexed)
-                          Padding(
+                          _TerminalLineReveal(
                             key: ValueKey<String>(
-                              'terminal-transcript-entry-${entry.$1}',
+                              'terminal-line-reveal-${entry.$1}',
                             ),
-                            padding: const EdgeInsets.only(bottom: 5),
-                            child: entry.$2.helpEntry != null
-                                ? _TerminalHelpRow(
-                                    entry: entry.$2.helpEntry!,
-                                    compact: widget.compact,
-                                    color: primary,
-                                  )
-                                : Text(
-                                    entry.$2.text,
-                                    style: _terminalTextStyle(
-                                      color: entry.$2.isCommand
-                                          ? accent
-                                          : primary,
+                            animate:
+                                entry.$2.revealBatch == _activeRevealBatch &&
+                                !_inputVisible,
+                            order: entry.$2.revealOrder,
+                            onRevealComplete:
+                                entry.$1 == _transcript.length - 1 &&
+                                    entry.$2.revealBatch ==
+                                        _activeRevealBatch &&
+                                    !_inputVisible
+                                ? () => _completeReveal(entry.$2.revealBatch)
+                                : null,
+                            child: Padding(
+                              key: ValueKey<String>(
+                                'terminal-transcript-entry-${entry.$1}',
+                              ),
+                              padding: const EdgeInsets.only(bottom: 5),
+                              child: entry.$2.helpEntry != null
+                                  ? _TerminalHelpRow(
+                                      entry: entry.$2.helpEntry!,
                                       compact: widget.compact,
+                                      color: primary,
+                                    )
+                                  : Text(
+                                      entry.$2.text,
+                                      style: _terminalTextStyle(
+                                        color: entry.$2.isCommand
+                                            ? accent
+                                            : primary,
+                                        compact: widget.compact,
+                                      ),
                                     ),
-                                  ),
+                            ),
                           ),
                       ],
                     ),
-                    _TerminalInput(
-                      key: const Key('terminal-input-area'),
-                      controller: _controller,
-                      focusNode: _focusNode,
-                      compact: widget.compact,
-                      prompt: _prompt,
-                      background: background,
-                      onSubmitted: _submit,
+                    SizedBox(
+                      key: const Key('terminal-input-reveal'),
+                      child: _inputVisible
+                          ? _TerminalInput(
+                              key: const Key('terminal-input-area'),
+                              controller: _controller,
+                              focusNode: _focusNode,
+                              compact: widget.compact,
+                              prompt: _prompt,
+                              background: background,
+                              onSubmitted: _submit,
+                            )
+                          : null,
                     ),
                   ],
                 ),
@@ -185,19 +274,65 @@ class _TerminalAppState extends State<TerminalApp> {
   }
 }
 
-TextStyle _terminalTextStyle({
-  required Color color,
-  required bool compact,
-  FontWeight? fontWeight,
-}) {
+TextStyle _terminalTextStyle({required Color color, required bool compact}) {
   return TextStyle(
     color: color,
     fontFamily: 'monospace',
     fontFamilyFallback: const <String>['Menlo', 'Consolas'],
     fontSize: compact ? 12.5 : 13.5,
-    fontWeight: fontWeight,
+    fontWeight: FontWeight.w400,
     height: 1.45,
   );
+}
+
+class _TerminalLineReveal extends StatelessWidget {
+  const _TerminalLineReveal({
+    required this.animate,
+    required this.order,
+    required this.onRevealComplete,
+    required this.child,
+    super.key,
+  });
+
+  final bool animate;
+  final int order;
+  final VoidCallback? onRevealComplete;
+  final Widget child;
+
+  @override
+  Widget build(BuildContext context) {
+    if (!animate || MediaQuery.disableAnimationsOf(context)) {
+      return _buildReveal(value: 1);
+    }
+
+    final delay = Duration(
+      milliseconds:
+          (_terminalLineRevealDuration.inMilliseconds +
+              _terminalLinePauseDuration.inMilliseconds) *
+          order,
+    );
+    final totalDuration = delay + _terminalLineRevealDuration;
+    final delayFraction = delay.inMicroseconds / totalDuration.inMicroseconds;
+
+    return TweenAnimationBuilder<double>(
+      tween: Tween<double>(begin: 0, end: 1),
+      duration: totalDuration,
+      curve: Interval(delayFraction, 1, curve: Curves.easeOutCubic),
+      onEnd: onRevealComplete,
+      builder: (context, value, child) => _buildReveal(value: value),
+      child: child,
+    );
+  }
+
+  Widget _buildReveal({required double value}) {
+    return Opacity(
+      opacity: value,
+      child: Transform.translate(
+        offset: Offset(0, _terminalLineTravel * (1 - value)),
+        child: child,
+      ),
+    );
+  }
 }
 
 class _TerminalHelpRow extends StatelessWidget {
@@ -223,11 +358,7 @@ class _TerminalHelpRow extends StatelessWidget {
             final stacked = textScale > 1.4 && constraints.maxWidth < 560;
             final command = Text(
               entry.command,
-              style: _terminalTextStyle(
-                color: color,
-                compact: compact,
-                fontWeight: FontWeight.w700,
-              ),
+              style: _terminalTextStyle(color: color, compact: compact),
             );
             final description = Text(
               entry.description,
@@ -294,12 +425,7 @@ class _TerminalInput extends StatelessWidget {
     final promptLabel = Text(
       prompt,
       maxLines: 1,
-      style: TextStyle(
-        color: accent,
-        fontFamily: 'monospace',
-        fontSize: compact ? 12.5 : 13,
-        fontWeight: FontWeight.w600,
-      ),
+      style: _terminalTextStyle(color: accent, compact: compact),
     );
     final input = MergeSemantics(
       child: Semantics(
@@ -315,11 +441,7 @@ class _TerminalInput extends StatelessWidget {
           enableInteractiveSelection: false,
           cursorOpacityAnimates: true,
           textInputAction: TextInputAction.send,
-          style: TextStyle(
-            color: inputForeground,
-            fontFamily: 'monospace',
-            fontSize: compact ? 13 : 13.5,
-          ),
+          style: _terminalTextStyle(color: inputForeground, compact: compact),
           cursorColor: accent,
           decoration: const InputDecoration(
             isDense: true,
@@ -364,14 +486,24 @@ class _TerminalInput extends StatelessWidget {
 }
 
 class _TerminalLine {
-  const _TerminalLine(this.text, {this.isCommand = false}) : helpEntry = null;
+  const _TerminalLine(
+    this.text, {
+    required this.revealBatch,
+    required this.revealOrder,
+    this.isCommand = false,
+  }) : helpEntry = null;
 
-  const _TerminalLine.help(TerminalHelpEntry entry)
-    : text = '',
-      isCommand = false,
-      helpEntry = entry;
+  const _TerminalLine.help(
+    TerminalHelpEntry entry, {
+    required this.revealBatch,
+    required this.revealOrder,
+  }) : text = '',
+       isCommand = false,
+       helpEntry = entry;
 
   final String text;
   final bool isCommand;
+  final int revealBatch;
+  final int revealOrder;
   final TerminalHelpEntry? helpEntry;
 }

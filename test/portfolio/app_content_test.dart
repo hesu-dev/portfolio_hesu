@@ -1156,22 +1156,26 @@ void main() {
       expect(find.text(r'portfolio: ~$ help'), findsOneWidget);
       expect(find.text('flutter run'), findsOneWidget);
       expect(find.text('포트폴리오 개발 서버 실행'), findsOneWidget);
+      await _finishTerminalReveal(tester, lineCount: 9);
 
       await tester.enterText(find.byKey(const Key('terminal-input')), 'whoami');
       await tester.testTextInput.receiveAction(TextInputAction.send);
       await tester.pump();
       expect(find.textContaining('Min He-su'), findsOneWidget);
       expect(find.textContaining(portfolioData.identity.email), findsOneWidget);
+      await _finishTerminalReveal(tester, lineCount: 5);
 
       await tester.enterText(find.byKey(const Key('terminal-input')), 'oops');
       await tester.testTextInput.receiveAction(TextInputAction.send);
       await tester.pump();
       expect(find.textContaining('command not found'), findsOneWidget);
+      await _finishTerminalReveal(tester, lineCount: 2);
 
       for (var index = 0; index < 3; index++) {
         await tester.enterText(find.byKey(const Key('terminal-input')), 'help');
         await tester.testTextInput.receiveAction(TextInputAction.send);
         await tester.pump();
+        await _finishTerminalReveal(tester, lineCount: 9);
       }
       final transcript = tester.widget<ListView>(
         find.byKey(const Key('terminal-transcript')),
@@ -1222,7 +1226,7 @@ void main() {
     });
 
     testWidgets(
-      'terminal places its focused blinking command line immediately after help',
+      'terminal places its focused command line only after help finishes',
       (tester) async {
         await _pumpApp(
           tester,
@@ -1233,8 +1237,14 @@ void main() {
 
         final inputArea = find.byKey(const Key('terminal-input-area'));
         final transcript = find.byKey(const Key('terminal-transcript'));
-        expect(inputArea, findsOneWidget);
+        final inputReveal = find.byKey(const Key('terminal-input-reveal'));
+        expect(inputArea, findsNothing);
+        expect(tester.getSize(inputReveal).height, 0);
         expect(transcript, findsOneWidget);
+        await _finishTerminalReveal(tester, lineCount: 9);
+
+        expect(inputArea, findsOneWidget);
+        expect(tester.getSize(inputReveal).height, greaterThan(0));
         expect(
           tester.getTopLeft(transcript).dy,
           lessThan(tester.getTopLeft(inputArea).dy),
@@ -1296,6 +1306,7 @@ void main() {
         launcher: _FakeExternalLauncher(),
         size: const Size(900, 650),
       );
+      await _finishTerminalReveal(tester, lineCount: 9);
 
       final input = find.byKey(const Key('terminal-input'));
       final transcript = find.byKey(const Key('terminal-transcript'));
@@ -1320,6 +1331,8 @@ void main() {
       await tester.enterText(input, 'whoami');
       await tester.testTextInput.receiveAction(TextInputAction.send);
       await tester.pump();
+      expect(input, findsNothing);
+      await _finishTerminalReveal(tester, lineCount: 5);
       expect(inputFocus().hasFocus, isTrue);
 
       inputFocus().unfocus();
@@ -1341,6 +1354,7 @@ void main() {
         launcher: _FakeExternalLauncher(),
         size: const Size(900, 650),
       );
+      await _finishTerminalReveal(tester, lineCount: 9);
 
       final textFields = find.semantics.byPredicate(
         (node) => node.getSemanticsData().flagsCollection.isTextField,
@@ -1370,6 +1384,7 @@ void main() {
         size: const Size(360, 600),
         compact: true,
       );
+      await _finishTerminalReveal(tester, lineCount: 9);
 
       expect(find.text(prompt), findsOneWidget);
       expect(find.text('$prompt help'), findsOneWidget);
@@ -1379,6 +1394,7 @@ void main() {
       await tester.pump();
       expect(find.text('$prompt whoami'), findsOneWidget);
       expect(find.textContaining('Ada Lovelace'), findsOneWidget);
+      await _finishTerminalReveal(tester, lineCount: 5);
 
       await tester.enterText(find.byKey(const Key('terminal-input')), 'clear');
       await tester.testTextInput.receiveAction(TextInputAction.send);
@@ -1404,6 +1420,7 @@ void main() {
         size: const Size(360, 600),
         compact: true,
       );
+      await _finishTerminalReveal(tester, lineCount: 9);
 
       expect(find.text(r'portfolio: ~$'), findsOneWidget);
       expect(find.textContaining('invalid email'), findsNothing);
@@ -1763,6 +1780,15 @@ Future<void> _pumpApp(
       ),
     ),
   );
+  await tester.pump();
+}
+
+Future<void> _finishTerminalReveal(
+  WidgetTester tester, {
+  required int lineCount,
+}) async {
+  await tester.pump(Duration(milliseconds: 500 + (lineCount - 1) * 800));
+  await tester.pump(const Duration(microseconds: 1));
   await tester.pump();
 }
 

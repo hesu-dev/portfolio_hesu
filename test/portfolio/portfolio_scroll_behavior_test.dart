@@ -251,6 +251,9 @@ Future<void> _fillTerminalTranscript(WidgetTester tester) async {
     await tester.enterText(find.byKey(const Key('terminal-input')), 'help');
     await tester.testTextInput.receiveAction(TextInputAction.send);
     await tester.pump();
+    await tester.pump(const Duration(milliseconds: 6900));
+    await tester.pump(const Duration(microseconds: 1));
+    await tester.pump();
   }
   await tester.pumpAndSettle();
 }
