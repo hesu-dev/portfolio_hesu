@@ -1,5 +1,7 @@
 import 'dart:ui' show PointerDeviceKind;
-import 'dart:ui' as ui show ImageByteFormat, SemanticsAction, Tristate;
+import 'dart:ui'
+    as ui
+    show ImageByteFormat, SemanticsAction, Tristate, instantiateImageCodec;
 
 import 'package:flutter/material.dart';
 import 'package:flutter/rendering.dart';
@@ -13,6 +15,7 @@ import 'package:portfolio_hesu/portfolio/services/external_launcher.dart';
 import 'package:portfolio_hesu/portfolio/theme/apple_theme.dart';
 import 'package:portfolio_hesu/portfolio/theme/portfolio_theme_controller.dart';
 import 'package:portfolio_hesu/portfolio/widgets/career_pixel_runner.dart';
+import 'package:portfolio_hesu/portfolio/widgets/education_pixel_study.dart';
 
 import 'support/music_test_controller.dart';
 
@@ -56,6 +59,148 @@ void main() {
       ]) {
         final asset = await rootBundle.load(assetPath);
         expect(asset.lengthInBytes, greaterThan(0), reason: assetPath);
+      }
+    });
+
+    test('교육 장면은 네 능력치를 정해진 순서로 올린다', () {
+      expect(EducationPixelStudy.statLabels, <String>[
+        'FLUTTER',
+        'DART',
+        'UX',
+        'SOLVE',
+      ]);
+      expect(EducationPixelStudy.activeStatIndexFor(0.16), 0);
+      expect(EducationPixelStudy.activeStatIndexFor(0.34), 1);
+      expect(EducationPixelStudy.activeStatIndexFor(0.52), 2);
+      expect(EducationPixelStudy.activeStatIndexFor(0.70), 3);
+      expect(EducationPixelStudy.activeStatIndexFor(0.90), -1);
+    });
+
+    test('교육 능력치 타이밍은 반열린 구간 밖의 진행률을 비활성화한다', () {
+      for (final boundary in const <(double, int)>[
+        (0.12, 0),
+        (0.24, -1),
+        (0.30, 1),
+        (0.42, -1),
+        (0.48, 2),
+        (0.60, -1),
+        (0.66, 3),
+        (0.78, -1),
+      ]) {
+        expect(
+          EducationPixelStudy.activeStatIndexFor(boundary.$1),
+          boundary.$2,
+          reason: 'progress=${boundary.$1}',
+        );
+      }
+
+      for (final inactiveProgress in <double>[
+        0,
+        0.27,
+        0.45,
+        0.63,
+        1,
+        -0.01,
+        1.01,
+        double.nan,
+        double.infinity,
+        double.negativeInfinity,
+      ]) {
+        expect(
+          EducationPixelStudy.activeStatIndexFor(inactiveProgress),
+          -1,
+          reason: 'progress=$inactiveProgress',
+        );
+      }
+    });
+
+    test('교육 캐릭터는 별도 투명 스프라이트 자산을 사용한다', () async {
+      expect(
+        EducationPixelStudy.studySpriteAsset,
+        'assets/sprites/education_student_study.png',
+      );
+      final asset = await rootBundle.load(EducationPixelStudy.studySpriteAsset);
+      expect(asset.lengthInBytes, greaterThan(0));
+
+      final codec = await ui.instantiateImageCodec(
+        asset.buffer.asUint8List(asset.offsetInBytes, asset.lengthInBytes),
+      );
+      try {
+        final frame = await codec.getNextFrame();
+        final image = frame.image;
+        try {
+          expect(image.width, 1536);
+          expect(image.height, 1024);
+
+          final rgba = await image.toByteData(
+            format: ui.ImageByteFormat.rawRgba,
+          );
+          expect(rgba, isNotNull);
+          var transparentPixels = 0;
+          var visiblePixels = 0;
+          for (var offset = 3; offset < rgba!.lengthInBytes; offset += 4) {
+            if (rgba.getUint8(offset) == 0) {
+              transparentPixels++;
+            } else {
+              visiblePixels++;
+            }
+          }
+          expect(transparentPixels, greaterThan(0));
+          expect(visiblePixels, greaterThan(0));
+        } finally {
+          image.dispose();
+        }
+      } finally {
+        codec.dispose();
+      }
+    });
+
+    test('교육 스프라이트 crop은 여덟 포즈를 공통 기준선에 정렬한다', () {
+      expect(EducationPixelStudy.studySheetSize, const Size(1536, 1024));
+      expect(EducationPixelStudy.studySourceFrames, const <Rect>[
+        Rect.fromLTRB(56, 107, 336, 448),
+        Rect.fromLTRB(449, 108, 720, 447),
+        Rect.fromLTRB(810, 113, 1062, 448),
+        Rect.fromLTRB(1178, 113, 1430, 448),
+        Rect.fromLTRB(68, 525, 331, 866),
+        Rect.fromLTRB(408, 526, 704, 866),
+        Rect.fromLTRB(810, 530, 1062, 866),
+        Rect.fromLTRB(1169, 534, 1447, 866),
+      ]);
+
+      final sheetBounds = Offset.zero & EducationPixelStudy.studySheetSize;
+      const cellSize = Size(384, 512);
+      const baseline = Offset(160, 200);
+      const scale = 0.25;
+      for (var index = 0; index < 8; index++) {
+        final source = EducationPixelStudy.studySourceFrames[index];
+        final cell = Rect.fromLTWH(
+          (index % 4) * cellSize.width,
+          (index ~/ 4) * cellSize.height,
+          cellSize.width,
+          cellSize.height,
+        );
+        expect(sheetBounds.contains(source.topLeft), isTrue);
+        expect(source.right, lessThanOrEqualTo(sheetBounds.right));
+        expect(source.bottom, lessThanOrEqualTo(sheetBounds.bottom));
+        expect(cell.contains(source.topLeft), isTrue);
+        expect(source.right, lessThan(cell.right));
+        expect(source.bottom, lessThan(cell.bottom));
+        expect(source.width, lessThan(cell.width));
+        expect(source.height, lessThan(cell.height));
+
+        final destination = EducationPixelStudy.destinationRectForFrame(
+          index,
+          baseline: baseline,
+          scale: scale,
+        );
+        expect(destination.center.dx, baseline.dx);
+        expect(
+          destination.bottom -
+              (EducationPixelStudy.studyFrameBottomPadding * scale),
+          closeTo(baseline.dy, 0.000001),
+          reason: 'frame=$index',
+        );
       }
     });
 
