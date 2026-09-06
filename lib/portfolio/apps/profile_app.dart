@@ -10,6 +10,7 @@ import '../theme/apple_theme.dart';
 import '../widgets/apple_app_icon.dart';
 import '../widgets/apple_mobile_navigation_header.dart';
 import '../widgets/career_pixel_runner.dart';
+import '../widgets/education_pixel_study.dart';
 
 /// Mobile-only social profile built independently from the reusable About app.
 class ProfileApp extends StatefulWidget {
@@ -1254,8 +1255,12 @@ class _ProfileHistoryDetailState extends State<_ProfileHistoryDetail> {
                       ),
                       child: _ProfileReelOverlay(
                         compact: widget.compact,
-                        showCareerRunner:
-                            widget.kind == _ProfileHistoryKind.experience,
+                        media: switch (widget.kind) {
+                          _ProfileHistoryKind.experience =>
+                            _ProfileHistoryMedia.career,
+                          _ProfileHistoryKind.education =>
+                            _ProfileHistoryMedia.education,
+                        },
                         liked: widget.liked,
                         title: title,
                         organization: widget.data.identity.headline,
@@ -1290,7 +1295,7 @@ class _ProfileHistoryDetailState extends State<_ProfileHistoryDetail> {
 class _ProfileReelOverlay extends StatelessWidget {
   const _ProfileReelOverlay({
     required this.compact,
-    required this.showCareerRunner,
+    required this.media,
     required this.liked,
     required this.title,
     required this.organization,
@@ -1304,7 +1309,7 @@ class _ProfileReelOverlay extends StatelessWidget {
   });
 
   final bool compact;
-  final bool showCareerRunner;
+  final _ProfileHistoryMedia media;
   final bool liked;
   final String title;
   final String organization;
@@ -1327,9 +1332,7 @@ class _ProfileReelOverlay extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final dark = AppleTheme.isDark(context);
-    final foreground = showCareerRunner || dark
-        ? Colors.white
-        : AppleTheme.primaryLabel(context);
+    const foreground = Colors.white;
     final mediaColor = dark ? const Color(0xFF151619) : const Color(0xFFF0F1F3);
 
     return Stack(
@@ -1340,11 +1343,14 @@ class _ProfileReelOverlay extends StatelessWidget {
           child: ColoredBox(
             key: const Key('profile-reel-media-slot'),
             color: mediaColor,
-            child: showCareerRunner
-                ? const CareerPixelRunner(
-                    key: Key('profile-career-pixel-runner'),
-                  )
-                : null,
+            child: switch (media) {
+              _ProfileHistoryMedia.career => const CareerPixelRunner(
+                key: Key('profile-career-pixel-runner'),
+              ),
+              _ProfileHistoryMedia.education => const EducationPixelStudy(
+                key: Key('profile-education-pixel-study'),
+              ),
+            },
           ),
         ),
         Positioned(
@@ -1979,6 +1985,8 @@ class _ProfileArtworkPainter extends CustomPainter {
 }
 
 enum _ProfileHistoryKind { experience, education }
+
+enum _ProfileHistoryMedia { career, education }
 
 const String _profileHandle = '@min_hesu';
 const int _profileCareerYears = 3;

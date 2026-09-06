@@ -938,7 +938,7 @@ void main() {
       semantics.dispose();
     });
 
-    testWidgets('교육 상세에는 경력 픽셀 러너를 표시하지 않는다', (tester) async {
+    testWidgets('교육 상세는 스터디 장면을 미디어 슬롯에 채운다', (tester) async {
       final semantics = tester.ensureSemantics();
       final data = _injectedProfileData();
       await _pumpProfileShell(
@@ -953,13 +953,102 @@ void main() {
         const Key('profile-history-post-education'),
       );
 
+      final detail = find.byKey(const Key('profile-history-detail'));
+      final mediaSlot = find.byKey(const Key('profile-reel-media-slot'));
+      final study = find.byKey(const Key('profile-education-pixel-study'));
+      expect(study, findsOneWidget);
+      expect(find.descendant(of: mediaSlot, matching: study), findsOneWidget);
+      expect(tester.widget(study), isA<EducationPixelStudy>());
+      expect(tester.getRect(study), tester.getRect(mediaSlot));
       expect(
         find.byKey(const Key('profile-career-pixel-runner')),
         findsNothing,
       );
+      expect(
+        tester.getSemantics(study).getSemanticsData().label,
+        _educationPixelStudySemantics,
+      );
+      expect(
+        find.byKey(const Key('profile-reel-reply-item-education-0')),
+        findsOneWidget,
+      );
+      expect(find.descendant(of: detail, matching: study), findsOneWidget);
       _expectHistoryDetailTemplate(tester, data: data);
       expect(tester.takeException(), isNull);
       semantics.dispose();
+    });
+
+    testWidgets('iPhone·iPad에서 경력과 교육은 같은 미디어 rect를 쓴다', (tester) async {
+      for (final scenario in const <(String, Size, bool, double)>[
+        ('iPhone', Size(390, 844), false, 258),
+        ('iPad', Size(834, 1194), true, 288),
+      ]) {
+        await tester.pumpWidget(const SizedBox.shrink());
+        await _pumpProfileShell(
+          tester,
+          size: scenario.$2,
+          tablet: scenario.$3,
+          data: _injectedProfileData(),
+        );
+        await _openProfile(tester);
+        await _openHistoryCard(
+          tester,
+          const Key('profile-history-post-education'),
+        );
+
+        final educationSlot = find.byKey(const Key('profile-reel-media-slot'));
+        final study = find.byKey(const Key('profile-education-pixel-study'));
+        expect(study, findsOneWidget, reason: scenario.$1);
+        expect(
+          find.byKey(const Key('profile-career-pixel-runner')),
+          findsNothing,
+          reason: scenario.$1,
+        );
+        final educationRect = tester.getRect(educationSlot);
+        expect(
+          tester.getRect(study),
+          educationRect,
+          reason: '${scenario.$1} education fills slot',
+        );
+        expect(
+          educationRect.height,
+          scenario.$4,
+          reason: '${scenario.$1} existing reel height',
+        );
+
+        await tester.pumpWidget(const SizedBox.shrink());
+        await _pumpProfileShell(
+          tester,
+          size: scenario.$2,
+          tablet: scenario.$3,
+          data: _injectedProfileData(),
+        );
+        await _openProfile(tester);
+        await _openHistoryCard(
+          tester,
+          const Key('profile-history-post-experience'),
+        );
+
+        final careerSlot = find.byKey(const Key('profile-reel-media-slot'));
+        final runner = find.byKey(const Key('profile-career-pixel-runner'));
+        expect(runner, findsOneWidget, reason: scenario.$1);
+        expect(
+          find.byKey(const Key('profile-education-pixel-study')),
+          findsNothing,
+          reason: scenario.$1,
+        );
+        final careerRect = tester.getRect(careerSlot);
+        expect(
+          tester.getRect(runner),
+          careerRect,
+          reason: '${scenario.$1} career fills slot',
+        );
+        expect(
+          careerRect,
+          educationRect,
+          reason: '${scenario.$1} education and career use one reel rule',
+        );
+      }
     });
 
     testWidgets('릴스 미디어는 공유 액션 직후 끝나고 첫 답글을 바로 보여준다', (tester) async {
@@ -1050,7 +1139,7 @@ void main() {
       }
     });
 
-    testWidgets('중립 미디어 슬롯과 오버레이 컨트롤은 라이트·다크 대비를 따른다', (tester) async {
+    testWidgets('컬러 미디어 위 오버레이 컨트롤은 라이트·다크 모두 흰색이다', (tester) async {
       for (final brightness in Brightness.values) {
         await tester.pumpWidget(const SizedBox.shrink());
         await _pumpProfileShell(
@@ -1077,15 +1166,11 @@ void main() {
         );
 
         final mediaColor = tester.widget<ColoredBox>(mediaSlot).color;
-        final foreground = brightness == Brightness.dark
-            ? Colors.white
-            : AppleTheme.primaryLabel(tester.element(overlay));
+        const foreground = Colors.white;
         if (brightness == Brightness.light) {
           expect(mediaColor.computeLuminance(), greaterThan(0.7));
-          expect(foreground.computeLuminance(), lessThan(0.2));
         } else {
           expect(mediaColor.computeLuminance(), lessThan(0.2));
-          expect(foreground, Colors.white);
         }
 
         final overlayText = <Text>[
@@ -2462,34 +2547,6 @@ void _expectHistoryDetailTemplate(
   expect(find.byKey(const Key('profile-reel-visual')), findsNothing);
   expect(find.byKey(const Key('profile-reel-artwork')), findsNothing);
   expect(find.byKey(const Key('profile-reel-caption')), findsNothing);
-  expect(
-    find.descendant(of: detail, matching: find.byType(Image)),
-    findsNothing,
-  );
-  expect(
-    find.descendant(of: detail, matching: find.byType(RawImage)),
-    findsNothing,
-  );
-  expect(
-    find.descendant(of: detail, matching: find.byType(CustomPaint)),
-    findsNothing,
-  );
-  expect(
-    find.descendant(
-      of: detail,
-      matching: find.byWidgetPredicate(
-        (widget) => switch (widget) {
-          Container(:final decoration) =>
-            decoration is BoxDecoration && decoration.image != null,
-          DecoratedBox(:final decoration) =>
-            decoration is BoxDecoration && decoration.image != null,
-          _ => false,
-        },
-        description: 'widget with a DecorationImage',
-      ),
-    ),
-    findsNothing,
-  );
   expect(find.byKey(const Key('profile-reel-like-count')), findsNothing);
   expect(find.byKey(const Key('profile-reel-comment-count')), findsNothing);
   expect(find.byKey(const Key('profile-reel-follower-count')), findsNothing);
