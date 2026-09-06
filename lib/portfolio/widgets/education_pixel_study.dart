@@ -491,28 +491,36 @@ class _EducationPixelStudyPainter extends CustomPainter {
     double progress,
     _StudyPalette palette,
   ) {
-    final deskLeft = math.max(5.0, center - 51);
-    final deskRight = math.min(width - 5, center + 61);
+    final deskLeft = math.max(5.0, center - 15);
+    final deskRight = math.min(width - 31, center + 50);
     final deskWidth = deskRight - deskLeft;
 
-    _rect(canvas, center - 27, 104, 19, 31, palette.chairFrame);
-    _rect(canvas, center - 24, 106, 14, 22, palette.chairSeat);
-    _rect(canvas, center - 22, 132, 3, 9, palette.chairFrame);
-    _rect(canvas, center - 12, 132, 3, 9, palette.chairFrame);
+    _rect(
+      canvas,
+      center - 35,
+      138,
+      87,
+      4,
+      palette.chairFrame.withValues(alpha: 0.18),
+    );
 
-    // A stepped top reads as a shallow perspective plane rather than a flat
-    // stripe. Props and hands are drawn over it, while the student remains
-    // behind the front fascia painted later.
-    _rect(canvas, deskLeft, 119, deskWidth, 14, palette.deskEdge);
-    _rect(canvas, deskLeft + 2, 120, deskWidth - 4, 3, palette.deskTop);
-    _rect(canvas, deskLeft + 4, 123, deskWidth - 8, 3, palette.deskFront);
-    _rect(canvas, deskLeft + 6, 126, deskWidth - 12, 6, palette.deskFrontInset);
-    _rect(canvas, deskLeft + 10, 128, deskWidth - 20, 1, palette.deskTop);
+    // The chair is deliberately narrow in profile and stays behind the
+    // transparent student sprite.
+    _rect(canvas, center - 30, 96, 14, 34, palette.chairFrame);
+    _rect(canvas, center - 27, 99, 9, 27, palette.chairSeat);
+    _rect(canvas, center - 21, 127, 27, 6, palette.chairFrame);
+    _rect(canvas, center - 18, 128, 22, 3, palette.chairSeat);
+    _rect(canvas, center - 9, 132, 4, 9, palette.chairFrame);
+    _rect(canvas, center - 18, 140, 23, 3, palette.chairFrame);
+    _rect(canvas, center - 20, 142, 5, 2, palette.chairFrame);
+    _rect(canvas, center + 2, 142, 5, 2, palette.chairFrame);
 
-    _drawTaskLamp(canvas, center - 45, progress, palette);
-    _drawPrimaryMonitor(canvas, center + 24, progress, palette);
-    _rect(canvas, center + 3, 118, 33, 5, palette.keyboard);
-    _rect(canvas, center + 6, 117, 27, 2, palette.keyHighlight);
+    // A short side desk and edge-on laptop align with the right-facing pose.
+    // The sprite is painted after this pass so the hands land on the base.
+    _rect(canvas, deskLeft, 121, deskWidth, 6, palette.deskEdge);
+    _rect(canvas, deskLeft + 2, 121, deskWidth - 4, 3, palette.deskTop);
+    _rect(canvas, deskLeft + 4, 124, deskWidth - 8, 2, palette.deskFrontInset);
+    _drawSideLaptop(canvas, center, progress, palette);
   }
 
   void _drawForegroundWorkstationFront(
@@ -521,82 +529,79 @@ class _EducationPixelStudyPainter extends CustomPainter {
     double center,
     _StudyPalette palette,
   ) {
-    final deskLeft = math.max(5.0, center - 51);
-    final deskRight = math.min(width - 5, center + 61);
+    final deskLeft = math.max(5.0, center - 15);
+    final deskRight = math.min(width - 31, center + 50);
     final deskWidth = deskRight - deskLeft;
 
-    _rect(canvas, deskLeft, 132, deskWidth, 5, palette.deskEdge);
-    _rect(canvas, deskLeft + 2, 132, deskWidth - 4, 2, palette.deskFront);
-    _rect(canvas, deskLeft + 5, 137, 4, 7, palette.deskLeg);
-    _rect(canvas, deskRight - 9, 137, 4, 7, palette.deskLeg);
-
-    _rect(canvas, deskLeft + 14, 133, 28, 4, palette.chargingPanel);
-    _rect(canvas, deskLeft + 17, 134, 3, 2, palette.chargingPort);
-    _rect(canvas, deskLeft + 24, 134, 5, 2, palette.chargingPort);
-    _rect(canvas, deskLeft + 34, 134, 3, 2, palette.chargingLight);
-    for (var vent = 0; vent < 4; vent++) {
-      _rect(
-        canvas,
-        deskRight - 31 + (vent * 5),
-        134,
-        2,
-        2,
-        palette.chargingPanel,
-      );
-    }
+    // One-pixel rims sit in front of the hands; the deeper fascia and legs
+    // keep the seated lower body behind the furniture.
+    _rect(canvas, center + 5, 118, 38, 1, palette.keyHighlight);
+    _rect(canvas, center + 8, 122, 37, 2, palette.monitorEdge);
+    _rect(canvas, deskLeft + 2, 126, deskWidth - 4, 11, palette.deskEdge);
+    _rect(canvas, deskLeft + 4, 127, deskWidth - 8, 8, palette.deskFront);
+    _rect(canvas, deskLeft + 7, 128, deskWidth - 14, 3, palette.deskFrontInset);
+    _rect(canvas, deskLeft + 4, 133, 4, 11, palette.deskLeg);
+    _rect(canvas, deskRight - 8, 133, 4, 11, palette.deskLeg);
+    _rect(canvas, deskRight - 13, 128, 3, 2, palette.chargingPanel);
+    _rect(canvas, deskRight - 12, 128, 1, 1, palette.chargingLight);
   }
 
-  void _drawTaskLamp(
+  void _drawSideLaptop(
     Canvas canvas,
-    double x,
+    double center,
     double progress,
     _StudyPalette palette,
   ) {
-    final pulse = 0.62 + (math.sin(progress * math.pi * 6).abs() * 0.20);
+    final glow = 0.82 + (math.sin(progress * math.pi * 4).abs() * 0.18);
     _rect(
       canvas,
-      x - 4,
-      89,
-      21,
-      20,
-      palette.lampGlow.withValues(alpha: 0.10 * pulse),
+      center + 39,
+      96,
+      10,
+      8,
+      palette.monitorGlow.withValues(alpha: 0.08 * glow),
     );
-    _rect(canvas, x + 4, 93, 3, 28, palette.lampFrame);
-    _rect(canvas, x + 5, 92, 13, 3, palette.lampFrame);
-    _rect(canvas, x + 15, 94, 7, 5, palette.lampShade);
-    _rect(canvas, x + 16, 99, 5, 2, palette.lampLight.withValues(alpha: pulse));
-    _rect(canvas, x, 119, 13, 3, palette.lampFrame);
-  }
-
-  void _drawPrimaryMonitor(
-    Canvas canvas,
-    double x,
-    double progress,
-    _StudyPalette palette,
-  ) {
-    final glow = 0.86 + (math.sin(progress * math.pi * 4).abs() * 0.14);
     _rect(
       canvas,
-      x - 3,
-      82,
-      38,
-      32,
-      palette.monitorGlow.withValues(alpha: 0.12 * glow),
+      center + 38,
+      104,
+      10,
+      8,
+      palette.monitorGlow.withValues(alpha: 0.08 * glow),
     );
-    _rect(canvas, x, 84, 33, 27, palette.monitorEdge);
-    _rect(canvas, x + 3, 87, 27, 19, palette.monitorScreen);
-    _rect(canvas, x + 4, 88, 25, 3, palette.screenChrome);
-    _rect(canvas, x + 5, 93, 16, 2, palette.screenCode);
-    _rect(canvas, x + 5, 97, 21, 2, palette.screenCodeMuted);
-    _rect(canvas, x + 5, 101, 12, 2, palette.screenCode);
+    _rect(
+      canvas,
+      center + 37,
+      112,
+      10,
+      9,
+      palette.monitorGlow.withValues(alpha: 0.08 * glow),
+    );
+    _rect(canvas, center + 41, 97, 7, 7, palette.monitorEdge);
+    _rect(canvas, center + 40, 104, 8, 7, palette.monitorEdge);
+    _rect(canvas, center + 39, 111, 9, 8, palette.monitorEdge);
+    _rect(canvas, center + 43, 99, 3, 5, palette.monitorScreen);
+    _rect(canvas, center + 42, 104, 4, 7, palette.monitorScreen);
+    _rect(canvas, center + 41, 111, 5, 5, palette.monitorScreen);
+    _rect(canvas, center + 43, 100, 3, 2, palette.screenChrome);
+    _rect(canvas, center + 43, 105, 3, 1, palette.screenCode);
+    _rect(canvas, center + 42, 109, 3, 1, palette.screenCodeMuted);
     final cursorVisible = (progress * 18).floor().isEven;
     if (cursorVisible) {
-      _rect(canvas, x + 18, 101, 2, 3, palette.screenCursor);
+      _rect(canvas, center + 42, 112, 2, 2, palette.screenCursor);
     }
-    final scanY = 92 + ((progress * 11).floor() % 12);
-    _rect(canvas, x + 4, scanY.toDouble(), 25, 1, palette.screenScan);
-    _rect(canvas, x + 14, 111, 6, 9, palette.monitorStand);
-    _rect(canvas, x + 9, 119, 16, 2, palette.monitorStand);
+    final scanY = 103 + ((progress * 9).floor() % 12);
+    final scanX = scanY < 104
+        ? center + 43
+        : scanY < 111
+        ? center + 42
+        : center + 41;
+    _rect(canvas, scanX, scanY.toDouble(), 3, 1, palette.screenScan);
+    _rect(canvas, center + 38, 117, 10, 4, palette.monitorEdge);
+    _rect(canvas, center + 5, 118, 39, 6, palette.monitorEdge);
+    _rect(canvas, center + 8, 118, 31, 3, palette.keyboard);
+    _rect(canvas, center + 11, 118, 25, 1, palette.keyHighlight);
+    _rect(canvas, center + 42, 121, 5, 3, palette.monitorEdge);
   }
 
   void _drawStudent(Canvas canvas, double center, double progress) {
@@ -1027,10 +1032,6 @@ class _StudyPalette {
     required this.chargingPanel,
     required this.chargingPort,
     required this.chargingLight,
-    required this.lampFrame,
-    required this.lampShade,
-    required this.lampLight,
-    required this.lampGlow,
     required this.hudEdge,
     required this.hud,
     required this.hudHeader,
@@ -1101,10 +1102,6 @@ class _StudyPalette {
     chargingPanel: Color(0xFF2E3439),
     chargingPort: Color(0xFF111619),
     chargingLight: Color(0xFF55E89C),
-    lampFrame: Color(0xFF39454B),
-    lampShade: Color(0xFF5F747C),
-    lampLight: Color(0xFFFFDC72),
-    lampGlow: Color(0xFFFFE9A6),
     hudEdge: Color(0xFF17212C),
     hud: Color(0xE8253340),
     hudHeader: Color(0xFF334F62),
@@ -1175,10 +1172,6 @@ class _StudyPalette {
     chargingPanel: Color(0xFF151B20),
     chargingPort: Color(0xFF05090B),
     chargingLight: Color(0xFF45E58D),
-    lampFrame: Color(0xFF202B31),
-    lampShade: Color(0xFF3B515B),
-    lampLight: Color(0xFFFFC94C),
-    lampGlow: Color(0xFFFFD76A),
     hudEdge: Color(0xFF080D12),
     hud: Color(0xEE111A24),
     hudHeader: Color(0xFF203D50),
@@ -1242,10 +1235,6 @@ class _StudyPalette {
   final Color chargingPanel;
   final Color chargingPort;
   final Color chargingLight;
-  final Color lampFrame;
-  final Color lampShade;
-  final Color lampLight;
-  final Color lampGlow;
   final Color hudEdge;
   final Color hud;
   final Color hudHeader;

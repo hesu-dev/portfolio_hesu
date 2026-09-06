@@ -412,107 +412,201 @@ void main() {
       }
     });
 
-    testWidgets('교육 캐릭터는 책상 뒤에 앉아 노트를 작업면 위에 둔다', (tester) async {
-      for (final size in const <Size>[Size(320, 258), Size(714, 288)]) {
-        await tester.pumpWidget(const SizedBox.shrink());
-        await _pumpStandaloneEducationStudy(
-          tester,
-          size: size,
-          disableAnimations: false,
-        );
-        final study = find.byType(EducationPixelStudy);
-        await _waitForEducationStudySprite(tester, study);
-        await tester.pump(const Duration(milliseconds: 640));
-        final typingFrame = await _renderedBytes(tester, study);
-        await tester.pump(const Duration(milliseconds: 1440));
-        final notebookFrame = await _renderedBytes(tester, study);
+    testWidgets('교육 캐릭터는 측면 노트북 작업대에서 계속 공부한다', (tester) async {
+      for (final brightness in Brightness.values) {
+        for (final size in const <Size>[Size(320, 258), Size(714, 288)]) {
+          await tester.pumpWidget(const SizedBox.shrink());
+          await _pumpStandaloneEducationStudy(
+            tester,
+            size: size,
+            disableAnimations: false,
+            brightness: brightness,
+          );
+          final study = find.byType(EducationPixelStudy);
+          await _waitForEducationStudySprite(tester, study);
+          await tester.pump(const Duration(milliseconds: 640));
+          final typingFrame = await _renderedBytes(tester, study);
+          await tester.pump(const Duration(milliseconds: 1440));
+          final notebookFrame = await _renderedBytes(tester, study);
 
-        final sceneScale = size.height / 144;
-        final sceneWidth = size.width / sceneScale;
-        final studyCenter = (math.max(80.0, sceneWidth - 56) * 0.62)
-            .clamp(96.0, 220.0)
-            .toDouble();
-        Rect sceneRect(double left, double top, double right, double bottom) =>
-            Rect.fromLTRB(
-              left * sceneScale,
-              top * sceneScale,
-              right * sceneScale,
-              bottom * sceneScale,
-            );
+          final sceneScale = size.height / 144;
+          final sceneWidth = size.width / sceneScale;
+          final studyCenter = (math.max(80.0, sceneWidth - 56) * 0.62)
+              .clamp(96.0, 220.0)
+              .toDouble();
+          Rect sceneRect(
+            double left,
+            double top,
+            double right,
+            double bottom,
+          ) => Rect.fromLTRB(
+            left * sceneScale,
+            top * sceneScale,
+            right * sceneScale,
+            bottom * sceneScale,
+          );
 
-        final keyboardRegion = sceneRect(
-          studyCenter + 1,
-          115,
-          studyCenter + 37,
-          124,
-        );
-        final pageRegion = sceneRect(
-          studyCenter - 10,
-          119,
-          studyCenter + 32,
-          132,
-        );
-        final belowDeskRegion = sceneRect(
-          studyCenter - 28,
-          137,
-          studyCenter + 30,
-          144,
-        );
+          final foregroundScreenRegion = sceneRect(
+            studyCenter + 34,
+            80,
+            studyCenter + 56,
+            123,
+          );
+          final laptopBaseRegion = sceneRect(
+            studyCenter + 2,
+            114,
+            studyCenter + 44,
+            126,
+          );
+          final chairRegion = sceneRect(
+            studyCenter - 31,
+            96,
+            studyCenter - 15,
+            132,
+          );
+          final backgroundWorkstationsRegion = sceneRect(
+            0,
+            55,
+            math.max(1, studyCenter - 34),
+            98,
+          );
+          final pageRegion = sceneRect(
+            studyCenter - 4,
+            119,
+            studyCenter + 32,
+            132,
+          );
+          final belowDeskRegion = sceneRect(
+            studyCenter - 13,
+            134,
+            studyCenter + 42,
+            144,
+          );
 
-        final typingSkinRatio = _pixelRatioInRect(
-          typingFrame,
-          imageSize: size,
-          rect: keyboardRegion,
-          matches: _isSkinPixel,
-        );
-        final typingPageRatio = _pixelRatioInRect(
-          typingFrame,
-          imageSize: size,
-          rect: pageRegion,
-          matches: _isLightPagePixel,
-        );
-        final notebookPageRatio = _pixelRatioInRect(
-          notebookFrame,
-          imageSize: size,
-          rect: pageRegion,
-          matches: _isLightPagePixel,
-        );
-        final typingExposureRatio = _pixelRatioInRect(
-          typingFrame,
-          imageSize: size,
-          rect: belowDeskRegion,
-          matches: _isSkinOrRedSpritePixel,
-        );
-        final notebookExposureRatio = _pixelRatioInRect(
-          notebookFrame,
-          imageSize: size,
-          rect: belowDeskRegion,
-          matches: _isSkinOrRedSpritePixel,
-        );
+          final screenPixels = _pixelCoordinatesInRect(
+            typingFrame,
+            imageSize: size,
+            rect: foregroundScreenRegion,
+            matches: _isCoolScreenPixel,
+          );
+          final screenBounds = _pixelBounds(screenPixels, imageSize: size);
+          final screenWidth =
+              _widestHorizontalRun(screenPixels, imageSize: size) / sceneScale;
+          final screenHeight = screenBounds.height / sceneScale;
+          final laptopHardwareRatio = _pixelRatioInRect(
+            typingFrame,
+            imageSize: size,
+            rect: laptopBaseRegion,
+            matches: _isNeutralHardwarePixel,
+          );
+          final typingSkinRatio = _pixelRatioInRect(
+            typingFrame,
+            imageSize: size,
+            rect: laptopBaseRegion,
+            matches: _isSkinPixel,
+          );
+          final chairRatio = _pixelRatioInRect(
+            typingFrame,
+            imageSize: size,
+            rect: chairRegion,
+            matches: _isNeutralHardwarePixel,
+          );
+          final backgroundScreenRatio = _pixelRatioInRect(
+            typingFrame,
+            imageSize: size,
+            rect: backgroundWorkstationsRegion,
+            matches: _isCoolScreenPixel,
+          );
+          final typingPageRatio = _pixelRatioInRect(
+            typingFrame,
+            imageSize: size,
+            rect: pageRegion,
+            matches: _isLightPagePixel,
+          );
+          final notebookPageRatio = _pixelRatioInRect(
+            notebookFrame,
+            imageSize: size,
+            rect: pageRegion,
+            matches: _isLightPagePixel,
+          );
+          final typingExposureRatio = _pixelRatioInRect(
+            typingFrame,
+            imageSize: size,
+            rect: belowDeskRegion,
+            matches: _isSkinOrRedSpritePixel,
+          );
+          final notebookExposureRatio = _pixelRatioInRect(
+            notebookFrame,
+            imageSize: size,
+            rect: belowDeskRegion,
+            matches: _isSkinOrRedSpritePixel,
+          );
 
-        expect(
-          typingSkinRatio,
-          greaterThanOrEqualTo(0.01),
-          reason: '$size 타이핑 손이 키보드 작업면에 남아야 한다.',
-        );
-        expect(
-          notebookPageRatio,
-          greaterThanOrEqualTo(typingPageRatio + 0.02),
-          reason:
-              '$size 노트 포즈의 밝은 페이지가 타이핑 포즈보다 '
-              '작업면에 더 많아야 한다. '
-              'typing=${typingPageRatio.toStringAsFixed(3)}, '
-              'notebook=${notebookPageRatio.toStringAsFixed(3)}',
-        );
-        expect(
-          math.max(typingExposureRatio, notebookExposureRatio),
-          lessThanOrEqualTo(0.002),
-          reason:
-              '$size fascia 아래에 피부·빨간 제본 픽셀이 남으면 '
-              '캐릭터가 책상 앞에 앉은 것처럼 본다. '
-              'typing=${typingExposureRatio.toStringAsFixed(3)}, '
-              'notebook=${notebookExposureRatio.toStringAsFixed(3)}',
-        );
+          expect(screenPixels, isNotEmpty, reason: '$brightness $size laptop');
+          expect(
+            screenWidth,
+            lessThanOrEqualTo(14),
+            reason:
+                '$brightness $size 노트북 뚜껑이 넓은 정면 모니터로 '
+                '남아 있으면 안 된다. width=${screenWidth.toStringAsFixed(2)}',
+          );
+          expect(
+            screenHeight,
+            greaterThanOrEqualTo(13),
+            reason:
+                '$brightness $size 세로로 세운 측면 노트북 화면이 '
+                '보여야 한다. height=${screenHeight.toStringAsFixed(2)}',
+          );
+          expect(
+            screenHeight,
+            greaterThan(screenWidth * 1.1),
+            reason: '$brightness $size 노트북 뚜껑은 세로형이어야 한다.',
+          );
+          expect(
+            laptopHardwareRatio,
+            greaterThanOrEqualTo(0.12),
+            reason:
+                '$brightness $size 노트북 아래에 가로 베이스와 키보드가 '
+                '남아야 한다. ratio=${laptopHardwareRatio.toStringAsFixed(3)}',
+          );
+          expect(
+            typingSkinRatio,
+            greaterThanOrEqualTo(0.01),
+            reason: '$brightness $size 타이핑 손이 노트북 베이스에 닿아야 한다.',
+          );
+          expect(
+            chairRatio,
+            greaterThanOrEqualTo(0.08),
+            reason:
+                '$brightness $size 캐릭터 뒤에 의자 등받이와 좌판이 '
+                '보여야 한다. ratio=${chairRatio.toStringAsFixed(3)}',
+          );
+          expect(
+            backgroundScreenRatio,
+            greaterThanOrEqualTo(0.01),
+            reason:
+                '$brightness $size 도서관 후경의 정면 컴퓨터는 유지해야 '
+                '한다. ratio=${backgroundScreenRatio.toStringAsFixed(3)}',
+          );
+          expect(
+            notebookPageRatio,
+            greaterThanOrEqualTo(typingPageRatio + 0.02),
+            reason:
+                '$brightness $size 노트 포즈의 밝은 페이지가 타이핑 포즈보다 '
+                '작업면에 더 많아야 한다. '
+                'typing=${typingPageRatio.toStringAsFixed(3)}, '
+                'notebook=${notebookPageRatio.toStringAsFixed(3)}',
+          );
+          expect(
+            math.max(typingExposureRatio, notebookExposureRatio),
+            lessThanOrEqualTo(0.002),
+            reason:
+                '$brightness $size fascia 아래에 피부·빨간 제본 픽셀이 '
+                '남으면 캐릭터가 책상 앞에 앉은 것처럼 본다. '
+                'typing=${typingExposureRatio.toStringAsFixed(3)}, '
+                'notebook=${notebookExposureRatio.toStringAsFixed(3)}',
+          );
+        }
       }
     });
 
@@ -2914,8 +3008,66 @@ Set<int> _pixelCoordinatesInRect(
   return matchingPixels;
 }
 
+Rect _pixelBounds(Set<int> pixels, {required Size imageSize}) {
+  if (pixels.isEmpty) {
+    return Rect.zero;
+  }
+  final width = imageSize.width.round();
+  var left = width;
+  var top = imageSize.height.round();
+  var right = 0;
+  var bottom = 0;
+  for (final pixel in pixels) {
+    final x = pixel % width;
+    final y = pixel ~/ width;
+    left = math.min(left, x);
+    top = math.min(top, y);
+    right = math.max(right, x + 1);
+    bottom = math.max(bottom, y + 1);
+  }
+  return Rect.fromLTRB(
+    left.toDouble(),
+    top.toDouble(),
+    right.toDouble(),
+    bottom.toDouble(),
+  );
+}
+
+int _widestHorizontalRun(Set<int> pixels, {required Size imageSize}) {
+  if (pixels.isEmpty) {
+    return 0;
+  }
+  final width = imageSize.width.round();
+  final sortedPixels = pixels.toList()..sort();
+  var widestRun = 1;
+  var currentRun = 1;
+  for (var index = 1; index < sortedPixels.length; index++) {
+    final previous = sortedPixels[index - 1];
+    final current = sortedPixels[index];
+    if (current == previous + 1 && current ~/ width == previous ~/ width) {
+      currentRun++;
+      widestRun = math.max(widestRun, currentRun);
+    } else {
+      currentRun = 1;
+    }
+  }
+  return widestRun;
+}
+
 bool _isSkinPixel(int red, int green, int blue) =>
     red >= 70 && red > green * 1.35 && green > blue * 1.10;
+
+bool _isCoolScreenPixel(int red, int green, int blue) =>
+    blue >= 45 && green >= 32 && blue > red * 1.18 && blue > green * 1.06;
+
+bool _isNeutralHardwarePixel(int red, int green, int blue) {
+  final brightest = math.max(red, math.max(green, blue));
+  final darkest = math.min(red, math.min(green, blue));
+  return brightest >= 18 &&
+      brightest <= 205 &&
+      brightest - darkest <= 34 &&
+      blue <= red * 1.45;
+}
 
 bool _isLightPagePixel(int red, int green, int blue) =>
     red >= 125 &&
