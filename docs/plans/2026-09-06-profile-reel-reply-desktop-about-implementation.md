@@ -28,7 +28,7 @@
 - Modify: `test/portfolio/profile_app_test.dart`
 - Modify: `lib/portfolio/apps/profile_app.dart`
 
-1. Change reply-contract tests so career author slots contain `organization` and bodies contain only `period` plus `description`; education author slots contain `program` and bodies contain `institution`, `period`, and any link.
+1. Change reply-contract tests so career author slots contain `organization` and bodies contain only `period` plus `description`; education author slots contain `institution` and bodies contain `period`, `program`, and any link.
 2. Add responsive cases for iPhone, iPad, and a wide standalone Profile surface, including large text, with no horizontal overflow or clipping.
 3. Run the focused tests and confirm RED because the current author is the profile identity and the old body duplicates titles and renders roles.
 4. Remove `identityName` from `_ProfileReplyItem`, derive the shared title from the current history item, and reduce each body to its new ordered fields.
