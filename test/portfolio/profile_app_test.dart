@@ -97,6 +97,67 @@ void main() {
       }
     });
 
+    test('분수 좌표의 상태 박스와 문구는 같은 픽셀 rect를 사용한다', () {
+      final cases = <(String, Rect, double)>[
+        (
+          CareerPixelRunner.levelUpLabel,
+          const Rect.fromLTWH(42.37, 8.63, 54, 10),
+          7.2,
+        ),
+        (
+          CareerPixelRunner.levelUpLabel,
+          const Rect.fromLTWH(41.68, 7.42, 54, 10),
+          8.2,
+        ),
+        (
+          EducationPixelStudy.headerLabel,
+          const Rect.fromLTWH(10.25, 12.35, 108.55, 6),
+          4.2,
+        ),
+        (
+          EducationPixelStudy.sessionCompleteLabel,
+          const Rect.fromLTWH(8.4, 62.6, 86.6, 8),
+          4.8,
+        ),
+      ];
+
+      for (final (label, rawContentRect, fontSize) in cases) {
+        final contentRect = snapPixelRect(rawContentRect);
+        expect(
+          contentRect,
+          Rect.fromLTWH(
+            rawContentRect.left.roundToDouble(),
+            rawContentRect.top.roundToDouble(),
+            math.max(1, rawContentRect.width.roundToDouble()),
+            math.max(1, rawContentRect.height.roundToDouble()),
+          ),
+          reason: '$label pixel rect',
+        );
+
+        final foreground = _layoutPixelStatusText(label, fontSize);
+        final shadow = _layoutPixelStatusText(label, fontSize);
+        final origin = centeredPixelTextOrigin(
+          contentRect: contentRect,
+          foregroundSize: foreground.size,
+          shadowSize: shadow.size,
+        );
+        final visualBounds = (origin & foreground.size).expandToInclude(
+          (origin + const Offset(1, 1)) & shadow.size,
+        );
+
+        expect(
+          (visualBounds.center.dx - contentRect.center.dx).abs(),
+          lessThanOrEqualTo(0.5),
+          reason: '$label horizontal center at $fontSize',
+        );
+        expect(
+          (visualBounds.center.dy - contentRect.center.dy).abs(),
+          lessThanOrEqualTo(0.5),
+          reason: '$label vertical center at $fontSize',
+        );
+      }
+    });
+
     test('구름·후경 빌딩·메인 빌딩은 앞쪽일수록 빠르게 무한 스크롤한다', () {
       expect(CareerPixelRunner.cloudSpeedMultiplier, 1.0);
       expect(CareerPixelRunner.farCitySpeedMultiplier, 1.25);

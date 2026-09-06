@@ -1,5 +1,21 @@
 import 'dart:ui';
 
+/// Snaps a logical rectangle to the pixel geometry used by the scene painters.
+///
+/// The origin and dimensions are rounded independently, and each drawn
+/// dimension remains at least one logical pixel.
+Rect snapPixelRect(Rect rect) {
+  _validateFiniteRect(rect, 'rect');
+  final width = rect.width.roundToDouble();
+  final height = rect.height.roundToDouble();
+  return Rect.fromLTWH(
+    rect.left.roundToDouble(),
+    rect.top.roundToDouble(),
+    width < 1 ? 1 : width,
+    height < 1 ? 1 : height,
+  );
+}
+
 /// Returns the integer-snapped foreground origin that centers the combined
 /// foreground and shadow bounds inside [contentRect].
 Offset centeredPixelTextOrigin({
@@ -8,13 +24,13 @@ Offset centeredPixelTextOrigin({
   required Size shadowSize,
   Offset shadowOffset = const Offset(1, 1),
 }) {
-  if (!contentRect.left.isFinite ||
-      !contentRect.top.isFinite ||
-      !contentRect.right.isFinite ||
-      !contentRect.bottom.isFinite ||
-      contentRect.width < 0 ||
-      contentRect.height < 0) {
-    throw ArgumentError.value(contentRect, 'contentRect', 'must be finite');
+  _validateFiniteRect(contentRect, 'contentRect');
+  if (contentRect.width < 0 || contentRect.height < 0) {
+    throw ArgumentError.value(
+      contentRect,
+      'contentRect',
+      'must have non-negative dimensions',
+    );
   }
   _validateSize(foregroundSize, 'foregroundSize');
   _validateSize(shadowSize, 'shadowSize');
@@ -37,6 +53,15 @@ Offset centeredPixelTextOrigin({
     (contentRect.center.dx - ((visualLeft + visualRight) / 2)).roundToDouble(),
     (contentRect.center.dy - ((visualTop + visualBottom) / 2)).roundToDouble(),
   );
+}
+
+void _validateFiniteRect(Rect rect, String name) {
+  if (!rect.left.isFinite ||
+      !rect.top.isFinite ||
+      !rect.right.isFinite ||
+      !rect.bottom.isFinite) {
+    throw ArgumentError.value(rect, name, 'must be finite');
+  }
 }
 
 void _validateSize(Size size, String name) {

@@ -640,7 +640,7 @@ class _EducationPixelStudyPainter extends CustomPainter {
       panel.height - 4,
       palette.hud,
     );
-    _rect(
+    final headerContentRect = _rect(
       canvas,
       panel.left + 4,
       panel.top + 4,
@@ -651,7 +651,7 @@ class _EducationPixelStudyPainter extends CustomPainter {
     _centeredPixelText(
       canvas,
       EducationPixelStudy.headerLabel,
-      Rect.fromLTWH(panel.left + 4, panel.top + 4, panel.width - 8, 6),
+      headerContentRect,
       size: 4.2,
       color: palette.hudTitle,
       shadow: palette.textShadow,
@@ -748,11 +748,18 @@ class _EducationPixelStudyPainter extends CustomPainter {
     final pulse = (progress * 32).floor().isEven;
     final boxWidth = math.min(91.0, panel.width);
     _rect(canvas, panel.left, 61, boxWidth, 12, palette.completeEdge);
-    _rect(canvas, panel.left + 2, 63, boxWidth - 4, 8, palette.completeFill);
+    final completeContentRect = _rect(
+      canvas,
+      panel.left + 2,
+      63,
+      boxWidth - 4,
+      8,
+      palette.completeFill,
+    );
     _centeredPixelText(
       canvas,
       EducationPixelStudy.sessionCompleteLabel,
-      Rect.fromLTWH(panel.left + 2, 63, boxWidth - 4, 8),
+      completeContentRect,
       size: 4.8,
       color: pulse ? palette.completeText : palette.hudTitle,
       shadow: palette.textShadow,
@@ -884,7 +891,7 @@ class _EducationPixelStudyPainter extends CustomPainter {
     );
   }
 
-  void _rect(
+  Rect _rect(
     Canvas canvas,
     double x,
     double y,
@@ -892,15 +899,9 @@ class _EducationPixelStudyPainter extends CustomPainter {
     double height,
     Color color,
   ) {
-    canvas.drawRect(
-      Rect.fromLTWH(
-        x.roundToDouble(),
-        y.roundToDouble(),
-        math.max(1, width.roundToDouble()),
-        math.max(1, height.roundToDouble()),
-      ),
-      _fillPaint..color = color,
-    );
+    final rect = snapPixelRect(Rect.fromLTWH(x, y, width, height));
+    canvas.drawRect(rect, _fillPaint..color = color);
+    return rect;
   }
 
   @override

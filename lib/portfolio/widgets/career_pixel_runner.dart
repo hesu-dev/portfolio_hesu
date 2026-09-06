@@ -691,11 +691,18 @@ class _CareerPixelRunnerPainter extends CustomPainter {
     final anchorY = 14 - lift;
     _rect(canvas, anchorX - 4, anchorY - 3, 62, 18, const Color(0xCC171C2C));
     _rect(canvas, anchorX - 2, anchorY - 1, 58, 14, const Color(0xFFE98E24));
-    _rect(canvas, anchorX, anchorY + 1, 54, 10, const Color(0xFF29334C));
+    final levelUpContentRect = _rect(
+      canvas,
+      anchorX,
+      anchorY + 1,
+      54,
+      10,
+      const Color(0xFF29334C),
+    );
     _centeredPixelText(
       canvas,
       CareerPixelRunner.levelUpLabel,
-      Rect.fromLTWH(anchorX, anchorY + 1, 54, 10),
+      levelUpContentRect,
       size: 7.2 * pulse,
       color: const Color(0xFFFFE66D),
       shadow: const Color(0xFF7D4213),
@@ -804,7 +811,7 @@ class _CareerPixelRunnerPainter extends CustomPainter {
     );
   }
 
-  void _rect(
+  Rect _rect(
     Canvas canvas,
     double x,
     double y,
@@ -812,15 +819,9 @@ class _CareerPixelRunnerPainter extends CustomPainter {
     double height,
     Color color,
   ) {
-    canvas.drawRect(
-      Rect.fromLTWH(
-        x.roundToDouble(),
-        y.roundToDouble(),
-        math.max(1, width.roundToDouble()),
-        math.max(1, height.roundToDouble()),
-      ),
-      _fillPaint..color = color,
-    );
+    final rect = snapPixelRect(Rect.fromLTWH(x, y, width, height));
+    canvas.drawRect(rect, _fillPaint..color = color);
+    return rect;
   }
 
   double _lerp(double begin, double end, double t) {
