@@ -1228,9 +1228,6 @@ class _ProfileHistoryDetailState extends State<_ProfileHistoryDetail> {
   @override
   Widget build(BuildContext context) {
     final title = widget.kind == _ProfileHistoryKind.experience ? '경력' : '교육';
-    final itemCount = widget.kind == _ProfileHistoryKind.experience
-        ? widget.data.experiences.length
-        : widget.data.education.length;
 
     return SizedBox.expand(
       key: const Key('profile-history-detail'),
@@ -1263,8 +1260,6 @@ class _ProfileHistoryDetailState extends State<_ProfileHistoryDetail> {
                         },
                         liked: widget.liked,
                         title: title,
-                        organization: widget.data.identity.headline,
-                        metadata: '$title $itemCount개',
                         name: widget.data.identity.name,
                         monogram: widget.data.monogram,
                         onCamera: _acknowledgeAction,
@@ -1298,8 +1293,6 @@ class _ProfileReelOverlay extends StatelessWidget {
     required this.media,
     required this.liked,
     required this.title,
-    required this.organization,
-    required this.metadata,
     required this.name,
     required this.monogram,
     required this.onCamera,
@@ -1312,8 +1305,6 @@ class _ProfileReelOverlay extends StatelessWidget {
   final _ProfileHistoryMedia media;
   final bool liked;
   final String title;
-  final String organization;
-  final String metadata;
   final String name;
   final String monogram;
   final VoidCallback onCamera;
@@ -1429,28 +1420,6 @@ class _ProfileReelOverlay extends StatelessWidget {
                   color: foreground,
                   fontWeight: FontWeight.w800,
                   height: 1.2,
-                ),
-              ),
-              const SizedBox(height: 5),
-              Text(
-                organization,
-                maxLines: 2,
-                overflow: TextOverflow.ellipsis,
-                style: AppleTheme.body(context).copyWith(
-                  color: foreground,
-                  fontWeight: FontWeight.w600,
-                  height: 1.25,
-                ),
-              ),
-              const SizedBox(height: 4),
-              Text(
-                metadata,
-                maxLines: 2,
-                overflow: TextOverflow.ellipsis,
-                style: AppleTheme.caption(context).copyWith(
-                  color: foreground,
-                  fontWeight: FontWeight.w600,
-                  height: 1.25,
                 ),
               ),
             ],
@@ -1611,7 +1580,6 @@ class _ProfileReplyThread extends StatelessWidget {
         for (final entry in data.experiences.indexed)
           _ProfileReplyItem.experience(
             key: Key('profile-reel-reply-item-experience-${entry.$1}'),
-            identityName: data.identity.name,
             monogram: data.monogram,
             index: entry.$1,
             experience: entry.$2,
@@ -1622,7 +1590,6 @@ class _ProfileReplyThread extends StatelessWidget {
         for (final entry in data.education.indexed)
           _ProfileReplyItem.education(
             key: Key('profile-reel-reply-item-education-${entry.$1}'),
-            identityName: data.identity.name,
             monogram: data.monogram,
             index: entry.$1,
             education: entry.$2,
@@ -1673,7 +1640,6 @@ class _ProfileReplyThread extends StatelessWidget {
 
 class _ProfileReplyItem extends StatelessWidget {
   const _ProfileReplyItem.experience({
-    required this.identityName,
     required this.monogram,
     required this.index,
     required this.experience,
@@ -1684,7 +1650,6 @@ class _ProfileReplyItem extends StatelessWidget {
        onLaunch = null;
 
   const _ProfileReplyItem.education({
-    required this.identityName,
     required this.monogram,
     required this.index,
     required this.education,
@@ -1694,7 +1659,6 @@ class _ProfileReplyItem extends StatelessWidget {
   }) : kind = _ProfileHistoryKind.education,
        experience = null;
 
-  final String identityName;
   final String monogram;
   final int index;
   final _ProfileHistoryKind kind;
@@ -1706,6 +1670,9 @@ class _ProfileReplyItem extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final kindName = kind.name;
+    final authorTitle = kind == _ProfileHistoryKind.experience
+        ? experience!.organization
+        : education!.institution;
     final bodyStyle = AppleTheme.body(
       context,
     ).copyWith(color: AppleTheme.primaryLabel(context), height: 1.5);
@@ -1740,7 +1707,7 @@ class _ProfileReplyItem extends StatelessWidget {
                 constraints: const BoxConstraints(minHeight: 24),
                 alignment: Alignment.centerLeft,
                 child: Text(
-                  identityName,
+                  authorTitle,
                   style: Theme.of(context).textTheme.labelLarge?.copyWith(
                     color: AppleTheme.primaryLabel(context),
                     fontWeight: FontWeight.w800,
@@ -1776,13 +1743,6 @@ class _ProfileReplyItem extends StatelessWidget {
   List<Widget> _experienceContent(BuildContext context, TextStyle bodyStyle) {
     final item = experience!;
     return <Widget>[
-      Text(item.role, style: bodyStyle.copyWith(fontWeight: FontWeight.w800)),
-      const SizedBox(height: 5),
-      Text(
-        item.organization,
-        style: bodyStyle.copyWith(fontWeight: FontWeight.w600),
-      ),
-      const SizedBox(height: 4),
       Text(
         item.period,
         style: AppleTheme.caption(
@@ -1798,20 +1758,15 @@ class _ProfileReplyItem extends StatelessWidget {
     final item = education!;
     return <Widget>[
       Text(
-        item.program,
-        style: bodyStyle.copyWith(fontWeight: FontWeight.w800),
-      ),
-      const SizedBox(height: 5),
-      Text(
-        item.institution,
-        style: bodyStyle.copyWith(fontWeight: FontWeight.w600),
-      ),
-      const SizedBox(height: 4),
-      Text(
         item.period,
         style: AppleTheme.caption(
           context,
         ).copyWith(color: AppleTheme.secondaryLabel(context), height: 1.4),
+      ),
+      const SizedBox(height: 10),
+      Text(
+        item.program,
+        style: bodyStyle.copyWith(fontWeight: FontWeight.w800),
       ),
       if (item.link case final link?) ...<Widget>[
         const SizedBox(height: 8),

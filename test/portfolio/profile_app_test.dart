@@ -2161,13 +2161,6 @@ void main() {
         find.descendant(of: info, matching: find.text('경력')),
         findsOneWidget,
       );
-      expect(
-        find.descendant(
-          of: info,
-          matching: find.text('경력 ${data.experiences.length}개'),
-        ),
-        findsOneWidget,
-      );
 
       final expectedItemKeys = <String>[
         for (var index = 0; index < data.experiences.length; index++)
@@ -2217,15 +2210,21 @@ void main() {
         _expectReplyItem(
           tester,
           thread: thread,
-          identityName: data.identity.name,
+          authorTitle: experience.organization,
           kind: 'experience',
           index: index,
-          expectedText: <String>[
-            experience.role,
-            experience.organization,
-            experience.period,
-            experience.description,
-          ],
+          expectedText: <String>[experience.period, experience.description],
+        );
+        final item = find.byKey(
+          Key('profile-reel-reply-item-experience-$index'),
+        );
+        expect(
+          find.descendant(of: item, matching: find.text(experience.role)),
+          findsNothing,
+        );
+        expect(
+          find.descendant(of: item, matching: find.text(data.identity.name)),
+          findsNothing,
         );
       }
 
@@ -2270,13 +2269,6 @@ void main() {
         find.descendant(of: info, matching: find.text('교육')),
         findsOneWidget,
       );
-      expect(
-        find.descendant(
-          of: info,
-          matching: find.text('교육 ${data.education.length}개'),
-        ),
-        findsOneWidget,
-      );
       final expectedItemKeys = <String>[
         for (var index = 0; index < data.education.length; index++)
           'profile-reel-reply-item-education-$index',
@@ -2306,15 +2298,21 @@ void main() {
         _expectReplyItem(
           tester,
           thread: thread,
-          identityName: data.identity.name,
+          authorTitle: education.institution,
           kind: 'education',
           index: index,
           expectedText: <String>[
-            education.program,
-            education.institution,
             education.period,
+            education.program,
             if (education.link case final link?) link.label,
           ],
+        );
+        final item = find.byKey(
+          Key('profile-reel-reply-item-education-$index'),
+        );
+        expect(
+          find.descendant(of: item, matching: find.text(data.identity.name)),
+          findsNothing,
         );
       }
       for (final experience in data.experiences) {
@@ -2384,6 +2382,122 @@ void main() {
       await tester.pumpAndSettle();
       expect(launcher.uris, <Uri>[link.uri]);
       semantics.dispose();
+    });
+
+    testWidgets('상세 문구 계층은 iPhone·iPad·desktop과 큰 글씨에서 동일하다', (tester) async {
+      final data = _injectedProfileData();
+      for (final scenario in const <(String, Size, bool, bool)>[
+        ('iPhone', Size(390, 844), false, false),
+        ('iPad', Size(834, 1194), true, false),
+        ('desktop', Size(900, 650), false, true),
+      ]) {
+        for (final history
+            in <
+              ({
+                String kind,
+                Key postKey,
+                String sectionTitle,
+                String authorTitle,
+                List<String> content,
+              })
+            >[
+              (
+                kind: 'experience',
+                postKey: const Key('profile-history-post-experience'),
+                sectionTitle: '경력',
+                authorTitle: data.experiences.first.organization,
+                content: <String>[
+                  data.experiences.first.period,
+                  data.experiences.first.description,
+                ],
+              ),
+              (
+                kind: 'education',
+                postKey: const Key('profile-history-post-education'),
+                sectionTitle: '교육',
+                authorTitle: data.education.first.institution,
+                content: <String>[
+                  data.education.first.period,
+                  data.education.first.program,
+                  data.education.first.link!.label,
+                ],
+              ),
+            ]) {
+          await tester.pumpWidget(const SizedBox.shrink());
+          if (scenario.$4) {
+            await _pumpStandaloneProfile(
+              tester,
+              size: scenario.$2,
+              tablet: false,
+              data: data,
+              textScaler: const TextScaler.linear(2),
+            );
+          } else {
+            await _pumpProfileShell(
+              tester,
+              size: scenario.$2,
+              tablet: scenario.$3,
+              data: data,
+              textScaler: const TextScaler.linear(2),
+            );
+            await _openProfile(tester);
+          }
+          await _openHistoryCard(tester, history.postKey);
+
+          final info = find.byKey(const Key('profile-reel-info'));
+          final infoText = find
+              .descendant(of: info, matching: find.byType(Text))
+              .evaluate()
+              .map((element) => (element.widget as Text).data)
+              .whereType<String>()
+              .toList();
+          expect(infoText, <String>[
+            data.monogram,
+            data.identity.name,
+            history.sectionTitle,
+          ], reason: '${scenario.$1} ${history.kind} overlay');
+
+          final thread = find.byKey(const Key('profile-reel-reply-thread'));
+          _expectReplyItem(
+            tester,
+            thread: thread,
+            authorTitle: history.authorTitle,
+            kind: history.kind,
+            index: 0,
+            expectedText: history.content,
+          );
+          final item = find.byKey(
+            Key('profile-reel-reply-item-${history.kind}-0'),
+          );
+          final author = find.byKey(
+            Key('profile-reel-reply-author-${history.kind}-0'),
+          );
+          final content = find.byKey(
+            Key('profile-reel-reply-content-${history.kind}-0'),
+          );
+          final itemRect = tester.getRect(item);
+          for (final rect in <Rect>[
+            tester.getRect(author),
+            tester.getRect(content),
+          ]) {
+            expect(
+              rect.left,
+              greaterThanOrEqualTo(itemRect.left),
+              reason: '${scenario.$1} ${history.kind} left bound',
+            );
+            expect(
+              rect.right,
+              lessThanOrEqualTo(itemRect.right),
+              reason: '${scenario.$1} ${history.kind} right bound',
+            );
+          }
+          expect(
+            tester.takeException(),
+            isNull,
+            reason: '${scenario.$1} ${history.kind}',
+          );
+        }
+      }
     });
 
     testWidgets('공용 헤더는 상세에서 뒤로 가고 피드 루트에서 앱을 닫는다', (tester) async {
@@ -2720,6 +2834,8 @@ Future<void> _pumpStandaloneProfile(
   WidgetTester tester, {
   required Size size,
   required bool tablet,
+  PortfolioData data = portfolioData,
+  TextScaler textScaler = TextScaler.noScaling,
 }) async {
   tester.view.devicePixelRatio = 1;
   tester.view.physicalSize = size;
@@ -2731,9 +2847,13 @@ Future<void> _pumpStandaloneProfile(
       theme: AppleTheme.light(),
       darkTheme: AppleTheme.dark(),
       home: MediaQuery(
-        data: MediaQueryData(size: size),
+        data: MediaQueryData(
+          size: size,
+          textScaler: textScaler,
+          disableAnimations: true,
+        ),
         child: ProfileApp(
-          data: portfolioData,
+          data: data,
           launcher: _RecordingLauncher(),
           tablet: tablet,
         ),
@@ -3354,7 +3474,7 @@ bool _isSpriteLeakPixel(int red, int green, int blue) =>
 void _expectReplyItem(
   WidgetTester tester, {
   required Finder thread,
-  required String identityName,
+  required String authorTitle,
   required String kind,
   required int index,
   required List<String> expectedText,
@@ -3366,7 +3486,7 @@ void _expectReplyItem(
   expect(find.descendant(of: item, matching: author), findsOneWidget);
   expect(find.descendant(of: item, matching: content), findsOneWidget);
   expect(
-    find.descendant(of: author, matching: find.text(identityName)),
+    find.descendant(of: author, matching: find.text(authorTitle)),
     findsOneWidget,
   );
 
@@ -3376,9 +3496,7 @@ void _expectReplyItem(
       .map((element) => (element.widget as Text).data)
       .whereType<String>()
       .toList();
-  expect(authorText, <String>[
-    identityName,
-  ], reason: '실제 identity만 reply 작성자로 노출한다.');
+  expect(authorText, <String>[authorTitle], reason: '각 답글의 소속 기관을 제목으로 노출한다.');
 
   final contentTextWidgets = find.descendant(
     of: content,
