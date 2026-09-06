@@ -1,3 +1,4 @@
+import 'dart:math' as math;
 import 'dart:ui' show PointerDeviceKind;
 import 'dart:ui'
     as ui
@@ -272,6 +273,45 @@ void main() {
         final study = find.byType(EducationPixelStudy);
         expect(tester.getRect(study), Offset.zero & size, reason: '$size');
         expect(tester.takeException(), isNull, reason: '$size');
+      }
+    });
+
+    testWidgets('교육 라이트 장면은 흰색 카메라 아이콘 배경을 3:1로 유지한다', (tester) async {
+      for (final scenario in const <(String, Size, bool)>[
+        ('iPhone', Size(320, 258), true),
+        ('iPad', Size(714, 288), false),
+      ]) {
+        await _pumpStandaloneEducationStudy(
+          tester,
+          size: scenario.$2,
+          disableAnimations: true,
+        );
+
+        final study = find.byType(EducationPixelStudy);
+        final pixels = await _renderedBytes(tester, study);
+        final compact = scenario.$3;
+        final cameraCenter = Offset(
+          scenario.$2.width - (compact ? 28 : 32),
+          compact ? 32 : 36,
+        );
+        final cameraFootprint = Rect.fromCenter(
+          center: cameraCenter,
+          width: 28,
+          height: 28,
+        );
+        final minimumContrast = _minimumWhiteContrastInRect(
+          pixels,
+          imageSize: scenario.$2,
+          rect: cameraFootprint,
+        );
+
+        expect(
+          minimumContrast,
+          greaterThanOrEqualTo(3),
+          reason:
+              '${scenario.$1} camera footprint contrast '
+              '${minimumContrast.toStringAsFixed(2)}:1',
+        );
       }
     });
 
@@ -2412,6 +2452,40 @@ Future<Uint8List> _renderedBytes(WidgetTester tester, Finder scope) async {
   });
   expect(rendered, isNotNull);
   return rendered!;
+}
+
+double _minimumWhiteContrastInRect(
+  Uint8List rgba, {
+  required Size imageSize,
+  required Rect rect,
+}) {
+  final width = imageSize.width.round();
+  final height = imageSize.height.round();
+  var brightestBackdrop = 0.0;
+  for (
+    var y = rect.top.floor().clamp(0, height);
+    y < rect.bottom.ceil().clamp(0, height);
+    y++
+  ) {
+    for (
+      var x = rect.left.floor().clamp(0, width);
+      x < rect.right.ceil().clamp(0, width);
+      x++
+    ) {
+      final byteOffset = ((y * width) + x) * 4;
+      final backdrop = Color.fromARGB(
+        rgba[byteOffset + 3],
+        rgba[byteOffset],
+        rgba[byteOffset + 1],
+        rgba[byteOffset + 2],
+      );
+      brightestBackdrop = math.max(
+        brightestBackdrop,
+        backdrop.computeLuminance(),
+      );
+    }
+  }
+  return 1.05 / (brightestBackdrop + 0.05);
 }
 
 void _expectReplyItem(

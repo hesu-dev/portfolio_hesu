@@ -756,6 +756,7 @@ class _EducationPixelStudyPainter extends CustomPainter {
 
   void _drawOverlayScrims(Canvas canvas, double width) {
     _rect(canvas, 0, 0, width, 8, const Color(0x24000000));
+    _rect(canvas, width - 32, 8, 32, 22, const Color(0x88000000));
     _rect(canvas, width - 56, 22, 56, 94, const Color(0x27000000));
     _rect(canvas, 0, 78, width, 18, const Color(0x10000000));
     _rect(canvas, 0, 96, width, 18, const Color(0x26000000));
