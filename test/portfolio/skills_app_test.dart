@@ -3,6 +3,7 @@ import 'dart:ui' as ui;
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_test/flutter_test.dart';
+import 'package:flutter_svg/flutter_svg.dart';
 import 'package:portfolio_hesu/portfolio/apps/skills_app.dart';
 import 'package:portfolio_hesu/portfolio/data/portfolio_data.dart';
 import 'package:portfolio_hesu/portfolio/theme/apple_theme.dart';
@@ -240,6 +241,130 @@ void main() {
       expect(find.text('Flutter 기반 크로스플랫폼 애플리케이션 개발'), findsNothing);
       expect(tester.takeException(), isNull);
       semantics.dispose();
+    });
+
+    testWidgets(
+      'uses every skill brand logo across desktop tablet and mobile channels',
+      (tester) async {
+        for (final configuration
+            in <
+              ({String name, Size size, bool compact, bool mobile, bool tablet})
+            >[
+              (
+                name: 'desktop',
+                size: const Size(900, 650),
+                compact: false,
+                mobile: false,
+                tablet: false,
+              ),
+              (
+                name: 'tablet',
+                size: const Size(600, 650),
+                compact: false,
+                mobile: true,
+                tablet: true,
+              ),
+              (
+                name: 'mobile',
+                size: const Size(390, 700),
+                compact: true,
+                mobile: true,
+                tablet: false,
+              ),
+            ]) {
+          await tester.pumpWidget(const SizedBox.shrink());
+          await _pumpSkills(
+            tester,
+            size: configuration.size,
+            data: portfolioData,
+            compact: configuration.compact,
+            mobile: configuration.mobile,
+            tablet: configuration.tablet,
+          );
+
+          for (final group in portfolioData.skillGroups) {
+            await tester.tap(
+              find.byKey(
+                Key(
+                  configuration.tablet || !configuration.mobile
+                      ? 'skills-category-${group.title}'
+                      : 'skills-mobile-channel-${group.title}',
+                ),
+              ),
+            );
+            await tester.pumpAndSettle();
+
+            for (final skill in group.skills) {
+              final logo = find.byKey(Key('skills-message-logo-$skill'));
+              expect(
+                logo,
+                findsOneWidget,
+                reason: '${configuration.name}: ${group.title} / $skill',
+              );
+
+              final picture = tester.widget<SvgPicture>(logo);
+              expect(
+                picture.bytesLoader,
+                isA<SvgAssetLoader>(),
+                reason: '${configuration.name}: $skill uses a local asset',
+              );
+              expect(
+                (picture.bytesLoader as SvgAssetLoader).assetName,
+                _skillLogoAssets[skill],
+                reason: '${configuration.name}: $skill asset path',
+              );
+
+              final avatar = find.byKey(Key('skills-message-avatar-$skill'));
+              expect(
+                find.descendant(
+                  of: avatar,
+                  matching: find.text(skill.characters.first),
+                ),
+                findsNothing,
+                reason: '${configuration.name}: $skill replaces its initial',
+              );
+            }
+
+            if (configuration.mobile && !configuration.tablet) {
+              await tester.tap(
+                find.byKey(const Key('skills-mobile-detail-back')),
+              );
+              await tester.pumpAndSettle();
+            }
+          }
+
+          expect(tester.takeException(), isNull, reason: configuration.name);
+        }
+      },
+    );
+
+    testWidgets('keeps an initial avatar for an unknown injected skill', (
+      tester,
+    ) async {
+      await _pumpSkills(tester, size: const Size(900, 650));
+
+      final avatar = find.byKey(const Key('skills-message-avatar-Dart VM'));
+      expect(
+        find.descendant(of: avatar, matching: find.text('D')),
+        findsOneWidget,
+      );
+      expect(
+        find.descendant(of: avatar, matching: find.byType(SvgPicture)),
+        findsNothing,
+      );
+    });
+
+    test('bundles every skill brand logo as self-contained SVG', () async {
+      for (final entry in _skillLogoAssets.entries) {
+        final source = await rootBundle.loadString(entry.value);
+        expect(source, contains('<svg'), reason: entry.key);
+        expect(source, contains('viewBox='), reason: entry.key);
+        expect(
+          source,
+          isNot(contains('http://www.w3.org/1999/xlink')),
+          reason: entry.key,
+        );
+      }
     });
 
     testWidgets('supports tap, Enter, Space, focus, and selected semantics', (
@@ -732,6 +857,19 @@ const PortfolioData _mobileData = PortfolioData.constant(
   ],
   projects: <PortfolioProject>[],
 );
+
+const Map<String, String> _skillLogoAssets = <String, String>{
+  'Flutter': 'assets/icons/skills/flutter.svg',
+  'Dart': 'assets/icons/skills/dart.svg',
+  'React': 'assets/icons/skills/react.svg',
+  'Java': 'assets/icons/skills/java.svg',
+  'Notion': 'assets/icons/skills/notion.svg',
+  'Slack': 'assets/icons/skills/slack.svg',
+  'Trello': 'assets/icons/skills/trello.svg',
+  'Figma': 'assets/icons/skills/figma.svg',
+  'Adobe Photoshop': 'assets/icons/skills/adobe-photoshop.svg',
+  'Adobe Illustrator': 'assets/icons/skills/adobe-illustrator.svg',
+};
 
 DateTime _fixedNow() => DateTime(2026, 9, 5, 9);
 

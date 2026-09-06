@@ -1,8 +1,29 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_svg/flutter_svg.dart';
 
 import '../data/portfolio_data.dart';
 import '../theme/apple_theme.dart';
 import '../widgets/apple_selection_control.dart';
+
+const Map<String, String> _skillLogoAssets = <String, String>{
+  'Flutter': 'assets/icons/skills/flutter.svg',
+  'Dart': 'assets/icons/skills/dart.svg',
+  'React': 'assets/icons/skills/react.svg',
+  'Java': 'assets/icons/skills/java.svg',
+  'Notion': 'assets/icons/skills/notion.svg',
+  'Slack': 'assets/icons/skills/slack.svg',
+  'Trello': 'assets/icons/skills/trello.svg',
+  'Figma': 'assets/icons/skills/figma.svg',
+  'Adobe Photoshop': 'assets/icons/skills/adobe-photoshop.svg',
+  'Adobe Illustrator': 'assets/icons/skills/adobe-illustrator.svg',
+};
+
+const List<Color> _fallbackAvatarColors = <Color>[
+  Color(0xFF1264A3),
+  Color(0xFF611F69),
+  Color(0xFF087F5B),
+  Color(0xFFA44500),
+];
 
 class SkillsApp extends StatefulWidget {
   const SkillsApp({
@@ -888,12 +909,6 @@ class _SkillActivityMessage extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    const avatarColors = <Color>[
-      Color(0xFF1264A3),
-      Color(0xFF611F69),
-      Color(0xFF087F5B),
-      Color(0xFFA44500),
-    ];
     final dark = AppleTheme.isDark(context);
     final primary = dark ? const Color(0xFFF8F8F8) : const Color(0xFF1D1C1D);
     final secondary = dark ? const Color(0xFFB5B7BA) : const Color(0xFF616061);
@@ -914,23 +929,7 @@ class _SkillActivityMessage extends StatelessWidget {
               label: '$skill 프로필 사진',
               image: true,
               child: ExcludeSemantics(
-                child: Container(
-                  width: 42,
-                  height: 42,
-                  alignment: Alignment.center,
-                  decoration: BoxDecoration(
-                    color: avatarColors[index % avatarColors.length],
-                    shape: BoxShape.circle,
-                  ),
-                  child: Text(
-                    _firstCharacter(skill).toUpperCase(),
-                    style: const TextStyle(
-                      color: Colors.white,
-                      fontSize: 15,
-                      fontWeight: FontWeight.w800,
-                    ),
-                  ),
-                ),
+                child: _SkillActivityAvatar(skill: skill, index: index),
               ),
             ),
             const SizedBox(width: 12),
@@ -979,6 +978,58 @@ class _SkillActivityMessage extends StatelessWidget {
             ),
           ],
         ),
+      ),
+    );
+  }
+}
+
+class _SkillActivityAvatar extends StatelessWidget {
+  const _SkillActivityAvatar({required this.skill, required this.index});
+
+  final String skill;
+  final int index;
+
+  @override
+  Widget build(BuildContext context) {
+    final logoAsset = _skillLogoAssets[skill];
+    if (logoAsset == null) {
+      return Container(
+        width: 42,
+        height: 42,
+        alignment: Alignment.center,
+        decoration: BoxDecoration(
+          color: _fallbackAvatarColors[index % _fallbackAvatarColors.length],
+          shape: BoxShape.circle,
+        ),
+        child: Text(
+          _firstCharacter(skill).toUpperCase(),
+          style: const TextStyle(
+            color: Colors.white,
+            fontSize: 15,
+            fontWeight: FontWeight.w800,
+          ),
+        ),
+      );
+    }
+
+    return Container(
+      width: 42,
+      height: 42,
+      padding: const EdgeInsets.all(7),
+      clipBehavior: Clip.antiAlias,
+      decoration: BoxDecoration(
+        color: const Color(0xFFF8FAFC),
+        shape: BoxShape.circle,
+        border: Border.all(
+          color: AppleTheme.isDark(context)
+              ? Colors.white.withValues(alpha: 0.2)
+              : Colors.black.withValues(alpha: 0.1),
+        ),
+      ),
+      child: SvgPicture.asset(
+        logoAsset,
+        key: Key('skills-message-logo-$skill'),
+        fit: BoxFit.contain,
       ),
     );
   }

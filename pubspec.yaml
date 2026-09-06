@@ -64,6 +64,7 @@ flutter:
     - assets/icons/github.svg
     - assets/icons/microsoft-word.png
     - assets/icons/settings-display-mode.svg
+    - assets/icons/skills/
     - assets/music/
     - assets/sprites/
 
