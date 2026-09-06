@@ -204,6 +204,127 @@ void main() {
       }
     });
 
+    test('교육 스프라이트 destination은 잘못된 프레임과 배율을 거부한다', () {
+      Rect destination(int frameIndex, double scale) =>
+          EducationPixelStudy.destinationRectForFrame(
+            frameIndex,
+            baseline: const Offset(160, 200),
+            scale: scale,
+          );
+
+      expect(() => destination(-1, 0.25), throwsRangeError);
+      expect(
+        () => destination(EducationPixelStudy.studySourceFrames.length, 0.25),
+        throwsRangeError,
+      );
+      for (final scale in <double>[
+        0,
+        -0.25,
+        double.nan,
+        double.infinity,
+        double.negativeInfinity,
+      ]) {
+        expect(
+          () => destination(0, scale),
+          throwsArgumentError,
+          reason: 'scale=$scale',
+        );
+      }
+    });
+
+    testWidgets('교육 도트 장면은 공부 흐름을 하나의 이미지로 설명한다', (tester) async {
+      final semantics = tester.ensureSemantics();
+      await _pumpStandaloneEducationStudy(
+        tester,
+        size: const Size(320, 258),
+        disableAnimations: true,
+      );
+
+      final study = find.byType(EducationPixelStudy);
+      expect(study, findsOneWidget);
+      expect(
+        find.bySemanticsLabel(_educationPixelStudySemantics),
+        findsOneWidget,
+      );
+      final data = tester.getSemantics(study).getSemanticsData();
+      expect(data.flagsCollection.isImage, isTrue);
+      expect(data.label, _educationPixelStudySemantics);
+      expect(
+        find.descendant(of: study, matching: find.byType(RepaintBoundary)),
+        findsOneWidget,
+      );
+      expect(
+        find.descendant(of: study, matching: find.byType(CustomPaint)),
+        findsOneWidget,
+      );
+
+      semantics.dispose();
+    });
+
+    testWidgets('교육 도트 장면은 고정된 iPhone·iPad 미디어 크기를 채운다', (tester) async {
+      for (final size in const <Size>[Size(320, 258), Size(714, 288)]) {
+        await _pumpStandaloneEducationStudy(
+          tester,
+          size: size,
+          disableAnimations: true,
+        );
+
+        final study = find.byType(EducationPixelStudy);
+        expect(tester.getRect(study), Offset.zero & size, reason: '$size');
+        expect(tester.takeException(), isNull, reason: '$size');
+      }
+    });
+
+    testWidgets('교육 도트 장면은 공부와 능력치 상승을 계속 애니메이션한다', (tester) async {
+      await _pumpStandaloneEducationStudy(
+        tester,
+        size: const Size(320, 258),
+        disableAnimations: false,
+      );
+
+      final study = find.byType(EducationPixelStudy);
+      final firstFrame = await _renderedBytes(tester, study);
+
+      await tester.pump(const Duration(milliseconds: 733));
+
+      final secondFrame = await _renderedBytes(tester, study);
+      expect(
+        secondFrame,
+        isNot(equals(firstFrame)),
+        reason: '타이핑, 모니터, 능력치 UI가 시간에 따라 실제 픽셀을 바꿔야 한다.',
+      );
+
+      await tester.pump(const Duration(milliseconds: 733));
+
+      final thirdFrame = await _renderedBytes(tester, study);
+      expect(
+        thirdFrame,
+        isNot(equals(secondFrame)),
+        reason: '자산 로딩이 끝난 뒤에도 controller가 다음 공부 프레임을 그려야 한다.',
+      );
+    });
+
+    testWidgets('교육 도트 장면은 동작 줄이기에서 ticker 없이 정지한다', (tester) async {
+      await _pumpStandaloneEducationStudy(
+        tester,
+        size: const Size(320, 258),
+        disableAnimations: true,
+      );
+
+      final study = find.byType(EducationPixelStudy);
+      final firstFrame = await _renderedBytes(tester, study);
+
+      await tester.pump(const Duration(milliseconds: 733));
+
+      final secondFrame = await _renderedBytes(tester, study);
+      expect(secondFrame, equals(firstFrame));
+      expect(
+        tester.binding.hasScheduledFrame,
+        isFalse,
+        reason: '동작 줄이기에서는 무한 ticker가 다음 프레임을 예약하면 안 된다.',
+      );
+    });
+
     testWidgets('iPhone과 iPad는 About과 분리된 프로필 앱을 연다', (tester) async {
       final semantics = tester.ensureSemantics();
 
@@ -1931,6 +2052,33 @@ Future<void> _pumpStandaloneProfile(
   await tester.pumpAndSettle();
 }
 
+Future<void> _pumpStandaloneEducationStudy(
+  WidgetTester tester, {
+  required Size size,
+  required bool disableAnimations,
+}) async {
+  tester.view.devicePixelRatio = 1;
+  tester.view.physicalSize = size;
+  addTearDown(tester.view.resetDevicePixelRatio);
+  addTearDown(tester.view.resetPhysicalSize);
+
+  await tester.pumpWidget(
+    MaterialApp(
+      theme: AppleTheme.light(),
+      darkTheme: AppleTheme.dark(),
+      home: MediaQuery(
+        data: MediaQueryData(size: size, disableAnimations: disableAnimations),
+        child: const EducationPixelStudy(),
+      ),
+    ),
+  );
+  if (disableAnimations) {
+    await tester.pumpAndSettle();
+  } else {
+    await tester.pump();
+  }
+}
+
 PortfolioData _injectedProfileData() {
   return PortfolioData(
     identity: const PortfolioIdentity(
@@ -2168,7 +2316,7 @@ Future<Uint8List> _renderedBytes(WidgetTester tester, Finder scope) async {
     try {
       final bytes = await image.toByteData(format: ui.ImageByteFormat.rawRgba);
       if (bytes == null) {
-        throw StateError('The career pixel runner did not render RGBA bytes.');
+        throw StateError('The pixel scene did not render RGBA bytes.');
       }
       return Uint8List.fromList(
         bytes.buffer.asUint8List(bytes.offsetInBytes, bytes.lengthInBytes),
@@ -2358,6 +2506,9 @@ const _careerPixelRunnerSemantics =
     '밝은 피부에 갈색 포니테일과 안경, 비즈니스 정장을 갖춘 여성 캐릭터가 '
     '오른쪽을 바라보고 구름과 AT Center, 판교역, 편의점이 이어지는 도심을 달리고 점프하며 '
     '골드 코인을 모아 LV UP 하는 도트 애니메이션';
+const _educationPixelStudySemantics =
+    '갈색 포니테일과 안경을 쓴 캐릭터가 현대적인 도서관 컴퓨터실에서 '
+    '계속 공부하며 FLUTTER, DART, UX, SOLVE 능력치를 차례로 올리는 도트 애니메이션';
 const _longExperienceDescription =
     '사용자 문제를 분석하고 Flutter 애플리케이션의 구조를 설계한 뒤 구현과 출시를 '
     '담당했습니다. 다양한 화면 크기와 접근성 글자 크기를 함께 검증하고, 제품 출시 이후에는 '
