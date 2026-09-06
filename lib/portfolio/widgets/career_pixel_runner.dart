@@ -16,8 +16,8 @@ class CareerPixelRunner extends StatefulWidget {
   static const cloudSpeedMultiplier = 1.0;
   static const farCitySpeedMultiplier = 1.25;
   static const mainBuildingSpeedMultiplier = 1.5;
-  static const runFramesPerSecond = 8;
-  static const runFrameVerticalLift = <double>[0, -1, 1, 2, 0, -1, 1, 2];
+  static const runFramesPerSecond = 6;
+  static const runFrameVerticalLift = <double>[0, -1, 1, 1, 0, -1, 1, 2];
   static const maxRunnerHeight = 30.0;
   static const convenienceStoreHeight = 31.0;
   static const runDecodeWidth = 384;

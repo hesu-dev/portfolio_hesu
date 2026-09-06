@@ -32,12 +32,12 @@ void main() {
       );
     });
 
-    test('플레이어는 초당 8프레임이며 편의점보다 작게 그린다', () {
-      expect(CareerPixelRunner.runFramesPerSecond, 8);
+    test('플레이어는 초당 6프레임이며 편의점보다 작게 그린다', () {
+      expect(CareerPixelRunner.runFramesPerSecond, 6);
       expect(CareerPixelRunner.runFrameVerticalLift, hasLength(8));
       expect(CareerPixelRunner.runFrameVerticalLift[1], -1);
       expect(CareerPixelRunner.runFrameVerticalLift[2], 1);
-      expect(CareerPixelRunner.runFrameVerticalLift[3], 2);
+      expect(CareerPixelRunner.runFrameVerticalLift[3], 1);
       expect(CareerPixelRunner.runFrameVerticalLift[5], -1);
       expect(CareerPixelRunner.runFrameVerticalLift[6], 1);
       expect(CareerPixelRunner.runFrameVerticalLift[7], 2);
