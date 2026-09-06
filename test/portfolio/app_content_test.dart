@@ -489,9 +489,10 @@ void main() {
       );
       expect(find.text('경력'), findsOneWidget);
       expect(find.text('Career'), findsNothing);
+      expect(find.text(portfolioData.experiences.first.role), findsNothing);
       expect(
-        find.text(portfolioData.experiences.first.role),
-        findsAtLeastNWidgets(1),
+        find.text(portfolioData.experiences.first.organization),
+        findsOneWidget,
       );
 
       await tester.scrollUntilVisible(

@@ -73,7 +73,9 @@ class MacTrafficControls extends StatelessWidget {
               ? 'Restore $windowLabel window'
               : 'Maximize $windowLabel window',
           color: maximizeColor,
-          glyph: null,
+          glyph: maximized
+              ? Icons.close_fullscreen_rounded
+              : Icons.open_in_full_rounded,
           onPressed: onMaximize!,
           targetSize: targetSize,
           visualOffset: visualCenterSpacing - minimumTargetWidth,
@@ -93,7 +95,9 @@ class MacTrafficControls extends StatelessWidget {
           visualKey: Key('window-maximize-${appId.name}-visual'),
           glyphKey: Key('window-maximize-${appId.name}-glyph'),
           color: maximizeColor,
-          glyph: null,
+          glyph: maximized
+              ? Icons.close_fullscreen_rounded
+              : Icons.open_in_full_rounded,
           targetSize: targetSize,
           visualOffset: visualCenterSpacing - minimumTargetWidth,
         ),
@@ -187,51 +191,48 @@ class _MacTrafficButtonState extends State<_MacTrafficButton> {
           }
         },
         child: ExcludeSemantics(
-          child: Tooltip(
-            message: widget.label,
-            child: GestureDetector(
-              behavior: HitTestBehavior.opaque,
-              onTap: _activate,
-              child: SizedBox(
-                width: MacTrafficControls.minimumTargetWidth,
-                height: widget.targetSize,
-                child: Transform.translate(
-                  offset: Offset(widget.visualOffset, 0),
-                  child: Stack(
-                    alignment: Alignment.center,
-                    children: <Widget>[
-                      if (_showFocus)
-                        Container(
-                          key: widget.focusKey,
-                          width: 22,
-                          height: 22,
-                          decoration: BoxDecoration(
-                            shape: BoxShape.circle,
-                            border: Border.all(
-                              color: const Color(0xFF0A84FF),
-                              width: 2,
-                            ),
+          child: GestureDetector(
+            behavior: HitTestBehavior.opaque,
+            onTap: _activate,
+            child: SizedBox(
+              width: MacTrafficControls.minimumTargetWidth,
+              height: widget.targetSize,
+              child: Transform.translate(
+                offset: Offset(widget.visualOffset, 0),
+                child: Stack(
+                  alignment: Alignment.center,
+                  children: <Widget>[
+                    if (_showFocus)
+                      Container(
+                        key: widget.focusKey,
+                        width: 22,
+                        height: 22,
+                        decoration: BoxDecoration(
+                          shape: BoxShape.circle,
+                          border: Border.all(
+                            color: const Color(0xFF0A84FF),
+                            width: 2,
                           ),
                         ),
-                      Container(
-                        key: widget.visualKey,
-                        width: MacTrafficControls.visualDiameter,
-                        height: MacTrafficControls.visualDiameter,
-                        decoration: BoxDecoration(
-                          color: widget.color,
-                          shape: BoxShape.circle,
-                        ),
-                        child: widget.glyph == null
-                            ? null
-                            : Icon(
-                                widget.glyph,
-                                key: widget.glyphKey,
-                                size: 9,
-                                color: const Color(0xA6000000),
-                              ),
                       ),
-                    ],
-                  ),
+                    Container(
+                      key: widget.visualKey,
+                      width: MacTrafficControls.visualDiameter,
+                      height: MacTrafficControls.visualDiameter,
+                      decoration: BoxDecoration(
+                        color: widget.color,
+                        shape: BoxShape.circle,
+                      ),
+                      child: widget.glyph == null
+                          ? null
+                          : Icon(
+                              widget.glyph,
+                              key: widget.glyphKey,
+                              size: 9,
+                              color: const Color(0xA6000000),
+                            ),
+                    ),
+                  ],
                 ),
               ),
             ),

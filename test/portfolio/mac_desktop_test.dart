@@ -310,10 +310,17 @@ void main() {
       await _openDesktopApp(tester, PortfolioAppId.about);
       final window = find.byKey(const Key('mac-window-about'));
       final originalRect = tester.getRect(window);
+      final maximizeGlyph = find.byKey(
+        const Key('window-maximize-about-glyph'),
+      );
 
       expect(find.bySemanticsLabel('Close 프로필 window'), findsOneWidget);
       expect(find.bySemanticsLabel('Minimize 프로필 window'), findsOneWidget);
       expect(find.bySemanticsLabel('Maximize 프로필 window'), findsOneWidget);
+      expect(
+        tester.widget<Icon>(maximizeGlyph).icon,
+        Icons.open_in_full_rounded,
+      );
 
       await tester.tap(find.byKey(const Key('window-minimize-about')));
       await tester.pumpAndSettle();
@@ -329,11 +336,19 @@ void main() {
       final maximizedRect = tester.getRect(window);
       expect(maximizedRect.width, greaterThan(originalRect.width));
       expect(maximizedRect.top, greaterThanOrEqualTo(30));
+      expect(
+        tester.widget<Icon>(maximizeGlyph).icon,
+        Icons.close_fullscreen_rounded,
+      );
 
       await tester.tap(find.byKey(const Key('window-maximize-about')));
       await tester.pumpAndSettle();
       final restoredRect = tester.getRect(window);
       expect(restoredRect.size, originalRect.size);
+      expect(
+        tester.widget<Icon>(maximizeGlyph).icon,
+        Icons.open_in_full_rounded,
+      );
 
       await tester.tap(find.byKey(const Key('window-close-about')));
       await tester.pumpAndSettle();
@@ -386,20 +401,18 @@ void main() {
           expect(glyph, findsOneWidget);
           expect(tester.widget<Icon>(glyph).icon, Icons.remove_rounded);
         } else {
-          expect(glyph, findsNothing);
-          expect(circle.child, isNull);
+          expect(glyph, findsOneWidget);
+          expect(tester.widget<Icon>(glyph).icon, Icons.open_in_full_rounded);
         }
-        expect(
-          find.byTooltip(
-            '${control == 'close'
-                ? 'Close'
-                : control == 'minimize'
-                ? 'Minimize'
-                : 'Maximize'} 프로필 window',
-          ),
-          findsOneWidget,
-        );
       }
+
+      expect(
+        find.descendant(
+          of: find.byKey(const Key('mac-traffic-controls-about')),
+          matching: find.byType(Tooltip),
+        ),
+        findsNothing,
+      );
 
       expect(visualCenters[1].dx - visualCenters[0].dx, closeTo(24, 0.01));
       expect(visualCenters[2].dx - visualCenters[1].dx, closeTo(24, 0.01));
@@ -638,6 +651,8 @@ void main() {
 
       expect(find.text('Custom Developer · Flutter portfolio'), findsOneWidget);
       expect(find.text('Min He-su · Flutter portfolio'), findsNothing);
+      expect(find.text('커스텀 개발자 프로필 보기'), findsOneWidget);
+      expect(find.text('민희수 프로필 보기'), findsNothing);
     });
 
     testWidgets('opens an accessible system menu with keyboard activation', (
@@ -651,7 +666,9 @@ void main() {
       await tester.tap(systemMenu);
       await tester.pumpAndSettle();
       expect(find.byKey(const Key('mac-system-menu-panel')), findsOneWidget);
-      expect(find.text('About This Portfolio'), findsOneWidget);
+      expect(find.text('민희수 프로필 보기'), findsOneWidget);
+      expect(find.text('About This Portfolio'), findsNothing);
+      expect(find.bySemanticsLabel('민희수 프로필 보기'), findsOneWidget);
       expect(FocusManager.instance.primaryFocus?.debugLabel, 'mac-system-menu');
 
       await tester.sendKeyEvent(LogicalKeyboardKey.escape);

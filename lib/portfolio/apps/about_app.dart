@@ -221,45 +221,13 @@ class _ExperienceCard extends StatelessWidget {
           ),
           const SizedBox(width: 13),
           Expanded(
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: <Widget>[
-                Wrap(
-                  spacing: 8,
-                  runSpacing: 5,
-                  crossAxisAlignment: WrapCrossAlignment.center,
-                  children: <Widget>[
-                    Text(
-                      experience.role,
-                      style: Theme.of(
-                        context,
-                      ).textTheme.titleMedium?.copyWith(color: colors.primary),
-                    ),
-                    Text(
-                      experience.period,
-                      style: AppleTheme.caption(context).copyWith(
-                        color: colors.accent,
-                        fontWeight: FontWeight.w600,
-                      ),
-                    ),
-                  ],
-                ),
-                const SizedBox(height: 3),
-                Text(
-                  experience.organization,
-                  style: AppleTheme.body(context).copyWith(
-                    color: colors.secondary,
-                    fontWeight: FontWeight.w600,
-                  ),
-                ),
-                const SizedBox(height: 7),
-                Text(
-                  experience.description,
-                  style: AppleTheme.body(
-                    context,
-                  ).copyWith(color: colors.primary),
-                ),
-              ],
+            child: _AboutHistoryEntry(
+              title: experience.organization,
+              period: experience.period,
+              body: Text(
+                experience.description,
+                style: AppleTheme.body(context).copyWith(color: colors.primary),
+              ),
             ),
           ),
         ],
@@ -323,54 +291,95 @@ class _EducationCardState extends State<_EducationCard> {
     final colors = _AboutNotePalette.of(context);
     return Padding(
       padding: const EdgeInsets.symmetric(vertical: 4),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: <Widget>[
-          Text(
-            education.program,
-            style: Theme.of(
-              context,
-            ).textTheme.titleMedium?.copyWith(color: colors.primary),
-          ),
-          const SizedBox(height: 6),
-          Text(
-            education.institution,
-            style: AppleTheme.body(context).copyWith(color: colors.secondary),
-          ),
-          const SizedBox(height: 7),
-          Wrap(
-            spacing: 8,
-            runSpacing: 7,
-            children: <Widget>[
-              ApplePill(
-                label: education.period,
-                icon: Icons.calendar_today_rounded,
-                color: AppleTheme.indigo,
-              ),
-              if (education.link case final link?)
-                OutlinedButton.icon(
-                  key: Key('about-education-link-${widget.index}'),
-                  onPressed: () => _openLink(link),
-                  style: OutlinedButton.styleFrom(
-                    foregroundColor: colors.accent,
-                    side: BorderSide(color: colors.linkBorder),
-                    minimumSize: const Size(44, 44),
-                  ),
-                  icon: const Icon(Icons.open_in_new_rounded, size: 17),
-                  label: Text('Open ${link.label}'),
+      child: _AboutHistoryEntry(
+        title: education.institution,
+        period: education.period,
+        body: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: <Widget>[
+            Text(
+              education.program,
+              style: AppleTheme.body(
+                context,
+              ).copyWith(color: colors.primary, fontWeight: FontWeight.w700),
+            ),
+            if (education.link case final link?) ...<Widget>[
+              const SizedBox(height: 8),
+              OutlinedButton.icon(
+                key: Key('about-education-link-${widget.index}'),
+                onPressed: () => _openLink(link),
+                style: OutlinedButton.styleFrom(
+                  foregroundColor: colors.accent,
+                  side: BorderSide(color: colors.linkBorder),
+                  minimumSize: const Size(44, 44),
                 ),
+                icon: const Icon(Icons.open_in_new_rounded, size: 17),
+                label: Text('Open ${link.label}'),
+              ),
             ],
-          ),
-          if (_feedback case final message?) ...<Widget>[
-            const SizedBox(height: 12),
-            AppleFeedbackBanner(
-              key: const Key('about-link-feedback'),
-              message: message,
-              success: _launchSucceeded,
+            if (_feedback case final message?) ...<Widget>[
+              const SizedBox(height: 12),
+              AppleFeedbackBanner(
+                key: const Key('about-link-feedback'),
+                message: message,
+                success: _launchSucceeded,
+              ),
+            ],
+          ],
+        ),
+      ),
+    );
+  }
+}
+
+class _AboutHistoryEntry extends StatelessWidget {
+  const _AboutHistoryEntry({
+    required this.title,
+    required this.period,
+    required this.body,
+  });
+
+  final String title;
+  final String period;
+  final Widget body;
+
+  @override
+  Widget build(BuildContext context) {
+    final colors = _AboutNotePalette.of(context);
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: <Widget>[
+        Wrap(
+          spacing: 8,
+          runSpacing: 5,
+          crossAxisAlignment: WrapCrossAlignment.center,
+          children: <Widget>[
+            Text(
+              title,
+              style: Theme.of(context).textTheme.titleMedium?.copyWith(
+                color: colors.primary,
+                fontWeight: FontWeight.w700,
+              ),
+            ),
+            Text(
+              period,
+              style: AppleTheme.caption(
+                context,
+              ).copyWith(color: colors.accent, fontWeight: FontWeight.w600),
             ),
           ],
-        ],
-      ),
+        ),
+        const SizedBox(height: 8),
+        Container(
+          padding: const EdgeInsets.only(left: 12),
+          decoration: BoxDecoration(
+            border: Border(
+              left: BorderSide(color: colors.entryDivider, width: 2),
+            ),
+          ),
+          child: body,
+        ),
+      ],
     );
   }
 }

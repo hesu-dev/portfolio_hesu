@@ -124,6 +124,100 @@ void main() {
       }
     });
 
+    testWidgets('데스크톱 이력은 소속과 연도를 먼저 두고 내용을 들여쓴다', (tester) async {
+      for (final scenario in const <({String label, Size size, bool compact})>[
+        (label: 'wide', size: Size(900, 900), compact: false),
+        (label: 'compact', size: Size(360, 700), compact: true),
+      ]) {
+        await tester.pumpWidget(const SizedBox.shrink());
+        await _pumpAbout(
+          tester,
+          data: portfolioData,
+          size: scenario.size,
+          compact: scenario.compact,
+        );
+
+        final experience = portfolioData.experiences.first;
+        final organization = find.text(experience.organization);
+        final experiencePeriod = find.text(experience.period);
+        final description = find.text(experience.description);
+
+        expect(
+          find.text(experience.role),
+          findsNothing,
+          reason: scenario.label,
+        );
+        if (scenario.compact) {
+          expect(
+            tester.getTopLeft(experiencePeriod).dy,
+            greaterThanOrEqualTo(tester.getBottomLeft(organization).dy),
+            reason: '${scenario.label} career period wraps before the body',
+          );
+        } else {
+          expect(
+            tester.getCenter(organization).dy,
+            closeTo(tester.getCenter(experiencePeriod).dy, 1),
+            reason: '${scenario.label} career title and period share a row',
+          );
+        }
+        expect(
+          tester.getTopLeft(description).dy,
+          greaterThan(tester.getBottomLeft(organization).dy),
+          reason: '${scenario.label} career body follows the header',
+        );
+        expect(
+          tester.getTopLeft(description).dy,
+          greaterThan(tester.getBottomLeft(experiencePeriod).dy),
+          reason: '${scenario.label} career body follows the period',
+        );
+        expect(
+          tester.getTopLeft(description).dx,
+          greaterThan(tester.getTopLeft(organization).dx),
+          reason: '${scenario.label} career body is indented',
+        );
+
+        final education = portfolioData.education.first;
+        final institution = find.text(education.institution);
+        final educationPeriod = find.text(education.period);
+        final program = find.text(education.program);
+
+        if (scenario.compact) {
+          expect(
+            tester.getTopLeft(educationPeriod).dy,
+            greaterThanOrEqualTo(tester.getBottomLeft(institution).dy),
+            reason: '${scenario.label} education period wraps before the body',
+          );
+        } else {
+          expect(
+            tester.getCenter(institution).dy,
+            closeTo(tester.getCenter(educationPeriod).dy, 1),
+            reason: '${scenario.label} education title and period share a row',
+          );
+        }
+        expect(
+          tester.getTopLeft(program).dy,
+          greaterThan(tester.getBottomLeft(institution).dy),
+          reason: '${scenario.label} education body follows the header',
+        );
+        expect(
+          tester.getTopLeft(program).dy,
+          greaterThan(tester.getBottomLeft(educationPeriod).dy),
+          reason: '${scenario.label} education body follows the period',
+        );
+        expect(
+          tester.getTopLeft(program).dx,
+          greaterThan(tester.getTopLeft(institution).dx),
+          reason: '${scenario.label} education body is indented',
+        );
+        expect(
+          find.byKey(const Key('about-education-link-0')),
+          findsOneWidget,
+          reason: '${scenario.label} education link is preserved',
+        );
+        expect(tester.takeException(), isNull, reason: scenario.label);
+      }
+    });
+
     testWidgets('밝은 메모 본문 텍스트는 두 테마에서 AA 대비를 충족한다', (tester) async {
       for (final brightness in Brightness.values) {
         await _pumpAbout(
@@ -199,12 +293,13 @@ void main() {
         portfolioData.identity.headline,
         portfolioData.identity.biography,
         '경력',
-        portfolioData.experiences.first.role,
         portfolioData.experiences.first.organization,
+        portfolioData.experiences.first.period,
         portfolioData.experiences.first.description,
         '교육',
         portfolioData.education.first.program,
         portfolioData.education.first.institution,
+        portfolioData.education.first.period,
       ]) {
         final foreground = tester
             .widget<Text>(find.text(text).first)

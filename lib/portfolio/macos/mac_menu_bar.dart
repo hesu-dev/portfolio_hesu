@@ -549,10 +549,12 @@ class MacSystemMenuPanel extends StatelessWidget {
     required this.identityName,
     required this.onOpenAbout,
     required this.onOpenThisMac,
+    String? profileName,
     super.key,
-  });
+  }) : profileName = profileName ?? identityName;
 
   final String identityName;
+  final String profileName;
   final VoidCallback onOpenAbout;
   final VoidCallback onOpenThisMac;
 
@@ -568,7 +570,7 @@ class MacSystemMenuPanel extends StatelessWidget {
         children: <Widget>[
           _SystemMenuItem(
             actionKey: const Key('system-menu-about'),
-            label: 'About This Portfolio',
+            label: '$profileName 프로필 보기',
             icon: Icons.person_outline_rounded,
             onPressed: onOpenAbout,
           ),

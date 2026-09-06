@@ -64,8 +64,12 @@ void main() {
         portfolioData.identity.name,
         portfolioData.identity.biography,
         '경력',
-        portfolioData.experiences.first.role,
+        portfolioData.experiences.first.organization,
+        portfolioData.experiences.first.period,
+        portfolioData.experiences.first.description,
         '교육',
+        portfolioData.education.first.institution,
+        portfolioData.education.first.period,
         portfolioData.education.first.program,
       ]) {
         expect(
@@ -83,6 +87,7 @@ void main() {
         portfolioData.identity.email,
         'GitHub',
         portfolioData.identity.githubUrl,
+        portfolioData.experiences.first.role,
       ]) {
         expect(
           find.descendant(of: body, matching: find.text(removedText)),

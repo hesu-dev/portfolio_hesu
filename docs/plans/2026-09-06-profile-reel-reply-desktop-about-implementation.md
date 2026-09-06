@@ -59,3 +59,48 @@
 2. Inspect the Profile Career and Education details at phone/tablet-compatible widths, then inspect desktop About at wide and narrow window sizes.
 3. Reuse or restart the static local server and leave `http://127.0.0.1:4174/` open on an updated screen.
 4. Request a final spec-compliance and code-quality review, fix any material findings, and re-run affected verification.
+
+### Task 5: Align desktop history entry hierarchy
+
+**Files:**
+- Modify: `test/portfolio/about_app_test.dart`
+- Modify: `test/portfolio/app_content_test.dart`
+- Modify: `test/portfolio/mobile_notes_about_test.dart`
+- Modify: `lib/portfolio/apps/about_app.dart`
+
+1. Add a widget test requiring career `organization + period` above an indented `description`, rejecting `role`; require education `institution + period` above an indented `program` while retaining the optional link.
+2. Run the focused About tests and confirm RED against the existing role-first and program-first layouts.
+3. Add one private shared history-entry presentation widget and map each data type into its title, period, body, and optional footer slots.
+4. Run the focused About tests and compact 200% text case and confirm GREEN.
+
+### Task 6: Remove traffic-light tooltips and identify maximize
+
+**Files:**
+- Modify: `test/portfolio/mac_desktop_test.dart`
+- Modify: `lib/portfolio/macos/mac_traffic_controls.dart`
+
+1. Change the traffic-light widget test to reject descendant `Tooltip` widgets and require maximize/restore glyphs while retaining accessible labels, pointer sizes, focus, and callbacks.
+2. Run the focused test and confirm RED because tooltips exist and the green control has no glyph.
+3. Remove only the visual Tooltip wrapper, preserving outer Semantics, and supply state-aware maximize/restore glyphs plus the decorative maximize glyph.
+4. Run the traffic-light tests and confirm GREEN.
+
+### Task 7: Rename the desktop system-menu profile action
+
+**Files:**
+- Modify: `test/portfolio/mac_desktop_test.dart`
+- Modify: `lib/portfolio/macos/mac_menu_bar.dart`
+
+1. Update the system-menu test to require `민희수 프로필 보기` and reject `About This Portfolio`, while still asserting that activation opens the About window.
+2. Run the focused test and confirm RED on the old label.
+3. Replace the menu-item label without changing its key, icon, callback, focus, or dismissal behavior.
+4. Run the focused menu-bar tests and confirm GREEN.
+
+### Task 8: Rebuild, review, and reconnect the preview
+
+**Files:**
+- Verify: all files changed in Tasks 5-7
+
+1. Run the focused suites, full test suite, analyzer, formatter check, and `git diff --check`.
+2. Build the Flutter web output, keep the static server on port 4174 available, and open a cache-busted local URL.
+3. Inspect the desktop About history hierarchy, traffic-light glyphs without hover tooltips, and renamed system-menu action in the browser.
+4. Request final spec and code-quality review, address material findings, commit with an Angular-style message, and leave the verified local page open.
