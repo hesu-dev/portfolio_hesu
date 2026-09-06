@@ -624,7 +624,7 @@ class _EducationPixelStudyPainter extends CustomPainter {
     );
     final destination = EducationPixelStudy.destinationRectForFrame(
       frameIndex,
-      baseline: Offset(center, 140),
+      baseline: Offset(center, 134),
       scale: _spriteScale,
     );
     final snappedDestination = Rect.fromLTRB(
@@ -1030,7 +1030,6 @@ class _StudyPalette {
     required this.deskFront,
     required this.deskFrontInset,
     required this.chargingPanel,
-    required this.chargingPort,
     required this.chargingLight,
     required this.hudEdge,
     required this.hud,
@@ -1100,7 +1099,6 @@ class _StudyPalette {
     deskFront: Color(0xFF795A45),
     deskFrontInset: Color(0xFF9A7355),
     chargingPanel: Color(0xFF2E3439),
-    chargingPort: Color(0xFF111619),
     chargingLight: Color(0xFF55E89C),
     hudEdge: Color(0xFF17212C),
     hud: Color(0xE8253340),
@@ -1170,7 +1168,6 @@ class _StudyPalette {
     deskFront: Color(0xFF3B2B25),
     deskFrontInset: Color(0xFF513A2E),
     chargingPanel: Color(0xFF151B20),
-    chargingPort: Color(0xFF05090B),
     chargingLight: Color(0xFF45E58D),
     hudEdge: Color(0xFF080D12),
     hud: Color(0xEE111A24),
@@ -1233,7 +1230,6 @@ class _StudyPalette {
   final Color deskFront;
   final Color deskFrontInset;
   final Color chargingPanel;
-  final Color chargingPort;
   final Color chargingLight;
   final Color hudEdge;
   final Color hud;

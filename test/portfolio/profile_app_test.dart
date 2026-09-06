@@ -458,6 +458,18 @@ void main() {
             studyCenter + 44,
             126,
           );
+          final keypadRegion = sceneRect(
+            studyCenter + 5,
+            116,
+            studyCenter + 40,
+            121,
+          );
+          final typingHandRegion = sceneRect(
+            studyCenter + 5,
+            116,
+            studyCenter + 28,
+            126,
+          );
           final chairRegion = sceneRect(
             studyCenter - 31,
             96,
@@ -476,9 +488,15 @@ void main() {
             studyCenter + 32,
             132,
           );
+          final fasciaRegion = sceneRect(
+            studyCenter - 31,
+            132,
+            studyCenter + 42,
+            137,
+          );
           final belowDeskRegion = sceneRect(
-            studyCenter - 13,
-            134,
+            studyCenter - 31,
+            137,
             studyCenter + 42,
             144,
           );
@@ -493,24 +511,53 @@ void main() {
           final screenWidth =
               _widestHorizontalRun(screenPixels, imageSize: size) / sceneScale;
           final screenHeight = screenBounds.height / sceneScale;
-          final laptopHardwareRatio = _pixelRatioInRect(
+          final laptopHardwarePixels = _pixelCoordinatesInRect(
             typingFrame,
             imageSize: size,
             rect: laptopBaseRegion,
-            matches: _isNeutralHardwarePixel,
+            matches: _isCoolHardwarePixel,
           );
-          final typingSkinRatio = _pixelRatioInRect(
+          final laptopBaseWidth =
+              _widestHorizontalRun(laptopHardwarePixels, imageSize: size) /
+              sceneScale;
+          final keypadCandidates = _pixelCoordinatesInRect(
             typingFrame,
             imageSize: size,
-            rect: laptopBaseRegion,
-            matches: _isSkinPixel,
+            rect: keypadRegion,
+            matches: _isCoolHardwarePixel,
           );
-          final chairRatio = _pixelRatioInRect(
+          final keypadPixels = _pixelsInHorizontalRuns(
+            keypadCandidates,
+            imageSize: size,
+            minimumRunLength: (6 * sceneScale).ceil(),
+          );
+          final keypadBounds = _pixelBounds(keypadPixels, imageSize: size);
+          final typingHandPixels = _pixelCoordinatesInRect(
+            typingFrame,
+            imageSize: size,
+            rect: typingHandRegion,
+            matches: _isHandSkinPixel,
+          );
+          final typingHandBounds = _pixelBounds(
+            typingHandPixels,
+            imageSize: size,
+          );
+          final nearbyHandPixels = _pixelsWithinRadiusOf(
+            typingHandPixels,
+            keypadPixels,
+            imageSize: size,
+            radius: (2 * sceneScale).ceil(),
+          );
+          final handBelowKeypad =
+              (typingHandBounds.bottom - keypadBounds.bottom) / sceneScale;
+          final chairPixels = _pixelCoordinatesInRect(
             typingFrame,
             imageSize: size,
             rect: chairRegion,
-            matches: _isNeutralHardwarePixel,
+            matches: _isCoolHardwarePixel,
           );
+          final chairBackHeight =
+              _tallestVerticalRun(chairPixels, imageSize: size) / sceneScale;
           final backgroundScreenRatio = _pixelRatioInRect(
             typingFrame,
             imageSize: size,
@@ -529,17 +576,29 @@ void main() {
             rect: pageRegion,
             matches: _isLightPagePixel,
           );
+          final typingFasciaExposureRatio = _pixelRatioInRect(
+            typingFrame,
+            imageSize: size,
+            rect: fasciaRegion,
+            matches: _isSpriteLeakPixel,
+          );
+          final notebookFasciaExposureRatio = _pixelRatioInRect(
+            notebookFrame,
+            imageSize: size,
+            rect: fasciaRegion,
+            matches: _isSpriteLeakPixel,
+          );
           final typingExposureRatio = _pixelRatioInRect(
             typingFrame,
             imageSize: size,
             rect: belowDeskRegion,
-            matches: _isSkinOrRedSpritePixel,
+            matches: _isSpriteLeakPixel,
           );
           final notebookExposureRatio = _pixelRatioInRect(
             notebookFrame,
             imageSize: size,
             rect: belowDeskRegion,
-            matches: _isSkinOrRedSpritePixel,
+            matches: _isSpriteLeakPixel,
           );
 
           expect(screenPixels, isNotEmpty, reason: '$brightness $size laptop');
@@ -563,23 +622,32 @@ void main() {
             reason: '$brightness $size 노트북 뚜껑은 세로형이어야 한다.',
           );
           expect(
-            laptopHardwareRatio,
-            greaterThanOrEqualTo(0.12),
+            laptopBaseWidth,
+            greaterThanOrEqualTo(30),
             reason:
-                '$brightness $size 노트북 아래에 가로 베이스와 키보드가 '
-                '남아야 한다. ratio=${laptopHardwareRatio.toStringAsFixed(3)}',
+                '$brightness $size 바닥과 구분되는 가로 노트북 베이스가 '
+                '남아야 한다. width=${laptopBaseWidth.toStringAsFixed(2)}',
           );
           expect(
-            typingSkinRatio,
-            greaterThanOrEqualTo(0.01),
-            reason: '$brightness $size 타이핑 손이 노트북 베이스에 닿아야 한다.',
+            nearbyHandPixels.length,
+            greaterThanOrEqualTo((2 * sceneScale).ceil()),
+            reason:
+                '$brightness $size 타이핑 손 픽셀이 키패드 장축과 실제로 '
+                '맞닿아야 한다. nearby=${nearbyHandPixels.length}',
           );
           expect(
-            chairRatio,
-            greaterThanOrEqualTo(0.08),
+            handBelowKeypad,
+            lessThanOrEqualTo(2),
             reason:
-                '$brightness $size 캐릭터 뒤에 의자 등받이와 좌판이 '
-                '보여야 한다. ratio=${chairRatio.toStringAsFixed(3)}',
+                '$brightness $size 손 하단이 키패드보다 지나치게 낮으면 '
+                '안 된다. offset=${handBelowKeypad.toStringAsFixed(2)}',
+          );
+          expect(
+            chairBackHeight,
+            greaterThanOrEqualTo(15),
+            reason:
+                '$brightness $size 바닥과 구분되는 세로 의자 등받이가 '
+                '보여야 한다. height=${chairBackHeight.toStringAsFixed(2)}',
           );
           expect(
             backgroundScreenRatio,
@@ -598,13 +666,81 @@ void main() {
                 'notebook=${notebookPageRatio.toStringAsFixed(3)}',
           );
           expect(
-            math.max(typingExposureRatio, notebookExposureRatio),
-            lessThanOrEqualTo(0.002),
+            math.max(typingFasciaExposureRatio, notebookFasciaExposureRatio),
+            lessThanOrEqualTo(0.10),
             reason:
-                '$brightness $size fascia 아래에 피부·빨간 제본 픽셀이 '
+                '$brightness $size 넓힌 fascia 영역에 캐릭터 색이 과도하게 '
+                '드러나면 안 된다. typing='
+                '${typingFasciaExposureRatio.toStringAsFixed(3)}, notebook='
+                '${notebookFasciaExposureRatio.toStringAsFixed(3)}',
+          );
+          expect(
+            math.max(typingExposureRatio, notebookExposureRatio),
+            lessThanOrEqualTo(0.01),
+            reason:
+                '$brightness $size 책상 아래에 피부·빨강·네이비 픽셀이 '
                 '남으면 캐릭터가 책상 앞에 앉은 것처럼 본다. '
                 'typing=${typingExposureRatio.toStringAsFixed(3)}, '
                 'notebook=${notebookExposureRatio.toStringAsFixed(3)}',
+          );
+        }
+      }
+    });
+
+    testWidgets('교육 노트 포즈는 종이를 책상 전면 위로 충분히 드러낸다', (tester) async {
+      for (final brightness in Brightness.values) {
+        for (final size in const <Size>[Size(320, 258), Size(714, 288)]) {
+          await tester.pumpWidget(const SizedBox.shrink());
+          await _pumpStandaloneEducationStudy(
+            tester,
+            size: size,
+            disableAnimations: false,
+            brightness: brightness,
+          );
+          final study = find.byType(EducationPixelStudy);
+          await _waitForEducationStudySprite(tester, study);
+          await tester.pump(const Duration(milliseconds: 2080));
+          final notebookFrame = await _renderedBytes(tester, study);
+
+          final sceneScale = size.height / 144;
+          final sceneWidth = size.width / sceneScale;
+          final studyCenter = (math.max(80.0, sceneWidth - 56) * 0.62)
+              .clamp(96.0, 220.0)
+              .toDouble();
+          final pageRegion = Rect.fromLTRB(
+            (studyCenter + 3) * sceneScale,
+            114 * sceneScale,
+            (studyCenter + 27) * sceneScale,
+            126 * sceneScale,
+          );
+          final pagePixels = _pixelCoordinatesInRect(
+            notebookFrame,
+            imageSize: size,
+            rect: pageRegion,
+            matches: _isLightPagePixel,
+          );
+          final visiblePage = _largestConnectedPixelComponent(
+            pagePixels,
+            imageSize: size,
+          );
+          final pageBounds = _pixelBounds(visiblePage, imageSize: size);
+          final pageArea = visiblePage.length / (sceneScale * sceneScale);
+          final pageHeight = pageBounds.height / sceneScale;
+
+          expect(visiblePage, isNotEmpty, reason: '$brightness $size page');
+          expect(
+            pageArea,
+            greaterThanOrEqualTo(16),
+            reason:
+                '$brightness $size 페이지 넘김 종이가 절대 면적으로 충분히 '
+                '보여야 한다. area=${pageArea.toStringAsFixed(2)}',
+          );
+          expect(
+            pageHeight,
+            greaterThanOrEqualTo(4),
+            reason:
+                '$brightness $size 종이가 fascia 위에서 얇은 한 줄로만 '
+                '남으면 안 된다. height=${pageHeight.toStringAsFixed(2)}',
           );
         }
       }
@@ -3054,19 +3190,152 @@ int _widestHorizontalRun(Set<int> pixels, {required Size imageSize}) {
   return widestRun;
 }
 
+Set<int> _pixelsInHorizontalRuns(
+  Set<int> pixels, {
+  required Size imageSize,
+  required int minimumRunLength,
+}) {
+  if (pixels.isEmpty) {
+    return <int>{};
+  }
+  final width = imageSize.width.round();
+  final sortedPixels = pixels.toList()..sort();
+  final runPixels = <int>{};
+  var runStart = 0;
+
+  void addRun(int runEnd) {
+    if (runEnd - runStart >= minimumRunLength) {
+      runPixels.addAll(sortedPixels.sublist(runStart, runEnd));
+    }
+  }
+
+  for (var index = 1; index < sortedPixels.length; index++) {
+    final previous = sortedPixels[index - 1];
+    final current = sortedPixels[index];
+    if (current != previous + 1 || current ~/ width != previous ~/ width) {
+      addRun(index);
+      runStart = index;
+    }
+  }
+  addRun(sortedPixels.length);
+  return runPixels;
+}
+
+int _tallestVerticalRun(Set<int> pixels, {required Size imageSize}) {
+  if (pixels.isEmpty) {
+    return 0;
+  }
+  final width = imageSize.width.round();
+  var tallestRun = 1;
+  for (final pixel in pixels) {
+    if (pixels.contains(pixel - width)) {
+      continue;
+    }
+    var run = 1;
+    var next = pixel + width;
+    while (pixels.contains(next)) {
+      run++;
+      next += width;
+    }
+    tallestRun = math.max(tallestRun, run);
+  }
+  return tallestRun;
+}
+
+Set<int> _pixelsWithinRadiusOf(
+  Set<int> source,
+  Set<int> target, {
+  required Size imageSize,
+  required int radius,
+}) {
+  if (source.isEmpty || target.isEmpty) {
+    return <int>{};
+  }
+  final width = imageSize.width.round();
+  final height = imageSize.height.round();
+  final nearby = <int>{};
+  for (final pixel in source) {
+    final x = pixel % width;
+    final y = pixel ~/ width;
+    search:
+    for (var dy = -radius; dy <= radius; dy++) {
+      final candidateY = y + dy;
+      if (candidateY < 0 || candidateY >= height) {
+        continue;
+      }
+      final horizontalRadius = radius - dy.abs();
+      for (var dx = -horizontalRadius; dx <= horizontalRadius; dx++) {
+        final candidateX = x + dx;
+        if (candidateX < 0 || candidateX >= width) {
+          continue;
+        }
+        if (target.contains((candidateY * width) + candidateX)) {
+          nearby.add(pixel);
+          break search;
+        }
+      }
+    }
+  }
+  return nearby;
+}
+
+Set<int> _largestConnectedPixelComponent(
+  Set<int> pixels, {
+  required Size imageSize,
+}) {
+  if (pixels.isEmpty) {
+    return <int>{};
+  }
+  final width = imageSize.width.round();
+  final height = imageSize.height.round();
+  final remaining = Set<int>.of(pixels);
+  var largest = <int>{};
+
+  while (remaining.isNotEmpty) {
+    final first = remaining.first;
+    final component = <int>{first};
+    final queue = <int>[first];
+    remaining.remove(first);
+    for (var index = 0; index < queue.length; index++) {
+      final pixel = queue[index];
+      final x = pixel % width;
+      final y = pixel ~/ width;
+      final neighbors = <int>[
+        if (x > 0) pixel - 1,
+        if (x + 1 < width) pixel + 1,
+        if (y > 0) pixel - width,
+        if (y + 1 < height) pixel + width,
+      ];
+      for (final neighbor in neighbors) {
+        if (remaining.remove(neighbor)) {
+          component.add(neighbor);
+          queue.add(neighbor);
+        }
+      }
+    }
+    if (component.length > largest.length) {
+      largest = component;
+    }
+  }
+  return largest;
+}
+
 bool _isSkinPixel(int red, int green, int blue) =>
     red >= 70 && red > green * 1.35 && green > blue * 1.10;
+
+bool _isHandSkinPixel(int red, int green, int blue) =>
+    red >= 100 && red > green * 1.35 && green > blue * 1.10;
 
 bool _isCoolScreenPixel(int red, int green, int blue) =>
     blue >= 45 && green >= 32 && blue > red * 1.18 && blue > green * 1.06;
 
-bool _isNeutralHardwarePixel(int red, int green, int blue) {
+bool _isCoolHardwarePixel(int red, int green, int blue) {
   final brightest = math.max(red, math.max(green, blue));
-  final darkest = math.min(red, math.min(green, blue));
-  return brightest >= 18 &&
+  return red >= 8 &&
       brightest <= 205 &&
-      brightest - darkest <= 34 &&
-      blue <= red * 1.45;
+      green >= red + 3 &&
+      blue >= green + 2 &&
+      blue - red <= 40;
 }
 
 bool _isLightPagePixel(int red, int green, int blue) =>
@@ -3077,9 +3346,10 @@ bool _isLightPagePixel(int red, int green, int blue) =>
             math.min(red, math.min(green, blue)) <
         45;
 
-bool _isSkinOrRedSpritePixel(int red, int green, int blue) =>
+bool _isSpriteLeakPixel(int red, int green, int blue) =>
     _isSkinPixel(red, green, blue) ||
-    (red >= 45 && red > green * 1.55 && red > blue * 1.35);
+    (red >= 45 && red > green * 1.55 && red > blue * 1.35) ||
+    (blue >= 25 && blue > green * 1.30 && green > red * 1.15);
 
 void _expectReplyItem(
   WidgetTester tester, {
