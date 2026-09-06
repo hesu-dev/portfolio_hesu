@@ -463,45 +463,50 @@ void main() {
       },
     );
 
-    testWidgets(
-      'about shows canonical identity, career, education, and contact',
-      (tester) async {
-        await _pumpApp(
-          tester,
-          appId: PortfolioAppId.about,
-          launcher: _FakeExternalLauncher(),
-          size: const Size(360, 600),
-          compact: true,
-        );
+    testWidgets('about shows canonical identity, 경력, and 교육 without contact', (
+      tester,
+    ) async {
+      await _pumpApp(
+        tester,
+        appId: PortfolioAppId.about,
+        launcher: _FakeExternalLauncher(),
+        size: const Size(360, 600),
+        compact: true,
+      );
 
-        expect(find.text('민희수'), findsOneWidget);
-        expect(find.text('Min He-su'), findsOneWidget);
-        expect(find.text(portfolioData.identity.headline), findsOneWidget);
-        expect(find.text(portfolioData.identity.email), findsOneWidget);
+      expect(find.text('민희수'), findsOneWidget);
+      expect(find.text('Min He-su'), findsOneWidget);
+      expect(find.text(portfolioData.identity.headline), findsOneWidget);
+      expect(find.text(portfolioData.identity.email), findsNothing);
+      expect(find.text(portfolioData.identity.githubUrl), findsNothing);
+      expect(find.text('Contact'), findsNothing);
+      expect(find.text('Let’s build something thoughtful'), findsNothing);
 
-        await tester.scrollUntilVisible(
-          find.text('Career'),
-          220,
-          scrollable: _scrollableInside(const Key('about-scroll')),
-        );
-        expect(find.text('Career'), findsOneWidget);
-        expect(
-          find.text(portfolioData.experiences.first.role),
-          findsAtLeastNWidgets(1),
-        );
+      await tester.scrollUntilVisible(
+        find.text('경력'),
+        220,
+        scrollable: _scrollableInside(const Key('about-scroll')),
+      );
+      expect(find.text('경력'), findsOneWidget);
+      expect(find.text('Career'), findsNothing);
+      expect(
+        find.text(portfolioData.experiences.first.role),
+        findsAtLeastNWidgets(1),
+      );
 
-        await tester.scrollUntilVisible(
-          find.text('Education'),
-          220,
-          scrollable: _scrollableInside(const Key('about-scroll')),
-        );
-        expect(
-          find.text(portfolioData.education.first.institution),
-          findsOneWidget,
-        );
-        expect(tester.takeException(), isNull);
-      },
-    );
+      await tester.scrollUntilVisible(
+        find.text('교육'),
+        220,
+        scrollable: _scrollableInside(const Key('about-scroll')),
+      );
+      expect(find.text('교육'), findsOneWidget);
+      expect(find.text('Education'), findsNothing);
+      expect(
+        find.text(portfolioData.education.first.institution),
+        findsOneWidget,
+      );
+      expect(tester.takeException(), isNull);
+    });
 
     testWidgets('about omits avatar monograms for every injected identity', (
       tester,

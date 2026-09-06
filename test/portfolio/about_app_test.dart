@@ -43,14 +43,85 @@ void main() {
         find.descendant(of: body, matching: find.byType(Image)),
         findsNothing,
       );
-      expect(find.text('Career'), findsOneWidget);
-      expect(find.text('Education'), findsOneWidget);
-      expect(find.text('Contact'), findsOneWidget);
+      expect(find.text('경력'), findsOneWidget);
+      expect(find.text('교육'), findsOneWidget);
       expect(
         tester.getTopLeft(body).dy,
-        lessThan(tester.getTopLeft(find.text('Career')).dy),
+        lessThan(tester.getTopLeft(find.text('경력')).dy),
       );
       expect(tester.takeException(), isNull);
+    });
+
+    testWidgets('넓은 화면과 compact 화면은 섹션을 한글로 표시하고 연락처 꼬리를 만들지 않는다', (
+      tester,
+    ) async {
+      for (final scenario in const <({String label, Size size, bool compact})>[
+        (label: 'wide', size: Size(900, 700), compact: false),
+        (label: 'compact', size: Size(360, 600), compact: true),
+      ]) {
+        await tester.pumpWidget(const SizedBox.shrink());
+        await _pumpAbout(
+          tester,
+          data: portfolioData,
+          size: scenario.size,
+          compact: scenario.compact,
+        );
+
+        final body = find.byKey(const Key('about-notes-body'));
+        for (final text in <String>[
+          '경력',
+          '교육',
+          portfolioData.experiences.first.organization,
+          portfolioData.education.first.program,
+          portfolioData.education.first.institution,
+        ]) {
+          expect(
+            find.descendant(of: body, matching: find.text(text)),
+            findsOneWidget,
+            reason: '${scenario.label} $text',
+          );
+        }
+        for (final removedText in <String>[
+          'Career',
+          'Education',
+          'Contact',
+          'Let’s build something thoughtful',
+          'Email',
+          portfolioData.identity.email,
+          'GitHub',
+          portfolioData.identity.githubUrl,
+        ]) {
+          expect(
+            find.descendant(of: body, matching: find.text(removedText)),
+            findsNothing,
+            reason: '${scenario.label} $removedText',
+          );
+        }
+
+        final dividers = find.descendant(
+          of: body,
+          matching: find.byType(Divider),
+        );
+        expect(
+          dividers,
+          findsNWidgets(
+            portfolioData.experiences.length + portfolioData.education.length,
+          ),
+          reason: '${scenario.label} must not keep the Contact section divider',
+        );
+        expect(
+          tester.getBottomLeft(dividers.last).dy,
+          lessThan(
+            tester
+                .getTopLeft(find.text(portfolioData.education.last.program))
+                .dy,
+          ),
+          reason:
+              '${scenario.label} final divider must separate education entries, '
+              'not trail the final one',
+        );
+        expect(tester.takeException(), isNull, reason: scenario.label);
+      }
     });
 
     testWidgets('밝은 메모 본문 텍스트는 두 테마에서 AA 대비를 충족한다', (tester) async {
@@ -127,16 +198,13 @@ void main() {
         portfolioData.identity.englishName,
         portfolioData.identity.headline,
         portfolioData.identity.biography,
-        'Career',
+        '경력',
         portfolioData.experiences.first.role,
         portfolioData.experiences.first.organization,
         portfolioData.experiences.first.description,
-        'Education',
+        '교육',
         portfolioData.education.first.program,
         portfolioData.education.first.institution,
-        'Contact',
-        'Email',
-        portfolioData.identity.email,
       ]) {
         final foreground = tester
             .widget<Text>(find.text(text).first)
@@ -163,6 +231,11 @@ void main() {
       expect(find.byKey(const Key('about-notes-card')), findsNothing);
       expect(find.byKey(const Key('about-notes-header')), findsNothing);
       expect(find.byKey(const Key('about-notes-body')), findsOneWidget);
+      expect(find.text('경력'), findsOneWidget);
+      expect(find.text('교육'), findsOneWidget);
+      expect(find.text('Contact'), findsNothing);
+      expect(find.text(portfolioData.identity.email), findsNothing);
+      expect(find.text(portfolioData.identity.githubUrl), findsNothing);
       expect(tester.takeException(), isNull);
 
       final scrollFinder = find.byKey(const Key('about-scroll'));

@@ -109,7 +109,7 @@ class _AboutNotesBody extends StatelessWidget {
         ),
         _NoteSectionDivider(compact: compact),
         const _NoteSectionTitle(
-          title: 'Career',
+          title: '경력',
           subtitle: 'Professional experience',
         ),
         SizedBox(height: compact ? 12 : 16),
@@ -120,7 +120,7 @@ class _AboutNotesBody extends StatelessWidget {
         ],
         _NoteSectionDivider(compact: compact),
         const _NoteSectionTitle(
-          title: 'Education',
+          title: '교육',
           subtitle: 'Learning and foundations',
         ),
         SizedBox(height: compact ? 12 : 16),
@@ -132,13 +132,6 @@ class _AboutNotesBody extends StatelessWidget {
           ),
           if (entry.$1 != data.education.length - 1) const _NoteEntryDivider(),
         ],
-        _NoteSectionDivider(compact: compact),
-        const _NoteSectionTitle(
-          title: 'Contact',
-          subtitle: 'Let’s build something thoughtful',
-        ),
-        SizedBox(height: compact ? 12 : 16),
-        _ContactCard(data: data),
       ],
     );
   }
@@ -376,89 +369,6 @@ class _EducationCardState extends State<_EducationCard> {
               success: _launchSucceeded,
             ),
           ],
-        ],
-      ),
-    );
-  }
-}
-
-class _ContactCard extends StatelessWidget {
-  const _ContactCard({required this.data});
-
-  final PortfolioData data;
-
-  @override
-  Widget build(BuildContext context) {
-    return Wrap(
-      spacing: 18,
-      runSpacing: 16,
-      children: <Widget>[
-        _ContactItem(
-          icon: Icons.mail_rounded,
-          label: 'Email',
-          value: data.identity.email,
-        ),
-        _ContactItem(
-          icon: Icons.code_rounded,
-          label: 'GitHub',
-          value: data.identity.githubUrl,
-        ),
-      ],
-    );
-  }
-}
-
-class _ContactItem extends StatelessWidget {
-  const _ContactItem({
-    required this.icon,
-    required this.label,
-    required this.value,
-  });
-
-  final IconData icon;
-  final String label;
-  final String value;
-
-  @override
-  Widget build(BuildContext context) {
-    final colors = _AboutNotePalette.of(context);
-    return ConstrainedBox(
-      constraints: const BoxConstraints(minWidth: 220, maxWidth: 360),
-      child: Row(
-        children: <Widget>[
-          Container(
-            width: 40,
-            height: 40,
-            decoration: BoxDecoration(
-              color: AppleTheme.blue.withValues(alpha: 0.1),
-              borderRadius: BorderRadius.circular(12),
-            ),
-            child: Icon(icon, color: AppleTheme.blue, size: 20),
-          ),
-          const SizedBox(width: 11),
-          Expanded(
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: <Widget>[
-                Text(
-                  label,
-                  style: AppleTheme.caption(
-                    context,
-                  ).copyWith(color: colors.sectionSecondary),
-                ),
-                const SizedBox(height: 2),
-                Text(
-                  value,
-                  maxLines: 2,
-                  overflow: TextOverflow.ellipsis,
-                  style: AppleTheme.body(context).copyWith(
-                    color: colors.primary,
-                    fontWeight: FontWeight.w600,
-                  ),
-                ),
-              ],
-            ),
-          ),
         ],
       ),
     );

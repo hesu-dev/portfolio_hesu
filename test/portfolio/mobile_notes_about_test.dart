@@ -46,7 +46,7 @@ void main() {
   });
 
   group('About 연속 메모', () {
-    testWidgets('소개부터 연락처까지 하나의 paper body 안에 이어진다', (tester) async {
+    testWidgets('소개부터 경력과 교육까지 하나의 paper body 안에 이어진다', (tester) async {
       await _pumpAbout(tester, size: const Size(900, 700));
 
       final body = find.byKey(const Key('about-notes-body'));
@@ -63,18 +63,31 @@ void main() {
       for (final text in <String>[
         portfolioData.identity.name,
         portfolioData.identity.biography,
-        'Career',
+        '경력',
         portfolioData.experiences.first.role,
-        'Education',
+        '교육',
         portfolioData.education.first.program,
-        'Contact',
-        portfolioData.identity.email,
-        portfolioData.identity.githubUrl,
       ]) {
         expect(
           find.descendant(of: body, matching: find.text(text)),
           findsAtLeastNWidgets(1),
           reason: text,
+        );
+      }
+      for (final removedText in <String>[
+        'Career',
+        'Education',
+        'Contact',
+        'Let’s build something thoughtful',
+        'Email',
+        portfolioData.identity.email,
+        'GitHub',
+        portfolioData.identity.githubUrl,
+      ]) {
+        expect(
+          find.descendant(of: body, matching: find.text(removedText)),
+          findsNothing,
+          reason: removedText,
         );
       }
     });
