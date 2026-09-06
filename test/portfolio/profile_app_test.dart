@@ -3489,6 +3489,15 @@ void _expectReplyItem(
     find.descendant(of: author, matching: find.text(authorTitle)),
     findsOneWidget,
   );
+  final authorTitleText = tester.widget<Text>(
+    find.descendant(of: author, matching: find.text(authorTitle)),
+  );
+  expect(authorTitleText.maxLines, isNull, reason: authorTitle);
+  expect(
+    authorTitleText.overflow,
+    isNot(TextOverflow.ellipsis),
+    reason: authorTitle,
+  );
 
   final authorText = find
       .descendant(of: author, matching: find.byType(Text))
