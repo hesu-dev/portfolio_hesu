@@ -5,10 +5,14 @@ import 'dart:ui' as ui;
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 
+import 'pixel_text_layout.dart';
+
 /// A pixel-art study scene with deterministic stat-up timing.
 class EducationPixelStudy extends StatefulWidget {
   const EducationPixelStudy({super.key});
 
+  static const headerLabel = 'LEARNING';
+  static const sessionCompleteLabel = 'SESSION COMPLETE';
   static const studySpriteAsset = 'assets/sprites/education_student_study.png';
   static const studySheetSize = Size(1536, 1024);
   static const studyFrameBottomPadding = 8.0;
@@ -644,10 +648,10 @@ class _EducationPixelStudyPainter extends CustomPainter {
       6,
       palette.hudHeader,
     );
-    _pixelText(
+    _centeredPixelText(
       canvas,
-      'LEARNING // 21C',
-      Offset(panel.left + 7, panel.top + 4),
+      EducationPixelStudy.headerLabel,
+      Rect.fromLTWH(panel.left + 4, panel.top + 4, panel.width - 8, 6),
       size: 4.2,
       color: palette.hudTitle,
       shadow: palette.textShadow,
@@ -745,10 +749,10 @@ class _EducationPixelStudyPainter extends CustomPainter {
     final boxWidth = math.min(91.0, panel.width);
     _rect(canvas, panel.left, 61, boxWidth, 12, palette.completeEdge);
     _rect(canvas, panel.left + 2, 63, boxWidth - 4, 8, palette.completeFill);
-    _pixelText(
+    _centeredPixelText(
       canvas,
-      'SESSION COMPLETE',
-      Offset(panel.left + 7, 63),
+      EducationPixelStudy.sessionCompleteLabel,
+      Rect.fromLTWH(panel.left + 2, 63, boxWidth - 4, 8),
       size: 4.8,
       color: pulse ? palette.completeText : palette.hudTitle,
       shadow: palette.textShadow,
@@ -798,9 +802,47 @@ class _EducationPixelStudyPainter extends CustomPainter {
     required Color color,
     required Color shadow,
   }) {
+    final painters = _resolvePixelTextPainters(
+      text,
+      size: size,
+      color: color,
+      shadow: shadow,
+    );
+    _paintPixelText(canvas, painters, offset);
+  }
+
+  void _centeredPixelText(
+    Canvas canvas,
+    String text,
+    Rect contentRect, {
+    required double size,
+    required Color color,
+    required Color shadow,
+  }) {
+    final painters = _resolvePixelTextPainters(
+      text,
+      size: size,
+      color: color,
+      shadow: shadow,
+    );
+    final (shadowPainter, painter) = painters;
+    final origin = centeredPixelTextOrigin(
+      contentRect: contentRect,
+      foregroundSize: painter.size,
+      shadowSize: shadowPainter.size,
+    );
+    _paintPixelText(canvas, painters, origin);
+  }
+
+  (TextPainter, TextPainter) _resolvePixelTextPainters(
+    String text, {
+    required double size,
+    required Color color,
+    required Color shadow,
+  }) {
     final quantizedSize = (size * 10).round() / 10;
     final key = (text, quantizedSize, color.toARGB32(), shadow.toARGB32());
-    final painters = textPainterCache.resolve(key, () {
+    return textPainterCache.resolve(key, () {
       final style = TextStyle(
         color: color,
         fontFamily: 'monospace',
@@ -824,6 +866,13 @@ class _EducationPixelStudyPainter extends CustomPainter {
       )..layout();
       return (shadowPainter, painter);
     });
+  }
+
+  void _paintPixelText(
+    Canvas canvas,
+    (TextPainter, TextPainter) painters,
+    Offset offset,
+  ) {
     final (shadowPainter, painter) = painters;
     shadowPainter.paint(
       canvas,

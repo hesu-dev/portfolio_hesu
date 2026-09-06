@@ -17,11 +17,86 @@ import 'package:portfolio_hesu/portfolio/theme/apple_theme.dart';
 import 'package:portfolio_hesu/portfolio/theme/portfolio_theme_controller.dart';
 import 'package:portfolio_hesu/portfolio/widgets/career_pixel_runner.dart';
 import 'package:portfolio_hesu/portfolio/widgets/education_pixel_study.dart';
+import 'package:portfolio_hesu/portfolio/widgets/pixel_text_layout.dart';
 
 import 'support/music_test_controller.dart';
 
+TextPainter _layoutPixelStatusText(String text, double fontSize) {
+  return TextPainter(
+    text: TextSpan(
+      text: text,
+      style: TextStyle(
+        fontFamily: 'monospace',
+        fontSize: fontSize,
+        fontWeight: FontWeight.w900,
+        height: 1,
+        letterSpacing: -0.35,
+      ),
+    ),
+    textDirection: TextDirection.ltr,
+    maxLines: 1,
+  )..layout();
+}
+
 void main() {
   group('모바일 Instagram형 프로필 앱', () {
+    test('교육과 경력 상태 박스는 정확한 문구만 표시한다', () {
+      expect(EducationPixelStudy.headerLabel, 'LEARNING');
+      expect(EducationPixelStudy.headerLabel, isNot(contains('21C')));
+      expect(CareerPixelRunner.levelUpLabel, 'LV + UP!');
+      expect(EducationPixelStudy.sessionCompleteLabel, 'SESSION COMPLETE');
+    });
+
+    test('픽셀 상태 문구는 1px 그림자를 포함해 상자 중앙에 정렬한다', () {
+      const educationPanel = Rect.fromLTWH(6, 8, 132, 50);
+      final educationHeaderRect = Rect.fromLTWH(
+        educationPanel.left + 4,
+        educationPanel.top + 4,
+        educationPanel.width - 8,
+        6,
+      );
+      final educationCompleteRect = Rect.fromLTWH(
+        educationPanel.left + 2,
+        63,
+        91 - 4,
+        8,
+      );
+      const careerLevelUpRect = Rect.fromLTWH(42, 15, 54, 10);
+
+      final cases = <(String, Rect, double)>[
+        (EducationPixelStudy.headerLabel, educationHeaderRect, 4.2),
+        (EducationPixelStudy.sessionCompleteLabel, educationCompleteRect, 4.8),
+        (CareerPixelRunner.levelUpLabel, careerLevelUpRect, 7.2),
+        (CareerPixelRunner.levelUpLabel, careerLevelUpRect, 8.2),
+      ];
+
+      for (final (label, contentRect, fontSize) in cases) {
+        final foreground = _layoutPixelStatusText(label, fontSize);
+        final shadow = _layoutPixelStatusText(label, fontSize);
+        final origin = centeredPixelTextOrigin(
+          contentRect: contentRect,
+          foregroundSize: foreground.size,
+          shadowSize: shadow.size,
+        );
+        final visualBounds = (origin & foreground.size).expandToInclude(
+          (origin + const Offset(1, 1)) & shadow.size,
+        );
+
+        expect(origin.dx, origin.dx.roundToDouble(), reason: label);
+        expect(origin.dy, origin.dy.roundToDouble(), reason: label);
+        expect(
+          (visualBounds.center.dx - contentRect.center.dx).abs(),
+          lessThanOrEqualTo(0.5),
+          reason: '$label horizontal center at $fontSize',
+        );
+        expect(
+          (visualBounds.center.dy - contentRect.center.dy).abs(),
+          lessThanOrEqualTo(0.5),
+          reason: '$label vertical center at $fontSize',
+        );
+      }
+    });
+
     test('구름·후경 빌딩·메인 빌딩은 앞쪽일수록 빠르게 무한 스크롤한다', () {
       expect(CareerPixelRunner.cloudSpeedMultiplier, 1.0);
       expect(CareerPixelRunner.farCitySpeedMultiplier, 1.25);

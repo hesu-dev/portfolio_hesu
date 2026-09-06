@@ -5,9 +5,13 @@ import 'dart:ui' as ui;
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 
+import 'pixel_text_layout.dart';
+
 /// A deterministic pixel-art city scene using approved runner sprite sheets.
 class CareerPixelRunner extends StatefulWidget {
   const CareerPixelRunner({super.key});
+
+  static const levelUpLabel = 'LV + UP!';
 
   /// Every scenery motif advances one common 240 px world unit per loop.
   static const landmarkScrollPerLoop = 240.0;
@@ -683,16 +687,15 @@ class _CareerPixelRunnerPainter extends CustomPainter {
     final t = (phase - start) / (end - start);
     final lift = Curves.easeOut.transform(t) * 9;
     final pulse = 1 + (math.sin(t * math.pi * 4).abs() * 0.14);
-    const label = 'LV + UP!';
     final anchorX = math.min(width - 61, math.max(6.0, runnerX - 30));
     final anchorY = 14 - lift;
     _rect(canvas, anchorX - 4, anchorY - 3, 62, 18, const Color(0xCC171C2C));
     _rect(canvas, anchorX - 2, anchorY - 1, 58, 14, const Color(0xFFE98E24));
     _rect(canvas, anchorX, anchorY + 1, 54, 10, const Color(0xFF29334C));
-    _pixelText(
+    _centeredPixelText(
       canvas,
-      label,
-      Offset(anchorX + 5, anchorY + 1),
+      CareerPixelRunner.levelUpLabel,
+      Rect.fromLTWH(anchorX, anchorY + 1, 54, 10),
       size: 7.2 * pulse,
       color: const Color(0xFFFFE66D),
       shadow: const Color(0xFF7D4213),
@@ -719,9 +722,47 @@ class _CareerPixelRunnerPainter extends CustomPainter {
     required Color color,
     required Color shadow,
   }) {
+    final painters = _resolvePixelTextPainters(
+      text,
+      size: size,
+      color: color,
+      shadow: shadow,
+    );
+    _paintPixelText(canvas, painters, offset);
+  }
+
+  void _centeredPixelText(
+    Canvas canvas,
+    String text,
+    Rect contentRect, {
+    required double size,
+    required Color color,
+    required Color shadow,
+  }) {
+    final painters = _resolvePixelTextPainters(
+      text,
+      size: size,
+      color: color,
+      shadow: shadow,
+    );
+    final (shadowPainter, painter) = painters;
+    final origin = centeredPixelTextOrigin(
+      contentRect: contentRect,
+      foregroundSize: painter.size,
+      shadowSize: shadowPainter.size,
+    );
+    _paintPixelText(canvas, painters, origin);
+  }
+
+  (TextPainter, TextPainter) _resolvePixelTextPainters(
+    String text, {
+    required double size,
+    required Color color,
+    required Color shadow,
+  }) {
     final quantizedSize = (size * 10).round() / 10;
     final key = (text, quantizedSize, color.toARGB32(), shadow.toARGB32());
-    final painters = textPainterCache.resolve(key, () {
+    return textPainterCache.resolve(key, () {
       final style = TextStyle(
         color: color,
         fontFamily: 'monospace',
@@ -745,6 +786,13 @@ class _CareerPixelRunnerPainter extends CustomPainter {
       )..layout();
       return (shadowPainter, painter);
     });
+  }
+
+  void _paintPixelText(
+    Canvas canvas,
+    (TextPainter, TextPainter) painters,
+    Offset offset,
+  ) {
     final (shadowPainter, painter) = painters;
     shadowPainter.paint(
       canvas,
