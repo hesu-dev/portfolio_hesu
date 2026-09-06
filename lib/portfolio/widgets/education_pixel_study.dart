@@ -224,6 +224,8 @@ class _EducationPixelStudyPainter extends CustomPainter {
   static const _spriteScale = 0.165;
   static const _baseStats = <int>[86, 79, 68, 74];
   static const _barProgress = <double>[0.70, 0.62, 0.54, 0.59];
+  static const _cityTicksPerCycle = 48;
+  static const _cityBlinkPeriods = <int>[12, 16, 24, 48];
 
   final Animation<double> timeline;
   final Brightness brightness;
@@ -345,14 +347,40 @@ class _EducationPixelStudyPainter extends CustomPainter {
     _rect(canvas, left + 3, 15, windowWidth - 6, 9, palette.windowGlow);
 
     final skylineColor = palette.windowSkyline;
+    final skylineClip = snapPixelRect(
+      Rect.fromLTWH(left + 3, 24, windowWidth - 6, 26),
+    );
+    canvas.save();
+    canvas.clipRect(skylineClip, doAntiAlias: false);
     for (var index = 0; index < (windowWidth / 15).ceil(); index++) {
       final buildingHeight = 7.0 + ((index * 5) % 12);
       final x = left + 4 + (index * 15);
-      _rect(canvas, x, 50 - buildingHeight, 11, buildingHeight, skylineColor);
-      if ((index + (progress * 10).floor()).isEven) {
-        _rect(canvas, x + 3, 44 - (index % 4), 2, 2, palette.windowLight);
+      final buildingTop = 50 - buildingHeight;
+      _rect(canvas, x, buildingTop, 11, buildingHeight, skylineColor);
+      final rowCount = (buildingHeight / 4).floor().clamp(1, 4);
+      for (var row = 0; row < rowCount; row++) {
+        for (var column = 0; column < 2; column++) {
+          final seed = _cityLightSeed(index, row, column);
+          if (!_cityLightExists(seed, row)) {
+            continue;
+          }
+          final lightX = x + 2 + (column * 5);
+          final lightY = buildingTop + 2 + (row * 4);
+          _rect(canvas, lightX, lightY, 2, 2, palette.windowUnlit);
+          if (_cityLightIsOn(seed, progress)) {
+            _rect(
+              canvas,
+              lightX,
+              lightY,
+              2,
+              2,
+              (seed ~/ 3).isEven ? palette.windowLight : palette.windowLightDim,
+            );
+          }
+        }
       }
     }
+    canvas.restore();
 
     for (var x = left + 24; x < width - 7; x += 25) {
       _rect(canvas, x, 13, 3, 39, palette.windowFrame);
@@ -360,6 +388,29 @@ class _EducationPixelStudyPainter extends CustomPainter {
     _rect(canvas, left + 2, 31, windowWidth - 4, 2, palette.windowFrame);
     _rect(canvas, left + 7, 17, 2, 29, palette.glassShine);
     _rect(canvas, left + 10, 17, 1, 18, palette.glassShine);
+  }
+
+  int _cityLightSeed(int building, int row, int column) {
+    return (((building + 1) * 37) ^ ((row + 3) * 53) ^ ((column + 7) * 97)) &
+        0x7fffffff;
+  }
+
+  bool _cityLightExists(int seed, int row) => row == 0 || seed % 7 != 0;
+
+  bool _cityLightIsOn(int seed, double progress) {
+    final mode = seed % 8;
+    if (mode < 4) {
+      return true;
+    }
+    if (mode == 4) {
+      return false;
+    }
+
+    final period = _cityBlinkPeriods[(seed ~/ 8) % _cityBlinkPeriods.length];
+    final phase = (seed * 7) % period;
+    final offTicks = (period ~/ 4) + (seed % 3);
+    final tick = (progress * _cityTicksPerCycle).floor() % _cityTicksPerCycle;
+    return ((tick + phase) % period) >= offTicks;
   }
 
   void _drawGlassPartitions(
@@ -946,7 +997,9 @@ class _StudyPalette {
     required this.windowSky,
     required this.windowGlow,
     required this.windowSkyline,
+    required this.windowUnlit,
     required this.windowLight,
+    required this.windowLightDim,
     required this.glassFrame,
     required this.glassShine,
     required this.floor,
@@ -1018,7 +1071,9 @@ class _StudyPalette {
     windowSky: Color(0xFF8BC5D8),
     windowGlow: Color(0xFFDDF5ED),
     windowSkyline: Color(0xFF658C9B),
+    windowUnlit: Color(0xFF466C78),
     windowLight: Color(0xFFFFE490),
+    windowLightDim: Color(0xFFD7BE72),
     glassFrame: Color(0xFF7C969C),
     glassShine: Color(0x88E8FFFF),
     floor: Color(0xFF8C8177),
@@ -1090,7 +1145,9 @@ class _StudyPalette {
     windowSky: Color(0xFF173D58),
     windowGlow: Color(0xFF315D70),
     windowSkyline: Color(0xFF102939),
+    windowUnlit: Color(0xFF1A4960),
     windowLight: Color(0xFFFFD66E),
+    windowLightDim: Color(0xFFC09246),
     glassFrame: Color(0xFF45616D),
     glassShine: Color(0x665D9BAA),
     floor: Color(0xFF302C31),
@@ -1155,7 +1212,9 @@ class _StudyPalette {
   final Color windowSky;
   final Color windowGlow;
   final Color windowSkyline;
+  final Color windowUnlit;
   final Color windowLight;
+  final Color windowLightDim;
   final Color glassFrame;
   final Color glassShine;
   final Color floor;

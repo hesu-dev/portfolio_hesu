@@ -555,6 +555,102 @@ void main() {
       }
     });
 
+    testWidgets('교육 창밖 건물 불빛은 여러 층에서 서로 다른 박자로 반짝인다', (tester) async {
+      const size = Size(288, 144);
+      const skylineRect = Rect.fromLTRB(174, 24, 280, 50);
+      const progressSamples = <double>[0.05, 0.20, 0.35, 0.50, 0.65, 0.80];
+
+      for (final brightness in Brightness.values) {
+        await tester.pumpWidget(const SizedBox.shrink());
+        await _pumpStandaloneEducationStudy(
+          tester,
+          size: size,
+          disableAnimations: false,
+          brightness: brightness,
+        );
+        final study = find.byType(EducationPixelStudy);
+        await _waitForEducationStudySprite(tester, study);
+
+        final lightMasks = <Set<int>>[];
+        final unlitMasks = <Set<int>>[];
+        final unlitColor = brightness == Brightness.dark
+            ? const (26, 73, 96)
+            : const (70, 108, 120);
+        var previousProgress = 0.0;
+        for (final progress in progressSamples) {
+          await tester.pump(
+            Duration(
+              milliseconds: ((progress - previousProgress) * 4000).round(),
+            ),
+          );
+          final frame = await _renderedBytes(tester, study);
+          lightMasks.add(
+            _pixelCoordinatesInRect(
+              frame,
+              imageSize: size,
+              rect: skylineRect,
+              matches: (red, green, blue) =>
+                  red >= 155 && green >= 100 && blue <= 150 && red > blue + 45,
+            ),
+          );
+          unlitMasks.add(
+            _pixelCoordinatesInRect(
+              frame,
+              imageSize: size,
+              rect: skylineRect,
+              matches: (red, green, blue) =>
+                  red == unlitColor.$1 &&
+                  green == unlitColor.$2 &&
+                  blue == unlitColor.$3,
+            ),
+          );
+          previousProgress = progress;
+        }
+
+        final union = <int>{for (final mask in lightMasks) ...mask};
+        final intersection = <int>{...lightMasks.first};
+        for (final mask in lightMasks.skip(1)) {
+          intersection.retainAll(mask);
+        }
+        final steadyOffPixels = <int>{...unlitMasks.first};
+        for (final mask in unlitMasks.skip(1)) {
+          steadyOffPixels.retainAll(mask);
+        }
+        final distinctMasks = lightMasks
+            .map((mask) => (mask.toList()..sort()).join(','))
+            .toSet();
+        final litRows = union
+            .map((pixel) => pixel ~/ size.width.round())
+            .toSet();
+
+        expect(
+          union.length,
+          greaterThan(72),
+          reason: '$brightness skyline should contain many fixed light sites',
+        );
+        expect(
+          litRows.length,
+          greaterThanOrEqualTo(10),
+          reason: '$brightness lights should span multiple building floors',
+        );
+        expect(
+          distinctMasks.length,
+          greaterThanOrEqualTo(4),
+          reason: '$brightness lights should not share one global blink phase',
+        );
+        expect(
+          intersection.length,
+          greaterThanOrEqualTo(12),
+          reason: '$brightness skyline should retain some steady-on lights',
+        );
+        expect(
+          steadyOffPixels.length,
+          greaterThanOrEqualTo(4),
+          reason: '$brightness skyline should retain some steady-off lights',
+        );
+      }
+    });
+
     testWidgets('교육 도트 장면은 공부와 능력치 상승을 계속 애니메이션한다', (tester) async {
       await _pumpStandaloneEducationStudy(
         tester,
@@ -2421,6 +2517,7 @@ Future<void> _pumpStandaloneEducationStudy(
   WidgetTester tester, {
   required Size size,
   required bool disableAnimations,
+  Brightness brightness = Brightness.light,
 }) async {
   tester.view.devicePixelRatio = 1;
   tester.view.physicalSize = size;
@@ -2431,6 +2528,9 @@ Future<void> _pumpStandaloneEducationStudy(
     MaterialApp(
       theme: AppleTheme.light(),
       darkTheme: AppleTheme.dark(),
+      themeMode: brightness == Brightness.dark
+          ? ThemeMode.dark
+          : ThemeMode.light,
       home: MediaQuery(
         data: MediaQueryData(size: size, disableAnimations: disableAnimations),
         child: const EducationPixelStudy(),
@@ -2781,6 +2881,37 @@ double _pixelRatioInRect(
     }
   }
   return pixelCount == 0 ? 0 : matchingPixels / pixelCount;
+}
+
+Set<int> _pixelCoordinatesInRect(
+  Uint8List rgba, {
+  required Size imageSize,
+  required Rect rect,
+  required bool Function(int red, int green, int blue) matches,
+}) {
+  final width = imageSize.width.round();
+  final height = imageSize.height.round();
+  final matchingPixels = <int>{};
+  for (
+    var y = rect.top.floor().clamp(0, height);
+    y < rect.bottom.ceil().clamp(0, height);
+    y++
+  ) {
+    for (
+      var x = rect.left.floor().clamp(0, width);
+      x < rect.right.ceil().clamp(0, width);
+      x++
+    ) {
+      final byteOffset = ((y * width) + x) * 4;
+      final red = rgba[byteOffset];
+      final green = rgba[byteOffset + 1];
+      final blue = rgba[byteOffset + 2];
+      if (matches(red, green, blue)) {
+        matchingPixels.add((y * width) + x);
+      }
+    }
+  }
+  return matchingPixels;
 }
 
 bool _isSkinPixel(int red, int green, int blue) =>
