@@ -445,10 +445,19 @@ class _EducationPixelStudyPainter extends CustomPainter {
     _rect(canvas, center - 22, 132, 3, 9, palette.chairFrame);
     _rect(canvas, center - 12, 132, 3, 9, palette.chairFrame);
 
+    // A stepped top reads as a shallow perspective plane rather than a flat
+    // stripe. Props and hands are drawn over it, while the student remains
+    // behind the front fascia painted later.
+    _rect(canvas, deskLeft, 119, deskWidth, 14, palette.deskEdge);
+    _rect(canvas, deskLeft + 2, 120, deskWidth - 4, 3, palette.deskTop);
+    _rect(canvas, deskLeft + 4, 123, deskWidth - 8, 3, palette.deskFront);
+    _rect(canvas, deskLeft + 6, 126, deskWidth - 12, 6, palette.deskFrontInset);
+    _rect(canvas, deskLeft + 10, 128, deskWidth - 20, 1, palette.deskTop);
+
     _drawTaskLamp(canvas, center - 45, progress, palette);
     _drawPrimaryMonitor(canvas, center + 24, progress, palette);
-
-    _rect(canvas, deskLeft + 2, 120, deskWidth - 4, 4, palette.deskTop);
+    _rect(canvas, center + 3, 118, 33, 5, palette.keyboard);
+    _rect(canvas, center + 6, 117, 27, 2, palette.keyHighlight);
   }
 
   void _drawForegroundWorkstationFront(
@@ -461,18 +470,25 @@ class _EducationPixelStudyPainter extends CustomPainter {
     final deskRight = math.min(width - 5, center + 61);
     final deskWidth = deskRight - deskLeft;
 
-    // The keyboard catches the typing hands while the apron hides the seated
-    // sprite's lower body, keeping the student visibly tucked behind the desk.
-    _rect(canvas, center + 8, 117, 27, 4, palette.keyboard);
-    _rect(canvas, center + 11, 116, 21, 2, palette.keyHighlight);
-    _rect(canvas, deskLeft, 123, deskWidth, 5, palette.deskEdge);
-    _rect(canvas, deskLeft + 5, 128, 4, 16, palette.deskLeg);
-    _rect(canvas, deskRight - 9, 128, 4, 16, palette.deskLeg);
+    _rect(canvas, deskLeft, 132, deskWidth, 5, palette.deskEdge);
+    _rect(canvas, deskLeft + 2, 132, deskWidth - 4, 2, palette.deskFront);
+    _rect(canvas, deskLeft + 5, 137, 4, 7, palette.deskLeg);
+    _rect(canvas, deskRight - 9, 137, 4, 7, palette.deskLeg);
 
-    _rect(canvas, deskLeft + 14, 129, 28, 7, palette.chargingPanel);
-    _rect(canvas, deskLeft + 17, 131, 3, 3, palette.chargingPort);
-    _rect(canvas, deskLeft + 24, 131, 5, 3, palette.chargingPort);
-    _rect(canvas, deskLeft + 34, 131, 3, 3, palette.chargingLight);
+    _rect(canvas, deskLeft + 14, 133, 28, 4, palette.chargingPanel);
+    _rect(canvas, deskLeft + 17, 134, 3, 2, palette.chargingPort);
+    _rect(canvas, deskLeft + 24, 134, 5, 2, palette.chargingPort);
+    _rect(canvas, deskLeft + 34, 134, 3, 2, palette.chargingLight);
+    for (var vent = 0; vent < 4; vent++) {
+      _rect(
+        canvas,
+        deskRight - 31 + (vent * 5),
+        134,
+        2,
+        2,
+        palette.chargingPanel,
+      );
+    }
   }
 
   void _drawTaskLamp(
@@ -557,12 +573,22 @@ class _EducationPixelStudyPainter extends CustomPainter {
       destination.right.roundToDouble(),
       destination.bottom.roundToDouble(),
     );
+    canvas.save();
+    canvas.clipRect(
+      Rect.fromLTRB(
+        snappedDestination.left,
+        snappedDestination.top,
+        snappedDestination.right,
+        137,
+      ),
+    );
     canvas.drawImageRect(
       spriteSheet,
       decodedSource,
       snappedDestination,
       _spritePaint,
     );
+    canvas.restore();
   }
 
   int _frameIndexFor(double progress) {
@@ -893,6 +919,8 @@ class _StudyPalette {
     required this.deskEdge,
     required this.deskTop,
     required this.deskLeg,
+    required this.deskFront,
+    required this.deskFrontInset,
     required this.chargingPanel,
     required this.chargingPort,
     required this.chargingLight,
@@ -963,6 +991,8 @@ class _StudyPalette {
     deskEdge: Color(0xFF493B34),
     deskTop: Color(0xFFC49D77),
     deskLeg: Color(0xFF493B34),
+    deskFront: Color(0xFF795A45),
+    deskFrontInset: Color(0xFF9A7355),
     chargingPanel: Color(0xFF2E3439),
     chargingPort: Color(0xFF111619),
     chargingLight: Color(0xFF55E89C),
@@ -1033,6 +1063,8 @@ class _StudyPalette {
     deskEdge: Color(0xFF211A19),
     deskTop: Color(0xFF765843),
     deskLeg: Color(0xFF2A211F),
+    deskFront: Color(0xFF3B2B25),
+    deskFrontInset: Color(0xFF513A2E),
     chargingPanel: Color(0xFF151B20),
     chargingPort: Color(0xFF05090B),
     chargingLight: Color(0xFF45E58D),
@@ -1096,6 +1128,8 @@ class _StudyPalette {
   final Color deskEdge;
   final Color deskTop;
   final Color deskLeg;
+  final Color deskFront;
+  final Color deskFrontInset;
   final Color chargingPanel;
   final Color chargingPort;
   final Color chargingLight;

@@ -276,6 +276,110 @@ void main() {
       }
     });
 
+    testWidgets('교육 캐릭터는 책상 뒤에 앉아 노트를 작업면 위에 둔다', (tester) async {
+      for (final size in const <Size>[Size(320, 258), Size(714, 288)]) {
+        await tester.pumpWidget(const SizedBox.shrink());
+        await _pumpStandaloneEducationStudy(
+          tester,
+          size: size,
+          disableAnimations: false,
+        );
+        final study = find.byType(EducationPixelStudy);
+        await _waitForEducationStudySprite(tester, study);
+        await tester.pump(const Duration(milliseconds: 640));
+        final typingFrame = await _renderedBytes(tester, study);
+        await tester.pump(const Duration(milliseconds: 1440));
+        final notebookFrame = await _renderedBytes(tester, study);
+
+        final sceneScale = size.height / 144;
+        final sceneWidth = size.width / sceneScale;
+        final studyCenter = (math.max(80.0, sceneWidth - 56) * 0.62)
+            .clamp(96.0, 220.0)
+            .toDouble();
+        Rect sceneRect(double left, double top, double right, double bottom) =>
+            Rect.fromLTRB(
+              left * sceneScale,
+              top * sceneScale,
+              right * sceneScale,
+              bottom * sceneScale,
+            );
+
+        final keyboardRegion = sceneRect(
+          studyCenter + 1,
+          115,
+          studyCenter + 37,
+          124,
+        );
+        final pageRegion = sceneRect(
+          studyCenter - 10,
+          119,
+          studyCenter + 32,
+          132,
+        );
+        final belowDeskRegion = sceneRect(
+          studyCenter - 28,
+          137,
+          studyCenter + 30,
+          144,
+        );
+
+        final typingSkinRatio = _pixelRatioInRect(
+          typingFrame,
+          imageSize: size,
+          rect: keyboardRegion,
+          matches: _isSkinPixel,
+        );
+        final typingPageRatio = _pixelRatioInRect(
+          typingFrame,
+          imageSize: size,
+          rect: pageRegion,
+          matches: _isLightPagePixel,
+        );
+        final notebookPageRatio = _pixelRatioInRect(
+          notebookFrame,
+          imageSize: size,
+          rect: pageRegion,
+          matches: _isLightPagePixel,
+        );
+        final typingExposureRatio = _pixelRatioInRect(
+          typingFrame,
+          imageSize: size,
+          rect: belowDeskRegion,
+          matches: _isSkinOrRedSpritePixel,
+        );
+        final notebookExposureRatio = _pixelRatioInRect(
+          notebookFrame,
+          imageSize: size,
+          rect: belowDeskRegion,
+          matches: _isSkinOrRedSpritePixel,
+        );
+
+        expect(
+          typingSkinRatio,
+          greaterThanOrEqualTo(0.01),
+          reason: '$size 타이핑 손이 키보드 작업면에 남아야 한다.',
+        );
+        expect(
+          notebookPageRatio,
+          greaterThanOrEqualTo(typingPageRatio + 0.02),
+          reason:
+              '$size 노트 포즈의 밝은 페이지가 타이핑 포즈보다 '
+              '작업면에 더 많아야 한다. '
+              'typing=${typingPageRatio.toStringAsFixed(3)}, '
+              'notebook=${notebookPageRatio.toStringAsFixed(3)}',
+        );
+        expect(
+          math.max(typingExposureRatio, notebookExposureRatio),
+          lessThanOrEqualTo(0.002),
+          reason:
+              '$size fascia 아래에 피부·빨간 제본 픽셀이 남으면 '
+              '캐릭터가 책상 앞에 앉은 것처럼 본다. '
+              'typing=${typingExposureRatio.toStringAsFixed(3)}, '
+              'notebook=${notebookExposureRatio.toStringAsFixed(3)}',
+        );
+      }
+    });
+
     testWidgets('교육 라이트 장면은 흰색 카메라 아이콘 배경을 3:1로 유지한다', (tester) async {
       for (final scenario in const <(String, Size, bool)>[
         ('iPhone', Size(320, 258), true),
@@ -2454,6 +2558,27 @@ Future<Uint8List> _renderedBytes(WidgetTester tester, Finder scope) async {
   return rendered!;
 }
 
+Future<void> _waitForEducationStudySprite(
+  WidgetTester tester,
+  Finder study,
+) async {
+  final paint = find.descendant(of: study, matching: find.byType(CustomPaint));
+  expect(paint, findsOneWidget);
+
+  for (var attempt = 0; attempt < 100; attempt++) {
+    final painter = tester.widget<CustomPaint>(paint).painter as dynamic;
+    if (painter.studySpriteSheet != null) {
+      return;
+    }
+    await tester.runAsync(() async {
+      await Future<void>.delayed(const Duration(milliseconds: 5));
+    });
+    await tester.pump();
+  }
+
+  fail('교육 스프라이트가 제한 시간 안에 디코딩되지 않았다.');
+}
+
 double _minimumWhiteContrastInRect(
   Uint8List rgba, {
   required Size imageSize,
@@ -2487,6 +2612,55 @@ double _minimumWhiteContrastInRect(
   }
   return 1.05 / (brightestBackdrop + 0.05);
 }
+
+double _pixelRatioInRect(
+  Uint8List rgba, {
+  required Size imageSize,
+  required Rect rect,
+  required bool Function(int red, int green, int blue) matches,
+}) {
+  final width = imageSize.width.round();
+  final height = imageSize.height.round();
+  var matchingPixels = 0;
+  var pixelCount = 0;
+  for (
+    var y = rect.top.floor().clamp(0, height);
+    y < rect.bottom.ceil().clamp(0, height);
+    y++
+  ) {
+    for (
+      var x = rect.left.floor().clamp(0, width);
+      x < rect.right.ceil().clamp(0, width);
+      x++
+    ) {
+      final byteOffset = ((y * width) + x) * 4;
+      if (matches(
+        rgba[byteOffset],
+        rgba[byteOffset + 1],
+        rgba[byteOffset + 2],
+      )) {
+        matchingPixels++;
+      }
+      pixelCount++;
+    }
+  }
+  return pixelCount == 0 ? 0 : matchingPixels / pixelCount;
+}
+
+bool _isSkinPixel(int red, int green, int blue) =>
+    red >= 70 && red > green * 1.35 && green > blue * 1.10;
+
+bool _isLightPagePixel(int red, int green, int blue) =>
+    red >= 125 &&
+    green >= 125 &&
+    blue >= 120 &&
+    math.max(red, math.max(green, blue)) -
+            math.min(red, math.min(green, blue)) <
+        45;
+
+bool _isSkinOrRedSpritePixel(int red, int green, int blue) =>
+    _isSkinPixel(red, green, blue) ||
+    (red >= 45 && red > green * 1.55 && red > blue * 1.35);
 
 void _expectReplyItem(
   WidgetTester tester, {
