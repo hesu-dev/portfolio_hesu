@@ -5,6 +5,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter/semantics.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_test/flutter_test.dart';
+import 'package:flutter_markdown_plus/flutter_markdown_plus.dart';
 import 'package:portfolio_hesu/portfolio/apps/portfolio_app_content.dart';
 import 'package:portfolio_hesu/portfolio/data/portfolio_data.dart';
 import 'package:portfolio_hesu/portfolio/models/portfolio_app_id.dart';
@@ -42,6 +43,7 @@ void main() {
         'introduction': '자기소개',
         'skills': '스킬',
         'projects': '포트폴리오',
+        'safari': '프로젝트',
         'terminal': '터미널',
         'music': '배경음',
         'photos': '사진',
@@ -71,6 +73,7 @@ void main() {
         AppleAppIcon.windowTitleFor(PortfolioAppId.terminal),
         AppleAppIcon.terminalWindowTitle,
       );
+      expect(AppleAppIcon.windowTitleFor(PortfolioAppId.safari), '프로젝트');
     });
 
     testWidgets('exposes selection, running, compact, and semantics states', (
@@ -260,6 +263,7 @@ void main() {
         'introduction': 'introduction-app',
         'skills': 'skills-app',
         'projects': 'projects-app',
+        'safari': 'safari-app',
         'terminal': 'terminal-app',
         'music': 'music-app',
         'photos': 'photos-app',
@@ -658,7 +662,7 @@ void main() {
     );
 
     testWidgets(
-      'project categories expose all six folders before their detail depth',
+      'project categories expose all eight folders before their detail depth',
       (tester) async {
         await _pumpApp(
           tester,
@@ -667,7 +671,7 @@ void main() {
           size: const Size(900, 650),
         );
 
-        for (final index in const <int>[2, 3, 4, 5]) {
+        for (final index in const <int>[2, 3, 4, 5, 6, 7]) {
           expect(find.byKey(Key('project-selector-$index')), findsOneWidget);
         }
         expect(find.byKey(const Key('project-selector-0')), findsNothing);
@@ -1102,11 +1106,13 @@ void main() {
         expect(launcher.requests, hasLength(2));
         launcher.complete(1, true);
         await tester.pumpAndSettle();
-        expect(find.text('App Store 링크를 열었습니다.'), findsOneWidget);
+        expect(find.text('App Store 링크를 열었습니다.'), findsNothing);
+        expect(find.byKey(const Key('project-launch-feedback')), findsNothing);
 
         launcher.complete(0, false);
         await tester.pumpAndSettle();
-        expect(find.text('App Store 링크를 열었습니다.'), findsOneWidget);
+        expect(find.text('App Store 링크를 열었습니다.'), findsNothing);
+        expect(find.byKey(const Key('project-launch-feedback')), findsNothing);
         expect(find.textContaining('Google Play 링크를 열 수 없습니다'), findsNothing);
         expect(tester.takeException(), isNull);
       },
@@ -1444,66 +1450,148 @@ void main() {
         compact: true,
       );
 
-      expect(find.text('Min He-su'), findsOneWidget);
-      await tester.tap(find.byKey(const Key('github-external-action')));
-      await tester.pumpAndSettle();
+      expect(
+        find.descendant(
+          of: find.byKey(const Key('github-profile-card')),
+          matching: find.text('sunell_dev'),
+        ),
+        findsOneWidget,
+      );
+      expect(find.byKey(const Key('github-external-action')), findsNothing);
+      await _tapGithubAccount(tester, 'hesu-dev');
 
-      expect(launcher.launched, <Uri>[Uri.parse(portfolioData.githubUrl)]);
+      expect(launcher.launched, <Uri>[
+        Uri.parse(portfolioData.identity.githubUrl),
+      ]);
       expect(find.byKey(const Key('github-launch-feedback')), findsOneWidget);
       expect(find.textContaining('열 수 없습니다'), findsOneWidget);
       expect(tester.takeException(), isNull);
     });
 
-    testWidgets('GitHub lists three repositories with their actual links', (
-      tester,
-    ) async {
-      final launcher = _FakeExternalLauncher();
-      const repositories = <String, String>{
-        'portfolio_hesu': 'https://github.com/hesu-dev/portfolio_hesu',
-        'chrome_extension': 'https://github.com/hesu-dev/chrome_extension',
-        'code_study': 'https://github.com/hesu-dev/code_study',
-      };
-      await _pumpApp(
-        tester,
-        appId: PortfolioAppId.github,
-        launcher: launcher,
-        size: const Size(390, 700),
-        compact: true,
-      );
-
-      expect(find.byKey(const Key('github-external-action')), findsOneWidget);
-      expect(launcher.launched, isEmpty);
-      for (final repository in repositories.entries) {
-        final card = find.byKey(Key('github-repository-${repository.key}'));
-        expect(card, findsOneWidget);
-        expect(find.text(repository.key), findsOneWidget);
-        await tester.ensureVisible(card);
-        await tester.tap(card);
+    testWidgets(
+      'GitHub shows contributions below Markdown followed by three account cards',
+      (tester) async {
+        final launcher = _FakeExternalLauncher();
+        const accounts = <String, String>{
+          'hesu-dev': 'sunell_dev',
+          'sukenell': 'sukenell',
+          'sunelll': 'sunell',
+        };
+        await _pumpApp(
+          tester,
+          appId: PortfolioAppId.github,
+          launcher: launcher,
+          size: const Size(390, 700),
+          compact: true,
+        );
         await tester.pumpAndSettle();
-      }
 
-      expect(
-        launcher.launched,
-        repositories.values.map(Uri.parse).toList(growable: false),
-      );
-      expect(find.byKey(const Key('github-launch-feedback')), findsOneWidget);
-      expect(tester.takeException(), isNull);
-    });
+        final markdown = find.byType(MarkdownBody);
+        expect(markdown, findsOneWidget);
+        expect(
+          tester.widget<MarkdownBody>(markdown).data,
+          contains('Tech Stack'),
+        );
+        expect(
+          tester.widget<MarkdownBody>(markdown).data,
+          contains('Infrastructure & DevOps'),
+        );
+        expect(find.byKey(const Key('github-external-action')), findsNothing);
+        expect(
+          tester.widget<MarkdownBody>(markdown).data,
+          isNot(contains('배포용 git')),
+        );
+        expect(
+          tester.widget<MarkdownBody>(markdown).data,
+          isNot(contains('취미용 배포 계정')),
+        );
+        expect(find.text('Repositories'), findsNothing);
+        expect(
+          find.byKey(const Key('github-repositories-section')),
+          findsNothing,
+        );
+        for (final name in const <String>[
+          'portfolio_hesu',
+          'chrome_extension',
+          'code_study',
+        ]) {
+          expect(find.text(name), findsNothing);
+        }
+        final contributions = find.byKey(const Key('github-contributions'));
+        final accountSection = find.byKey(const Key('github-accounts-section'));
+        expect(contributions, findsOneWidget);
+        expect(accountSection, findsOneWidget);
+        expect(find.byKey(const Key('github-profile-link')), findsOneWidget);
+        expect(
+          tester.getTopLeft(contributions).dy,
+          greaterThan(tester.getBottomLeft(markdown).dy),
+        );
+        expect(
+          tester.getTopLeft(accountSection).dy,
+          greaterThan(tester.getBottomLeft(contributions).dy),
+        );
+        expect(launcher.launched, isEmpty);
+        var previousCard = contributions;
+        for (final account in accounts.entries) {
+          final card = find.byKey(Key('github-account-${account.key}'));
+          expect(card, findsOneWidget);
+          expect(
+            find.descendant(of: card, matching: find.text(account.value)),
+            findsOneWidget,
+          );
+          expect(
+            tester.getTopLeft(card).dy,
+            greaterThan(tester.getBottomLeft(previousCard).dy),
+          );
+          final avatar = find.descendant(
+            of: card,
+            matching: find.byType(Image),
+          );
+          expect(avatar, findsOneWidget);
+          expect(tester.widget<Image>(avatar).image, isA<AssetImage>());
+          expect(
+            (tester.widget<Image>(avatar).image as AssetImage).assetName,
+            'assets/github-profile/${account.key}-avatar.png',
+          );
+          previousCard = card;
+          await _tapGithubAccount(tester, account.key);
+        }
+        expect(launcher.launched, <Uri>[
+          Uri.parse(portfolioData.identity.githubUrl),
+          Uri.parse('https://github.com/sukenell'),
+          Uri.parse('https://github.com/sunelll'),
+        ]);
+        expect(find.byKey(const Key('github-launch-feedback')), findsNothing);
+        expect(tester.takeException(), isNull);
+      },
+    );
 
-    testWidgets('GitHub hides the repository section when no repos exist', (
+    testWidgets('GitHub ignores populated legacy repository data', (
       tester,
     ) async {
-      final launcher = _FakeExternalLauncher();
       await _pumpApp(
         tester,
         appId: PortfolioAppId.github,
-        launcher: launcher,
-        data: _dataWithRepositories(const <PortfolioRepository>[]),
+        launcher: _FakeExternalLauncher(),
+        data: _dataWithRepositories(const <PortfolioRepository>[
+          PortfolioRepository(
+            name: 'private_repo',
+            description: 'Private project details',
+            language: 'Dart',
+            url: 'https://github.com/hesu-dev/private_repo',
+          ),
+        ]),
         size: const Size(390, 700),
         compact: true,
       );
-
-      expect(find.text('Repositories'), findsNothing);
+      expect(find.byKey(const Key('github-accounts-section')), findsOneWidget);
+      expect(find.byKey(const Key('github-contributions')), findsOneWidget);
+      expect(find.text('private_repo'), findsNothing);
+      expect(find.text('Private project details'), findsNothing);
+      expect(
+        find.text('https://github.com/hesu-dev/private_repo'),
+        findsNothing,
+      );
       expect(
         find.byKey(const Key('github-repositories-section')),
         findsNothing,
@@ -1511,37 +1599,31 @@ void main() {
       expect(tester.takeException(), isNull);
     });
 
-    testWidgets('GitHub reports malformed repository links as launch failure', (
-      tester,
-    ) async {
-      final launcher = _FakeExternalLauncher();
-      const malformedRepository = PortfolioRepository(
-        name: 'broken_repository',
-        description: 'Malformed URL fixture',
-        language: 'Dart',
-        url: 'https://github.com:abc/broken_repository',
-      );
-      await _pumpApp(
-        tester,
-        appId: PortfolioAppId.github,
-        launcher: launcher,
-        data: _dataWithRepositories(const <PortfolioRepository>[
-          malformedRepository,
-        ]),
-        size: const Size(390, 700),
-        compact: true,
-      );
-
-      final card = find.byKey(const Key('github-repository-broken_repository'));
-      await tester.ensureVisible(card);
-      await tester.tap(card);
-      await tester.pumpAndSettle();
-
-      expect(launcher.launched, isEmpty);
-      expect(find.byKey(const Key('github-launch-feedback')), findsOneWidget);
-      expect(find.text('GitHub 링크를 열 수 없습니다.'), findsOneWidget);
-      expect(tester.takeException(), isNull);
-    });
+    testWidgets(
+      'GitHub routes Markdown links through the launcher and reports malformed links',
+      (tester) async {
+        final launcher = _FakeExternalLauncher();
+        await _pumpApp(
+          tester,
+          appId: PortfolioAppId.github,
+          launcher: launcher,
+          size: const Size(390, 700),
+          compact: true,
+        );
+        await tester.pumpAndSettle();
+        final markdown = tester.widget<MarkdownBody>(find.byType(MarkdownBody));
+        markdown.onTapLink!('Documentation', 'https://example.com/docs', '');
+        await tester.pumpAndSettle();
+        expect(launcher.launched, <Uri>[Uri.parse('https://example.com/docs')]);
+        expect(find.byKey(const Key('github-launch-feedback')), findsNothing);
+        markdown.onTapLink!('broken', 'https://github.com:abc/broken', '');
+        await tester.pumpAndSettle();
+        expect(launcher.launched, hasLength(1));
+        expect(find.byKey(const Key('github-launch-feedback')), findsOneWidget);
+        expect(find.text('GitHub 링크를 열 수 없습니다.'), findsOneWidget);
+        expect(tester.takeException(), isNull);
+      },
+    );
 
     testWidgets('Mail composes subject and body into a mailto launch', (
       tester,
@@ -1579,8 +1661,8 @@ void main() {
       expect(mail.toString(), contains('%26'));
       expect(mail.toString(), contains('%0A'));
       expect(mail.toString(), isNot(contains('+')));
-      expect(find.byKey(const Key('mail-launch-feedback')), findsOneWidget);
-      expect(find.text('Mail 앱을 열었습니다.'), findsOneWidget);
+      expect(find.byKey(const Key('mail-launch-feedback')), findsNothing);
+      expect(find.text('Mail 앱을 열었습니다.'), findsNothing);
       expect(tester.takeException(), isNull);
     });
 
@@ -1616,19 +1698,19 @@ void main() {
         compact: true,
       );
 
-      await tester.tap(find.byKey(const Key('github-external-action')));
-      await tester.pump();
-      await tester.tap(find.byKey(const Key('github-external-action')));
-      await tester.pump();
+      await _tapGithubAccount(tester, 'hesu-dev');
+      await _tapGithubAccount(tester, 'hesu-dev');
       expect(launcher.requests, hasLength(2));
 
       launcher.complete(1, true);
       await tester.pumpAndSettle();
-      expect(find.text('GitHub 앱을 열었습니다.'), findsOneWidget);
+      expect(find.text('GitHub 앱을 열었습니다.'), findsNothing);
+      expect(find.byKey(const Key('github-launch-feedback')), findsNothing);
 
       launcher.complete(0, false);
       await tester.pumpAndSettle();
-      expect(find.text('GitHub 앱을 열었습니다.'), findsOneWidget);
+      expect(find.text('GitHub 앱을 열었습니다.'), findsNothing);
+      expect(find.byKey(const Key('github-launch-feedback')), findsNothing);
       expect(find.textContaining('GitHub 링크를 열 수 없습니다'), findsNothing);
       expect(tester.takeException(), isNull);
     });
@@ -1644,9 +1726,10 @@ void main() {
           size: const Size(360, 600),
         );
 
-        await tester.tap(find.byKey(const Key('github-external-action')));
-        await tester.pump();
-        expect(launcher.requests, <Uri>[Uri.parse(portfolioData.githubUrl)]);
+        await _tapGithubAccount(tester, 'hesu-dev');
+        expect(launcher.requests, <Uri>[
+          Uri.parse(portfolioData.identity.githubUrl),
+        ]);
 
         final updatedData = _dataWithGithubUrl(
           'https://github.com/hesu-updated/',
@@ -1737,6 +1820,23 @@ class _ControlledExternalLauncher implements ExternalLauncher {
   }
 }
 
+Future<void> _tapGithubAccount(WidgetTester tester, String account) async {
+  final card = find.byKey(Key('github-account-$account'));
+  await tester.scrollUntilVisible(
+    card,
+    250,
+    scrollable: find
+        .descendant(
+          of: find.byKey(const Key('github-app-scroll')),
+          matching: find.byType(Scrollable),
+        )
+        .first,
+  );
+  await tester.pumpAndSettle();
+  await tester.tap(card);
+  await tester.pumpAndSettle();
+}
+
 Future<void> _pumpApp(
   WidgetTester tester, {
   required PortfolioAppId appId,
@@ -1749,6 +1849,9 @@ Future<void> _pumpApp(
   Brightness brightness = Brightness.light,
   TextScaler textScaler = TextScaler.noScaling,
 }) async {
+  if (appId == PortfolioAppId.github) {
+    rootBundle.evict('assets/github-profile/README.md');
+  }
   final themeController = PortfolioThemeController(
     initial: brightness == Brightness.dark
         ? PortfolioThemePreference.dark
@@ -1786,6 +1889,11 @@ Future<void> _pumpApp(
       ),
     ),
   );
+  if (appId == PortfolioAppId.github) {
+    await tester.runAsync(() async {
+      await rootBundle.loadString('assets/github-profile/README.md');
+    });
+  }
   await tester.pump();
 }
 

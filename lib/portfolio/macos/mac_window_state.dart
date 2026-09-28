@@ -47,7 +47,8 @@ class MacWindowState {
     final settings = appId == PortfolioAppId.settings;
     final width = settings
         ? (workArea.width * 0.72).clamp(680.0, 820.0)
-        : (workArea.width * 0.76).clamp(620.0, 860.0);
+        : (workArea.width * 0.76).clamp(620.0, 860.0) *
+              (appId == PortfolioAppId.safari ? 1.6 : 1.0);
     final height = settings
         ? (workArea.height * 0.9).clamp(480.0, 600.0)
         : (workArea.height * 0.86).clamp(420.0, 620.0);

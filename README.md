@@ -25,6 +25,19 @@ flutter pub get
 flutter run -d chrome
 ```
 
+Git 화면의 기여 달력은 `hesu-dev`의 GitHub GraphQL 원본을 날짜별 횟수와
+색상으로 저장한 스냅샷입니다. 비공개 기여까지 포함하려면 `hesu-dev`로 로그인한
+GitHub CLI에 `read:user` 권한이 필요합니다.
+
+```bash
+gh auth refresh -h github.com -s read:user
+dart run tool/refresh_github_contributions.dart
+```
+
+인증 정보나 저장소 상세는 웹 빌드에 포함되지 않습니다. 화면에 마지막 갱신일을
+표시하며, `tool/build_web.dart`도 빌드 전에 갱신을 시도합니다. 인증 또는 네트워크를
+사용할 수 없는 빌드 환경에서는 기존 스냅샷을 유지합니다.
+
 ## 검증하기
 
 ```bash

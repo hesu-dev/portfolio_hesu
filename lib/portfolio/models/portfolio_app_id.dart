@@ -4,6 +4,7 @@ enum PortfolioAppId {
   introduction,
   skills,
   projects,
+  safari,
   terminal,
   music,
   photos,
@@ -17,13 +18,14 @@ enum PortfolioAppId {
 /// Apps exposed through macOS launch surfaces.
 ///
 /// [PortfolioAppId.thisMac] remains only as an internal legacy route for shared
-/// component coverage. Launchers and the system menu use
-/// [PortfolioAppId.projects] as the single public project entry point.
+/// component coverage. [PortfolioAppId.projects] opens the project collection,
+/// while [PortfolioAppId.safari] provides the browser presentation.
 const List<PortfolioAppId> portfolioLauncherAppIds = <PortfolioAppId>[
   PortfolioAppId.about,
   PortfolioAppId.introduction,
   PortfolioAppId.skills,
   PortfolioAppId.projects,
+  PortfolioAppId.safari,
   PortfolioAppId.terminal,
   PortfolioAppId.music,
   PortfolioAppId.github,
@@ -41,6 +43,7 @@ const List<PortfolioAppId> portfolioMacDesktopLauncherAppIds = <PortfolioAppId>[
   PortfolioAppId.introduction,
   PortfolioAppId.skills,
   PortfolioAppId.projects,
+  PortfolioAppId.safari,
   PortfolioAppId.terminal,
   PortfolioAppId.music,
   PortfolioAppId.github,
@@ -57,6 +60,7 @@ const List<PortfolioAppId> portfolioMobileLauncherAppIds = <PortfolioAppId>[
   PortfolioAppId.introduction,
   PortfolioAppId.skills,
   PortfolioAppId.projects,
+  PortfolioAppId.safari,
   PortfolioAppId.terminal,
   PortfolioAppId.music,
   PortfolioAppId.photos,
@@ -71,6 +75,7 @@ const List<PortfolioAppId> portfolioDockAppIds = <PortfolioAppId>[
   PortfolioAppId.introduction,
   PortfolioAppId.skills,
   PortfolioAppId.projects,
+  PortfolioAppId.safari,
   PortfolioAppId.terminal,
   PortfolioAppId.music,
   PortfolioAppId.github,

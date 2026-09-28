@@ -18,6 +18,7 @@ void main() {
       'introduction',
       'skills',
       'projects',
+      'safari',
       'terminal',
       'music',
       'github',
@@ -30,6 +31,7 @@ void main() {
       'introduction',
       'skills',
       'projects',
+      'safari',
       'terminal',
       'music',
       'photos',
@@ -45,6 +47,7 @@ void main() {
         'introduction',
         'skills',
         'projects',
+        'safari',
         'terminal',
         'music',
         'github',
@@ -57,6 +60,7 @@ void main() {
       'introduction',
       'skills',
       'projects',
+      'safari',
       'terminal',
       'music',
       'github',
@@ -101,38 +105,50 @@ void main() {
     },
   );
 
-  testWidgets(
-    'desktop shows the 포트폴리오 launcher without the duplicate project app',
-    (tester) async {
-      tester.view.devicePixelRatio = 1;
-      tester.view.physicalSize = const Size(1440, 900);
-      addTearDown(tester.view.resetDevicePixelRatio);
-      addTearDown(tester.view.resetPhysicalSize);
+  testWidgets('desktop distinguishes Finder 포트폴리오 from Safari 프로젝트', (
+    tester,
+  ) async {
+    tester.view.devicePixelRatio = 1;
+    tester.view.physicalSize = const Size(1440, 900);
+    addTearDown(tester.view.resetDevicePixelRatio);
+    addTearDown(tester.view.resetPhysicalSize);
 
-      final themeController = PortfolioThemeController();
-      addTearDown(themeController.dispose);
-      await tester.pumpWidget(
-        MaterialApp(
-          home: MacDesktop(
-            data: portfolioData,
-            externalLauncher: const _FakeLauncher(),
-            themeController: themeController,
-            musicController: createTestMusicController(),
-          ),
+    final themeController = PortfolioThemeController();
+    addTearDown(themeController.dispose);
+    await tester.pumpWidget(
+      MaterialApp(
+        home: MacDesktop(
+          data: portfolioData,
+          externalLauncher: const _FakeLauncher(),
+          themeController: themeController,
+          musicController: createTestMusicController(),
         ),
-      );
-      await tester.pump();
+      ),
+    );
+    await tester.pump();
 
-      expect(find.byKey(const Key('desktop-app-projects')), findsOneWidget);
-      expect(find.byKey(const Key('desktop-app-music')), findsOneWidget);
-      expect(find.byKey(const Key('desktop-app-thisMac')), findsNothing);
-      expect(find.byKey(const Key('desktop-app-trash')), findsNothing);
-      expect(find.byKey(const Key('dock-app-trash')), findsOneWidget);
-      expect(find.text('포트폴리오'), findsOneWidget);
-      expect(find.text('Projects'), findsNothing);
-      expect(find.text('프로젝트'), findsNothing);
-    },
-  );
+    expect(find.byKey(const Key('desktop-app-projects')), findsOneWidget);
+    expect(find.byKey(const Key('desktop-app-safari')), findsOneWidget);
+    expect(find.byKey(const Key('desktop-app-music')), findsOneWidget);
+    expect(find.byKey(const Key('desktop-app-thisMac')), findsNothing);
+    expect(find.byKey(const Key('desktop-app-trash')), findsNothing);
+    expect(find.byKey(const Key('dock-app-trash')), findsOneWidget);
+    expect(
+      find.descendant(
+        of: find.byKey(const Key('desktop-app-projects')),
+        matching: find.text('포트폴리오'),
+      ),
+      findsOneWidget,
+    );
+    expect(find.text('Projects'), findsNothing);
+    expect(
+      find.descendant(
+        of: find.byKey(const Key('desktop-app-safari')),
+        matching: find.text('프로젝트'),
+      ),
+      findsOneWidget,
+    );
+  });
 }
 
 final class _FakeLauncher implements ExternalLauncher {

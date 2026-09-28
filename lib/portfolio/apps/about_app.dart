@@ -254,7 +254,6 @@ class _EducationCard extends StatefulWidget {
 class _EducationCardState extends State<_EducationCard> {
   int _launchRequestGeneration = 0;
   String? _feedback;
-  bool _launchSucceeded = false;
 
   @override
   void didUpdateWidget(covariant _EducationCard oldWidget) {
@@ -278,10 +277,7 @@ class _EducationCardState extends State<_EducationCard> {
       return;
     }
     setState(() {
-      _launchSucceeded = succeeded;
-      _feedback = succeeded
-          ? '${link.label} 링크를 열었습니다.'
-          : '${link.label} 링크를 열 수 없습니다.';
+      _feedback = succeeded ? null : '${link.label} 링크를 열 수 없습니다.';
     });
   }
 
@@ -322,7 +318,6 @@ class _EducationCardState extends State<_EducationCard> {
               AppleFeedbackBanner(
                 key: const Key('about-link-feedback'),
                 message: message,
-                success: _launchSucceeded,
               ),
             ],
           ],

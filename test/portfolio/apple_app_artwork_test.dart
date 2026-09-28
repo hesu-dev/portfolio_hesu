@@ -681,6 +681,7 @@ const List<PortfolioAppId> _bespokeApps = <PortfolioAppId>[
   PortfolioAppId.about,
   PortfolioAppId.skills,
   PortfolioAppId.projects,
+  PortfolioAppId.safari,
   PortfolioAppId.terminal,
   PortfolioAppId.music,
   PortfolioAppId.photos,

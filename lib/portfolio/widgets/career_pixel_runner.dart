@@ -714,7 +714,6 @@ class _CareerPixelRunnerPainter extends CustomPainter {
   void _drawOverlayScrims(Canvas canvas, double width) {
     _rect(canvas, 0, 0, width, 14, const Color(0x3A000000));
     _rect(canvas, 0, 14, width, 14, const Color(0x18000000));
-    _rect(canvas, width - 34, 34, 34, 72, const Color(0x22000000));
     _rect(canvas, 0, 72, width, 18, const Color(0x16000000));
     _rect(canvas, 0, 90, width, 18, const Color(0x30000000));
     _rect(canvas, 0, 108, width, 18, const Color(0x52000000));

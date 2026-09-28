@@ -449,22 +449,39 @@ void main() {
       }
     });
 
-    testWidgets('opens GitHub externally only after its explicit action', (
+    testWidgets('opens GitHub externally only after tapping an account card', (
       tester,
     ) async {
       final launcher = _RecordingLauncher();
       await _pumpShell(tester, size: const Size(390, 844), launcher: launcher);
 
+      rootBundle.evict('assets/github-profile/README.md');
       await tester.tap(find.byKey(const Key('home-app-github')));
+      await tester.runAsync(() async {
+        await rootBundle.loadString('assets/github-profile/README.md');
+      });
       await tester.pumpAndSettle();
 
       expect(find.byKey(const Key('github-app')), findsOneWidget);
       expect(launcher.uris, isEmpty);
+      expect(find.byKey(const Key('github-external-action')), findsNothing);
 
-      await tester.tap(find.byKey(const Key('github-external-action')));
+      final account = find.byKey(const Key('github-account-hesu-dev'));
+      await tester.scrollUntilVisible(
+        account,
+        250,
+        scrollable: find
+            .descendant(
+              of: find.byKey(const Key('github-app-scroll')),
+              matching: find.byType(Scrollable),
+            )
+            .first,
+      );
+      await tester.pumpAndSettle();
+      await tester.tap(account);
       await tester.pumpAndSettle();
 
-      expect(launcher.uris, <Uri>[Uri.parse(portfolioData.githubUrl)]);
+      expect(launcher.uris, <Uri>[Uri.parse(portfolioData.identity.githubUrl)]);
     });
 
     testWidgets(
@@ -702,11 +719,11 @@ void main() {
         );
         expect(find.byKey(const Key('projects-detail-scroll')), findsNothing);
         expect(find.byKey(const Key('project-detail-title')), findsNothing);
-        for (final index in const <int>[2, 3, 4, 5]) {
+        for (final index in const <int>[2, 3, 4, 5, 6, 7]) {
           expect(find.byKey(Key('project-selector-$index')), findsOneWidget);
         }
 
-        await tester.tap(find.byKey(const Key('project-selector-3')));
+        await tester.tap(find.byKey(const Key('project-selector-5')));
         await tester.pumpAndSettle();
         expect(
           find.byKey(const Key('projects-collection-scroll')),
@@ -898,6 +915,7 @@ const List<String> _allAppNames = <String>[
   'introduction',
   'skills',
   'projects',
+  'safari',
   'terminal',
   'music',
   'photos',

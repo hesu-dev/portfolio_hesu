@@ -12,6 +12,7 @@ import 'music_app.dart';
 import 'photos_app.dart';
 import 'profile_app.dart';
 import 'projects_app.dart';
+import 'safari_app.dart';
 import 'settings_app.dart';
 import 'skills_app.dart';
 import 'system_apps.dart';
@@ -88,6 +89,13 @@ class PortfolioAppContent extends StatelessWidget {
         tablet: tablet,
         finderWindowChrome: finderWindowChrome,
         onOpenApp: onOpenApp,
+      ),
+      PortfolioAppId.safari => SafariApp(
+        data: data,
+        launcher: launcher,
+        compact: compact,
+        tablet: tablet,
+        windowChrome: finderWindowChrome,
       ),
       PortfolioAppId.terminal => TerminalApp(
         data: data,

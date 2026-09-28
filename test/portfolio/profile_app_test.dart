@@ -8,6 +8,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter/rendering.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_test/flutter_test.dart';
+import 'package:flutter_svg/flutter_svg.dart';
 import 'package:portfolio_hesu/portfolio/apps/profile_app.dart';
 import 'package:portfolio_hesu/portfolio/data/portfolio_data.dart';
 import 'package:portfolio_hesu/portfolio/mobile/apple_mobile_shell.dart';
@@ -1336,6 +1337,12 @@ void main() {
 
       final secondFrame = await _renderedBytes(tester, runner);
       expect(secondFrame, equals(firstFrame));
+      // Asset decoding can schedule one frame during the asynchronous capture.
+      await tester.pumpAndSettle(
+        const Duration(milliseconds: 100),
+        EnginePhase.sendSemanticsUpdate,
+        const Duration(seconds: 1),
+      );
       expect(
         tester.binding.hasScheduledFrame,
         isFalse,
@@ -1496,6 +1503,8 @@ void main() {
           const Key('profile-history-post-education'),
         );
         expect(grid, findsOneWidget, reason: scenario.$1);
+        _expectAvatarArtwork(tester, find.byKey(const Key('profile-avatar')));
+        expect(find.text(data.monogram), findsNothing);
         for (final post in <Finder>[experiencePost, educationPost]) {
           await _ensureCardBuilt(tester, post);
           expect(find.descendant(of: grid, matching: post), findsOneWidget);
@@ -1505,6 +1514,18 @@ void main() {
             postRect.width,
             closeTo(postRect.height, 0.5),
             reason: scenario.$1,
+          );
+        }
+        for (final entry in <(Finder, String)>[
+          (experiencePost, 'career'),
+          (educationPost, 'education'),
+        ]) {
+          final artwork = tester.widget<SvgPicture>(
+            find.descendant(of: entry.$1, matching: find.byType(SvgPicture)),
+          );
+          expect(
+            (artwork.bytesLoader as SvgAssetLoader).assetName,
+            'assets/illustrations/profile/${entry.$2}.svg',
           );
         }
         expect(
@@ -1520,23 +1541,23 @@ void main() {
         _expectButtonSemantics(tester, educationPost, label: '교육 게시물 열기');
         expect(
           find.descendant(of: experiencePost, matching: find.text('경력')),
-          findsWidgets,
+          findsOneWidget,
         );
         expect(
           find.descendant(
             of: experiencePost,
-            matching: find.text('경력 ${data.experiences.length}개'),
+            matching: find.text('${data.experiences.length}개'),
           ),
           findsOneWidget,
         );
         expect(
           find.descendant(of: educationPost, matching: find.text('교육')),
-          findsWidgets,
+          findsOneWidget,
         );
         expect(
           find.descendant(
             of: educationPost,
-            matching: find.text('교육 ${data.education.length}개'),
+            matching: find.text('${data.education.length}개'),
           ),
           findsOneWidget,
         );
@@ -1773,11 +1794,7 @@ void main() {
 
         final mediaColor = tester.widget<ColoredBox>(mediaSlot).color;
         const foreground = Colors.white;
-        if (brightness == Brightness.light) {
-          expect(mediaColor.computeLuminance(), greaterThan(0.7));
-        } else {
-          expect(mediaColor.computeLuminance(), lessThan(0.2));
-        }
+        expect(mediaColor, Colors.transparent);
 
         final overlayText = <Text>[
           ...find
@@ -1802,6 +1819,27 @@ void main() {
         expect(actionIcons, hasLength(3));
         for (final icon in actionIcons) {
           expect(icon.color, foreground);
+          expect(icon.shadows, isNotEmpty);
+        }
+        for (final element
+            in find
+                .descendant(of: actionRail, matching: find.byType(IconButton))
+                .evaluate()) {
+          final action = element.widget as IconButton;
+          for (final states in <Set<WidgetState>>[
+            <WidgetState>{},
+            <WidgetState>{WidgetState.hovered},
+            <WidgetState>{WidgetState.pressed},
+          ]) {
+            expect(
+              action.style!.backgroundColor!.resolve(states),
+              Colors.transparent,
+            );
+            expect(
+              action.style!.overlayColor!.resolve(states),
+              Colors.transparent,
+            );
+          }
         }
         final cameraIcon = tester.widget<Icon>(
           find.descendant(of: topBar, matching: find.byType(Icon)),
@@ -1813,6 +1851,10 @@ void main() {
         );
         final avatarDecoration = avatar.decoration! as BoxDecoration;
         expect(avatarDecoration.border!.top.color, foreground);
+        _expectAvatarArtwork(
+          tester,
+          find.byKey(const Key('profile-reel-avatar')),
+        );
 
         final likeAction = find.byKey(const Key('profile-reel-like-action'));
         await tester.tap(likeAction);
@@ -2452,7 +2494,6 @@ void main() {
               .whereType<String>()
               .toList();
           expect(infoText, <String>[
-            data.monogram,
             data.identity.name,
             history.sectionTitle,
           ], reason: '${scenario.$1} ${history.kind} overlay');
@@ -3471,6 +3512,16 @@ bool _isSpriteLeakPixel(int red, int green, int blue) =>
     (red >= 45 && red > green * 1.55 && red > blue * 1.35) ||
     (blue >= 25 && blue > green * 1.30 && green > red * 1.15);
 
+void _expectAvatarArtwork(WidgetTester tester, Finder container) {
+  final artwork = tester.widget<SvgPicture>(
+    find.descendant(of: container, matching: find.byType(SvgPicture)),
+  );
+  expect(
+    (artwork.bytesLoader as SvgAssetLoader).assetName,
+    'assets/illustrations/profile/avatar.svg',
+  );
+}
+
 void _expectReplyItem(
   WidgetTester tester, {
   required Finder thread,
@@ -3483,6 +3534,7 @@ void _expectReplyItem(
   final author = find.byKey(Key('profile-reel-reply-author-$kind-$index'));
   final content = find.byKey(Key('profile-reel-reply-content-$kind-$index'));
   expect(find.descendant(of: thread, matching: item), findsOneWidget);
+  _expectAvatarArtwork(tester, item);
   expect(find.descendant(of: item, matching: author), findsOneWidget);
   expect(find.descendant(of: item, matching: content), findsOneWidget);
   expect(

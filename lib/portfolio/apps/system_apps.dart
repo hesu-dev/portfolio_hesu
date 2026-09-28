@@ -1,10 +1,13 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
+import 'package:flutter_markdown_plus/flutter_markdown_plus.dart';
 
 import '../data/portfolio_data.dart';
 import '../services/external_launcher.dart';
 import '../theme/apple_theme.dart';
 import '../widgets/apple_finder_scaffold.dart';
+import '../widgets/github_contributions.dart';
+import '../widgets/project_app_icon.dart';
 
 class ThisMacApp extends StatefulWidget {
   const ThisMacApp({
@@ -148,6 +151,7 @@ class _ProjectHubFolderList extends StatelessWidget {
                               key: Key('project-hub-folder-${entry.$1}'),
                               label: entry.$2.title,
                               semanticsLabel: '${entry.$2.title} 열기',
+                              imageAsset: entry.$2.appIconAsset,
                               compact: compact,
                               onPressed: () => onOpenProject(entry.$1),
                             ),
@@ -187,11 +191,17 @@ class _ProjectHubDetail extends StatelessWidget {
                 Row(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: <Widget>[
-                    Icon(
-                      Icons.folder_open_rounded,
-                      size: compact ? 48 : 58,
-                      color: const Color(0xFF55B8F5),
-                    ),
+                    if (project.appIconAsset case final assetPath?)
+                      ProjectAppIcon(
+                        assetPath: assetPath,
+                        size: compact ? 48 : 58,
+                      )
+                    else
+                      Icon(
+                        Icons.folder_open_rounded,
+                        size: compact ? 48 : 58,
+                        color: const Color(0xFF55B8F5),
+                      ),
                     const SizedBox(width: 14),
                     Expanded(
                       child: Text(
@@ -204,15 +214,17 @@ class _ProjectHubDetail extends StatelessWidget {
                     ),
                   ],
                 ),
-                const SizedBox(height: 14),
-                Align(
-                  alignment: Alignment.centerLeft,
-                  child: ApplePill(
-                    label: project.period,
-                    icon: Icons.calendar_month_rounded,
-                    color: AppleTheme.indigo,
+                if (project.period.trim().isNotEmpty) ...<Widget>[
+                  const SizedBox(height: 14),
+                  Align(
+                    alignment: Alignment.centerLeft,
+                    child: ApplePill(
+                      label: project.period,
+                      icon: Icons.calendar_month_rounded,
+                      color: AppleTheme.indigo,
+                    ),
                   ),
-                ),
+                ],
                 SizedBox(height: compact ? 18 : 24),
                 AppleSurfaceCard(
                   radius: 17,
@@ -513,6 +525,26 @@ class _TrashConfirmationDialog extends StatelessWidget {
   }
 }
 
+const _githubProfile = (
+  username: 'hesu-dev',
+  name: 'sunell_dev',
+  avatarAsset: 'assets/github-profile/hesu-dev-avatar.png',
+);
+
+const _githubAccounts = [
+  _githubProfile,
+  (
+    username: 'sukenell',
+    name: 'sukenell',
+    avatarAsset: 'assets/github-profile/sukenell-avatar.png',
+  ),
+  (
+    username: 'sunelll',
+    name: 'sunell',
+    avatarAsset: 'assets/github-profile/sunelll-avatar.png',
+  ),
+];
+
 class GitHubApp extends StatelessWidget {
   const GitHubApp({
     required this.data,
@@ -532,17 +564,9 @@ class GitHubApp extends StatelessWidget {
     return _ExternalProfilePage(
       rootKey: 'github-app',
       feedbackKey: 'github-launch-feedback',
-      actionKey: 'github-external-action',
-      title: 'GitHub',
-      subtitle: 'Developer profile',
-      actionLabel: 'Open GitHub profile',
       destinationLabel: 'GitHub',
       uri: Uri.parse(data.githubUrl),
-      data: data,
-      repositories: data.repositories,
       launcher: launcher,
-      icon: Icons.code_rounded,
-      colors: const <Color>[Color(0xFF50535A), Color(0xFF15161A)],
       compact: compact,
       tablet: tablet,
     );
@@ -581,7 +605,6 @@ class _MailAppState extends State<MailApp> {
   final TextEditingController _bodyController = TextEditingController();
   int _launchRequestGeneration = 0;
   String? _feedback;
-  bool _succeeded = false;
 
   @override
   void didUpdateWidget(covariant MailApp oldWidget) {
@@ -629,8 +652,7 @@ class _MailAppState extends State<MailApp> {
       return;
     }
     setState(() {
-      _succeeded = succeeded;
-      _feedback = succeeded ? 'Mail 앱을 열었습니다.' : 'Mail 링크를 열 수 없습니다.';
+      _feedback = succeeded ? null : 'Mail 링크를 열 수 없습니다.';
     });
   }
 
@@ -746,7 +768,7 @@ class _MailAppState extends State<MailApp> {
                     AppleFeedbackBanner(
                       key: const Key('mail-launch-feedback'),
                       message: message,
-                      success: _succeeded,
+                      success: false,
                     ),
                   ],
                 ],
@@ -763,34 +785,18 @@ class _ExternalProfilePage extends StatefulWidget {
   const _ExternalProfilePage({
     required this.rootKey,
     required this.feedbackKey,
-    required this.actionKey,
-    required this.title,
-    required this.subtitle,
-    required this.actionLabel,
     required this.destinationLabel,
     required this.uri,
-    required this.data,
-    this.repositories = const <PortfolioRepository>[],
     required this.launcher,
-    required this.icon,
-    required this.colors,
     required this.compact,
     required this.tablet,
   });
 
   final String rootKey;
   final String feedbackKey;
-  final String actionKey;
-  final String title;
-  final String subtitle;
-  final String actionLabel;
   final String destinationLabel;
   final Uri uri;
-  final PortfolioData data;
-  final List<PortfolioRepository> repositories;
   final ExternalLauncher launcher;
-  final IconData icon;
-  final List<Color> colors;
   final bool compact;
   final bool tablet;
 
@@ -799,15 +805,16 @@ class _ExternalProfilePage extends StatefulWidget {
 }
 
 class _ExternalProfilePageState extends State<_ExternalProfilePage> {
+  late final Future<String> _readme = rootBundle.loadString(
+    'assets/github-profile/README.md',
+  );
   int _launchRequestGeneration = 0;
   String? _feedback;
-  bool _succeeded = false;
 
   @override
   void didUpdateWidget(covariant _ExternalProfilePage oldWidget) {
     super.didUpdateWidget(oldWidget);
     if (oldWidget.uri != widget.uri ||
-        oldWidget.repositories != widget.repositories ||
         !identical(oldWidget.launcher, widget.launcher)) {
       _launchRequestGeneration++;
       _feedback = null;
@@ -829,10 +836,7 @@ class _ExternalProfilePageState extends State<_ExternalProfilePage> {
       return;
     }
     setState(() {
-      _succeeded = succeeded;
-      _feedback = succeeded
-          ? '${widget.destinationLabel} 앱을 열었습니다.'
-          : '${widget.destinationLabel} 링크를 열 수 없습니다.';
+      _feedback = succeeded ? null : '${widget.destinationLabel} 링크를 열 수 없습니다.';
     });
   }
 
@@ -847,69 +851,96 @@ class _ExternalProfilePageState extends State<_ExternalProfilePage> {
         children: <Widget>[
           Center(
             child: ConstrainedBox(
-              constraints: const BoxConstraints(maxWidth: 620),
+              constraints: const BoxConstraints(maxWidth: 900),
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.stretch,
                 children: <Widget>[
                   AppleSurfaceCard(
+                    key: const Key('github-profile-card'),
                     padding: EdgeInsets.all(widget.compact ? 20 : 28),
                     child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.stretch,
                       children: <Widget>[
-                        Container(
-                          width: widget.compact ? 76 : 92,
-                          height: widget.compact ? 76 : 92,
-                          decoration: BoxDecoration(
-                            gradient: LinearGradient(
-                              begin: Alignment.topLeft,
-                              end: Alignment.bottomRight,
-                              colors: widget.colors,
-                            ),
-                            borderRadius: BorderRadius.circular(
-                              widget.compact ? 22 : 27,
-                            ),
-                            boxShadow: <BoxShadow>[
-                              BoxShadow(
-                                color: widget.colors.last.withValues(
-                                  alpha: 0.25,
+                        Semantics(
+                          link: true,
+                          child: InkWell(
+                            key: const Key('github-profile-link'),
+                            onTap: () => _launch(),
+                            borderRadius: BorderRadius.circular(10),
+                            child: Row(
+                              children: <Widget>[
+                                _GitHubAvatar(
+                                  asset: _githubProfile.avatarAsset,
+                                  size: 56,
                                 ),
-                                blurRadius: 24,
-                                offset: const Offset(0, 10),
-                              ),
-                            ],
+                                const SizedBox(width: 14),
+                                Expanded(
+                                  child: Column(
+                                    crossAxisAlignment:
+                                        CrossAxisAlignment.start,
+                                    children: <Widget>[
+                                      Text(
+                                        _githubProfile.name,
+                                        style: AppleTheme.title(context),
+                                      ),
+                                      const SizedBox(height: 4),
+                                      Text(
+                                        _githubProfile.username,
+                                        style: AppleTheme.caption(context),
+                                      ),
+                                    ],
+                                  ),
+                                ),
+                              ],
+                            ),
                           ),
-                          child: Icon(
-                            widget.icon,
-                            color: Colors.white,
-                            size: widget.compact ? 36 : 42,
-                          ),
-                        ),
-                        const SizedBox(height: 18),
-                        Text(
-                          widget.data.identity.englishName,
-                          textAlign: TextAlign.center,
-                          style: Theme.of(context).textTheme.headlineSmall,
-                        ),
-                        const SizedBox(height: 5),
-                        Text(
-                          widget.title == 'Mail'
-                              ? widget.data.identity.email
-                              : widget.data.identity.headline,
-                          textAlign: TextAlign.center,
-                          style: AppleTheme.body(
-                            context,
-                          ).copyWith(color: AppleTheme.secondaryLabel(context)),
                         ),
                         const SizedBox(height: 20),
-                        FilledButton.icon(
-                          key: Key(widget.actionKey),
-                          onPressed: () => _launch(),
-                          icon: Icon(
-                            widget.title == 'Mail'
-                                ? Icons.edit_rounded
-                                : Icons.open_in_new_rounded,
-                            size: 18,
-                          ),
-                          label: Text(widget.actionLabel),
+                        FutureBuilder<String>(
+                          future: _readme,
+                          builder: (context, snapshot) {
+                            if (snapshot.hasError) {
+                              return const Text('프로필을 불러올 수 없습니다.');
+                            }
+                            if (!snapshot.hasData) {
+                              return const Text('프로필을 불러오는 중입니다.');
+                            }
+                            return MarkdownBody(
+                              key: const Key('github-profile-markdown'),
+                              data: snapshot.data!,
+                              styleSheet:
+                                  MarkdownStyleSheet.fromTheme(
+                                    Theme.of(context),
+                                  ).copyWith(
+                                    p: AppleTheme.body(context),
+                                    a: AppleTheme.body(context).copyWith(
+                                      color: AppleTheme.blue,
+                                      decoration: TextDecoration.underline,
+                                    ),
+                                  ),
+                              imageBuilder: (uri, title, alt) {
+                                final image = Image.asset(
+                                  uri.path,
+                                  height: alt == 'header' ? null : 28,
+                                  fit: BoxFit.contain,
+                                  semanticLabel: alt == 'header'
+                                      ? '반갑습니다! 👋'
+                                      : alt,
+                                );
+                                return alt == 'header'
+                                    ? AspectRatio(
+                                        aspectRatio: 854 / 300,
+                                        child: image,
+                                      )
+                                    : image;
+                              },
+                              onTapLink: (text, href, title) {
+                                if (href != null) {
+                                  _launch(rawTarget: href);
+                                }
+                              },
+                            );
+                          },
                         ),
                       ],
                     ),
@@ -919,68 +950,64 @@ class _ExternalProfilePageState extends State<_ExternalProfilePage> {
                     AppleFeedbackBanner(
                       key: Key(widget.feedbackKey),
                       message: message,
-                      success: _succeeded,
+                      success: false,
                     ),
                   ],
-                  if (widget.repositories.isNotEmpty) ...<Widget>[
-                    const SizedBox(height: 18),
-                    Column(
-                      key: const Key('github-repositories-section'),
-                      crossAxisAlignment: CrossAxisAlignment.stretch,
-                      children: <Widget>[
-                        Row(
-                          children: <Widget>[
-                            Expanded(
-                              child: Text(
-                                'Repositories',
-                                style: AppleTheme.title(context),
+                  const SizedBox(height: 18),
+                  const GitHubContributions(),
+                  const SizedBox(height: 18),
+                  Column(
+                    key: const Key('github-accounts-section'),
+                    crossAxisAlignment: CrossAxisAlignment.stretch,
+                    children: [
+                      for (final account in _githubAccounts)
+                        Padding(
+                          padding: const EdgeInsets.only(bottom: 10),
+                          child: AppleSurfaceCard(
+                            padding: EdgeInsets.zero,
+                            child: Material(
+                              type: MaterialType.transparency,
+                              child: ListTile(
+                                key: Key('github-account-${account.username}'),
+                                contentPadding: const EdgeInsets.symmetric(
+                                  horizontal: 18,
+                                  vertical: 10,
+                                ),
+                                leading: _GitHubAvatar(
+                                  asset: account.avatarAsset,
+                                  size: 44,
+                                ),
+                                title: Text(
+                                  account.name,
+                                  style: AppleTheme.body(
+                                    context,
+                                  ).copyWith(fontWeight: FontWeight.w600),
+                                ),
+                                subtitle: account.name == account.username
+                                    ? null
+                                    : Text(
+                                        account.username,
+                                        style: AppleTheme.caption(context),
+                                      ),
+                                trailing: Icon(
+                                  Icons.open_in_new_rounded,
+                                  size: 18,
+                                  color: AppleTheme.secondaryLabel(context),
+                                ),
+                                onTap: () => _launch(
+                                  target:
+                                      account.username ==
+                                          _githubProfile.username
+                                      ? widget.uri
+                                      : Uri.parse(
+                                          'https://github.com/${account.username}',
+                                        ),
+                                ),
                               ),
                             ),
-                            Text(
-                              '${widget.repositories.length}',
-                              style: AppleTheme.caption(context),
-                            ),
-                          ],
-                        ),
-                        const SizedBox(height: 10),
-                        for (final repository
-                            in widget.repositories) ...<Widget>[
-                          _GitHubRepositoryCard(
-                            repository: repository,
-                            onPressed: () => _launch(rawTarget: repository.url),
                           ),
-                          const SizedBox(height: 10),
-                        ],
-                      ],
-                    ),
-                  ],
-                  const SizedBox(height: 8),
-                  AppleSurfaceCard(
-                    radius: 17,
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: <Widget>[
-                        Text(
-                          widget.title == 'Mail'
-                              ? 'Contact card'
-                              : 'Profile card',
-                          style: AppleTheme.title(context),
                         ),
-                        const SizedBox(height: 12),
-                        _InfoRow(
-                          label: 'Name',
-                          value:
-                              '${widget.data.identity.name} · ${widget.data.identity.englishName}',
-                        ),
-                        const SizedBox(height: 10),
-                        _InfoRow(
-                          label: widget.title == 'Mail' ? 'Address' : 'Profile',
-                          value: widget.title == 'Mail'
-                              ? widget.data.identity.email
-                              : widget.data.identity.githubUrl,
-                        ),
-                      ],
-                    ),
+                    ],
                   ),
                 ],
               ),
@@ -992,128 +1019,28 @@ class _ExternalProfilePageState extends State<_ExternalProfilePage> {
   }
 }
 
-class _GitHubRepositoryCard extends StatelessWidget {
-  const _GitHubRepositoryCard({
-    required this.repository,
-    required this.onPressed,
-  });
+class _GitHubAvatar extends StatelessWidget {
+  const _GitHubAvatar({required this.asset, required this.size});
 
-  final PortfolioRepository repository;
-  final VoidCallback onPressed;
+  final String? asset;
+  final double size;
 
   @override
   Widget build(BuildContext context) {
-    final borderRadius = BorderRadius.circular(14);
-    return Material(
-      color: Colors.transparent,
-      child: InkWell(
-        key: Key('github-repository-${repository.name}'),
-        onTap: onPressed,
-        borderRadius: borderRadius,
-        child: Ink(
-          padding: const EdgeInsets.all(16),
-          decoration: BoxDecoration(
-            color: AppleTheme.panel(context),
-            borderRadius: borderRadius,
-            border: Border.all(color: AppleTheme.separator(context)),
-          ),
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: <Widget>[
-              Row(
-                children: <Widget>[
-                  const Icon(
-                    Icons.book_outlined,
-                    size: 18,
-                    color: AppleTheme.blue,
-                  ),
-                  const SizedBox(width: 8),
-                  Expanded(
-                    child: Text(
-                      repository.name,
-                      style: AppleTheme.body(context).copyWith(
-                        color: AppleTheme.blue,
-                        fontWeight: FontWeight.w700,
-                      ),
-                    ),
-                  ),
-                  Container(
-                    padding: const EdgeInsets.symmetric(
-                      horizontal: 8,
-                      vertical: 3,
-                    ),
-                    decoration: BoxDecoration(
-                      borderRadius: BorderRadius.circular(99),
-                      border: Border.all(color: AppleTheme.separator(context)),
-                    ),
-                    child: Text('Public', style: AppleTheme.caption(context)),
-                  ),
-                ],
-              ),
-              const SizedBox(height: 9),
-              Text(repository.description, style: AppleTheme.body(context)),
-              const SizedBox(height: 12),
-              Row(
-                children: <Widget>[
-                  Container(
-                    width: 10,
-                    height: 10,
-                    decoration: BoxDecoration(
-                      color: _languageColor(repository.language),
-                      shape: BoxShape.circle,
-                    ),
-                  ),
-                  const SizedBox(width: 6),
-                  Text(repository.language, style: AppleTheme.caption(context)),
-                  const Spacer(),
-                  Icon(
-                    Icons.open_in_new_rounded,
-                    size: 17,
-                    color: AppleTheme.secondaryLabel(context),
-                  ),
-                ],
-              ),
-            ],
-          ),
-        ),
-      ),
-    );
-  }
-
-  Color _languageColor(String language) {
-    return switch (language.toLowerCase()) {
-      'dart' => const Color(0xFF00B4AB),
-      'javascript' => const Color(0xFFF1E05A),
-      _ => AppleTheme.blue,
-    };
-  }
-}
-
-class _InfoRow extends StatelessWidget {
-  const _InfoRow({required this.label, required this.value});
-
-  final String label;
-  final String value;
-
-  @override
-  Widget build(BuildContext context) {
-    return Row(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: <Widget>[
-        SizedBox(
-          width: 104,
-          child: Text(label, style: AppleTheme.caption(context)),
-        ),
-        const SizedBox(width: 10),
-        Expanded(
-          child: Text(
-            value,
-            style: AppleTheme.body(
-              context,
-            ).copyWith(fontWeight: FontWeight.w600),
-          ),
-        ),
-      ],
+    return ClipOval(
+      child: asset == null
+          ? Icon(
+              Icons.account_circle_outlined,
+              size: size,
+              color: AppleTheme.blue,
+            )
+          : Image.asset(
+              asset!,
+              width: size,
+              height: size,
+              fit: BoxFit.cover,
+              excludeFromSemantics: true,
+            ),
     );
   }
 }

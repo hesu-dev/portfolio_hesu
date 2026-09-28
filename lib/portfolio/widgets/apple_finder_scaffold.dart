@@ -6,6 +6,7 @@ import '../mobile/apple_mobile_dock_geometry.dart';
 import '../theme/apple_theme.dart';
 import 'apple_mobile_navigation_header.dart';
 import 'apple_selection_control.dart';
+import 'project_app_icon.dart';
 
 typedef AppleFinderBodyBuilder =
     Widget Function(BuildContext context, bool compactLayout);
@@ -850,6 +851,7 @@ class AppleFinderFolderTile extends StatelessWidget {
     required this.compact,
     required this.onPressed,
     this.selected = false,
+    this.imageAsset,
     super.key,
   });
 
@@ -858,6 +860,7 @@ class AppleFinderFolderTile extends StatelessWidget {
   final bool compact;
   final VoidCallback onPressed;
   final bool selected;
+  final String? imageAsset;
 
   @override
   Widget build(BuildContext context) {
@@ -896,12 +899,20 @@ class AppleFinderFolderTile extends StatelessWidget {
                 color: selected ? selectedArtworkColor : Colors.transparent,
                 borderRadius: BorderRadius.circular(10),
               ),
-              child: Icon(
-                Icons.folder_rounded,
-                key: const Key('apple-finder-folder-artwork'),
-                size: folderSize,
-                color: const Color(0xFF55B8F5),
-              ),
+              child: imageAsset == null
+                  ? Icon(
+                      Icons.folder_rounded,
+                      key: const Key('apple-finder-folder-artwork'),
+                      size: folderSize,
+                      color: const Color(0xFF55B8F5),
+                    )
+                  : ClipRRect(
+                      borderRadius: BorderRadius.circular(folderSize * 0.22),
+                      child: ProjectAppIcon(
+                        assetPath: imageAsset!,
+                        size: folderSize,
+                      ),
+                    ),
             ),
             const SizedBox(height: 8),
             SizedBox(

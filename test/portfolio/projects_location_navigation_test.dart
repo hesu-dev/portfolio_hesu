@@ -194,8 +194,9 @@ void main() {
         tester.widget<Text>(find.byKey(const Key('project-detail-title'))).data,
         'Personal sample',
       );
-      expect(find.byKey(const Key('project-narrative')), findsOneWidget);
-      expect(find.text('프로젝트 회고'), findsOneWidget);
+      expect(find.byKey(const Key('project-introduction')), findsOneWidget);
+      expect(find.text('Unused detail'), findsOneWidget);
+      expect(find.byKey(const Key('project-narrative')), findsNothing);
 
       await tester.tap(find.byKey(const Key('projects-finder-back')));
       await tester.pumpAndSettle();

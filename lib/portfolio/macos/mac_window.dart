@@ -188,7 +188,9 @@ class MacWindow extends StatelessWidget {
 }
 
 bool _integratesFinderToolbar(PortfolioAppId appId) => switch (appId) {
-  PortfolioAppId.projects || PortfolioAppId.thisMac => true,
+  PortfolioAppId.projects ||
+  PortfolioAppId.safari ||
+  PortfolioAppId.thisMac => true,
   _ => false,
 };
 

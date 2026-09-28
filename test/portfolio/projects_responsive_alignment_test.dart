@@ -13,7 +13,7 @@ void main() {
         await _pumpProjects(tester, size: const Size(375, 700), compact: true);
 
         final folders = <Finder>[
-          for (var index = 0; index < 4; index++)
+          for (var index = 0; index < 6; index++)
             find.byKey(Key('projects-career-folder-$index')),
         ];
         final firstRowY = tester.getTopLeft(folders.first).dy;
@@ -65,7 +65,7 @@ void main() {
       await _pumpProjects(tester, size: const Size(390, 700), compact: true);
 
       final folders = <Finder>[
-        for (var index = 0; index < 4; index++)
+        for (var index = 0; index < 6; index++)
           find.byKey(Key('projects-career-folder-$index')),
       ];
       final firstRowY = tester.getTopLeft(folders.first).dy;
@@ -162,7 +162,7 @@ void main() {
       }
     });
 
-    testWidgets('iPad Finder keeps all six recent projects on one dense row', (
+    testWidgets('iPad Finder wraps two recent projects after six dense tiles', (
       tester,
     ) async {
       await _pumpProjects(tester, size: const Size(834, 700), tablet: true);
@@ -177,18 +177,26 @@ void main() {
       ];
       final firstRowY = tester.getTopLeft(folders.first).dy;
 
-      expect(tester.getSize(folders.first).width, closeTo(112, 0.01));
-      for (final folder in folders.skip(1)) {
-        expect(tester.getTopLeft(folder).dy, closeTo(firstRowY, 0.01));
+      for (final folder in folders) {
         expect(tester.getSize(folder).width, closeTo(112, 0.01));
       }
-      for (var index = 1; index < folders.length; index++) {
+      for (final folder in folders.take(6)) {
+        expect(tester.getTopLeft(folder).dy, closeTo(firstRowY, 0.01));
+      }
+      for (var index = 1; index < 6; index++) {
         expect(
           tester.getTopLeft(folders[index]).dx -
               tester.getRect(folders[index - 1]).right,
           closeTo(8, 0.01),
         );
       }
+      final nextRow = tester.getRect(folders[6]);
+      final firstTile = tester.getRect(folders.first);
+      expect(nextRow.left, closeTo(firstTile.left, 0.01));
+      expect(nextRow.top - firstTile.bottom, closeTo(8, 0.01));
+      final lastTile = tester.getRect(folders[7]);
+      expect(lastTile.top, closeTo(nextRow.top, 0.01));
+      expect(lastTile.left - nextRow.right, closeTo(8, 0.01));
     });
 
     testWidgets('프로젝트 폴더의 모든 행을 파일 영역 왼쪽에 정렬한다', (tester) async {
@@ -207,28 +215,28 @@ void main() {
               compact: false,
               tablet: false,
               horizontalPadding: 30,
-              rowLengths: <int>[4],
+              rowLengths: <int>[4, 2],
             ),
             (
               size: Size(834, 700),
               compact: false,
               tablet: true,
               horizontalPadding: 30,
-              rowLengths: <int>[4],
+              rowLengths: <int>[6],
             ),
             (
               size: Size(1366, 900),
               compact: false,
               tablet: true,
               horizontalPadding: 30,
-              rowLengths: <int>[4],
+              rowLengths: <int>[6],
             ),
             (
               size: Size(390, 700),
               compact: true,
               tablet: false,
               horizontalPadding: 16,
-              rowLengths: <int>[3, 1],
+              rowLengths: <int>[3, 3],
             ),
           ]) {
         await tester.pumpWidget(const SizedBox.shrink());
@@ -251,7 +259,7 @@ void main() {
           reason: '${scenario.size} grid leading edge',
         );
         final folders = <Finder>[
-          for (var index = 0; index < 4; index++)
+          for (var index = 0; index < 6; index++)
             find.byKey(Key('projects-career-folder-$index')),
         ];
         var rowStart = 0;

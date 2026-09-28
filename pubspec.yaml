@@ -35,6 +35,7 @@ dependencies:
   url_launcher: ^6.3.0
   audioplayers: ^6.7.1
   web: ^1.1.1
+  flutter_markdown_plus: ^1.0.12
 
 
 dev_dependencies:
@@ -61,11 +62,15 @@ flutter:
   uses-material-design: true
 
   assets:
+    - assets/github-profile/
     - assets/icons/github.svg
     - assets/icons/microsoft-word.png
     - assets/icons/settings-display-mode.svg
+    - assets/icons/projects/
     - assets/icons/skills/
+    - assets/illustrations/profile/
     - assets/music/
+    - assets/screenshots/ai-work-skills/
     - assets/sprites/
 
   # An image asset can refer to one or more resolution-specific "variants", see

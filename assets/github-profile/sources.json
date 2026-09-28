@@ -1,0 +1,69 @@
+{
+  "readme": "https://raw.githubusercontent.com/hesu-dev/hesu-dev/main/README.md",
+  "retrieved": "2026-09-16",
+  "images": {
+    "header.svg": "https://capsule-render.vercel.app/api?type=wave&color=auto&height=300&section=header&text=\"반갑습니다!👋\"&fontSize=40",
+    "java.svg": "https://img.shields.io/badge/Java-ED8B00?style=for-the-badge&logo=openjdk&logoColor=white",
+    "php.svg": "https://img.shields.io/badge/PHP-704b8a?style=for-the-badge&logo=PHP&logoColor=white",
+    "unity.svg": "https://img.shields.io/badge/Unity-100000?style=for-the-badge&logo=unity&logoColor=white",
+    "mariadb.svg": "https://img.shields.io/badge/MariaDB-7fb7ff?style=for-the-badge&logo=mariadb&logoColor=white",
+    "mysql.svg": "https://img.shields.io/badge/MySQL-7fb7ff?style=for-the-badge&logo=mysql&logoColor=white",
+    "dart.svg": "https://img.shields.io/badge/Dart-0175C2?style=for-the-badge&logo=dart&logoColor=white",
+    "flutter.svg": "https://img.shields.io/badge/Flutter-02569B?style=for-the-badge&logo=flutter&logoColor=white",
+    "js.svg": "https://img.shields.io/badge/JavaScript-F7DF1E?style=for-the-badge&logo=JavaScript&logoColor=white",
+    "typescript.svg": "https://img.shields.io/badge/TypeScript-394683?style=for-the-badge&logo=TypeScript&logoColor=white",
+    "react.svg": "https://img.shields.io/badge/React-2a98f2?style=for-the-badge&logo=react&logoColor=white",
+    "html.svg": "https://img.shields.io/badge/HTML-239120?style=for-the-badge&logo=html5&logoColor=white",
+    "css.svg": "https://img.shields.io/badge/CSS-239120?&style=for-the-badge&logo=css3&logoColor=white",
+    "aws-ec2.svg": "https://img.shields.io/badge/aws_Ec2-ED8B00?style=for-the-badge&logo=aws&logoColor=white",
+    "aws-sqs.svg": "https://img.shields.io/badge/aws_sqs-ED8B00?style=for-the-badge&logo=aws&logoColor=white",
+    "aws-rds.svg": "https://img.shields.io/badge/RDS-264d9a?style=for-the-badge&logo=rds&logoColor=white"
+  },
+  "accounts": [
+    {
+      "login": "hesu-dev",
+      "name": "sunell_dev",
+      "bio": null,
+      "profile_url": "https://github.com/hesu-dev",
+      "avatar_url": "https://avatars.githubusercontent.com/u/219951941?v=4&s=320",
+      "avatar_asset": "assets/github-profile/hesu-dev-avatar.png",
+      "source": "https://api.github.com/users/hesu-dev",
+      "retrieved": "2026-09-16"
+    },
+    {
+      "login": "sukenell",
+      "name": null,
+      "bio": null,
+      "profile_url": "https://github.com/sukenell",
+      "avatar_url": "https://avatars.githubusercontent.com/u/96758100?v=4&s=320",
+      "avatar_asset": "assets/github-profile/sukenell-avatar.png",
+      "source": "https://api.github.com/users/sukenell",
+      "retrieved": "2026-09-16"
+    },
+    {
+      "login": "sunelll",
+      "name": "sunell",
+      "bio": "sunell / Min hee-su",
+      "profile_url": "https://github.com/sunelll",
+      "avatar_url": "https://avatars.githubusercontent.com/u/43489093?v=4&s=320",
+      "avatar_asset": "assets/github-profile/sunelll-avatar.png",
+      "source": "https://api.github.com/users/sunelll",
+      "retrieved": "2026-09-16"
+    }
+  ],
+  "omitted_readme_sections": [
+    "배포용 git"
+  ],
+  "local_badges": {
+    "cloudflare-d1.svg": {
+      "label": "Cloudflare D1",
+      "source": "Locally authored SVG; rendered to cloudflare-d1.png with sharp.",
+      "created": "2026-09-18"
+    },
+    "cloudflare-r2.svg": {
+      "label": "Cloudflare R2",
+      "source": "Locally authored SVG; rendered to cloudflare-r2.png with sharp.",
+      "created": "2026-09-18"
+    }
+  }
+}

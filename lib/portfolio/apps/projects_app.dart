@@ -9,6 +9,7 @@ import '../services/external_launcher.dart';
 import '../theme/apple_theme.dart';
 import '../widgets/apple_app_icon.dart';
 import '../widgets/apple_finder_scaffold.dart';
+import '../widgets/project_app_icon.dart';
 
 enum _ProjectsLocation {
   recent,
@@ -149,7 +150,6 @@ class _ProjectsAppState extends State<ProjectsApp> {
   int _historyCursor = 0;
   int _launchRequestGeneration = 0;
   String? _launchFeedback;
-  bool _launchSucceeded = false;
   final Map<Uri, int> _pendingLaunches = <Uri, int>{};
 
   _ProjectsDestination get _currentDestination => _history[_historyCursor];
@@ -186,7 +186,6 @@ class _ProjectsAppState extends State<ProjectsApp> {
       _historyCursor = 0;
       _selectedProject.clear();
       _launchFeedback = null;
-      _launchSucceeded = false;
       _pendingLaunches.clear();
       return;
     }
@@ -309,10 +308,7 @@ class _ProjectsAppState extends State<ProjectsApp> {
       if (requestGeneration != _launchRequestGeneration) {
         return;
       }
-      _launchSucceeded = succeeded;
-      _launchFeedback = succeeded
-          ? '${link.label} 링크를 열었습니다.'
-          : '${link.label} 링크를 열 수 없습니다.';
+      _launchFeedback = succeeded ? null : '${link.label} 링크를 열 수 없습니다.';
     });
   }
 
@@ -381,7 +377,6 @@ class _ProjectsAppState extends State<ProjectsApp> {
         compact: compact,
         bottomContentInset: bottomContentInset,
         feedback: _launchFeedback,
-        launchSucceeded: _launchSucceeded,
         pendingLaunches: _pendingLaunches.keys.toSet(),
         onOpenLink: _openLink,
       );
@@ -481,6 +476,7 @@ class _ProjectFolderGrid extends StatelessWidget {
                       label: entry.$2.project.title,
                       semanticsLabel: 'Open project ${entry.$2.project.title}',
                       selected: selectedIndex == entry.$2.index,
+                      imageAsset: entry.$2.project.appIconAsset,
                       compact: compact,
                       onPressed: () => onSelected(entry.$2.index),
                     ),
@@ -654,7 +650,6 @@ class _ProjectDetail extends StatelessWidget {
     required this.compact,
     required this.bottomContentInset,
     required this.feedback,
-    required this.launchSucceeded,
     required this.pendingLaunches,
     required this.onOpenLink,
   });
@@ -664,7 +659,6 @@ class _ProjectDetail extends StatelessWidget {
   final bool compact;
   final double bottomContentInset;
   final String? feedback;
-  final bool launchSucceeded;
   final Set<Uri> pendingLaunches;
   final ValueChanged<PortfolioProjectLink> onOpenLink;
 
@@ -684,7 +678,6 @@ class _ProjectDetail extends StatelessWidget {
           projectIndex: projectIndex,
           compact: compact,
           feedback: feedback,
-          launchSucceeded: launchSucceeded,
           pendingLaunches: pendingLaunches,
           onOpenLink: onOpenLink,
         ),
@@ -699,7 +692,6 @@ class _SelectedProjectDetail extends StatelessWidget {
     required this.projectIndex,
     required this.compact,
     required this.feedback,
-    required this.launchSucceeded,
     required this.pendingLaunches,
     required this.onOpenLink,
   });
@@ -708,7 +700,6 @@ class _SelectedProjectDetail extends StatelessWidget {
   final int projectIndex;
   final bool compact;
   final String? feedback;
-  final bool launchSucceeded;
   final Set<Uri> pendingLaunches;
   final ValueChanged<PortfolioProjectLink> onOpenLink;
 
@@ -730,7 +721,7 @@ class _SelectedProjectDetail extends StatelessWidget {
           children: <Widget>[
             _ProjectCaseStudyHeader(project: project, compact: compact),
             SizedBox(height: compact ? 20 : 28),
-            _ProjectActions(
+            _ProjectIntroduction(
               project: project,
               projectIndex: projectIndex,
               pendingLaunches: pendingLaunches,
@@ -741,7 +732,6 @@ class _SelectedProjectDetail extends StatelessWidget {
               AppleFeedbackBanner(
                 key: const Key('project-launch-feedback'),
                 message: message,
-                success: launchSucceeded,
               ),
             ],
             if (technologies.isNotEmpty) ...<Widget>[
@@ -782,16 +772,16 @@ class _SelectedProjectDetail extends StatelessWidget {
                 ),
               ),
             ],
+            if (highlights.isNotEmpty) ...<Widget>[
+              SizedBox(height: compact ? 16 : 20),
+              _ProjectHighlightsCard(highlights: highlights),
+            ],
             if (project.architecture case final architecture?) ...<Widget>[
               SizedBox(height: compact ? 16 : 20),
               _ProjectArchitectureCard(
                 architecture: architecture,
                 compact: compact,
               ),
-            ],
-            if (highlights.isNotEmpty) ...<Widget>[
-              SizedBox(height: compact ? 16 : 20),
-              _ProjectHighlightsCard(highlights: highlights),
             ],
             if (sections.isNotEmpty) ...<Widget>[
               SizedBox(height: compact ? 16 : 20),
@@ -808,16 +798,13 @@ List<PortfolioProjectSection> _orderedProjectSections(
   PortfolioProject project,
 ) {
   final sections = project.sections
-      .where((section) => section.body.trim().isNotEmpty)
+      .where(
+        (section) =>
+            section.body.trim().isNotEmpty &&
+            !(section.kind == PortfolioProjectSectionKind.work &&
+                section.body.trim() == project.description.trim()),
+      )
       .toList(growable: true);
-  if (sections.isEmpty && project.description.trim().isNotEmpty) {
-    sections.add(
-      PortfolioProjectSection(
-        kind: PortfolioProjectSectionKind.work,
-        body: project.description,
-      ),
-    );
-  }
   sections.sort((left, right) => left.kind.index.compareTo(right.kind.index));
   return List<PortfolioProjectSection>.unmodifiable(sections);
 }
@@ -830,54 +817,22 @@ class _ProjectCaseStudyHeader extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final year = project.displayYear;
-    final yearBadge = year == null
-        ? null
-        : Semantics(
-            label: '프로젝트 시작 연도 $year',
-            excludeSemantics: true,
-            child: Container(
-              key: const Key('project-detail-year'),
-              constraints: const BoxConstraints(minWidth: 74, minHeight: 74),
-              padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
-              decoration: BoxDecoration(
-                gradient: const LinearGradient(
-                  begin: Alignment.topLeft,
-                  end: Alignment.bottomRight,
-                  colors: <Color>[Color(0xFF0066CC), Color(0xFF003E80)],
-                ),
-                borderRadius: BorderRadius.circular(20),
-                boxShadow: <BoxShadow>[
-                  BoxShadow(
-                    color: AppleTheme.buttonBlue.withValues(alpha: 0.22),
-                    blurRadius: 20,
-                    offset: const Offset(0, 8),
-                  ),
-                ],
-              ),
-              child: Column(
-                mainAxisSize: MainAxisSize.min,
-                children: <Widget>[
-                  Text(
-                    year,
-                    textAlign: TextAlign.center,
-                    style: Theme.of(context).textTheme.titleLarge?.copyWith(
-                      color: Colors.white,
-                      fontWeight: FontWeight.w800,
-                    ),
-                  ),
-                  Text(
-                    'YEAR',
-                    style: Theme.of(context).textTheme.labelSmall?.copyWith(
-                      color: Colors.white,
-                      fontWeight: FontWeight.w700,
-                      letterSpacing: 1.1,
-                    ),
-                  ),
-                ],
-              ),
-            ),
-          );
+    final appIcon = Container(
+      key: const Key('project-detail-icon'),
+      width: 74,
+      height: 74,
+      clipBehavior: Clip.antiAlias,
+      decoration: BoxDecoration(
+        color: AppleTheme.surface(context),
+        borderRadius: BorderRadius.circular(20),
+        border: project.appIconAsset == null
+            ? Border.all(color: AppleTheme.separator(context))
+            : null,
+      ),
+      child: project.appIconAsset == null
+          ? null
+          : ProjectAppIcon(assetPath: project.appIconAsset!),
+    );
     final title = Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: <Widget>[
@@ -891,12 +846,14 @@ class _ProjectCaseStudyHeader extends StatelessWidget {
                 : Theme.of(context).textTheme.headlineSmall,
           ),
         ),
-        const SizedBox(height: 9),
-        ApplePill(
-          label: project.period,
-          icon: Icons.calendar_month_rounded,
-          color: AppleTheme.indigo,
-        ),
+        if (project.period.trim().isNotEmpty) ...<Widget>[
+          const SizedBox(height: 9),
+          ApplePill(
+            label: project.period,
+            icon: Icons.calendar_month_rounded,
+            color: AppleTheme.indigo,
+          ),
+        ],
       ],
     );
 
@@ -911,10 +868,8 @@ class _ProjectCaseStudyHeader extends StatelessWidget {
                   key: const Key('project-detail-header'),
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: <Widget>[
-                    if (yearBadge case final badge?) ...<Widget>[
-                      badge,
-                      const SizedBox(height: 16),
-                    ],
+                    appIcon,
+                    const SizedBox(height: 16),
                     title,
                   ],
                 )
@@ -922,10 +877,8 @@ class _ProjectCaseStudyHeader extends StatelessWidget {
                   key: const Key('project-detail-header'),
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: <Widget>[
-                    if (yearBadge case final badge?) ...<Widget>[
-                      badge,
-                      const SizedBox(width: 18),
-                    ],
+                    appIcon,
+                    const SizedBox(width: 18),
                     Expanded(child: title),
                   ],
                 ),
@@ -1113,7 +1066,7 @@ class _ProjectHighlightsCard extends StatelessWidget {
           children: <Widget>[
             Semantics(
               header: true,
-              child: Text('핵심 포인트', style: AppleTheme.title(context)),
+              child: Text('역할 · 기여도', style: AppleTheme.title(context)),
             ),
             const SizedBox(height: 12),
             for (final entry in highlights.indexed) ...<Widget>[
@@ -1244,7 +1197,7 @@ class _ProjectNarrativeRow extends StatelessWidget {
               : Row(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: <Widget>[
-                    SizedBox(width: 92, child: label),
+                    SizedBox(width: 112, child: label),
                     const SizedBox(width: 16),
                     Expanded(child: body),
                   ],
@@ -1255,8 +1208,8 @@ class _ProjectNarrativeRow extends StatelessWidget {
   }
 }
 
-class _ProjectActions extends StatelessWidget {
-  const _ProjectActions({
+class _ProjectIntroduction extends StatelessWidget {
+  const _ProjectIntroduction({
     required this.project,
     required this.projectIndex,
     required this.pendingLaunches,
@@ -1274,28 +1227,40 @@ class _ProjectActions extends StatelessWidget {
       container: true,
       explicitChildNodes: true,
       child: AppleSurfaceCard(
-        key: const Key('project-actions'),
+        key: const Key('project-introduction'),
         radius: 17,
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: <Widget>[
             Semantics(
               header: true,
+              child: Text('프로젝트 소개', style: AppleTheme.title(context)),
+            ),
+            if (project.description.trim().isNotEmpty) ...<Widget>[
+              const SizedBox(height: 12),
+              Text(project.description, style: AppleTheme.body(context)),
+            ],
+            const SizedBox(height: 20),
+            Semantics(
+              key: const Key('project-actions'),
+              header: true,
               child: Text(
                 '프로젝트 링크',
                 key: const Key('project-actions-heading'),
-                style: AppleTheme.title(context),
+                style: Theme.of(
+                  context,
+                ).textTheme.labelLarge?.copyWith(fontWeight: FontWeight.w700),
               ),
             ),
-            const SizedBox(height: 6),
-            Text(
-              project.links.isEmpty
-                  ? '현재 공개된 외부 링크가 없습니다.'
-                  : '스토어와 공개 문서를 외부에서 열어 프로젝트를 확인할 수 있습니다.',
-              style: AppleTheme.body(
-                context,
-              ).copyWith(color: AppleTheme.secondaryLabel(context)),
-            ),
+            if (project.links.isEmpty) ...<Widget>[
+              const SizedBox(height: 6),
+              Text(
+                '현재 공개된 외부 링크가 없습니다.',
+                style: AppleTheme.body(
+                  context,
+                ).copyWith(color: AppleTheme.secondaryLabel(context)),
+              ),
+            ],
             if (project.links.isNotEmpty) ...<Widget>[
               const SizedBox(height: 13),
               Wrap(
@@ -1303,19 +1268,49 @@ class _ProjectActions extends StatelessWidget {
                 runSpacing: 9,
                 children: <Widget>[
                   for (final entry in project.links.indexed)
-                    OutlinedButton.icon(
+                    OutlinedButton(
                       key: Key('project-link-$projectIndex-${entry.$1}'),
                       style: OutlinedButton.styleFrom(
-                        minimumSize: const Size(0, 44),
+                        minimumSize: const Size(0, 56),
+                        padding: const EdgeInsets.fromLTRB(10, 10, 14, 10),
+                        backgroundColor: AppleTheme.panel(context),
+                        foregroundColor: AppleTheme.primaryLabel(context),
+                        side: BorderSide(color: AppleTheme.separator(context)),
+                        shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(15),
+                        ),
                       ),
                       onPressed: pendingLaunches.contains(entry.$2.uri)
                           ? null
                           : () => onOpenLink(entry.$2),
-                      icon: const Icon(Icons.open_in_new_rounded, size: 17),
-                      label: Text(entry.$2.label),
+                      child: Row(
+                        mainAxisSize: MainAxisSize.min,
+                        children: <Widget>[
+                          Container(
+                            width: 32,
+                            height: 32,
+                            decoration: BoxDecoration(
+                              color: AppleTheme.surface(context),
+                              borderRadius: BorderRadius.circular(9),
+                            ),
+                            child: Icon(
+                              _projectLinkIcon(entry.$2.uri),
+                              size: 21,
+                            ),
+                          ),
+                          const SizedBox(width: 10),
+                          Flexible(child: Text(entry.$2.label)),
+                          const SizedBox(width: 16),
+                          const Icon(Icons.arrow_outward_rounded, size: 17),
+                        ],
+                      ),
                     ),
                 ],
               ),
+            ],
+            if (project.screenshots.isNotEmpty) ...<Widget>[
+              const SizedBox(height: 24),
+              _ProjectScreenshots(screenshots: project.screenshots),
             ],
           ],
         ),
@@ -1323,6 +1318,100 @@ class _ProjectActions extends StatelessWidget {
     );
   }
 }
+
+class _ProjectScreenshots extends StatelessWidget {
+  const _ProjectScreenshots({required this.screenshots});
+
+  final List<PortfolioProjectScreenshot> screenshots;
+
+  void _openScreenshot(
+    BuildContext context,
+    PortfolioProjectScreenshot screenshot,
+  ) {
+    showDialog<void>(
+      context: context,
+      builder: (context) => Dialog.fullscreen(
+        key: const Key('project-screenshot-preview'),
+        child: Scaffold(
+          backgroundColor: AppleTheme.canvas(context),
+          appBar: AppBar(
+            leading: IconButton(
+              tooltip: '닫기',
+              icon: const Icon(Icons.close_rounded),
+              onPressed: () => Navigator.of(context).pop(),
+            ),
+            title: Text(
+              screenshot.caption,
+              maxLines: 2,
+              overflow: TextOverflow.ellipsis,
+              style: AppleTheme.body(context),
+            ),
+          ),
+          body: Center(
+            child: InteractiveViewer(
+              maxScale: 5,
+              child: Image.asset(
+                screenshot.asset,
+                semanticLabel: screenshot.caption,
+                fit: BoxFit.contain,
+              ),
+            ),
+          ),
+        ),
+      ),
+    );
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return Column(
+      key: const Key('project-screenshots'),
+      crossAxisAlignment: CrossAxisAlignment.stretch,
+      children: <Widget>[
+        Semantics(
+          header: true,
+          child: Text('프로젝트 화면', style: AppleTheme.title(context)),
+        ),
+        const SizedBox(height: 6),
+        Text('이미지를 누르면 확대해서 볼 수 있습니다.', style: AppleTheme.caption(context)),
+        for (final entry in screenshots.indexed) ...<Widget>[
+          const SizedBox(height: 16),
+          Semantics(
+            label: '${entry.$2.caption} 확대 보기',
+            button: true,
+            child: Material(
+              color: AppleTheme.panel(context),
+              borderRadius: BorderRadius.circular(12),
+              clipBehavior: Clip.antiAlias,
+              child: AspectRatio(
+                aspectRatio: entry.$2.aspectRatio,
+                child: Ink.image(
+                  image: AssetImage(entry.$2.asset),
+                  fit: BoxFit.contain,
+                  child: InkWell(
+                    key: Key('project-screenshot-${entry.$1}'),
+                    onTap: () => _openScreenshot(context, entry.$2),
+                    focusColor: AppleTheme.blue.withValues(alpha: 0.18),
+                  ),
+                ),
+              ),
+            ),
+          ),
+          const SizedBox(height: 8),
+          Text(entry.$2.caption, style: AppleTheme.caption(context)),
+        ],
+      ],
+    );
+  }
+}
+
+IconData _projectLinkIcon(Uri uri) => switch (uri.host) {
+  'apps.apple.com' => Icons.apple_rounded,
+  'play.google.com' => Icons.play_arrow_rounded,
+  'chromewebstore.google.com' => Icons.extension_rounded,
+  'www.dbpia.co.kr' => Icons.article_outlined,
+  _ => Icons.language_rounded,
+};
 
 class _DesktopApplicationsDirectory extends StatelessWidget {
   const _DesktopApplicationsDirectory({

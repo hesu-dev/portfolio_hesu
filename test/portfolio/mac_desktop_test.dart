@@ -64,7 +64,7 @@ void main() {
   });
 
   group('macOS desktop icons', () {
-    testWidgets('shows the complete desktop catalog and discoverability hint', (
+    testWidgets('shows the complete desktop catalog without a hint badge', (
       tester,
     ) async {
       await _pumpPortfolio(tester);
@@ -80,9 +80,9 @@ void main() {
       expect(find.byKey(const Key('dock-app-trash')), findsOneWidget);
       expect(
         find.byKey(const Key('desktop-discoverability-hint')),
-        findsOneWidget,
+        findsNothing,
       );
-      expect(find.textContaining('Double-click'), findsOneWidget);
+      expect(find.textContaining('Double-click'), findsNothing);
     });
 
     testWidgets('single click selects and double click opens an app', (
@@ -545,7 +545,7 @@ void main() {
         );
         await tester.pumpAndSettle();
         await _openDesktopApp(tester, PortfolioAppId.projects);
-        await tester.tap(find.byKey(const Key('project-selector-3')));
+        await tester.tap(find.byKey(const Key('project-selector-5')));
         await tester.pumpAndSettle();
 
         expect(find.text(r'portfolio: ~$ skills'), findsOneWidget);
@@ -1093,6 +1093,7 @@ const Map<PortfolioAppId, String> _labels = <PortfolioAppId, String>{
   PortfolioAppId.introduction: '자기소개',
   PortfolioAppId.skills: '스킬',
   PortfolioAppId.projects: '포트폴리오',
+  PortfolioAppId.safari: '프로젝트',
   PortfolioAppId.terminal: '터미널',
   PortfolioAppId.music: '배경음',
   PortfolioAppId.settings: '설정',
@@ -1107,6 +1108,7 @@ const List<PortfolioAppId> _desktopLauncherApps = <PortfolioAppId>[
   PortfolioAppId.introduction,
   PortfolioAppId.skills,
   PortfolioAppId.projects,
+  PortfolioAppId.safari,
   PortfolioAppId.terminal,
   PortfolioAppId.music,
   PortfolioAppId.github,

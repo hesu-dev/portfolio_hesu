@@ -112,6 +112,7 @@ class AppleAppArtwork extends StatelessWidget {
     PortfolioAppId.about ||
     PortfolioAppId.skills ||
     PortfolioAppId.projects ||
+    PortfolioAppId.safari ||
     PortfolioAppId.terminal ||
     PortfolioAppId.music ||
     PortfolioAppId.photos ||
@@ -163,6 +164,10 @@ class AppleAppArtwork extends StatelessWidget {
     PortfolioAppId.projects => const <Color>[
       Color(0xFF7DE2FF),
       Color(0xFF0878ED),
+    ],
+    PortfolioAppId.safari => const <Color>[
+      Color(0xFFFFFFFF),
+      Color(0xFFE9EDF2),
     ],
     PortfolioAppId.terminal => const <Color>[
       Color(0xFF42454D),
@@ -345,6 +350,8 @@ class _AppleAppArtworkPainter extends CustomPainter {
         _drawSkills(canvas, size);
       case PortfolioAppId.projects:
         _drawProjects(canvas, size);
+      case PortfolioAppId.safari:
+        _drawSafari(canvas, size);
       case PortfolioAppId.terminal:
         _drawTerminal(canvas, size);
       case PortfolioAppId.music:
@@ -578,6 +585,73 @@ class _AppleAppArtworkPainter extends CustomPainter {
         colors: <Color>[Color(0xFF69D8FF), Color(0xFF1594ED)],
       ).createShader(Offset.zero & size);
     canvas.drawPath(frontFolder, folderPaint);
+  }
+
+  void _drawSafari(Canvas canvas, Size size) {
+    final unit = size.shortestSide;
+    final center = size.center(Offset.zero);
+    final dial = Rect.fromCircle(center: center, radius: unit * 0.38);
+    canvas.drawCircle(
+      center,
+      unit * 0.425,
+      Paint()
+        ..shader = const LinearGradient(
+          begin: Alignment.topLeft,
+          end: Alignment.bottomRight,
+          colors: <Color>[Color(0xFFFFFFFF), Color(0xFFB7C4D4)],
+        ).createShader(Offset.zero & size),
+    );
+    canvas.drawOval(
+      dial,
+      Paint()
+        ..shader = const LinearGradient(
+          begin: Alignment.topCenter,
+          end: Alignment.bottomCenter,
+          colors: <Color>[Color(0xFF32D2FF), Color(0xFF0874E5)],
+        ).createShader(dial),
+    );
+
+    final tick = Paint()..color = Colors.white.withValues(alpha: 0.92);
+    for (var index = 0; index < 60; index++) {
+      final angle = index * math.pi / 30;
+      final major = index % 5 == 0;
+      final direction = Offset(math.sin(angle), -math.cos(angle));
+      tick.strokeWidth = unit * (major ? 0.016 : 0.008);
+      canvas.drawLine(
+        center + direction * unit * (major ? 0.285 : 0.32),
+        center + direction * unit * 0.352,
+        tick,
+      );
+    }
+
+    canvas.save();
+    canvas.translate(center.dx, center.dy);
+    canvas.rotate(math.pi / 4);
+    final needle = Path()
+      ..moveTo(0, -unit * 0.34)
+      ..lineTo(unit * 0.06, 0)
+      ..lineTo(0, unit * 0.34)
+      ..lineTo(-unit * 0.06, 0)
+      ..close();
+    canvas.drawShadow(needle, const Color(0x6600357B), unit * 0.025, false);
+    canvas.drawPath(needle, Paint()..color = Colors.white);
+    canvas.drawPath(
+      Path()
+        ..moveTo(0, -unit * 0.34)
+        ..lineTo(unit * 0.06, 0)
+        ..lineTo(-unit * 0.06, 0)
+        ..close(),
+      Paint()..color = const Color(0xFFFF3B44),
+    );
+    canvas.drawPath(
+      Path()
+        ..moveTo(0, -unit * 0.34)
+        ..lineTo(unit * 0.06, 0)
+        ..lineTo(0, unit * 0.34)
+        ..close(),
+      Paint()..color = const Color(0x22002C68),
+    );
+    canvas.restore();
   }
 
   void _drawTerminal(Canvas canvas, Size size) {

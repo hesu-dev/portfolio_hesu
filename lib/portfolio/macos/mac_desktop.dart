@@ -1,5 +1,3 @@
-import 'dart:ui';
-
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 
@@ -194,7 +192,6 @@ class _MacDesktopState extends State<MacDesktop> {
                       ),
                     ),
                     _buildDesktopIcons(),
-                    _buildDiscoverabilityHint(),
                     for (final appId in _zOrder)
                       if (_windows[appId] case final window?)
                         _buildWindow(window, active: activeApp == appId),
@@ -304,45 +301,6 @@ class _MacDesktopState extends State<MacDesktop> {
             onOpen: () => _openApp(appId),
           );
         },
-      ),
-    );
-  }
-
-  Widget _buildDiscoverabilityHint() {
-    return Positioned(
-      left: 22,
-      bottom: 108,
-      child: IgnorePointer(
-        child: ClipRRect(
-          borderRadius: BorderRadius.circular(999),
-          child: BackdropFilter(
-            filter: ImageFilter.blur(sigmaX: 18, sigmaY: 18),
-            child: Container(
-              key: const Key('desktop-discoverability-hint'),
-              padding: const EdgeInsets.symmetric(horizontal: 13, vertical: 8),
-              decoration: BoxDecoration(
-                color: const Color(0xFF10152B).withValues(alpha: 0.38),
-                borderRadius: BorderRadius.circular(999),
-                border: Border.all(color: Colors.white.withValues(alpha: 0.2)),
-              ),
-              child: const Row(
-                mainAxisSize: MainAxisSize.min,
-                children: <Widget>[
-                  Icon(Icons.ads_click_rounded, size: 14, color: Colors.white),
-                  SizedBox(width: 7),
-                  Text(
-                    'Double-click an icon to explore',
-                    style: TextStyle(
-                      color: Colors.white,
-                      fontSize: 11.5,
-                      fontWeight: FontWeight.w600,
-                    ),
-                  ),
-                ],
-              ),
-            ),
-          ),
-        ),
       ),
     );
   }

@@ -12,28 +12,19 @@ void main() {
       expect(portfolioData.allUrls, everyElement(isNot(contains('juah'))));
     });
 
-    test('contains three verified public GitHub repositories', () {
-      const repositories = <String, String>{
-        'portfolio_hesu': 'https://github.com/hesu-dev/portfolio_hesu',
-        'chrome_extension': 'https://github.com/hesu-dev/chrome_extension',
-        'code_study': 'https://github.com/hesu-dev/code_study',
-      };
-
-      expect(
-        portfolioData.repositories.map((repository) => repository.name),
-        repositories.keys,
-      );
-      expect(
-        portfolioData.repositories.map((repository) => repository.url),
-        repositories.values,
-      );
-      expect(portfolioData.allUrls, containsAll(repositories.values));
-      for (final name in repositories.keys) {
-        expect(portfolioData.allSearchableText, contains(name));
+    test('does not expose default repository names or links', () {
+      expect(portfolioData.repositories, isEmpty);
+      for (final name in <String>[
+        'portfolio_hesu',
+        'chrome_extension',
+        'code_study',
+      ]) {
+        expect(portfolioData.allSearchableText, isNot(contains(name)));
+        expect(portfolioData.allUrls, everyElement(isNot(contains(name))));
       }
     });
 
-    test('contains the six Min He-su portfolio projects', () {
+    test('contains the eight Min He-su portfolio projects', () {
       expect(
         portfolioData.projects.map((project) => project.title),
         containsAll(<String>[
@@ -43,9 +34,11 @@ void main() {
           'IRIS',
           'AI-Bver',
           'HiddenTag',
+          'AI 역량 검사',
+          'AI Switch',
         ]),
       );
-      expect(portfolioData.projects, hasLength(6));
+      expect(portfolioData.projects, hasLength(8));
     });
 
     test('contains only the verified information engineer certification', () {
@@ -117,7 +110,24 @@ void main() {
         'IRIS',
         'AI-Bver',
         'HiddenTag',
+        'AI 역량 검사',
+        'AI Switch',
       });
+      expect(
+        portfolioData.projects
+            .where(
+              (project) => project.category == PortfolioProjectCategory.career,
+            )
+            .map((project) => project.title),
+        orderedEquals(<String>[
+          'AI 역량 검사',
+          'AI Switch',
+          'Blue Mentor',
+          'IRIS',
+          'AI-Bver',
+          'HiddenTag',
+        ]),
+      );
       final projectWithoutExplicitCategory = PortfolioProject(
         title: 'Unclassified project',
         description: 'Defaults safely',
@@ -166,6 +176,10 @@ void main() {
           'https://play.google.com/store/apps/details?id=ScanTag.ndk.det&pcampaignid=web_share',
           'https://apps.apple.com/kr/app/hiddentag-%ED%9E%88%EB%93%A0%ED%83%9C%EA%B7%B8/id413494082',
         },
+        'AI 역량 검사': <String>{
+          'https://ai-work-skills-dev.illusionists1004.workers.dev/',
+        },
+        'AI Switch': <String>{'https://ax.aiswitch.co.kr/chat'},
       };
 
       for (final project in portfolioData.projects) {
@@ -219,6 +233,13 @@ void main() {
       );
       expect(
         () => portfolioData.projects.first.links.clear(),
+        throwsUnsupportedError,
+      );
+      expect(
+        () => portfolioData.projects
+            .singleWhere((project) => project.title == 'AI 역량 검사')
+            .screenshots
+            .clear(),
         throwsUnsupportedError,
       );
       expect(
@@ -396,6 +417,7 @@ void main() {
       'introduction',
       'skills',
       'projects',
+      'safari',
       'terminal',
       'music',
       'photos',
@@ -411,7 +433,18 @@ void main() {
     test('exposes the narrative labels in portfolio reading order', () {
       expect(
         PortfolioProjectSectionKind.values.map((kind) => kind.label),
-        <String>['업무', '문제', '원인', '측정', '해결', '평가', '비고'],
+        <String>[
+          '업무',
+          '문제',
+          '원인',
+          '측정',
+          '해결',
+          '평가',
+          '배운 점',
+          '직무 연관성',
+          '성과 · 지표',
+          '비고',
+        ],
       );
     });
 
@@ -444,6 +477,11 @@ void main() {
         ),
       ];
       final sourceNodes = <String>['Client', 'API'];
+      const screenshot = PortfolioProjectScreenshot(
+        asset: 'assets/screenshots/example.webp',
+        caption: 'Example screen',
+      );
+      final sourceScreenshots = <PortfolioProjectScreenshot>[screenshot];
       final architecture = PortfolioProjectArchitecture(
         title: 'System architecture',
         description: 'Request flow',
@@ -458,14 +496,17 @@ void main() {
         highlights: sourceHighlights,
         architecture: architecture,
         sections: sourceSections,
+        screenshots: sourceScreenshots,
       );
 
       sourceHighlights.add('Reference highlight');
       sourceSections.clear();
       sourceNodes.add('Database');
+      sourceScreenshots.clear();
 
       expect(project.highlights, <String>['First highlight']);
       expect(project.sections, hasLength(1));
+      expect(project.screenshots, <PortfolioProjectScreenshot>[screenshot]);
       expect(project.architecture!.nodes, <String>['Client', 'API']);
       expect(
         project.architecture!.presentation,
@@ -476,6 +517,7 @@ void main() {
         throwsUnsupportedError,
       );
       expect(() => project.sections.clear(), throwsUnsupportedError);
+      expect(() => project.screenshots.clear(), throwsUnsupportedError);
       expect(
         () => project.architecture!.nodes.add('Another node'),
         throwsUnsupportedError,
@@ -490,6 +532,12 @@ void main() {
         technologies: <String>['Flutter'],
         links: <PortfolioProjectLink>[],
         highlights: <String>['SEARCHABLE_HIGHLIGHT'],
+        screenshots: <PortfolioProjectScreenshot>[
+          PortfolioProjectScreenshot(
+            asset: 'assets/screenshots/example.webp',
+            caption: 'SEARCHABLE_SCREENSHOT',
+          ),
+        ],
         architecture: PortfolioProjectArchitecture.constant(
           title: 'SEARCHABLE_ARCHITECTURE',
           description: 'SEARCHABLE_ARCHITECTURE_DESCRIPTION',
@@ -519,6 +567,7 @@ void main() {
 
       for (final fragment in <String>[
         'SEARCHABLE_HIGHLIGHT',
+        'SEARCHABLE_SCREENSHOT',
         'SEARCHABLE_ARCHITECTURE',
         'SEARCHABLE_ARCHITECTURE_DESCRIPTION',
         'SEARCHABLE_NODE',
@@ -528,12 +577,17 @@ void main() {
       }
     });
 
-    test('gives every portfolio project verified work and highlights', () {
+    test('keeps project roles and the available detailed reflections', () {
       for (final project in portfolioData.projects) {
         expect(project.highlights, isNotEmpty, reason: project.title);
+        if (project.title == 'AI Switch') {
+          expect(project.period, isEmpty);
+          expect(project.sections, isEmpty);
+          continue;
+        }
         expect(
-          project.sections.map((section) => section.kind),
-          contains(PortfolioProjectSectionKind.work),
+          project.sections.map((section) => section.kind.label),
+          containsAll(<String>['업무', '배운 점', '직무 연관성', '성과 · 지표']),
           reason: project.title,
         );
         expect(
@@ -547,7 +601,7 @@ void main() {
       }
     });
 
-    test('documents only the verified ReadingLog app and extension flow', () {
+    test('documents the ReadingLog app flow and project reflection', () {
       final project = portfolioData.projects.singleWhere(
         (project) => project.title == 'ReadingLog',
       );
@@ -563,13 +617,13 @@ void main() {
         'JSON 내보내기',
         'ReadingLog 앱',
       ]);
-      expect(
-        project.sections.map((section) => section.kind),
-        <PortfolioProjectSectionKind>[
-          PortfolioProjectSectionKind.work,
-          PortfolioProjectSectionKind.solution,
-        ],
-      );
+      expect(project.sections.map((section) => section.kind.label), <String>[
+        '업무',
+        '해결',
+        '배운 점',
+        '직무 연관성',
+        '성과 · 지표',
+      ]);
     });
 
     test('marks PersonaChat as measured design work rather than a launch', () {

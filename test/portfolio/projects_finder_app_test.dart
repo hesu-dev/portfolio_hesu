@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_svg/flutter_svg.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:portfolio_hesu/portfolio/apps/projects_app.dart';
 import 'package:portfolio_hesu/portfolio/data/portfolio_data.dart';
@@ -54,7 +55,7 @@ void main() {
         tester.getSize(collectionScroll).height,
         closeTo(tester.getSize(sidebar).height, 1),
       );
-      for (var index = 0; index < 4; index++) {
+      for (var index = 0; index < 6; index++) {
         expect(
           find.descendant(
             of: grid,
@@ -68,7 +69,7 @@ void main() {
         findsNothing,
       );
 
-      await tester.tap(find.byKey(const Key('projects-career-folder-1')));
+      await tester.tap(find.byKey(const Key('projects-career-folder-3')));
       await tester.pumpAndSettle();
       expect(find.byKey(const Key('projects-finder-grid')), findsNothing);
       expect(find.byKey(const Key('projects-collection-scroll')), findsNothing);
@@ -83,7 +84,7 @@ void main() {
       expect(
         tester
             .widget<AppleFinderFolderTile>(
-              find.byKey(const Key('project-selector-3')),
+              find.byKey(const Key('project-selector-5')),
             )
             .selected,
         isTrue,
@@ -130,7 +131,7 @@ void main() {
 
         final grid = find.byKey(const Key('projects-finder-grid'));
         expect(grid, findsOneWidget, reason: '$contentWidth');
-        for (var index = 0; index < 4; index++) {
+        for (var index = 0; index < 6; index++) {
           expect(
             find.descendant(
               of: grid,
@@ -171,7 +172,7 @@ void main() {
       expect(inlineTrafficLights, findsNothing);
     });
 
-    testWidgets('좁은 iPhone은 가용 폭을 채운 2열과 별도 상세 뎁스를 스크롤한다', (tester) async {
+    testWidgets('좁은 iPhone은 2열 회사 목록에서 두 번째 AI Switch 상세를 연다', (tester) async {
       await _pumpProjects(
         tester,
         size: const Size(320, 480),
@@ -194,7 +195,7 @@ void main() {
       expect(find.byKey(const Key('project-detail-title')), findsNothing);
 
       final folders = <Finder>[
-        for (var index = 0; index < 4; index++)
+        for (var index = 0; index < 6; index++)
           find.byKey(Key('projects-career-folder-$index')),
       ];
       for (final folder in folders) {
@@ -226,7 +227,33 @@ void main() {
       await tester.pumpAndSettle();
       expect(find.byKey(const Key('projects-finder-grid')), findsNothing);
       expect(find.byKey(const Key('projects-detail-scroll')), findsOneWidget);
+      expect(
+        tester.widget<Text>(find.byKey(const Key('project-detail-title'))).data,
+        'AI Switch',
+      );
+      expect(
+        find.text('React와 TypeScript로 제작된 AI Switch 홈페이지 유지보수 업무입니다.'),
+        findsOneWidget,
+      );
+      expect(find.text('#React'), findsOneWidget);
+      expect(find.text('#TypeScript'), findsOneWidget);
+      expect(find.text('React·TypeScript 기반 홈페이지 유지보수'), findsOneWidget);
       expect(find.byKey(const Key('project-link-3-0')), findsOneWidget);
+      final headerIcon = find.byKey(const Key('project-detail-icon'));
+      expect(tester.getSize(headerIcon), const Size(74, 74));
+      final svg = tester.widget<SvgPicture>(
+        find.descendant(of: headerIcon, matching: find.byType(SvgPicture)),
+      );
+      expect(
+        (svg.bytesLoader as SvgAssetLoader).assetName,
+        'assets/icons/projects/ai-switch.svg',
+      );
+      for (final contentType in <Type>[Image, Icon, Text]) {
+        expect(
+          find.descendant(of: headerIcon, matching: find.byType(contentType)),
+          findsNothing,
+        );
+      }
       expect(tester.takeException(), isNull);
     });
 
@@ -243,7 +270,7 @@ void main() {
         );
 
         final folders = <Finder>[
-          for (var index = 0; index < 4; index++)
+          for (var index = 0; index < 6; index++)
             find.byKey(Key('projects-career-folder-$index')),
         ];
         final availableWidth = scenario.width - 32;
@@ -286,7 +313,7 @@ void main() {
       expect(find.byKey(const Key('project-detail-title')), findsNothing);
 
       final folders = <Finder>[
-        for (var index = 0; index < 4; index++)
+        for (var index = 0; index < 6; index++)
           find.byKey(Key('projects-career-folder-$index')),
       ];
 
@@ -326,7 +353,7 @@ void main() {
       expect(tester.takeException(), isNull);
     });
 
-    testWidgets('상세는 연도와 액션부터 문제 해결 서사까지 요청 순서로 표시한다', (tester) async {
+    testWidgets('상세는 소개 안의 링크와 기술·기여도·회고를 순서대로 표시한다', (tester) async {
       await _pumpProjects(
         tester,
         size: const Size(1024, 1600),
@@ -336,9 +363,39 @@ void main() {
       await tester.tap(find.byKey(const Key('projects-career-folder-0')));
       await tester.pumpAndSettle();
 
-      expect(find.byKey(const Key('project-detail-year')), findsOneWidget);
-      expect(find.text('2026'), findsOneWidget);
+      final iconPlaceholder = find.byKey(const Key('project-detail-icon'));
+      expect(iconPlaceholder, findsOneWidget);
+      expect(tester.getSize(iconPlaceholder), const Size(74, 74));
+      for (final contentType in <Type>[Image, Icon, Text]) {
+        expect(
+          find.descendant(
+            of: iconPlaceholder,
+            matching: find.byType(contentType),
+          ),
+          findsNothing,
+        );
+      }
+      expect(find.text('2026'), findsNothing);
+      expect(find.text('YEAR'), findsNothing);
+      expect(find.text(_caseStudyData.projects.single.period), findsOneWidget);
       expect(find.byKey(const Key('project-detail-title')), findsOneWidget);
+      final introduction = find.byKey(const Key('project-introduction'));
+      expect(introduction, findsOneWidget);
+      expect(
+        find.descendant(
+          of: introduction,
+          matching: find.text('Case study overview'),
+        ),
+        findsOneWidget,
+      );
+      expect(
+        find.descendant(
+          of: introduction,
+          matching: find.byKey(const Key('project-link-0-0')),
+        ),
+        findsOneWidget,
+      );
+      expect(find.text('역할 · 기여도'), findsOneWidget);
       expect(find.byKey(const Key('project-actions')), findsOneWidget);
       expect(find.byKey(const Key('project-link-0-0')), findsOneWidget);
       expect(find.byKey(const Key('project-technologies')), findsOneWidget);
@@ -351,10 +408,10 @@ void main() {
 
       final orderedKeys = <Key>[
         const Key('project-detail-header'),
-        const Key('project-actions'),
+        const Key('project-introduction'),
         const Key('project-technologies'),
-        const Key('project-architecture'),
         const Key('project-highlights'),
+        const Key('project-architecture'),
         const Key('project-narrative'),
       ];
       var previousTop = double.negativeInfinity;
@@ -366,7 +423,8 @@ void main() {
         previousTop = top;
       }
 
-      for (final kind in PortfolioProjectSectionKind.values) {
+      for (final item in _caseStudyData.projects.single.sections) {
+        final kind = item.kind;
         final section = find.byKey(Key('project-section-${kind.name}'));
         expect(section, findsOneWidget, reason: kind.label);
         expect(
@@ -374,6 +432,58 @@ void main() {
           findsOneWidget,
         );
       }
+      expect(tester.takeException(), isNull);
+    });
+
+    testWidgets('출시 앱은 목록과 상세에 같은 아이콘을 쓰고 IRIS 목록은 폴더를 유지한다', (tester) async {
+      await _pumpProjects(tester, size: const Size(900, 650));
+      for (final index in <int>[4, 6, 7]) {
+        final tile = find.byKey(Key('project-selector-$index'));
+        expect(
+          find.descendant(of: tile, matching: find.byType(Image)),
+          findsOneWidget,
+        );
+        expect(
+          find.descendant(
+            of: tile,
+            matching: find.byIcon(Icons.folder_rounded),
+          ),
+          findsNothing,
+        );
+      }
+      expect(
+        find.descendant(
+          of: find.byKey(const Key('project-selector-5')),
+          matching: find.byIcon(Icons.folder_rounded),
+        ),
+        findsOneWidget,
+      );
+      await tester.tap(find.byKey(const Key('project-selector-4')));
+      await tester.pumpAndSettle();
+      final detailIcon = find.byKey(const Key('project-detail-icon'));
+      final image = find.descendant(
+        of: detailIcon,
+        matching: find.byType(Image),
+      );
+      expect(image, findsOneWidget);
+      expect(
+        tester.widget<Image>(image).image,
+        const AssetImage('assets/icons/projects/blue-mentor.png'),
+      );
+      expect(find.text('YEAR'), findsNothing);
+      await tester.tap(find.byKey(const Key('projects-finder-back')));
+      await tester.pumpAndSettle();
+      await tester.tap(
+        find.byKey(const Key('projects-finder-location-personal-projects')),
+      );
+      await tester.pumpAndSettle();
+      expect(
+        find.descendant(
+          of: find.byKey(const Key('project-selector-0')),
+          matching: find.byType(Image),
+        ),
+        findsOneWidget,
+      );
       expect(tester.takeException(), isNull);
     });
 
@@ -452,10 +562,11 @@ void main() {
 
       expect(
         tester
-            .getSemantics(find.byKey(const Key('project-detail-year')))
+            .getSemantics(find.byKey(const Key('project-detail-title')))
             .getSemanticsData()
-            .label,
-        '프로젝트 시작 연도 2026',
+            .flagsCollection
+            .isHeader,
+        isTrue,
       );
       expect(
         tester
@@ -556,7 +667,57 @@ void main() {
       expect(find.text('#'), findsNothing);
     });
 
-    testWidgets('핵심 강조색은 라이트·다크 배경에서 텍스트 대비를 보장한다', (tester) async {
+    testWidgets('AI 역량 검사 폴더에서 화면을 확대하고 상세로 돌아온다', (tester) async {
+      for (final size in <Size>[const Size(320, 760), const Size(900, 900)]) {
+        await tester.pumpWidget(const SizedBox.shrink());
+        await _pumpProjects(
+          tester,
+          size: size,
+          compact: size.width < 600,
+          textScaler: const TextScaler.linear(2),
+        );
+        final folder = find.byKey(const Key('projects-career-folder-0'));
+        await tester.ensureVisible(folder);
+        await tester.tap(folder);
+        await tester.pumpAndSettle();
+
+        expect(
+          tester
+              .widget<Text>(find.byKey(const Key('project-detail-title')))
+              .data,
+          'AI 역량 검사',
+        );
+        expect(find.text('2026.08 - 2026.09'), findsOneWidget);
+        expect(find.byKey(const Key('project-link-2-0')), findsOneWidget);
+        expect(find.byKey(const Key('project-screenshots')), findsOneWidget);
+        for (var index = 0; index < 3; index++) {
+          expect(find.byKey(Key('project-screenshot-$index')), findsOneWidget);
+        }
+
+        final screenshot = find.byKey(const Key('project-screenshot-0'));
+        await tester.ensureVisible(screenshot);
+        await tester.pumpAndSettle();
+        await tester.tap(screenshot);
+        await tester.pumpAndSettle();
+        expect(
+          find.byKey(const Key('project-screenshot-preview')),
+          findsOneWidget,
+        );
+        expect(find.byType(InteractiveViewer), findsOneWidget);
+        expect(tester.takeException(), isNull);
+
+        await tester.tap(find.byTooltip('닫기'));
+        await tester.pumpAndSettle();
+        expect(
+          find.byKey(const Key('project-screenshot-preview')),
+          findsNothing,
+        );
+        expect(find.byKey(const Key('project-detail-title')), findsOneWidget);
+        expect(tester.takeException(), isNull);
+      }
+    });
+
+    testWidgets('서사 라벨은 라이트·다크 배경에서 텍스트 대비를 보장한다', (tester) async {
       for (final theme in <ThemeData>[AppleTheme.light(), AppleTheme.dark()]) {
         await tester.pumpWidget(const SizedBox.shrink());
         await _pumpProjects(
@@ -567,17 +728,6 @@ void main() {
         );
         await tester.tap(find.byKey(const Key('projects-career-folder-0')));
         await tester.pumpAndSettle();
-
-        final year = tester.widget<Container>(
-          find.byKey(const Key('project-detail-year')),
-        );
-        final gradient = (year.decoration! as BoxDecoration).gradient!;
-        for (final color in gradient.colors) {
-          expect(
-            _contrastRatio(Colors.white, color),
-            greaterThanOrEqualTo(4.5),
-          );
-        }
 
         final label = tester.widget<Text>(
           find.byKey(const Key('project-section-work-label')),
