@@ -7,6 +7,7 @@ import '../models/portfolio_app_id.dart';
 import '../music/music_controller.dart';
 import '../services/external_launcher.dart';
 import '../theme/portfolio_theme_controller.dart';
+import '../widgets/portfolio_guide_button.dart';
 import 'apple_home_grid.dart';
 import 'apple_mobile_dock.dart';
 import 'apple_mobile_dock_geometry.dart';
@@ -236,6 +237,20 @@ class _AppleMobileShellState extends State<AppleMobileShell> {
                   ),
                 ),
               ),
+            Positioned.fill(
+              key: const ValueKey('floating-portfolio-guide'),
+              child: PortfolioGuideButton(
+                onOpenApp: _openApp,
+                initialRight: 16,
+                initialBottom:
+                    AppleMobileDockGeometry.homeIndicatorExtent +
+                    AppleMobileDockGeometry.homeBottomOffset(
+                      tablet: widget.tablet,
+                    ) +
+                    AppleMobileDockGeometry.height(tablet: widget.tablet) +
+                    12,
+              ),
+            ),
           ],
         ),
       ),

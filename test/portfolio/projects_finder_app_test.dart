@@ -6,6 +6,7 @@ import 'package:portfolio_hesu/portfolio/data/portfolio_data.dart';
 import 'package:portfolio_hesu/portfolio/services/external_launcher.dart';
 import 'package:portfolio_hesu/portfolio/theme/apple_theme.dart';
 import 'package:portfolio_hesu/portfolio/widgets/apple_finder_scaffold.dart';
+import 'package:portfolio_hesu/portfolio/widgets/project_app_icon.dart';
 
 void main() {
   group('Finder형 Projects 화면', () {
@@ -435,9 +436,9 @@ void main() {
       expect(tester.takeException(), isNull);
     });
 
-    testWidgets('출시 앱은 목록과 상세에 같은 아이콘을 쓰고 IRIS 목록은 폴더를 유지한다', (tester) async {
+    testWidgets('출시 앱과 IRIS·AI 역량 검사는 목록과 상세에 같은 아이콘을 쓴다', (tester) async {
       await _pumpProjects(tester, size: const Size(900, 650));
-      for (final index in <int>[4, 6, 7]) {
+      for (final index in <int>[2, 4, 6, 7]) {
         final tile = find.byKey(Key('project-selector-$index'));
         expect(
           find.descendant(of: tile, matching: find.byType(Image)),
@@ -456,23 +457,44 @@ void main() {
           of: find.byKey(const Key('project-selector-5')),
           matching: find.byIcon(Icons.folder_rounded),
         ),
-        findsOneWidget,
+        findsNothing,
       );
-      await tester.tap(find.byKey(const Key('project-selector-4')));
-      await tester.pumpAndSettle();
-      final detailIcon = find.byKey(const Key('project-detail-icon'));
-      final image = find.descendant(
-        of: detailIcon,
-        matching: find.byType(Image),
+      final iris = tester.widget<SvgPicture>(
+        find.descendant(
+          of: find.byKey(const Key('project-selector-5')),
+          matching: find.byType(SvgPicture),
+        ),
       );
-      expect(image, findsOneWidget);
       expect(
-        tester.widget<Image>(image).image,
-        const AssetImage('assets/icons/projects/blue-mentor.png'),
+        (iris.bytesLoader as SvgAssetLoader).assetName,
+        'assets/icons/projects/iris.svg',
       );
-      expect(find.text('YEAR'), findsNothing);
-      await tester.tap(find.byKey(const Key('projects-finder-back')));
-      await tester.pumpAndSettle();
+      final aiq = tester.widget<Image>(
+        find.descendant(
+          of: find.byKey(const Key('project-selector-2')),
+          matching: find.byType(Image),
+        ),
+      );
+      expect(aiq.image, const AssetImage('assets/icons/projects/aiq.png'));
+      expect(aiq.fit, BoxFit.contain);
+      for (final (index, asset) in <(int, String)>[
+        (2, 'assets/icons/projects/aiq.png'),
+        (4, 'assets/icons/projects/blue-mentor.png'),
+        (5, 'assets/icons/projects/iris.svg'),
+      ]) {
+        await tester.tap(find.byKey(Key('project-selector-$index')));
+        await tester.pumpAndSettle();
+        final detailIcon = find.byKey(const Key('project-detail-icon'));
+        final icon = find.descendant(
+          of: detailIcon,
+          matching: find.byType(ProjectAppIcon),
+        );
+        expect(icon, findsOneWidget);
+        expect(tester.widget<ProjectAppIcon>(icon).assetPath, asset);
+        expect(find.text('YEAR'), findsNothing);
+        await tester.tap(find.byKey(const Key('projects-finder-back')));
+        await tester.pumpAndSettle();
+      }
       await tester.tap(
         find.byKey(const Key('projects-finder-location-personal-projects')),
       );

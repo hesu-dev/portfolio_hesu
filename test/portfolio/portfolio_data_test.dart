@@ -434,7 +434,9 @@ void main() {
       expect(
         PortfolioProjectSectionKind.values.map((kind) => kind.label),
         <String>[
+          '소속',
           '업무',
+          '기능',
           '문제',
           '원인',
           '측정',
@@ -587,7 +589,11 @@ void main() {
         }
         expect(
           project.sections.map((section) => section.kind.label),
-          containsAll(<String>['업무', '배운 점', '직무 연관성', '성과 · 지표']),
+          containsAll(
+            project.title == 'ReadingLog'
+                ? <String>['소속', '업무', '기능']
+                : <String>['업무', '배운 점', '직무 연관성', '성과 · 지표'],
+          ),
           reason: project.title,
         );
         expect(
@@ -601,7 +607,7 @@ void main() {
       }
     });
 
-    test('documents the ReadingLog app flow and project reflection', () {
+    test('documents ReadingLog roles, features, stack and ongoing operation', () {
       final project = portfolioData.projects.singleWhere(
         (project) => project.title == 'ReadingLog',
       );
@@ -612,18 +618,48 @@ void main() {
         PortfolioArchitecturePresentation.flow,
       );
       expect(project.architecture!.nodes, <String>[
-        '채팅 로그',
+        'HTML 채팅 로그',
         'Chrome 확장 프로그램',
-        'JSON 내보내기',
-        'ReadingLog 앱',
+        'JSON 변환',
+        '스키마 기반 Flutter 화면',
+        'PDF · EPUB 내보내기',
       ]);
       expect(project.sections.map((section) => section.kind.label), <String>[
+        '소속',
         '업무',
-        '해결',
-        '배운 점',
-        '직무 연관성',
-        '성과 · 지표',
+        '기능',
       ]);
+      expect(project.category, PortfolioProjectCategory.personal);
+      expect(project.technologies, <String>[
+        'Flutter',
+        'Dart',
+        'JavaScript',
+        'Codex',
+        'GitHub',
+        'Firebase Hosting',
+      ]);
+      final content = <String>[
+        project.description,
+        ...project.highlights,
+        ...project.sections.map((section) => section.body),
+      ].join('\n');
+      for (final detail in <String>[
+        'UI/UX',
+        'JSON 파싱',
+        '채팅 로그 변환',
+        'Chrome 확장 프로그램 개발',
+        '언어 전환 및 다국어 설정',
+        'PDF·EPUB',
+        '검색 데이터 정비',
+        '세이프 텍스트 검수 자동화',
+        '백그라운드 오디오',
+        '이펙트 디자인',
+        '현재 운영 중',
+      ]) {
+        expect(content, contains(detail), reason: detail);
+      }
+      expect(content, isNot(contains('임시 예시')));
+      expect(content, isNot(contains('40%')));
     });
 
     test('marks PersonaChat as measured design work rather than a launch', () {

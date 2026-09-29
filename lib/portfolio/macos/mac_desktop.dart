@@ -8,6 +8,7 @@ import '../services/external_launcher.dart';
 import '../theme/portfolio_theme_controller.dart';
 import '../widgets/apple_app_artwork.dart';
 import '../widgets/apple_app_icon.dart';
+import '../widgets/portfolio_guide_button.dart';
 import 'mac_dock.dart';
 import 'mac_menu_bar.dart';
 import 'mac_wallpaper.dart';
@@ -262,6 +263,13 @@ class _MacDesktopState extends State<MacDesktop> {
                         right: 12,
                         child: MacNotificationsPanel(),
                       ),
+                    Positioned.fill(
+                      key: const ValueKey('floating-portfolio-guide'),
+                      child: PortfolioGuideButton(
+                        onOpenApp: _openApp,
+                        onOpened: _dismissPanels,
+                      ),
+                    ),
                   ],
                 ),
               ),

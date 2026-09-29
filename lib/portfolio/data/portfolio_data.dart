@@ -99,7 +99,9 @@ class PortfolioRepository {
 }
 
 enum PortfolioProjectSectionKind {
+  affiliation('소속'),
   work('업무'),
+  features('기능'),
   problem('문제'),
   cause('원인'),
   measurement('측정'),
@@ -486,44 +488,60 @@ const portfolioData = PortfolioData.constant(
       title: 'ReadingLog',
       category: PortfolioProjectCategory.personal,
       appIconAsset: 'assets/icons/projects/readinglog.jpg',
-      description: '채팅 로그 리더기 앱 기획 및 개발, 파싱용 Chrome 확장 프로그램 개발',
+      description:
+          '채팅 로그를 JSON으로 변환하는 Chrome 확장 프로그램과 '
+          '스키마에 맞춰 로그를 보여주는 Flutter 리더 앱을 기획·디자인·개발한 개인 프로젝트입니다.',
       period: '2026.02 - 2026.05',
-      technologies: <String>['Flutter', 'Dart', 'JavaScript'],
+      technologies: <String>[
+        'Flutter',
+        'Dart',
+        'JavaScript',
+        'Codex',
+        'GitHub',
+        'Firebase Hosting',
+      ],
       highlights: <String>[
-        '앱·확장 프로그램 기획 및 개발 · 기여도 100% (임시 예시)',
-        'Flutter 로그 리더와 JavaScript 파싱 확장 프로그램 개발',
-        '로그 추출·모바일 열람 흐름 설계 및 3개 스토어 배포',
+        'UI/UX 기획 및 디자인',
+        'JSON 파싱 및 채팅 로그 변환',
+        'Flutter 프런트엔드 구현 및 이펙트 디자인',
+        'Chrome 확장 프로그램 개발',
       ],
       architecture: PortfolioProjectArchitecture.constant(
-        title: '로그 추출부터 모바일 열람까지',
-        description: '브라우저에서 채팅 로그를 구조화된 파일로 내보내고 Flutter 앱에서 다시 읽는 흐름입니다.',
+        title: 'HTML 채팅 로그에서 Flutter 화면과 문서 내보내기까지',
+        description:
+            'Chrome 확장 프로그램으로 HTML 채팅 로그를 JSON으로 변환하고, '
+            'Flutter 앱에서 JSON 스키마 구조에 따라 화면을 배치합니다. '
+            '데이터는 PDF와 EPUB 형식으로 내보낼 수 있습니다.',
         presentation: PortfolioArchitecturePresentation.flow,
-        nodes: <String>['채팅 로그', 'Chrome 확장 프로그램', 'JSON 내보내기', 'ReadingLog 앱'],
+        nodes: <String>[
+          'HTML 채팅 로그',
+          'Chrome 확장 프로그램',
+          'JSON 변환',
+          '스키마 기반 Flutter 화면',
+          'PDF · EPUB 내보내기',
+        ],
       ),
       sections: <PortfolioProjectSection>[
         PortfolioProjectSection(
+          kind: PortfolioProjectSectionKind.affiliation,
+          body: '개인',
+        ),
+        PortfolioProjectSection(
           kind: PortfolioProjectSectionKind.work,
-          body: '채팅 로그 리더기 앱 기획 및 개발, 파싱용 Chrome 확장 프로그램 개발',
+          body: '기획·디자인·개발 및 스토어 출시를 진행했으며, 현재 운영 중입니다.',
         ),
         PortfolioProjectSection(
-          kind: PortfolioProjectSectionKind.solution,
+          kind: PortfolioProjectSectionKind.features,
           body:
-              'Chrome 확장 프로그램은 로그 파싱과 JSON 내보내기를, Flutter 앱은 가져온 로그의 모바일 열람 경험을 담당하도록 역할을 분리했습니다.',
-        ),
-        PortfolioProjectSection(
-          kind: PortfolioProjectSectionKind.learning,
-          body:
-              'JSON을 매개로 브라우저와 모바일의 책임을 나누며, 플랫폼 간 데이터 형식과 사용자 흐름을 함께 설계하는 중요성을 배웠습니다.',
-        ),
-        PortfolioProjectSection(
-          kind: PortfolioProjectSectionKind.relevance,
-          body:
-              '아이디어를 Flutter 앱과 확장 프로그램으로 구현하고 스토어 배포까지 연결한 경험입니다. 크로스플랫폼 앱 개발과 제품의 전체 사용 흐름을 고려하는 업무에 활용할 수 있습니다.',
-        ),
-        PortfolioProjectSection(
-          kind: PortfolioProjectSectionKind.outcome,
-          body:
-              'Google Play·App Store·Chrome Web Store 3개 채널에 배포했습니다. 임시 성과 예시: 로그 추출부터 열람까지의 소요 시간 40% 단축. 수치는 실제 측정 후 교체할 초안입니다.',
+              '• Chrome 확장 프로그램의 HTML → JSON 변환\n'
+              '• JSON 스키마 구조에 따른 Flutter 화면 배치\n'
+              '• 언어 전환 및 다국어 설정\n'
+              '• 데이터 양식의 PDF·EPUB 내보내기\n'
+              '• 검색 기능 구현 및 검색 데이터 정비\n'
+              '• 세이프 텍스트 검수 자동화\n'
+              '• 백그라운드 오디오 기능\n'
+              '• 이펙트 디자인\n'
+              '• 기타 프런트엔드 기능 구현',
         ),
       ],
       links: <PortfolioProjectLink>[
@@ -623,6 +641,7 @@ const portfolioData = PortfolioData.constant(
     PortfolioProject.constant(
       title: 'AI 역량 검사',
       category: PortfolioProjectCategory.career,
+      appIconAsset: 'assets/icons/projects/aiq.png',
       description:
           '기업 구성원의 AI 활용 역량을 평가하는 웹 기반 진단 서비스입니다. '
           '기업 신청·초대, AI 협업 응시, 자동 채점과 개인·조직 리포트를 하나의 흐름으로 구현한 기능형 POC입니다.',
@@ -780,6 +799,7 @@ const portfolioData = PortfolioData.constant(
     PortfolioProject.constant(
       title: 'IRIS',
       category: PortfolioProjectCategory.career,
+      appIconAsset: 'assets/icons/projects/iris.svg',
       description: '범부처통합연구지원시스템 R&D 참여: 3D 증강현실 기반 교량 점검 시스템 개발',
       period: '2022.12 - 2023.12',
       technologies: <String>['React', 'Unity', 'MySQL'],
@@ -807,6 +827,13 @@ const portfolioData = PortfolioData.constant(
           kind: PortfolioProjectSectionKind.outcome,
           body:
               '관련 연구 논문 1건을 프로젝트 자료로 연결했습니다. 임시 성과 예시: 교량 점검 정보 확인 시간 20% 단축. 수치는 실제 검증 후 교체할 초안이며 논문의 측정 결과를 인용한 값은 아닙니다.',
+        ),
+      ],
+      screenshots: <PortfolioProjectScreenshot>[
+        PortfolioProjectScreenshot(
+          asset: 'assets/screenshots/iris/01.png',
+          caption: 'IRIS 통합업무포털의 연구과제 참여 내역',
+          aspectRatio: 2680 / 808,
         ),
       ],
       links: <PortfolioProjectLink>[

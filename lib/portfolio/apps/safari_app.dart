@@ -413,7 +413,9 @@ class _SafariAppState extends State<SafariApp> {
                             children: [
                               AspectRatio(
                                 aspectRatio: 1.35,
-                                child: entry.$2.screenshots.isNotEmpty
+                                child:
+                                    entry.$2.appIconAsset == null &&
+                                        entry.$2.screenshots.isNotEmpty
                                     ? Image.asset(
                                         entry.$2.screenshots.first.asset,
                                         fit: BoxFit.cover,

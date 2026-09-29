@@ -71,6 +71,7 @@ flutter:
     - assets/illustrations/profile/
     - assets/music/
     - assets/screenshots/ai-work-skills/
+    - assets/screenshots/iris/
     - assets/sprites/
 
   # An image asset can refer to one or more resolution-specific "variants", see
