@@ -1,0 +1,19 @@
+<svg width="64" height="64" viewBox="0 0 64 64" fill="none" xmlns="http://www.w3.org/2000/svg">
+  <defs>
+    <linearGradient id="body" x1="32" y1="21" x2="32" y2="49" gradientUnits="userSpaceOnUse">
+      <stop stop-color="#F0F2F5"/><stop offset="1" stop-color="#9CA5B1"/>
+    </linearGradient>
+    <linearGradient id="paper" x1="32" y1="36" x2="32" y2="59" gradientUnits="userSpaceOnUse">
+      <stop stop-color="#D6DCE3"/><stop offset=".24" stop-color="#FFFFFF"/>
+    </linearGradient>
+  </defs>
+  <ellipse cx="32" cy="57" rx="23" ry="3" fill="#000" fill-opacity=".18"/>
+  <rect x="17" y="4.5" width="30" height="25" rx="2" fill="#FCFCFD" stroke="#BEC5CF"/>
+  <path d="M23 11h18M23 15h18M23 19h12" stroke="#B6C0CE" stroke-width="2" stroke-linecap="round"/>
+  <rect x="5" y="22" width="54" height="27" rx="7" fill="url(#body)" stroke="#838D9A"/>
+  <path d="M8 29h48" stroke="#FFFFFF" stroke-opacity=".6"/>
+  <rect x="13" y="35" width="38" height="11" rx="3" fill="#424B59"/>
+  <circle cx="50" cy="28" r="2" fill="#52B788"/>
+  <rect x="17" y="38" width="30" height="20" rx="1.5" fill="url(#paper)" stroke="#B6BEC9"/>
+  <path d="M23 45h18M23 49h18M23 53h11" stroke="#AAB4C2" stroke-width="1.7" stroke-linecap="round"/>
+</svg>

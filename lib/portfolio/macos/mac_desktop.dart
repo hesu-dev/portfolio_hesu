@@ -8,6 +8,7 @@ import '../services/external_launcher.dart';
 import '../theme/portfolio_theme_controller.dart';
 import '../widgets/apple_app_artwork.dart';
 import '../widgets/apple_app_icon.dart';
+import '../widgets/desktop_printer_shortcut.dart';
 import '../widgets/portfolio_guide_button.dart';
 import 'mac_dock.dart';
 import 'mac_menu_bar.dart';
@@ -193,6 +194,11 @@ class _MacDesktopState extends State<MacDesktop> {
                       ),
                     ),
                     _buildDesktopIcons(),
+                    Positioned(
+                      top: 56,
+                      left: 20,
+                      child: DesktopPrinterShortcut(data: widget.data),
+                    ),
                     for (final appId in _zOrder)
                       if (_windows[appId] case final window?)
                         _buildWindow(window, active: activeApp == appId),
