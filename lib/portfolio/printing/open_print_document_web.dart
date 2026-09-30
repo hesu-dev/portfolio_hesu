@@ -1,5 +1,4 @@
 import 'dart:async';
-import 'dart:convert';
 import 'dart:js_interop';
 
 import 'package:flutter/services.dart';
@@ -12,16 +11,22 @@ import 'portfolio_print_document.dart';
 /// Opens the tab before any await to retain the click's popup permission.
 Future<bool> openPrintDocument(PortfolioData data) async {
   web.Window? preview;
+  final ready = Completer<void>();
+  final previewUrl = Uri.base.resolve('print-preview.html').toString();
+  final onReady = ((web.MessageEvent event) {
+    if (event.origin == web.window.location.origin && event.source == preview) {
+      if (event.data.dartify() case {'type': 'portfolio-print-ready'}) {
+        if (!ready.isCompleted) ready.complete();
+      }
+    }
+  }).toJS;
+  web.window.addEventListener('message', onReady);
   try {
-    preview = web.window.open('', '_blank');
+    preview = web.window.open(previewUrl, '_blank');
     if (preview == null) return false;
-    preview.opener = null;
-    _write(preview, '''<!doctype html><html lang="ko"><head>
-<meta charset="utf-8"><title>${const HtmlEscape().convert(data.name)} 포트폴리오</title>
-<style>body { margin:0; display:grid; place-items:center; min-height:100vh;
-background:#292a2d; color:#fff; font:16px system-ui,sans-serif; }</style>
-</head><body><p role="status">PDF를 준비하고 있습니다…</p></body></html>''');
+    await ready.future.timeout(const Duration(seconds: 15));
 
+    String? pdfUrl;
     if (web.window.navigator.pdfViewerEnabled) {
       try {
         final fonts = await Future.wait([
@@ -39,35 +44,35 @@ background:#292a2d; color:#fff; font:16px system-ui,sans-serif; }</style>
           [bytes.toJS].toJS,
           web.BlobPropertyBag(type: 'application/pdf'),
         );
-        final url = web.URL.createObjectURL(pdf);
-        preview.location.replace('$url#toolbar=1&navpanes=1&view=FitH');
-        // Keep the URL alive for the viewer's later save/print operations.
-        final viewer = preview;
-        Timer.periodic(const Duration(seconds: 30), (timer) {
-          if (viewer.closed) {
-            web.URL.revokeObjectURL(url);
-            timer.cancel();
-          }
-        });
-        return true;
+        pdfUrl = web.URL.createObjectURL(pdf);
       } catch (_) {
         // Font loading or PDF rendering failure still leaves a printable copy.
       }
     }
-    if (preview.closed) return true;
-    _write(
-      preview,
-      buildPortfolioPrintDocument(data, introduction: data.identity.biography),
+    // Returning while the fonts/PDF load must not replace the portfolio page.
+    if (preview.closed || preview.location.href != previewUrl) {
+      if (pdfUrl != null) web.URL.revokeObjectURL(pdfUrl);
+      return true;
+    }
+    preview.postMessage(
+      {
+        'type': 'portfolio-print-document',
+        'title': '${data.name} 포트폴리오',
+        'returnUrl': web.window.location.href,
+        'html': buildPortfolioPrintDocument(
+          data,
+          introduction: data.identity.biography,
+        ),
+        'pdfUrl': pdfUrl,
+      }.jsify(),
+      web.window.location.origin.toJS,
     );
     return true;
   } catch (_) {
+    if (preview?.closed ?? false) return true;
     preview?.close();
     return false;
+  } finally {
+    web.window.removeEventListener('message', onReady);
   }
-}
-
-void _write(web.Window window, String html) {
-  window.document.open();
-  window.document.write(html.toJS);
-  window.document.close();
 }

@@ -320,7 +320,7 @@ class _ProfileSidebar extends StatelessWidget {
                   const SizedBox(height: 6),
                   _ProfileSidebarAction(
                     actionKey: const Key('profile-sidebar-projects-action'),
-                    label: '회사 포트폴리오 열기',
+                    label: '파일의 회사 열기',
                     icon: Icons.work_outline_rounded,
                     selectedIcon: Icons.work_rounded,
                     onTap: onOpenProjects,
@@ -915,7 +915,7 @@ class _ProfileHistoryGrid extends StatelessWidget {
                   summary: '${data.experiences.length}개',
                   kind: _ProfileHistoryKind.experience,
                   linkActionKey: const Key('profile-career-projects-link'),
-                  linkActionLabel: '포트폴리오 회사 열기',
+                  linkActionLabel: '파일의 회사 열기',
                   onLinkTap: onOpenCareerProjects,
                   onTap: () => onOpenHistory(_ProfileHistoryKind.experience),
                 ),

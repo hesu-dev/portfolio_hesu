@@ -89,6 +89,7 @@ class PortfolioAppContent extends StatelessWidget {
         tablet: tablet,
         finderWindowChrome: finderWindowChrome,
         onOpenApp: onOpenApp,
+        trashEmpty: trashEmpty,
       ),
       PortfolioAppId.safari => SafariApp(
         data: data,

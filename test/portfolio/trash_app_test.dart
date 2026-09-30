@@ -269,7 +269,7 @@ void main() {
     );
   });
 
-  testWidgets('empty Trash state updates Dock and survives a shell resize', (
+  testWidgets('empty Trash state updates Files and survives a shell resize', (
     tester,
   ) async {
     tester.view.devicePixelRatio = 1;
@@ -279,24 +279,30 @@ void main() {
 
     await tester.pumpWidget(const PortfolioApp());
     await tester.pumpAndSettle();
+    await tester.tap(find.byKey(const Key('dock-app-projects')));
+    await tester.pumpAndSettle();
+    await tester.tap(find.byKey(const Key('projects-finder-location-files')));
+    await tester.pumpAndSettle();
     expect(
       find.descendant(
-        of: find.byKey(const Key('dock-app-trash')),
+        of: find.byKey(const Key('projects-files-app-trash')),
         matching: find.byKey(const Key('apple-app-artwork-trash-filled')),
       ),
       findsOneWidget,
     );
 
-    await tester.tap(find.byKey(const Key('dock-app-trash')));
+    await tester.tap(find.byKey(const Key('projects-files-app-trash')));
     await tester.pumpAndSettle();
     await tester.tap(find.byKey(const Key('trash-empty-button')));
     await tester.pumpAndSettle();
     await tester.tap(find.byKey(const Key('trash-empty-confirm')));
     await tester.pumpAndSettle();
+    await tester.tap(find.byKey(const Key('window-close-trash')));
+    await tester.pumpAndSettle();
 
     expect(
       find.descendant(
-        of: find.byKey(const Key('dock-app-trash')),
+        of: find.byKey(const Key('projects-files-app-trash')),
         matching: find.byKey(const Key('apple-app-artwork-trash-empty')),
       ),
       findsOneWidget,
@@ -304,12 +310,30 @@ void main() {
 
     tester.view.physicalSize = const Size(390, 844);
     await tester.pumpAndSettle();
-    final homeTrash = find.byKey(const Key('home-app-trash'));
-    await tester.ensureVisible(homeTrash);
+    expect(find.byKey(const Key('home-app-trash')), findsNothing);
+    await tester.tap(find.byKey(const Key('home-app-projects')));
+    await tester.pumpAndSettle();
+    await tester.tap(find.byKey(const Key('projects-finder-location-files')));
+    await tester.pumpAndSettle();
+    final filesTrash = find.byKey(const Key('projects-files-app-trash'));
+    await tester.ensureVisible(filesTrash);
     await tester.pumpAndSettle();
     expect(
       find.descendant(
-        of: homeTrash,
+        of: filesTrash,
+        matching: find.byKey(const Key('apple-app-artwork-trash-empty')),
+      ),
+      findsOneWidget,
+    );
+    await tester.tap(filesTrash);
+    await tester.pumpAndSettle();
+    expect(find.byKey(const Key('trash-item-0')), findsNothing);
+    await tester.tap(find.byKey(const Key('mobile-back-close-trash')));
+    await tester.pumpAndSettle();
+    expect(find.byKey(const Key('projects-files-app-grid')), findsOneWidget);
+    expect(
+      find.descendant(
+        of: filesTrash,
         matching: find.byKey(const Key('apple-app-artwork-trash-empty')),
       ),
       findsOneWidget,

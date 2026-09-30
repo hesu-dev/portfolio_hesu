@@ -42,7 +42,7 @@ void main() {
         'about': '프로필',
         'introduction': '자기소개',
         'skills': '스킬',
-        'projects': '포트폴리오',
+        'projects': '파일',
         'safari': '프로젝트',
         'terminal': '터미널',
         'music': '배경음',
@@ -96,7 +96,7 @@ void main() {
         ),
       );
 
-      expect(find.bySemanticsLabel('Open 포트폴리오'), findsOneWidget);
+      expect(find.bySemanticsLabel('Open 파일'), findsOneWidget);
       expect(
         find.byKey(const Key('apple-app-icon-selection-projects')),
         findsOneWidget,

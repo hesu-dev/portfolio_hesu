@@ -13,6 +13,7 @@ import '../widgets/project_app_icon.dart';
 
 enum _ProjectsLocation {
   recent,
+  files,
   iCloudDrive,
   desktop,
   career,
@@ -22,6 +23,7 @@ enum _ProjectsLocation {
 extension on _ProjectsLocation {
   String get id => switch (this) {
     _ProjectsLocation.recent => 'recent',
+    _ProjectsLocation.files => 'files',
     _ProjectsLocation.iCloudDrive => 'icloud-drive',
     _ProjectsLocation.desktop => 'desktop',
     _ProjectsLocation.career => 'career',
@@ -30,6 +32,7 @@ extension on _ProjectsLocation {
 
   String get label => switch (this) {
     _ProjectsLocation.recent => '최근 항목',
+    _ProjectsLocation.files => '파일',
     _ProjectsLocation.iCloudDrive => 'iCloud Drive',
     _ProjectsLocation.desktop => '데스크탑',
     _ProjectsLocation.career => '회사',
@@ -38,6 +41,7 @@ extension on _ProjectsLocation {
 
   IconData get icon => switch (this) {
     _ProjectsLocation.recent => Icons.access_time_filled_rounded,
+    _ProjectsLocation.files => Icons.folder_rounded,
     _ProjectsLocation.iCloudDrive => Icons.cloud_rounded,
     _ProjectsLocation.desktop => Icons.desktop_mac_rounded,
     _ProjectsLocation.career => Icons.business_center_rounded,
@@ -75,6 +79,7 @@ class ProjectsApp extends StatefulWidget {
     this.tablet = false,
     this.finderWindowChrome,
     this.onOpenApp,
+    this.trashEmpty = false,
     super.key,
   });
 
@@ -84,6 +89,7 @@ class ProjectsApp extends StatefulWidget {
   final bool tablet;
   final AppleFinderWindowChrome? finderWindowChrome;
   final ValueChanged<PortfolioAppId>? onOpenApp;
+  final bool trashEmpty;
 
   @override
   State<ProjectsApp> createState() => _ProjectsAppState();
@@ -92,6 +98,7 @@ class ProjectsApp extends StatefulWidget {
 class _ProjectsAppState extends State<ProjectsApp> {
   static const List<_ProjectsLocation> _allLocationValues = <_ProjectsLocation>[
     _ProjectsLocation.recent,
+    _ProjectsLocation.files,
     _ProjectsLocation.iCloudDrive,
     _ProjectsLocation.desktop,
     _ProjectsLocation.career,
@@ -102,6 +109,7 @@ class _ProjectsAppState extends State<ProjectsApp> {
       <_ProjectsLocation>[
         _ProjectsLocation.iCloudDrive,
         _ProjectsLocation.desktop,
+        _ProjectsLocation.files,
         _ProjectsLocation.career,
         _ProjectsLocation.personalProjects,
       ];
@@ -109,6 +117,7 @@ class _ProjectsAppState extends State<ProjectsApp> {
   static const List<_ProjectsLocation> _mobileLocationValues =
       <_ProjectsLocation>[
         _ProjectsLocation.recent,
+        _ProjectsLocation.files,
         _ProjectsLocation.career,
         _ProjectsLocation.personalProjects,
       ];
@@ -400,7 +409,17 @@ class _ProjectsAppState extends State<ProjectsApp> {
         message: '연결된 파일이 생기면 이 위치에 표시됩니다.',
         bottomContentInset: bottomContentInset,
       ),
-      _ProjectsLocation.desktop => _DesktopApplicationsDirectory(
+      _ProjectsLocation.files => _ApplicationsDirectory(
+        keyPrefix: 'projects-files',
+        apps: portfolioFileAppIds,
+        compact: compact,
+        bottomContentInset: bottomContentInset,
+        onOpenApp: widget.onOpenApp,
+        trashEmpty: widget.trashEmpty,
+      ),
+      _ProjectsLocation.desktop => _ApplicationsDirectory(
+        keyPrefix: 'projects-desktop',
+        apps: portfolioMacDesktopLauncherAppIds,
         compact: compact,
         bottomContentInset: bottomContentInset,
         onOpenApp: widget.onOpenApp,
@@ -1413,21 +1432,27 @@ IconData _projectLinkIcon(Uri uri) => switch (uri.host) {
   _ => Icons.language_rounded,
 };
 
-class _DesktopApplicationsDirectory extends StatelessWidget {
-  const _DesktopApplicationsDirectory({
+class _ApplicationsDirectory extends StatelessWidget {
+  const _ApplicationsDirectory({
+    required this.keyPrefix,
+    required this.apps,
     required this.compact,
     required this.bottomContentInset,
     required this.onOpenApp,
+    this.trashEmpty = false,
   });
 
+  final String keyPrefix;
+  final List<PortfolioAppId> apps;
   final bool compact;
   final double bottomContentInset;
   final ValueChanged<PortfolioAppId>? onOpenApp;
+  final bool trashEmpty;
 
   @override
   Widget build(BuildContext context) {
     return GridView.builder(
-      key: const Key('projects-desktop-app-grid'),
+      key: Key('$keyPrefix-app-grid'),
       padding: EdgeInsets.fromLTRB(
         compact ? 16 : 24,
         compact ? 16 : 24,
@@ -1441,43 +1466,23 @@ class _DesktopApplicationsDirectory extends StatelessWidget {
         crossAxisSpacing: compact ? 6 : 10,
         mainAxisSpacing: compact ? 8 : 12,
       ),
-      itemCount: portfolioMacDesktopLauncherAppIds.length,
+      itemCount: apps.length,
       itemBuilder: (context, index) {
-        final appId = portfolioMacDesktopLauncherAppIds[index];
-        return _DesktopApplicationTile(
-          appId: appId,
-          compact: compact,
-          onOpen: onOpenApp == null ? null : () => onOpenApp!(appId),
+        final appId = apps[index];
+        return Center(
+          child: AppleAppIcon(
+            key: Key('$keyPrefix-app-${appId.name}'),
+            appId: appId,
+            compact: compact,
+            size: compact ? 52 : 58,
+            trashEmpty: trashEmpty,
+            artworkForegroundColor: appId == PortfolioAppId.github
+                ? Colors.black
+                : null,
+            onTap: onOpenApp == null ? null : () => onOpenApp!(appId),
+          ),
         );
       },
-    );
-  }
-}
-
-class _DesktopApplicationTile extends StatelessWidget {
-  const _DesktopApplicationTile({
-    required this.appId,
-    required this.compact,
-    required this.onOpen,
-  });
-
-  final PortfolioAppId appId;
-  final bool compact;
-  final VoidCallback? onOpen;
-
-  @override
-  Widget build(BuildContext context) {
-    return Center(
-      child: AppleAppIcon(
-        key: Key('projects-desktop-app-${appId.name}'),
-        appId: appId,
-        compact: compact,
-        size: compact ? 52 : 58,
-        artworkForegroundColor: appId == PortfolioAppId.github
-            ? Colors.black
-            : null,
-        onTap: onOpen,
-      ),
     );
   }
 }

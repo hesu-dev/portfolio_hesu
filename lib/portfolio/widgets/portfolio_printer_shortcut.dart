@@ -7,15 +7,23 @@ import 'package:flutter_svg/flutter_svg.dart';
 import '../data/portfolio_data.dart';
 import '../printing/open_print_document.dart';
 
-class DesktopPrinterShortcut extends StatelessWidget {
-  const DesktopPrinterShortcut({
+class PortfolioPrinterShortcut extends StatelessWidget {
+  const PortfolioPrinterShortcut({
     required this.data,
     this.openDocument = openPrintDocument,
+    this.iconSize = 50,
+    this.foregroundColor,
+    this.showLabel = true,
+    this.buttonKey = const Key('desktop-printer'),
     super.key,
   });
 
   final PortfolioData data;
   final FutureOr<bool> Function(PortfolioData data) openDocument;
+  final double iconSize;
+  final Color? foregroundColor;
+  final bool showLabel;
+  final Key buttonKey;
 
   Future<void> _open(BuildContext context) async {
     if (await openDocument(data) || !context.mounted) return;
@@ -43,19 +51,23 @@ class DesktopPrinterShortcut extends StatelessWidget {
     return Tooltip(
       message: '이력서 · 자기소개서 · 프로젝트 PDF 저장 / 인쇄',
       child: SizedBox(
-        width: 91,
+        width: showLabel ? 91 : iconSize + 12,
+        height: showLabel ? null : iconSize + 8,
         child: TextButton(
-          key: const Key('desktop-printer'),
+          key: buttonKey,
           onPressed: () => _open(context),
           style: ButtonStyle(
-            foregroundColor: const WidgetStatePropertyAll(Colors.white),
+            foregroundColor: WidgetStatePropertyAll(
+              foregroundColor ?? Colors.white,
+            ),
             overlayColor: WidgetStateProperty.resolveWith(
               (states) => states.contains(WidgetState.focused)
                   ? Colors.white.withValues(alpha: 0.24)
                   : Colors.black.withValues(alpha: 0.16),
             ),
-            padding: const WidgetStatePropertyAll(
-              EdgeInsets.symmetric(horizontal: 6, vertical: 10),
+            minimumSize: const WidgetStatePropertyAll(Size.zero),
+            padding: WidgetStatePropertyAll(
+              EdgeInsets.symmetric(horizontal: 6, vertical: showLabel ? 10 : 4),
             ),
             shape: WidgetStatePropertyAll(
               RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
@@ -66,27 +78,32 @@ class DesktopPrinterShortcut extends StatelessWidget {
             children: <Widget>[
               SvgPicture.asset(
                 'assets/icons/printer.svg',
-                width: 50,
-                height: 50,
-                excludeFromSemantics: true,
+                width: iconSize,
+                height: iconSize,
+                excludeFromSemantics: showLabel,
+                semanticsLabel: '프린터',
               ),
-              const SizedBox(height: 6),
-              const Text(
-                '프린터',
-                maxLines: 1,
-                overflow: TextOverflow.ellipsis,
-                style: TextStyle(
-                  fontSize: 11.5,
-                  fontWeight: FontWeight.w600,
-                  shadows: <Shadow>[
-                    Shadow(
-                      color: Color(0xB3000000),
-                      blurRadius: 4,
-                      offset: Offset(0, 1),
-                    ),
-                  ],
+              if (showLabel) ...<Widget>[
+                const SizedBox(height: 6),
+                Text(
+                  '프린터',
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
+                  style: TextStyle(
+                    fontSize: 11.5,
+                    fontWeight: FontWeight.w600,
+                    shadows: foregroundColor == null
+                        ? const <Shadow>[
+                            Shadow(
+                              color: Color(0xB3000000),
+                              blurRadius: 4,
+                              offset: Offset(0, 1),
+                            ),
+                          ]
+                        : null,
+                  ),
                 ),
-              ),
+              ],
             ],
           ),
         ),

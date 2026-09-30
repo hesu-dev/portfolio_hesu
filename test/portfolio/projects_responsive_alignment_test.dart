@@ -275,7 +275,7 @@ void main() {
       }
     });
 
-    testWidgets('mobile Finder navigation centers every icon in its third', (
+    testWidgets('mobile Finder navigation centers every icon in its quarter', (
       tester,
     ) async {
       for (final scenario in const <({Size size, bool compact, bool tablet})>[
@@ -293,13 +293,14 @@ void main() {
         final dock = find.byKey(const Key('projects-finder-mobile-dock'));
         final dockRect = tester.getRect(dock);
         const dockPadding = 5.0;
-        final slotWidth = (dockRect.width - dockPadding * 2) / 3;
+        final slotWidth = (dockRect.width - dockPadding * 2) / 4;
         final destinations = <({String id, String label, IconData icon})>[
           (
             id: 'recent',
             label: '최근 항목',
             icon: Icons.access_time_filled_rounded,
           ),
+          (id: 'files', label: '파일', icon: Icons.folder_rounded),
           (id: 'career', label: '회사', icon: Icons.business_center_rounded),
           (
             id: 'personal-projects',

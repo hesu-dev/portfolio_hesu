@@ -2,7 +2,7 @@
 
 **Goal:** Open a PDF viewer from a desktop printer shortcut, with one document containing the existing resume, profile introduction, and all projects.
 
-**Architecture:** Open a browser tab synchronously, then generate an A4 PDF from the existing portfolio data using the Dart `pdf` package and bundled Korean fonts. The browser PDF viewer provides pagination, zoom, save, and print. Browsers without an inline PDF viewer, or failed PDF generation, receive a printable HTML document instead. Blocked popups produce an actionable error.
+**Architecture:** Open a browser tab synchronously, then generate an A4 PDF from the existing portfolio data using the Dart `pdf` package and bundled Korean fonts. Retain the browser's native PDF viewer inside a full-size iframe, with one small external back button and no additional header. Browser-menu printing uses A4 HTML content rather than the scaled iframe. Browsers without an inline PDF viewer, or failed PDF generation, receive a printable HTML document instead. Blocked popups produce an actionable error.
 
 **Tech Stack:** Flutter/Dart, `pdf`, existing `package:web`, Nanum Gothic (OFL), HTML/CSS fallback.
 
@@ -12,4 +12,4 @@
 4. Run the full tests, static analysis, and web build. Inspect the PDF pages and browser flow.
 5. Commit all changes using the AngularJS commit convention and push to `origin/main`, as requested.
 
-The user requested the PDF viewer flow after the initial HTML implementation. pdfcn is React-specific; its native browser PDF preview behavior is reproduced without a React application.
+The user requested the PDF viewer flow after the initial HTML implementation. pdfcn is React-specific; its native browser PDF preview behavior is reproduced without a React application. The user chose the original native viewer with a small external back button over replacing the viewer to customize its toolbar.

@@ -8,7 +8,7 @@ import '../services/external_launcher.dart';
 import '../theme/portfolio_theme_controller.dart';
 import '../widgets/apple_app_artwork.dart';
 import '../widgets/apple_app_icon.dart';
-import '../widgets/desktop_printer_shortcut.dart';
+import '../widgets/portfolio_printer_shortcut.dart';
 import '../widgets/portfolio_guide_button.dart';
 import 'mac_dock.dart';
 import 'mac_menu_bar.dart';
@@ -194,11 +194,6 @@ class _MacDesktopState extends State<MacDesktop> {
                       ),
                     ),
                     _buildDesktopIcons(),
-                    Positioned(
-                      top: 56,
-                      left: 20,
-                      child: DesktopPrinterShortcut(data: widget.data),
-                    ),
                     for (final appId in _zOrder)
                       if (_windows[appId] case final window?)
                         _buildWindow(window, active: activeApp == appId),
@@ -221,9 +216,9 @@ class _MacDesktopState extends State<MacDesktop> {
                       child: Center(
                         child: MacDock(
                           key: const Key('mac-dock-widget'),
+                          data: widget.data,
                           runningApps: _windows.keys.toSet(),
                           activeApp: activeApp,
-                          trashEmpty: widget.trashEmpty,
                           onAppPressed: _openApp,
                         ),
                       ),
@@ -287,26 +282,26 @@ class _MacDesktopState extends State<MacDesktop> {
   }
 
   Widget _buildDesktopIcons() {
-    // Launchers render in a compact two-column grid while clearing the Dock on the
-    // minimum desktop size. Trash lives in the Dock's utility area.
-    final availableHeight = (_viewport.height - 158).clamp(360.0, 560.0);
     return Positioned(
       top: 48,
       right: 17,
-      width: 190,
-      height: availableHeight,
+      width: 384,
+      height: 216,
       child: GridView.builder(
         key: const Key('mac-desktop-icons'),
         padding: EdgeInsets.zero,
         physics: const NeverScrollableScrollPhysics(),
         gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
-          crossAxisCount: 2,
+          crossAxisCount: 4,
           childAspectRatio: 0.88,
           mainAxisSpacing: 2,
           crossAxisSpacing: 4,
         ),
-        itemCount: _desktopApps.length,
+        itemCount: _desktopApps.length + 1,
         itemBuilder: (context, index) {
+          if (index == _desktopApps.length) {
+            return Center(child: PortfolioPrinterShortcut(data: widget.data));
+          }
           final appId = _desktopApps[index];
           return _MacDesktopIcon(
             appId: appId,

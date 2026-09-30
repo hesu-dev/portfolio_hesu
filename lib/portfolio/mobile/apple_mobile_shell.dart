@@ -277,7 +277,11 @@ class _AppleMobileShellState extends State<AppleMobileShell> {
               tablet: widget.tablet,
             ),
             child: Center(
-              child: AppleMobileDock(tablet: widget.tablet, onOpen: _openApp),
+              child: AppleMobileDock(
+                data: widget.data,
+                tablet: widget.tablet,
+                onOpen: _openApp,
+              ),
             ),
           ),
         ],

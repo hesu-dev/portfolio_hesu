@@ -21,6 +21,7 @@ class AppleAppIcon extends StatefulWidget {
     this.artworkSurface = AppleAppArtworkSurface.desktop,
     this.artworkForegroundColor,
     this.trashEmpty = false,
+    this.label,
     super.key,
   });
 
@@ -36,6 +37,7 @@ class AppleAppIcon extends StatefulWidget {
   final AppleAppArtworkSurface artworkSurface;
   final Color? artworkForegroundColor;
   final bool trashEmpty;
+  final String? label;
 
   @override
   State<AppleAppIcon> createState() => _AppleAppIconState();
@@ -45,7 +47,7 @@ class AppleAppIcon extends StatefulWidget {
     PortfolioAppId.about => '프로필',
     PortfolioAppId.introduction => '자기소개',
     PortfolioAppId.skills => '스킬',
-    PortfolioAppId.projects => '포트폴리오',
+    PortfolioAppId.projects => '파일',
     PortfolioAppId.safari => '프로젝트',
     PortfolioAppId.terminal => '터미널',
     PortfolioAppId.music => '배경음',
@@ -82,7 +84,7 @@ class _AppleAppIconState extends State<AppleAppIcon> {
     final running = widget.running;
     final showLabel = widget.showLabel;
     final onTap = widget.onTap;
-    final label = labelFor(appId);
+    final label = widget.label ?? labelFor(appId);
     final tileSize = widget.size ?? (compact ? 48.0 : 58.0);
     final cornerRadius = compact ? 13.0 : 16.0;
     return Semantics(

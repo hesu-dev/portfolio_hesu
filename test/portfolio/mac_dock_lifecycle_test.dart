@@ -2,7 +2,6 @@ import 'dart:ui' show PointerDeviceKind;
 
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
-import 'package:flutter_svg/flutter_svg.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:portfolio_hesu/portfolio/apps/terminal_app.dart';
 import 'package:portfolio_hesu/portfolio/data/portfolio_data.dart';
@@ -11,93 +10,57 @@ import 'package:portfolio_hesu/portfolio/models/portfolio_app_id.dart';
 import 'package:portfolio_hesu/portfolio/theme/apple_theme.dart';
 
 void main() {
-  testWidgets('Dock keeps Trash fixed after an always-visible separator', (
+  testWidgets('Dock keeps profile and my files before the printer', (
     tester,
   ) async {
     await _pumpDock(tester);
 
-    for (final appId in _launchableApps) {
+    for (final appId in PortfolioAppId.values) {
       expect(
         find.byKey(Key('dock-app-${appId.name}')),
-        _persistentApps.contains(appId) ? findsOneWidget : findsNothing,
+        _pinnedApps.contains(appId) ? findsOneWidget : findsNothing,
       );
     }
-    expect(find.byKey(const Key('dock-app-trash')), findsOneWidget);
+    expect(find.byTooltip('내파일'), findsOneWidget);
+    expect(find.byKey(const Key('dock-printer')), findsOneWidget);
     expect(find.byKey(const Key('mac-dock-utility-separator')), findsOneWidget);
-    expect(find.byKey(const Key('dock-running-trash')), findsNothing);
-
-    final separatorCenter = tester.getCenter(
-      find.byKey(const Key('mac-dock-utility-separator')),
-    );
-    for (final appId in _pinnedApps) {
-      expect(
-        tester.getCenter(find.byKey(Key('dock-app-${appId.name}'))).dx,
-        lessThan(separatorCenter.dx),
-      );
-    }
-    expect(
-      separatorCenter.dx,
-      lessThan(tester.getCenter(find.byKey(const Key('dock-app-trash'))).dx),
-    );
-  });
-
-  testWidgets('Dock places its separator between running apps and Trash', (
-    tester,
-  ) async {
-    const runningApps = <PortfolioAppId>{
-      PortfolioAppId.github,
-      PortfolioAppId.settings,
-      PortfolioAppId.terminal,
-      PortfolioAppId.about,
-      PortfolioAppId.trash,
-    };
-
-    await _pumpDock(
-      tester,
-      runningApps: runningApps,
-      activeApp: PortfolioAppId.github,
-    );
 
     final centers = <double>[
-      for (final appId in _launchableApps)
-        if (_persistentApps.contains(appId) || runningApps.contains(appId))
-          tester.getCenter(find.byKey(Key('dock-app-${appId.name}'))).dx,
+      tester.getCenter(find.byKey(const Key('dock-app-about'))).dx,
+      tester.getCenter(find.byKey(const Key('dock-app-projects'))).dx,
+      tester.getCenter(find.byKey(const Key('mac-dock-utility-separator'))).dx,
+      tester.getCenter(find.byKey(const Key('dock-printer'))).dx,
     ];
     expect(centers, orderedEquals(centers.toList()..sort()));
-    for (final appId in _launchableApps) {
+  });
+
+  testWidgets('Dock stays fixed when other apps are running', (tester) async {
+    await _pumpDock(
+      tester,
+      runningApps: PortfolioAppId.values.toSet(),
+      activeApp: PortfolioAppId.about,
+    );
+
+    for (final appId in PortfolioAppId.values) {
       expect(
         find.byKey(Key('dock-app-${appId.name}')),
-        _persistentApps.contains(appId) || runningApps.contains(appId)
-            ? findsOneWidget
-            : findsNothing,
+        _pinnedApps.contains(appId) ? findsOneWidget : findsNothing,
       );
     }
-    expect(find.byKey(const Key('dock-app-trash')), findsOneWidget);
     expect(find.byKey(const Key('dock-running-about')), findsOneWidget);
-    expect(find.byKey(const Key('dock-running-projects')), findsNothing);
-    expect(find.byKey(const Key('dock-running-trash')), findsOneWidget);
-    expect(find.byKey(const Key('mac-dock-utility-separator')), findsOneWidget);
+    expect(find.byKey(const Key('dock-running-projects')), findsOneWidget);
+    expect(find.byKey(const Key('dock-printer')), findsOneWidget);
+  });
 
-    final separatorCenter = tester.getCenter(
-      find.byKey(const Key('mac-dock-utility-separator')),
-    );
-    for (final appId in const <PortfolioAppId>[
-      PortfolioAppId.about,
-      PortfolioAppId.projects,
-      PortfolioAppId.terminal,
-      PortfolioAppId.github,
-      PortfolioAppId.settings,
-    ]) {
-      expect(
-        tester.getCenter(find.byKey(Key('dock-app-${appId.name}'))).dx,
-        lessThan(separatorCenter.dx),
-        reason: '${appId.name} must stay before the Trash separator',
-      );
-    }
-    expect(
-      separatorCenter.dx,
-      lessThan(tester.getCenter(find.byKey(const Key('dock-app-trash'))).dx),
-    );
+  testWidgets('Dock printer opens the shared print flow', (tester) async {
+    final pressedApps = <PortfolioAppId>[];
+    await _pumpDock(tester, onAppPressed: pressedApps.add);
+
+    await tester.tap(find.byKey(const Key('dock-printer')));
+    await tester.pumpAndSettle();
+
+    expect(find.text('인쇄 화면을 열지 못했어요'), findsOneWidget);
+    expect(pressedApps, isEmpty);
   });
 
   testWidgets('Dock surface is borderless and uses 0.48 surface alpha', (
@@ -121,7 +84,7 @@ void main() {
     );
 
     final dockRect = tester.getRect(find.byKey(const Key('mac-dock')));
-    for (final appId in _persistentApps) {
+    for (final appId in _pinnedApps) {
       final artworkRect = tester.getRect(
         find.byKey(Key('dock-app-artwork-frame-${appId.name}')),
       );
@@ -163,49 +126,16 @@ void main() {
     );
   });
 
-  testWidgets('Dock keeps folder, GitHub, and Trash frames transparent', (
-    tester,
-  ) async {
-    await _pumpDock(
-      tester,
-      runningApps: const <PortfolioAppId>{
-        PortfolioAppId.projects,
-        PortfolioAppId.github,
-      },
-    );
+  testWidgets('Dock keeps the my files artwork transparent', (tester) async {
+    await _pumpDock(tester);
 
-    for (final appId in const <PortfolioAppId>[
-      PortfolioAppId.projects,
-      PortfolioAppId.trash,
-      PortfolioAppId.github,
-    ]) {
-      final frame = find.byKey(Key('dock-app-artwork-frame-${appId.name}'));
-      expect(frame, findsOneWidget);
-      final decoration =
-          tester.widget<Container>(frame).decoration! as BoxDecoration;
-      expect(decoration.color, isNull);
-      expect(decoration.gradient, isNull);
-      expect(decoration.border, isNull);
-      expect(decoration.boxShadow, isEmpty);
-    }
-  });
-
-  testWidgets('Dock GitHub artwork stays black in every theme', (tester) async {
-    for (final theme in <ThemeData>[AppleTheme.light(), AppleTheme.dark()]) {
-      await _pumpDock(
-        tester,
-        theme: theme,
-        runningApps: const <PortfolioAppId>{PortfolioAppId.github},
-      );
-
-      final picture = tester.widget<SvgPicture>(
-        find.byKey(const Key('apple-app-artwork-github-svg')),
-      );
-      expect(
-        (picture.bytesLoader as SvgAssetLoader).theme?.currentColor,
-        Colors.black,
-      );
-    }
+    final frame = find.byKey(const Key('dock-app-artwork-frame-projects'));
+    final decoration =
+        tester.widget<Container>(frame).decoration! as BoxDecoration;
+    expect(decoration.color, isNull);
+    expect(decoration.gradient, isNull);
+    expect(decoration.border, isNull);
+    expect(decoration.boxShadow, isEmpty);
   });
 
   testWidgets('Dock keeps focus on an app when an earlier app starts running', (
@@ -214,7 +144,7 @@ void main() {
     final pressedApps = <PortfolioAppId>[];
     await _pumpDock(tester, onAppPressed: pressedApps.add);
 
-    await tester.tap(find.byKey(const Key('dock-app-trash')));
+    await tester.tap(find.byKey(const Key('dock-app-projects')));
     await tester.pump();
     pressedApps.clear();
 
@@ -226,7 +156,7 @@ void main() {
     await tester.sendKeyEvent(LogicalKeyboardKey.space);
     await tester.pump();
 
-    expect(pressedApps, <PortfolioAppId>[PortfolioAppId.trash]);
+    expect(pressedApps, <PortfolioAppId>[PortfolioAppId.projects]);
   });
 
   testWidgets('Terminal content does not draw window traffic controls', (
@@ -260,14 +190,10 @@ void main() {
   });
 }
 
-const _launchableApps = portfolioLauncherAppIds;
-
 const _pinnedApps = <PortfolioAppId>[
   PortfolioAppId.about,
   PortfolioAppId.projects,
 ];
-
-const _persistentApps = <PortfolioAppId>[..._pinnedApps, PortfolioAppId.trash];
 
 Future<void> _pumpDock(
   WidgetTester tester, {
@@ -282,6 +208,7 @@ Future<void> _pumpDock(
       home: Scaffold(
         body: Center(
           child: MacDock(
+            data: portfolioData,
             runningApps: runningApps,
             activeApp: activeApp,
             onAppPressed: onAppPressed ?? (_) {},

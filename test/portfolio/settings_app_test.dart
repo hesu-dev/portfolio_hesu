@@ -589,27 +589,18 @@ void main() {
 
   group('Settings 셸 연결', () {
     testWidgets('Mac, iPad, iPhone에서 실행되고 현재 화면을 유지한다', (tester) async {
-      for (final scenario in <(Size, String, String)>[
-        (const Size(1440, 900), 'desktop-app-settings', 'mac-window-settings'),
-        (const Size(834, 1194), 'home-app-settings', 'mobile-app-surface'),
-        (const Size(390, 844), 'home-app-settings', 'mobile-app-surface'),
+      for (final scenario in <(Size, String)>[
+        (const Size(1440, 900), 'mac-window-settings'),
+        (const Size(834, 1194), 'mobile-app-surface'),
+        (const Size(390, 844), 'mobile-app-surface'),
       ]) {
         final controller = PortfolioThemeController();
         await _pumpPortfolio(tester, size: scenario.$1, controller: controller);
 
-        final launcher = find.byKey(Key(scenario.$2));
-        if (scenario.$1.width >= 1024) {
-          await tester.tap(launcher);
-          await tester.pump(const Duration(milliseconds: 50));
-          await tester.tap(launcher);
-        } else {
-          await tester.ensureVisible(launcher);
-          await tester.tap(launcher);
-        }
-        await tester.pumpAndSettle();
+        await _openSettings(tester, desktop: scenario.$1.width >= 1024);
 
         expect(find.byKey(const Key('settings-app')), findsOneWidget);
-        expect(find.byKey(Key(scenario.$3)), findsOneWidget);
+        expect(find.byKey(Key(scenario.$2)).last, findsOneWidget);
         if (scenario.$1.width >= 1024) {
           expect(find.byKey(const Key('settings-sidebar')), findsOneWidget);
           expect(
@@ -632,7 +623,7 @@ void main() {
           ThemeMode.dark,
         );
         expect(find.byKey(const Key('settings-app')), findsOneWidget);
-        expect(find.byKey(Key(scenario.$3)), findsOneWidget);
+        expect(find.byKey(Key(scenario.$2)).last, findsOneWidget);
         expect(tester.takeException(), isNull, reason: '${scenario.$1}');
 
         await tester.pumpWidget(const SizedBox.shrink());
@@ -655,7 +646,7 @@ void main() {
       await tester.pumpAndSettle();
       expect(find.text(r'portfolio: ~$ help'), findsNWidgets(2));
 
-      await _openDesktopApp(tester, PortfolioAppId.settings);
+      await _openSettings(tester, desktop: true);
       await tester.tap(find.byKey(const Key('theme-dark')));
       await tester.pumpAndSettle();
 
@@ -674,7 +665,7 @@ void main() {
         controller: controller,
       );
 
-      await _openDesktopApp(tester, PortfolioAppId.settings);
+      await _openSettings(tester, desktop: true);
 
       final size = tester.getSize(find.byKey(const Key('mac-window-settings')));
       expect(size.width, inInclusiveRange(680, 820));
@@ -735,6 +726,22 @@ Future<void> _pumpPortfolio(
       externalLauncher: CallbackExternalLauncher((_) async => true),
     ),
   );
+  await tester.pumpAndSettle();
+}
+
+Future<void> _openSettings(WidgetTester tester, {required bool desktop}) async {
+  if (desktop) {
+    await _openDesktopApp(tester, PortfolioAppId.projects);
+  } else {
+    await tester.tap(find.byKey(const Key('home-app-projects')));
+    await tester.pumpAndSettle();
+  }
+  await tester.tap(find.byKey(const Key('projects-finder-location-files')));
+  await tester.pumpAndSettle();
+  final settings = find.byKey(const Key('projects-files-app-settings'));
+  await tester.ensureVisible(settings);
+  await tester.pumpAndSettle();
+  await tester.tap(settings);
   await tester.pumpAndSettle();
 }
 

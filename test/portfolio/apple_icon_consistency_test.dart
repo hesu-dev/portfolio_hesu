@@ -64,11 +64,7 @@ void main() {
                 PortfolioAppId.projects,
                 PortfolioAppId.github,
               ]
-            : const <PortfolioAppId>[
-                PortfolioAppId.projects,
-                PortfolioAppId.github,
-                PortfolioAppId.trash,
-              ];
+            : const <PortfolioAppId>[PortfolioAppId.projects];
         for (final appId in transparentApps) {
           final launcher = find.byKey(_launcherKey(surface, appId));
           final frame = find.descendant(
@@ -114,7 +110,6 @@ void main() {
           PortfolioAppId.introduction,
           PortfolioAppId.projects,
           PortfolioAppId.github,
-          PortfolioAppId.trash,
         ]) {
           final launcher = find.byKey(_launcherKey(surface, appId));
           final frame = find.descendant(
@@ -142,38 +137,7 @@ void main() {
       });
     }
 
-    testWidgets('Dock Trash는 49px 전체 painter를 비클리핑으로 노출한다', (tester) async {
-      await _pumpSurface(tester, _IconSurface.dock);
-
-      final desktopFrame = find.byKey(
-        const Key('dock-app-artwork-frame-trash'),
-      );
-      final desktopLauncher = find.byKey(const Key('dock-app-trash'));
-      expect(desktopFrame, findsOneWidget);
-      final sharedFrame = find.descendant(
-        of: desktopLauncher,
-        matching: find.byType(AppleAppArtworkFrame),
-      );
-      expect(sharedFrame, findsOneWidget);
-
-      final paint = find.descendant(
-        of: sharedFrame,
-        matching: find.byType(CustomPaint),
-      );
-      expect(paint, findsOneWidget);
-      expect(tester.getSize(paint), const Size.square(49));
-      expect(
-        find.descendant(of: sharedFrame, matching: find.byType(ClipRRect)),
-        findsNothing,
-      );
-      for (final stack in tester.widgetList<Stack>(
-        find.descendant(of: sharedFrame, matching: find.byType(Stack)),
-      )) {
-        expect(stack.clipBehavior, Clip.none);
-      }
-    });
-
-    testWidgets('720px 높이에서도 Trash는 그리드가 아닌 Dock 오른쪽에 보인다', (tester) async {
+    testWidgets('720px 높이에서도 프린터는 Dock 오른쪽에 보인다', (tester) async {
       await _pumpSurface(
         tester,
         _IconSurface.desktop,
@@ -182,14 +146,13 @@ void main() {
 
       final grid = find.byKey(const Key('mac-desktop-icons'));
       final trash = find.byKey(const Key('desktop-app-trash'));
-      final dockTrash = find.byKey(const Key('dock-app-trash'));
-      final artwork = find.byKey(const Key('dock-app-artwork-frame-trash'));
+      final dockPrinter = find.byKey(const Key('dock-printer'));
 
       expect(grid, findsOneWidget);
       expect(trash, findsNothing);
-      expect(dockTrash, findsOneWidget);
-      expect(artwork, findsOneWidget);
-      expect(tester.getRect(dockTrash).bottom, lessThanOrEqualTo(720));
+      expect(dockPrinter, findsOneWidget);
+      expect(find.byKey(const Key('dock-app-trash')), findsNothing);
+      expect(tester.getRect(dockPrinter).bottom, lessThanOrEqualTo(720));
     });
   });
 }
@@ -197,7 +160,7 @@ void main() {
 List<PortfolioAppId> _appsFor(_IconSurface surface) => switch (surface) {
   _IconSurface.desktop => portfolioMacDesktopLauncherAppIds,
   _IconSurface.iPad || _IconSurface.iPhone => AppleHomeGrid.apps,
-  _IconSurface.dock => MacDock.launchableApps,
+  _IconSurface.dock => MacDock.pinnedApps,
 };
 
 enum _IconSurface {
@@ -257,6 +220,7 @@ Future<void> _pumpSurface(
     ),
     _IconSurface.dock => Center(
       child: MacDock(
+        data: portfolioData,
         runningApps: portfolioLauncherAppIds.toSet(),
         activeApp: PortfolioAppId.about,
         onAppPressed: (_) {},

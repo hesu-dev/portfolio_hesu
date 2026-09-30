@@ -322,7 +322,7 @@ void main() {
           );
           expect(
             tester.getSemantics(circularControl).getSemanticsData().label,
-            'Close 포트폴리오 window',
+            'Close 파일 window',
             reason: '$size root semantics',
           );
           expect(
@@ -330,7 +330,7 @@ void main() {
             const Size(44, 44),
             reason: '$size root semantics target',
           );
-          expect(find.byTooltip('Close 포트폴리오 window'), findsOneWidget);
+          expect(find.byTooltip('Close 파일 window'), findsOneWidget);
 
           await tester.tap(find.byKey(const Key('projects-career-folder-0')));
           await tester.pumpAndSettle();
@@ -338,10 +338,10 @@ void main() {
           expect(find.byKey(const Key('project-detail-title')), findsOneWidget);
           expect(
             tester.getSemantics(circularControl).getSemanticsData().label,
-            'Back in 포트폴리오',
+            'Back in 파일',
             reason: '$size detail semantics',
           );
-          expect(find.byTooltip('Back in 포트폴리오'), findsOneWidget);
+          expect(find.byTooltip('Back in 파일'), findsOneWidget);
 
           await tester.tap(circularControl);
           await tester.pumpAndSettle();
@@ -354,10 +354,10 @@ void main() {
           expect(find.byKey(const Key('mobile-app-surface')), findsOneWidget);
           expect(
             tester.getSemantics(circularControl).getSemanticsData().label,
-            'Close 포트폴리오 window',
+            'Close 파일 window',
             reason: '$size returned root semantics',
           );
-          expect(find.byTooltip('Close 포트폴리오 window'), findsOneWidget);
+          expect(find.byTooltip('Close 파일 window'), findsOneWidget);
 
           await tester.tap(circularControl);
           await tester.pumpAndSettle();
@@ -390,7 +390,7 @@ void main() {
         expect(find.text('최근 항목'), findsWidgets);
         expect(
           tester.getSemantics(circularControl).getSemanticsData().label,
-          startsWith('Close 포트폴리오 window'),
+          startsWith('Close 파일 window'),
           reason: '$size location root semantics',
         );
 

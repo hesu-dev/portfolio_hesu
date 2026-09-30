@@ -43,7 +43,7 @@ void main() {
 
     final projectAction = find.byKey(const Key('system-menu-this-mac'));
     expect(
-      find.descendant(of: projectAction, matching: find.text('포트폴리오 열기')),
+      find.descendant(of: projectAction, matching: find.text('파일 열기')),
       findsOneWidget,
     );
     expect(

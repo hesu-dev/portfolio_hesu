@@ -21,6 +21,7 @@ void main() {
       'safari',
       'terminal',
       'music',
+      'photos',
       'github',
       'mail',
       'settings',
@@ -29,53 +30,38 @@ void main() {
     expect(AppleHomeGrid.apps.map((appId) => appId.name), <String>[
       'profile',
       'introduction',
-      'skills',
       'projects',
       'safari',
       'terminal',
-      'music',
-      'photos',
       'github',
-      'mail',
-      'settings',
-      'trash',
+      'skills',
     ]);
     expect(
       portfolioMacDesktopLauncherAppIds.map((appId) => appId.name),
       <String>[
         'about',
         'introduction',
-        'skills',
         'projects',
         'safari',
         'terminal',
-        'music',
         'github',
-        'mail',
-        'settings',
+        'skills',
       ],
     );
-    expect(MacDock.launchableApps.map((appId) => appId.name), <String>[
-      'about',
-      'introduction',
-      'skills',
-      'projects',
-      'safari',
-      'terminal',
-      'music',
-      'github',
-      'mail',
-      'settings',
-      'trash',
-    ]);
     expect(MacDock.pinnedApps.map((appId) => appId.name), <String>[
       'about',
       'projects',
     ]);
-    expect(MacDock.utilityApps.map((appId) => appId.name), <String>['trash']);
     expect(AppleMobileDock.apps.map((appId) => appId.name), <String>[
       'profile',
       'projects',
+    ]);
+    expect(portfolioFileAppIds.map((appId) => appId.name), <String>[
+      'music',
+      'photos',
+      'mail',
+      'settings',
+      'trash',
     ]);
   });
 
@@ -100,12 +86,13 @@ void main() {
       expect(find.byKey(const Key('home-app-about')), findsNothing);
       expect(find.byKey(const Key('home-app-profile')), findsOneWidget);
       expect(find.byKey(const Key('home-app-introduction')), findsOneWidget);
-      expect(find.byKey(const Key('home-app-music')), findsOneWidget);
-      expect(find.byKey(const Key('home-app-photos')), findsOneWidget);
+      for (final appId in portfolioFileAppIds) {
+        expect(find.byKey(Key('home-app-${appId.name}')), findsNothing);
+      }
     },
   );
 
-  testWidgets('desktop distinguishes Finder 포트폴리오 from Safari 프로젝트', (
+  testWidgets('desktop distinguishes Finder 파일 from Safari 프로젝트', (
     tester,
   ) async {
     tester.view.devicePixelRatio = 1;
@@ -129,14 +116,17 @@ void main() {
 
     expect(find.byKey(const Key('desktop-app-projects')), findsOneWidget);
     expect(find.byKey(const Key('desktop-app-safari')), findsOneWidget);
-    expect(find.byKey(const Key('desktop-app-music')), findsOneWidget);
+    for (final appId in portfolioFileAppIds) {
+      expect(find.byKey(Key('desktop-app-${appId.name}')), findsNothing);
+    }
     expect(find.byKey(const Key('desktop-app-thisMac')), findsNothing);
     expect(find.byKey(const Key('desktop-app-trash')), findsNothing);
-    expect(find.byKey(const Key('dock-app-trash')), findsOneWidget);
+    expect(find.byKey(const Key('dock-app-trash')), findsNothing);
+    expect(find.byKey(const Key('dock-printer')), findsOneWidget);
     expect(
       find.descendant(
         of: find.byKey(const Key('desktop-app-projects')),
-        matching: find.text('포트폴리오'),
+        matching: find.text('파일'),
       ),
       findsOneWidget,
     );

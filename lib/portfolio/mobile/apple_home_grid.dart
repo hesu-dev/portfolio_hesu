@@ -2,8 +2,10 @@ import 'package:flutter/material.dart';
 
 import '../data/portfolio_data.dart';
 import '../models/portfolio_app_id.dart';
+import '../theme/apple_theme.dart';
 import '../widgets/apple_app_artwork.dart';
 import '../widgets/apple_app_icon.dart';
+import '../widgets/portfolio_printer_shortcut.dart';
 
 class AppleHomeGrid extends StatelessWidget {
   const AppleHomeGrid({
@@ -46,6 +48,16 @@ class AppleHomeGrid extends StatelessWidget {
               sliver: SliverGrid(
                 delegate: SliverChildBuilderDelegate(
                   (context, index) {
+                    if (index == apps.length) {
+                      return Center(
+                        key: const Key('home-app-printer'),
+                        child: PortfolioPrinterShortcut(
+                          data: data,
+                          iconSize: tablet ? 62 : 52,
+                          foregroundColor: AppleTheme.primaryLabel(context),
+                        ),
+                      );
+                    }
                     final appId = apps[index];
                     return Center(
                       child: AppleAppIcon(
@@ -60,7 +72,7 @@ class AppleHomeGrid extends StatelessWidget {
                       ),
                     );
                   },
-                  childCount: apps.length,
+                  childCount: apps.length + 1,
                   addAutomaticKeepAlives: false,
                 ),
                 gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(

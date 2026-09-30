@@ -3,44 +3,33 @@ import 'dart:ui';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 
+import '../data/portfolio_data.dart';
 import '../models/portfolio_app_id.dart';
 import '../widgets/apple_app_artwork.dart';
 import '../widgets/apple_app_icon.dart';
+import '../widgets/portfolio_printer_shortcut.dart';
 
 class MacDock extends StatelessWidget {
   const MacDock({
+    required this.data,
     required this.runningApps,
     required this.activeApp,
     required this.onAppPressed,
-    this.trashEmpty = false,
     super.key,
   });
-
-  static const List<PortfolioAppId> launchableApps = portfolioLauncherAppIds;
 
   static const List<PortfolioAppId> pinnedApps = <PortfolioAppId>[
     PortfolioAppId.about,
     PortfolioAppId.projects,
   ];
 
-  static const List<PortfolioAppId> utilityApps = <PortfolioAppId>[
-    PortfolioAppId.trash,
-  ];
-
+  final PortfolioData data;
   final Set<PortfolioAppId> runningApps;
   final PortfolioAppId? activeApp;
   final ValueChanged<PortfolioAppId> onAppPressed;
-  final bool trashEmpty;
 
   @override
   Widget build(BuildContext context) {
-    // Utility apps have a permanent position after the separator.
-    final runningLaunchableApps = launchableApps
-        .where(
-          (appId) => runningApps.contains(appId) && !pinnedApps.contains(appId),
-        )
-        .where((appId) => !utilityApps.contains(appId))
-        .toList(growable: false);
     final theme = Theme.of(context);
 
     return RepaintBoundary(
@@ -71,10 +60,18 @@ class MacDock extends StatelessWidget {
                 crossAxisAlignment: CrossAxisAlignment.center,
                 children: <Widget>[
                   for (final appId in pinnedApps) _buildDockItem(appId),
-                  for (final appId in runningLaunchableApps)
-                    _buildDockItem(appId),
                   const _DockSeparator(key: Key('mac-dock-utility-separator')),
-                  for (final appId in utilityApps) _buildDockItem(appId),
+                  SizedBox(
+                    height: 69,
+                    child: Center(
+                      child: PortfolioPrinterShortcut(
+                        data: data,
+                        iconSize: 49,
+                        showLabel: false,
+                        buttonKey: const Key('dock-printer'),
+                      ),
+                    ),
+                  ),
                 ],
               ),
             ),
@@ -90,7 +87,6 @@ class MacDock extends StatelessWidget {
       appId: appId,
       running: runningApps.contains(appId),
       active: activeApp == appId,
-      trashEmpty: trashEmpty,
       onPressed: () => onAppPressed(appId),
     );
   }
@@ -115,7 +111,6 @@ class _MacDockItem extends StatefulWidget {
     required this.appId,
     required this.running,
     required this.active,
-    required this.trashEmpty,
     required this.onPressed,
     super.key,
   });
@@ -123,7 +118,6 @@ class _MacDockItem extends StatefulWidget {
   final PortfolioAppId appId;
   final bool running;
   final bool active;
-  final bool trashEmpty;
   final VoidCallback onPressed;
 
   @override
@@ -144,7 +138,9 @@ class _MacDockItemState extends State<_MacDockItem> {
   @override
   Widget build(BuildContext context) {
     final appId = widget.appId;
-    final label = AppleAppIcon.labelFor(appId);
+    final label = appId == PortfolioAppId.projects
+        ? '내파일'
+        : AppleAppIcon.labelFor(appId);
     final lifted = _hovering || _showFocus;
     final colorScheme = Theme.of(context).colorScheme;
 
@@ -153,9 +149,6 @@ class _MacDockItemState extends State<_MacDockItem> {
       label: 'Open or restore $label',
       button: true,
       selected: widget.active,
-      value: appId == PortfolioAppId.trash
-          ? (widget.trashEmpty ? 'Empty' : 'Contains items')
-          : null,
       onTap: widget.onPressed,
       child: FocusableActionDetector(
         focusNode: _focusNode,
@@ -213,14 +206,9 @@ class _MacDockItemState extends State<_MacDockItem> {
                                 AppleAppArtworkFrame(
                                   appId: appId,
                                   size: 49,
-                                  foregroundColor:
-                                      appId == PortfolioAppId.github
-                                      ? Colors.black
-                                      : null,
                                   frameKey: Key(
                                     'dock-app-artwork-frame-${appId.name}',
                                   ),
-                                  trashEmpty: widget.trashEmpty,
                                 ),
                                 if (_showFocus)
                                   Positioned.fill(

@@ -184,6 +184,11 @@ String buildPortfolioPrintDocument(
       .entry { break-inside: avoid; }
       p, li, dd { orphans: 3; widows: 3; }
       a { text-decoration: none; }
+      /* Suppress browser headers while retaining margins on every fragment. */
+      @supports (box-decoration-break: clone) {
+        @page { margin: 0; }
+        .sheet { padding: 17mm 18mm; box-decoration-break: clone; }
+      }
     }
   </style>
 </head>

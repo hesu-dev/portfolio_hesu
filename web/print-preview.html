@@ -1,0 +1,83 @@
+<!doctype html>
+<html lang="ko">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>포트폴리오 인쇄</title>
+  <style>
+    html, body { margin: 0; width: 100%; height: 100%; }
+    body { background: #292a2d; color: #fff; font: 14px system-ui, sans-serif; }
+    #loading-status { position: absolute; inset: 0; display: grid; place-items: center; }
+    #document-preview { display: block; width: 100%; height: 100%; border: 0; }
+    #back-button { position: fixed; z-index: 2; bottom: 16px; left: 16px;
+      display: flex; align-items: center; gap: 6px; min-height: 36px; padding: 8px 12px;
+      border: 1px solid #666; border-radius: 20px; background: #292a2df2; color: #fff;
+      box-shadow: 0 2px 8px #0004; font: inherit; cursor: pointer; }
+    #back-button:hover { background: #45464a; }
+    #back-button:focus-visible { outline: 3px solid #8ab4f8; outline-offset: 3px; }
+    #print-copy { display: none; }
+    [hidden] { display: none !important; }
+    @media print {
+      html, body { height: auto; }
+      body { background: #fff; color: #222; }
+      #back-button, #loading-status, #document-preview { display: none !important; }
+      #print-copy { display: block; }
+    }
+  </style>
+</head>
+<body>
+  <div id="loading-status" role="status">PDF를 준비하고 있습니다…</div>
+  <iframe id="document-preview" title="포트폴리오 PDF 뷰어" hidden></iframe>
+  <button id="back-button" type="button" title="포트폴리오로 돌아가기" aria-label="포트폴리오로 돌아가기">〈 뒤로</button>
+  <div id="print-copy" aria-hidden="true"></div>
+  <script>
+    const source = window.opener;
+    window.opener = null;
+    const previewFrame = document.getElementById('document-preview');
+    const status = document.getElementById('loading-status');
+    let returnUrl = new URL('./', location.href).href;
+    let received = false;
+
+    document.getElementById('back-button').addEventListener('click', () => {
+      setTimeout(() => location.replace(returnUrl), 100);
+      window.close();
+    });
+    window.addEventListener('message', (event) => {
+      const data = event.data;
+      if (received || !source || event.source !== source || event.origin !== location.origin ||
+          !data || data.type !== 'portfolio-print-document' ||
+          typeof data.title !== 'string' || typeof data.returnUrl !== 'string' ||
+          typeof data.html !== 'string') return;
+      received = true;
+      document.title = data.title;
+      try {
+        const url = new URL(data.returnUrl, location.href);
+        if (url.origin === location.origin) returnUrl = url.href;
+      } catch (_) { /* Keep the same-origin portfolio fallback. */ }
+
+      // Browser-menu printing must print A4 content instead of a scaled iframe.
+      const html = new DOMParser().parseFromString(data.html, 'text/html');
+      const printStyles = document.createElement('style');
+      printStyles.textContent = '@media print {' +
+        Array.from(html.querySelectorAll('style'), (style) => style.textContent).join('\n') + '}';
+      document.head.append(printStyles);
+      document.getElementById('print-copy').replaceChildren(...html.body.childNodes);
+
+      if (typeof data.pdfUrl === 'string' && data.pdfUrl.startsWith('blob:' + location.origin + '/')) {
+        previewFrame.src = data.pdfUrl + '#toolbar=1&navpanes=1&view=Fit';
+        window.addEventListener('pagehide', () => URL.revokeObjectURL(data.pdfUrl), {once: true});
+      } else {
+        previewFrame.srcdoc = data.html;
+      }
+      previewFrame.hidden = false;
+      status.hidden = true;
+    });
+
+    if (source) {
+      source.postMessage({type: 'portfolio-print-ready'}, location.origin);
+    } else {
+      status.textContent = '포트폴리오로 돌아가 프린터를 다시 눌러 주세요.';
+    }
+  </script>
+</body>
+</html>

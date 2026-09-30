@@ -14,7 +14,7 @@ import 'package:portfolio_hesu/portfolio/widgets/apple_finder_scaffold.dart';
 void main() {
   group('Projects Finder locations', () {
     testWidgets(
-      'defaults to 회사 and keeps Finder shortcuts above four locations',
+      'defaults to 회사 and keeps Finder shortcuts above five locations',
       (tester) async {
         await _pumpProjects(tester, size: const Size(900, 650));
 
@@ -23,6 +23,7 @@ void main() {
         for (final label in const <String>[
           'iCloud Drive',
           '데스크탑',
+          '파일',
           '회사',
           '개인 프로젝트',
         ]) {
@@ -123,10 +124,10 @@ void main() {
         );
 
         await tester.tap(
-          find.byKey(Key('projects-desktop-app-${PortfolioAppId.mail.name}')),
+          find.byKey(Key('projects-desktop-app-${PortfolioAppId.github.name}')),
         );
         await tester.pump();
-        expect(openedApp, PortfolioAppId.mail);
+        expect(openedApp, PortfolioAppId.github);
       },
     );
 
@@ -228,7 +229,7 @@ void main() {
     });
 
     testWidgets(
-      'iPhone and iPad share recent, career, and personal bottom navigation',
+      'iPhone and iPad share recent, files, career, and personal navigation',
       (tester) async {
         for (final scenario in const <({Size size, bool compact, bool tablet})>[
           (size: Size(390, 700), compact: true, tablet: false),
@@ -252,12 +253,17 @@ void main() {
             find.byKey(const Key('projects-finder-locations')),
             findsNothing,
           );
-          for (final label in const <String>['최근 항목', '회사', '개인']) {
+          var previousX = -1.0;
+          for (final label in const <String>['최근 항목', '파일', '회사', '개인']) {
+            final item = find.descendant(of: dock, matching: find.text(label));
+            expect(item, findsOneWidget, reason: '${scenario.size} $label');
+            final x = tester.getCenter(item).dx;
             expect(
-              find.descendant(of: dock, matching: find.text(label)),
-              findsOneWidget,
-              reason: '${scenario.size} $label',
+              x,
+              greaterThan(previousX),
+              reason: '$label navigation order',
             );
+            previousX = x;
           }
           expect(
             find.descendant(of: dock, matching: find.text('공유')),
@@ -539,7 +545,7 @@ void main() {
       },
     );
 
-    testWidgets('데스크탑 app shortcuts open another macOS window', (tester) async {
+    testWidgets('파일 app shortcuts open another macOS window', (tester) async {
       await _pumpPortfolio(tester, size: const Size(1280, 720));
 
       final projectsIcon = find.byKey(const Key('desktop-app-projects'));
@@ -547,12 +553,10 @@ void main() {
       await tester.pump(const Duration(milliseconds: 50));
       await tester.tap(projectsIcon);
       await tester.pumpAndSettle();
-      await tester.tap(
-        find.byKey(const Key('projects-finder-location-desktop')),
-      );
+      await tester.tap(find.byKey(const Key('projects-finder-location-files')));
       await tester.pumpAndSettle();
       await tester.tap(
-        find.byKey(Key('projects-desktop-app-${PortfolioAppId.mail.name}')),
+        find.byKey(Key('projects-files-app-${PortfolioAppId.mail.name}')),
       );
       await tester.pumpAndSettle();
 
@@ -560,6 +564,45 @@ void main() {
       expect(find.byKey(const Key('mac-window-mail')), findsOneWidget);
       expect(tester.takeException(), isNull);
     });
+
+    testWidgets(
+      '파일 contains the five moved apps on desktop, tablet, and phone',
+      (tester) async {
+        for (final scenario in const <({Size size, bool compact, bool tablet})>[
+          (size: Size(900, 650), compact: false, tablet: false),
+          (size: Size(834, 700), compact: false, tablet: true),
+          (size: Size(320, 480), compact: true, tablet: false),
+        ]) {
+          await tester.pumpWidget(const SizedBox.shrink());
+          final opened = <PortfolioAppId>[];
+          await _pumpProjects(
+            tester,
+            size: scenario.size,
+            compact: scenario.compact,
+            tablet: scenario.tablet,
+            textScaler: const TextScaler.linear(2),
+            onOpenApp: opened.add,
+          );
+          await tester.tap(
+            find.byKey(const Key('projects-finder-location-files')),
+          );
+          await tester.pumpAndSettle();
+          expect(_toolbarTitle(tester), '파일');
+
+          for (final appId in portfolioFileAppIds) {
+            final app = find.byKey(Key('projects-files-app-${appId.name}'));
+            await tester.ensureVisible(app);
+            await tester.pumpAndSettle();
+            expect(app.hitTestable(), findsOneWidget);
+            await tester.tap(app);
+            await tester.pump();
+            expect(opened.last, appId);
+          }
+          expect(opened, portfolioFileAppIds);
+          expect(tester.takeException(), isNull, reason: '${scenario.size}');
+        }
+      },
+    );
   });
 }
 

@@ -61,82 +61,70 @@ void main() {
       expect(find.byKey(const Key('mac-dock')), findsNothing);
     });
 
-    testWidgets(
-      'iPhone and iPad share a 50% translucent tile except for Photos',
-      (tester) async {
-        for (final size in const <Size>[Size(390, 844), Size(834, 1194)]) {
-          for (final brightness in Brightness.values) {
-            await tester.pumpWidget(const SizedBox.shrink());
-            await _pumpShell(tester, size: size, brightness: brightness);
+    testWidgets('iPhone and iPad home and Dock share a 50% translucent tile', (
+      tester,
+    ) async {
+      for (final size in const <Size>[Size(390, 844), Size(834, 1194)]) {
+        for (final brightness in Brightness.values) {
+          await tester.pumpWidget(const SizedBox.shrink());
+          await _pumpShell(tester, size: size, brightness: brightness);
 
-            for (final appId in const <PortfolioAppId>[
-              PortfolioAppId.introduction,
-              PortfolioAppId.projects,
-              PortfolioAppId.github,
-              PortfolioAppId.trash,
-            ]) {
-              final reason = '$size ${brightness.name} ${appId.name}';
-              final decoration = _launcherFrameDecoration(
-                tester,
-                find.byKey(Key('home-app-${appId.name}')),
-              );
-              expect(
-                decoration.color,
-                Colors.white.withValues(alpha: 0.5),
-                reason: reason,
-              );
-              expect(decoration.borderRadius, isNotNull, reason: reason);
-              expect(decoration.boxShadow, isEmpty, reason: reason);
-            }
-
-            final photosDecoration = _launcherFrameDecoration(
+          for (final appId in const <PortfolioAppId>[
+            PortfolioAppId.introduction,
+            PortfolioAppId.projects,
+            PortfolioAppId.github,
+          ]) {
+            final reason = '$size ${brightness.name} ${appId.name}';
+            final decoration = _launcherFrameDecoration(
               tester,
-              find.byKey(const Key('home-app-photos')),
+              find.byKey(Key('home-app-${appId.name}')),
             );
             expect(
-              photosDecoration.color,
-              isNull,
-              reason: '$size ${brightness.name} Photos stays excluded',
-            );
-
-            final githubSvg = tester.widget<SvgPicture>(
-              find.descendant(
-                of: find.byKey(const Key('home-app-github')),
-                matching: find.byKey(const Key('apple-app-artwork-github-svg')),
-              ),
-            );
-            expect(
-              (githubSvg.bytesLoader as SvgAssetLoader).theme?.currentColor,
-              Colors.black,
-              reason: '$size ${brightness.name} GitHub foreground',
-            );
-
-            final dockProjectsDecoration = _launcherFrameDecoration(
-              tester,
-              find.byKey(const Key('mobile-dock-projects')),
-            );
-            final dockProjectsFrame = tester.widget<AppleAppArtworkFrame>(
-              find.descendant(
-                of: find.byKey(const Key('mobile-dock-projects')),
-                matching: find.byType(AppleAppArtworkFrame),
-              ),
-            );
-            expect(
-              dockProjectsFrame.surface,
-              AppleAppArtworkSurface.mobile,
-              reason: '$size ${brightness.name}',
-            );
-            expect(
-              dockProjectsDecoration.color,
+              decoration.color,
               Colors.white.withValues(alpha: 0.5),
-              reason: '$size ${brightness.name}',
+              reason: reason,
             );
-            expect(dockProjectsDecoration.borderRadius, isNotNull);
-            expect(dockProjectsDecoration.boxShadow, isEmpty);
+            expect(decoration.borderRadius, isNotNull, reason: reason);
+            expect(decoration.boxShadow, isEmpty, reason: reason);
           }
+
+          final githubSvg = tester.widget<SvgPicture>(
+            find.descendant(
+              of: find.byKey(const Key('home-app-github')),
+              matching: find.byKey(const Key('apple-app-artwork-github-svg')),
+            ),
+          );
+          expect(
+            (githubSvg.bytesLoader as SvgAssetLoader).theme?.currentColor,
+            Colors.black,
+            reason: '$size ${brightness.name} GitHub foreground',
+          );
+
+          final dockProjectsDecoration = _launcherFrameDecoration(
+            tester,
+            find.byKey(const Key('mobile-dock-projects')),
+          );
+          final dockProjectsFrame = tester.widget<AppleAppArtworkFrame>(
+            find.descendant(
+              of: find.byKey(const Key('mobile-dock-projects')),
+              matching: find.byType(AppleAppArtworkFrame),
+            ),
+          );
+          expect(
+            dockProjectsFrame.surface,
+            AppleAppArtworkSurface.mobile,
+            reason: '$size ${brightness.name}',
+          );
+          expect(
+            dockProjectsDecoration.color,
+            Colors.white.withValues(alpha: 0.5),
+            reason: '$size ${brightness.name}',
+          );
+          expect(dockProjectsDecoration.borderRadius, isNotNull);
+          expect(dockProjectsDecoration.boxShadow, isEmpty);
         }
-      },
-    );
+      }
+    });
 
     testWidgets(
       'iPhone and iPad Dock center artwork with equal vertical gaps',
@@ -257,11 +245,10 @@ void main() {
               find.byKey(const Key('mobile-home-indicator')),
             );
 
-            await tester.tap(find.byKey(const Key('home-app-settings')));
-            await tester.pumpAndSettle();
+            await _openFileApp(tester, 'settings');
 
             final surfaceRect = tester.getRect(
-              find.byKey(const Key('mobile-app-surface')),
+              find.byKey(const Key('mobile-app-surface')).last,
             );
             final indicatorRect = tester.getRect(
               find.byKey(const Key('mobile-home-indicator')),
@@ -296,7 +283,7 @@ void main() {
 
   group('iPhone home and navigation', () {
     testWidgets(
-      'uses a four-column app grid with Profile and Projects in the Dock',
+      'uses a four-column app grid with Profile, My Files and Printer in the Dock',
       (tester) async {
         await _pumpShell(tester, size: const Size(390, 844));
 
@@ -307,6 +294,7 @@ void main() {
         expect(find.byKey(const Key('mobile-dock')), findsOneWidget);
         expect(find.byKey(const Key('mobile-dock-profile')), findsOneWidget);
         expect(find.byKey(const Key('mobile-dock-projects')), findsOneWidget);
+        expect(find.byKey(const Key('mobile-dock-printer')), findsOneWidget);
         expect(find.byKey(const Key('mobile-dock-about')), findsNothing);
         expect(find.byKey(const Key('mobile-dock-trash')), findsNothing);
         _expectAllHomeApps();
@@ -381,7 +369,23 @@ void main() {
         expect(find.byKey(const Key('mobile-dock-projects')), findsOneWidget);
         expect(find.byKey(const Key('mobile-dock-about')), findsNothing);
         expect(find.bySemanticsLabel('Open 프로필'), findsNWidgets(2));
+        expect(find.bySemanticsLabel('Open 내파일'), findsOneWidget);
         expect(find.bySemanticsLabel('Open 자기소개'), findsOneWidget);
+        final profileRect = tester.getRect(
+          find.byKey(const Key('mobile-dock-profile')),
+        );
+        final filesRect = tester.getRect(
+          find.byKey(const Key('mobile-dock-projects')),
+        );
+        final separatorRect = tester.getRect(
+          find.byKey(const Key('mobile-dock-separator')),
+        );
+        final printerRect = tester.getRect(
+          find.byKey(const Key('mobile-dock-printer')),
+        );
+        expect(profileRect.right, lessThanOrEqualTo(filesRect.left));
+        expect(filesRect.right, lessThan(separatorRect.left));
+        expect(separatorRect.right, lessThan(printerRect.left));
 
         await tester.tap(find.byKey(Key('mobile-dock-${scenario.$2.name}')));
         await tester.pumpAndSettle();
@@ -536,6 +540,7 @@ void main() {
 
       final profile = find.byKey(const Key('home-app-profile'));
       await tester.ensureVisible(profile);
+      await tester.pumpAndSettle();
       await tester.tap(profile);
       await tester.pumpAndSettle();
       expect(find.byKey(const Key('profile-scroll')), findsOneWidget);
@@ -826,10 +831,7 @@ void main() {
           textScaler: const TextScaler.linear(2),
         );
 
-        final trashIcon = find.byKey(const Key('home-app-trash'));
-        await _scrollHomeIconIntoView(tester, trashIcon, reason: '$size');
-        await tester.tap(trashIcon);
-        await tester.pumpAndSettle();
+        await _openFileApp(tester, 'trash');
 
         final trashScroll = find.byKey(const Key('trash-scroll'));
         expect(trashScroll, findsOneWidget);
@@ -882,6 +884,20 @@ Finder _launcherFrameFinder(Finder launcher) {
   return find.descendant(of: frame, matching: find.byType(Container)).first;
 }
 
+Future<void> _openFileApp(WidgetTester tester, String appName) async {
+  final files = find.byKey(const Key('home-app-projects'));
+  await _scrollHomeIconIntoView(tester, files, reason: 'files');
+  await tester.tap(files);
+  await tester.pumpAndSettle();
+  await tester.tap(find.byKey(const Key('projects-finder-location-files')));
+  await tester.pumpAndSettle();
+  final app = find.byKey(Key('projects-files-app-$appName'));
+  await tester.ensureVisible(app);
+  await tester.pumpAndSettle();
+  await tester.tap(app);
+  await tester.pumpAndSettle();
+}
+
 Future<void> _scrollHomeIconIntoView(
   WidgetTester tester,
   Finder icon, {
@@ -917,17 +933,21 @@ const List<String> _allAppNames = <String>[
   'projects',
   'safari',
   'terminal',
-  'music',
-  'photos',
   'github',
-  'mail',
-  'settings',
-  'trash',
 ];
 
 void _expectAllHomeApps() {
   for (final appName in _allAppNames) {
     expect(find.byKey(Key('home-app-$appName')), findsOneWidget);
+  }
+  for (final movedApp in <String>[
+    'music',
+    'photos',
+    'mail',
+    'settings',
+    'trash',
+  ]) {
+    expect(find.byKey(Key('home-app-$movedApp')), findsNothing);
   }
   expect(find.byKey(const Key('home-app-about')), findsNothing);
 }

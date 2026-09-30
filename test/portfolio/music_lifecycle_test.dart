@@ -70,8 +70,12 @@ void main() {
 
     tester.view.physicalSize = const Size(390, 844);
     await tester.pumpAndSettle();
-    expect(find.byKey(const Key('home-app-music')), findsOneWidget);
-    await tester.tap(find.byKey(const Key('home-app-music')));
+    expect(find.byKey(const Key('home-app-music')), findsNothing);
+    await tester.tap(find.byKey(const Key('home-app-projects')));
+    await tester.pumpAndSettle();
+    await tester.tap(find.byKey(const Key('projects-finder-location-files')));
+    await tester.pumpAndSettle();
+    await tester.tap(find.byKey(const Key('projects-files-app-music')));
     await tester.pumpAndSettle();
     expect(find.byKey(const Key('music-app')), findsOneWidget);
     expect(find.text('Second Song'), findsWidgets);
@@ -79,6 +83,12 @@ void main() {
     expect(controller.currentIndex, 1);
     expect(controller.isPlaying, isTrue);
     expect(loaderCalls, 0);
+
+    await tester.tap(find.byKey(const Key('mobile-back-close-music')));
+    await tester.pumpAndSettle();
+    expect(find.byKey(const Key('projects-files-app-grid')), findsOneWidget);
+    expect(controller.currentIndex, 1);
+    expect(controller.isPlaying, isTrue);
 
     await tester.pumpWidget(const SizedBox.shrink());
     await tester.pump();
@@ -159,7 +169,7 @@ void main() {
     expect(playback.playedTracks, <MusicTrack>[tracks[1]]);
   });
 
-  testWidgets('desktop music restores shortcut focus after Dock restore', (
+  testWidgets('desktop music restores shortcut focus after Files restore', (
     tester,
   ) async {
     await _setViewport(tester, const Size(1440, 900));
@@ -183,7 +193,9 @@ void main() {
     await tester.pumpAndSettle();
     expect(find.byKey(const Key('music-app')), findsNothing);
 
-    await tester.tap(find.byKey(const Key('dock-app-music')));
+    await tester.tap(find.byKey(const Key('dock-app-projects')));
+    await tester.pumpAndSettle();
+    await tester.tap(find.byKey(const Key('projects-files-app-music')));
     await tester.pumpAndSettle();
     expect(find.byKey(const Key('music-app')), findsOneWidget);
     await tester.sendKeyEvent(LogicalKeyboardKey.arrowRight);
@@ -232,7 +244,11 @@ Future<void> _setViewport(WidgetTester tester, Size size) async {
 }
 
 Future<void> _openDesktopMusic(WidgetTester tester) async {
-  await _openDesktopApp(tester, PortfolioAppId.music);
+  await _openDesktopApp(tester, PortfolioAppId.projects);
+  await tester.tap(find.byKey(const Key('projects-finder-location-files')));
+  await tester.pumpAndSettle();
+  await tester.tap(find.byKey(const Key('projects-files-app-music')));
+  await tester.pumpAndSettle();
   expect(find.byKey(const Key('music-app')), findsOneWidget);
 }
 

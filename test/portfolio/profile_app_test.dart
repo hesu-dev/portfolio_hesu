@@ -1157,7 +1157,7 @@ void main() {
       semantics.dispose();
     });
 
-    testWidgets('경력 갤러리는 포트폴리오 회사를 열고 닫으면 프로필로 돌아온다', (tester) async {
+    testWidgets('경력 갤러리는 파일의 회사를 열고 닫으면 프로필로 돌아온다', (tester) async {
       final semantics = tester.ensureSemantics();
 
       for (final scenario in const <(String, Size, bool)>[
@@ -1179,7 +1179,7 @@ void main() {
         final companyLink = find.byKey(
           const Key('profile-career-projects-link'),
         );
-        _expectButtonSemantics(tester, companyLink, label: '포트폴리오 회사 열기');
+        _expectButtonSemantics(tester, companyLink, label: '파일의 회사 열기');
         final linkRect = tester.getRect(companyLink);
         expect(linkRect.width, greaterThanOrEqualTo(44));
         expect(linkRect.height, greaterThanOrEqualTo(44));
