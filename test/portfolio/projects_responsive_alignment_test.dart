@@ -25,15 +25,11 @@ void main() {
             .toList(growable: false);
         final firstArtwork = find.descendant(
           of: firstRow.first,
-          matching: find.byKey(
-            const Key('apple-finder-folder-artwork-background'),
-          ),
+          matching: find.byKey(const Key('apple-finder-icon-background')),
         );
         final lastArtwork = find.descendant(
           of: firstRow.last,
-          matching: find.byKey(
-            const Key('apple-finder-folder-artwork-background'),
-          ),
+          matching: find.byKey(const Key('apple-finder-icon-background')),
         );
         final collectionRect = tester.getRect(
           find.byKey(const Key('projects-collection-scroll')),
@@ -118,7 +114,7 @@ void main() {
         );
         await tester.pumpAndSettle();
 
-        final scroll = find.byKey(const Key('projects-collection-scroll'));
+        final scroll = find.byKey(const Key('projects-recent-app-grid'));
         await tester.drag(scroll, const Offset(0, -1000));
         await tester.pumpAndSettle();
 
@@ -162,42 +158,46 @@ void main() {
       }
     });
 
-    testWidgets('iPad Finder wraps two recent projects after six dense tiles', (
-      tester,
-    ) async {
-      await _pumpProjects(tester, size: const Size(834, 700), tablet: true);
-      await tester.tap(
-        find.byKey(const Key('projects-finder-location-recent')),
-      );
-      await tester.pumpAndSettle();
-
-      final folders = <Finder>[
-        for (var index = 0; index < portfolioData.projects.length; index++)
-          find.byKey(Key('projects-recent-folder-$index')),
-      ];
-      final firstRowY = tester.getTopLeft(folders.first).dy;
-
-      for (final folder in folders) {
-        expect(tester.getSize(folder).width, closeTo(112, 0.01));
-      }
-      for (final folder in folders.take(6)) {
-        expect(tester.getTopLeft(folder).dy, closeTo(firstRowY, 0.01));
-      }
-      for (var index = 1; index < 6; index++) {
-        expect(
-          tester.getTopLeft(folders[index]).dx -
-              tester.getRect(folders[index - 1]).right,
-          closeTo(8, 0.01),
+    testWidgets(
+      'iPad recent projects and file shortcuts use consistent grid slots',
+      (tester) async {
+        await _pumpProjects(tester, size: const Size(834, 700), tablet: true);
+        await tester.tap(
+          find.byKey(const Key('projects-finder-location-recent')),
         );
-      }
-      final nextRow = tester.getRect(folders[6]);
-      final firstTile = tester.getRect(folders.first);
-      expect(nextRow.left, closeTo(firstTile.left, 0.01));
-      expect(nextRow.top - firstTile.bottom, closeTo(8, 0.01));
-      final lastTile = tester.getRect(folders[7]);
-      expect(lastTile.top, closeTo(nextRow.top, 0.01));
-      expect(lastTile.left - nextRow.right, closeTo(8, 0.01));
-    });
+        await tester.pumpAndSettle();
+        final gridFinder = find.byKey(const Key('projects-recent-app-grid'));
+        final grid = tester.widget<GridView>(gridFinder);
+        expect(
+          grid.childrenDelegate.estimatedChildCount,
+          portfolioData.projects.length + 5,
+        );
+        final folders = [
+          for (var index = 0; index < portfolioData.projects.length; index++)
+            find.byKey(Key('projects-recent-folder-$index')),
+        ];
+        final first = tester.getRect(folders.first);
+        final delegate =
+            grid.gridDelegate as SliverGridDelegateWithMaxCrossAxisExtent;
+        final origin = tester.getTopLeft(gridFinder) + const Offset(24, 24);
+        for (final folder in folders) {
+          final rect = tester.getRect(folder);
+          expect(rect.width, closeTo(first.width, 0.01));
+          final column =
+              (rect.left - origin.dx) /
+              (rect.width + delegate.crossAxisSpacing);
+          final row =
+              (rect.top - origin.dy) /
+              (delegate.mainAxisExtent! + delegate.mainAxisSpacing);
+          expect(column, closeTo(column.roundToDouble(), 0.01));
+          expect(row, closeTo(row.roundToDouble(), 0.01));
+        }
+        for (final app in ['music', 'photos', 'mail', 'trash', 'printer']) {
+          expect(find.byKey(Key('projects-recent-app-$app')), findsOneWidget);
+        }
+        expect(tester.takeException(), isNull);
+      },
+    );
 
     testWidgets('프로젝트 폴더의 모든 행을 파일 영역 왼쪽에 정렬한다', (tester) async {
       for (final scenario
@@ -368,6 +368,8 @@ Future<void> _pumpProjects(
     ),
   );
   await tester.pump();
+  await tester.tap(find.byKey(const Key('projects-finder-location-career')));
+  await tester.pumpAndSettle();
 }
 
 final class _FakeExternalLauncher implements ExternalLauncher {

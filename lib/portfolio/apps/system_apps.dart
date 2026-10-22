@@ -913,6 +913,13 @@ class _ExternalProfilePageState extends State<_ExternalProfilePage> {
                                     Theme.of(context),
                                   ).copyWith(
                                     p: AppleTheme.body(context),
+                                    blockSpacing: 16,
+                                    h4Padding: const EdgeInsets.symmetric(
+                                      vertical: 6,
+                                    ),
+                                    h6Padding: const EdgeInsets.symmetric(
+                                      vertical: 4,
+                                    ),
                                     a: AppleTheme.body(context).copyWith(
                                       color: AppleTheme.blue,
                                       decoration: TextDecoration.underline,
@@ -932,7 +939,12 @@ class _ExternalProfilePageState extends State<_ExternalProfilePage> {
                                         aspectRatio: 854 / 300,
                                         child: image,
                                       )
-                                    : image;
+                                    : Padding(
+                                        padding: const EdgeInsets.symmetric(
+                                          vertical: 4,
+                                        ),
+                                        child: image,
+                                      );
                               },
                               onTapLink: (text, href, title) {
                                 if (href != null) {

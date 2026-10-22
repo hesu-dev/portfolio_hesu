@@ -163,7 +163,7 @@ void main() {
       final htmlAttributes = _elements(indexHtml, 'html').single;
 
       expect(htmlAttributes['lang'], 'ko');
-      expect(_elementText(indexHtml, 'title'), '민희수 포트폴리오');
+      expect(_elementText(indexHtml, 'title'), '희수 포폴');
       expect(_metaContent(indexHtml, 'description'), _portfolioDescription);
       expect(_metaContent(indexHtml, 'theme-color'), '#F4F4F7');
       expect(
@@ -171,10 +171,14 @@ void main() {
         isNull,
         reason: 'Flutter bootstrap owns responsive viewport configuration.',
       );
+      expect(_metaContent(indexHtml, 'apple-mobile-web-app-title'), '희수 포폴');
       expect(
-        _metaContent(indexHtml, 'apple-mobile-web-app-title'),
-        '민희수 포트폴리오',
+        _elements(indexHtml, 'meta').singleWhere(
+          (attributes) => attributes['property'] == 'og:title',
+        )['content'],
+        '희수 포폴',
       );
+      expect(_metaContent(indexHtml, 'twitter:title'), '희수 포폴');
       expect(_linkHref(indexHtml, 'manifest'), 'manifest.json');
       expect(_scriptSource(indexHtml), isNotNull);
       expect(_elementText(indexHtml, 'noscript'), contains('민희수의 포트폴리오'));
@@ -192,8 +196,8 @@ void main() {
       ).readAsStringSync();
       final manifest = jsonDecode(manifestSource) as Map<String, dynamic>;
 
-      expect(manifest['name'], '민희수 포트폴리오');
-      expect(manifest['short_name'], '민희수');
+      expect(manifest['name'], '희수 포폴');
+      expect(manifest['short_name'], '희수 포폴');
       expect(manifest['description'], _portfolioDescription);
       expect(manifest['start_url'], '.');
       expect(manifest['scope'], '.');
@@ -374,12 +378,12 @@ void main() {
       expect(pubspec, contains('uses-material-design: true'));
       expect(pubspec, isNot(contains('animated_text_kit:')));
       expect(pubspec, isNot(contains('font_awesome_flutter:')));
-      expect(pubspec, isNot(contains('cupertino_icons:')));
+      expect(pubspec, contains('cupertino_icons:'));
       expect(pubspec, isNot(contains('assets/image/')));
     });
   });
 
-  test('README documents adaptive UI and the Vercel web build target', () {
+  test('README documents adaptive UI and the Cloudflare web build target', () {
     final readme = _projectFile('README.md').readAsStringSync();
 
     expect(readme, contains('macOS'));
@@ -392,47 +396,33 @@ void main() {
     expect(readme, contains('dart run tool/build_web.dart'));
     expect(readme, contains('build/web'));
     expect(readme, contains('GitHub Pages'));
-    expect(readme, contains('Vercel'));
+    expect(readme, contains('Cloudflare'));
     expect(readme, contains('기존 GitHub Pages 배포는 중단'));
     expect(readme, isNot(contains('hesu-dev.github.io/portfolio_hesu')));
     expect(readme, isNot(contains('--base-href /portfolio_hesu/')));
   });
 
-  test('README gives reproducible Vercel Flutter build settings', () {
+  test('README gives reproducible Cloudflare Flutter build settings', () {
     final readme = _projectFile('README.md').readAsStringSync();
+    final config =
+        jsonDecode(_projectFile('wrangler.json').readAsStringSync())
+            as Map<String, dynamic>;
 
-    expect(readme, contains('Vercel 기본 빌드 이미지에는 Flutter SDK가'));
-    expect(readme, contains('Framework Preset'));
-    expect(readme, contains('Install Command'));
-    expect(
-      readme,
-      contains(
-        'git clone --depth 1 --branch 3.38.9 '
-        'https://github.com/flutter/flutter.git .flutter',
-      ),
-    );
-    expect(readme, contains('./.flutter/bin/flutter config --enable-web'));
-    expect(readme, contains('./.flutter/bin/flutter pub get'));
-    expect(readme, contains('Build Command'));
-    expect(
-      readme,
-      contains(
-        './.flutter/bin/dart run tool/build_web.dart '
-        '--flutter-bin ./.flutter/bin/flutter',
-      ),
-    );
-    expect(readme, contains('Output Directory'));
-    expect(readme, contains('사전 빌드'));
-    expect(readme, contains('정적 배포'));
+    expect(config['assets']['directory'], './build/web');
+    expect(config['assets']['not_found_handling'], 'single-page-application');
+    expect(readme, contains('./deploy.sh 3'));
+    expect(readme, contains('dart run tool/build_web.dart'));
+    expect(readme, contains('npx wrangler deploy --config wrangler.json'));
+    expect(readme, contains('운영 웹 빌드까지만 실행'));
     expect(readme, contains('독립적으로 제작'));
     expect(readme, contains('Apple과 제휴하거나 보증받지 않았습니다'));
     expect(readme, contains('Slack과 제휴하거나 보증받지 않았습니다'));
     expect(readme, contains('원본 자산을 포함하지 않습니다'));
-    expect(readme, contains('GitHub Pages 자동 배포 워크플로는 제거했습니다'));
+    expect(readme, contains('GitHub Pages 자동 배포 워크플로는 제거된 상태'));
     expect(readme, isNot(contains('contents: write')));
   });
 
-  test('removes GitHub Pages workflows before the Vercel migration', () {
+  test('removes GitHub Pages workflows before the Cloudflare migration', () {
     expect(
       _projectFile('.github/workflows/flutter-web.yml').existsSync(),
       isFalse,
@@ -528,20 +518,6 @@ void main() {
         _projectFile('.github/workflows/flutter-web.yml').existsSync(),
         isFalse,
       );
-    });
-
-    test('removes superseded local deployment and redesign files', () {
-      for (final stalePath in <String>[
-        'deploy.sh',
-        'docs/plans/2026-03-20-portfolio-redesign.md',
-        '.github/workflows/deploy.yml',
-      ]) {
-        expect(
-          _projectFile(stalePath).existsSync(),
-          isFalse,
-          reason: stalePath,
-        );
-      }
     });
 
     test('ignores the project-local Flutter SDK used by Vercel', () {

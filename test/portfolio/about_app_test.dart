@@ -104,9 +104,7 @@ void main() {
         );
         expect(
           dividers,
-          findsNWidgets(
-            portfolioData.experiences.length + portfolioData.education.length,
-          ),
+          findsNWidgets(1 + portfolioData.education.length),
           reason: '${scenario.label} must not keep the Contact section divider',
         );
         expect(
@@ -142,24 +140,15 @@ void main() {
         final experiencePeriod = find.text(experience.period);
         final description = find.text(experience.description);
 
+        expect(find.text(experience.role), findsWidgets);
         expect(
-          find.text(experience.role),
-          findsNothing,
-          reason: scenario.label,
+          tester.getTopLeft(organization).dy,
+          greaterThan(tester.getTopLeft(find.text(experience.role).first).dy),
         );
-        if (scenario.compact) {
-          expect(
-            tester.getTopLeft(experiencePeriod).dy,
-            greaterThanOrEqualTo(tester.getBottomLeft(organization).dy),
-            reason: '${scenario.label} career period wraps before the body',
-          );
-        } else {
-          expect(
-            tester.getCenter(organization).dy,
-            closeTo(tester.getCenter(experiencePeriod).dy, 1),
-            reason: '${scenario.label} career title and period share a row',
-          );
-        }
+        expect(
+          tester.getTopLeft(experiencePeriod).dy,
+          greaterThanOrEqualTo(tester.getBottomLeft(organization).dy),
+        );
         expect(
           tester.getTopLeft(description).dy,
           greaterThan(tester.getBottomLeft(organization).dy),

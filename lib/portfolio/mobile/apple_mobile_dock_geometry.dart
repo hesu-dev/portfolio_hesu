@@ -1,8 +1,8 @@
 /// Shared vertical geometry for the iPhone and iPad Dock surfaces.
 ///
-/// The home Dock is laid out above the 17 px home-indicator row. App-level
-/// bottom navigation uses the same measurements so switching screens does not
-/// move or resize the Dock surface.
+/// The home Dock reserves a 17 px gap above the native bottom safe area, or
+/// the drawn indicator in browser previews. App-level bottom navigation uses
+/// the same measurements so switching screens does not move or resize the Dock.
 abstract final class AppleMobileDockGeometry {
   static const double homeIndicatorExtent = 17;
   static const double phoneBottomOffset = 9;

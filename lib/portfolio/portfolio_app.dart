@@ -2,6 +2,7 @@ import 'dart:async';
 import 'dart:ui' show PointerDeviceKind;
 
 import 'package:flutter/material.dart';
+import 'package:flutter_localizations/flutter_localizations.dart';
 import 'package:portfolio_hesu/portfolio/data/portfolio_data.dart';
 import 'package:portfolio_hesu/portfolio/music/music_asset_library.dart';
 import 'package:portfolio_hesu/portfolio/music/music_controller.dart';
@@ -35,6 +36,8 @@ class PortfolioApp extends StatefulWidget {
     this.musicPlaybackFactory = createMusicPlayback,
     super.key,
   });
+
+  static const displayName = '희수 포폴';
 
   final PortfolioData data;
   final ExternalLauncher externalLauncher;
@@ -151,7 +154,10 @@ class _PortfolioAppState extends State<PortfolioApp> {
         musicController: _musicController,
       ),
       builder: (context, child) => MaterialApp(
-        title: widget.data.appTitle,
+        title: PortfolioApp.displayName,
+        locale: const Locale('ko'),
+        supportedLocales: const [Locale('ko')],
+        localizationsDelegates: GlobalMaterialLocalizations.delegates,
         color: const Color(0xFFF4F4F7),
         debugShowCheckedModeBanner: false,
         theme: AppleTheme.light(),

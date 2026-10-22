@@ -3,7 +3,21 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:portfolio_hesu/portfolio/music/music_asset_library.dart';
 
 void main() {
+  TestWidgetsFlutterBinding.ensureInitialized();
   group('MusicAssetLibrary', () {
+    test(
+      'bundled playlist contains only the supplied Always soundtrack',
+      () async {
+        final tracks = await const MusicAssetLibrary().load();
+
+        expect(tracks, hasLength(1));
+        expect(tracks.single.assetPath, 'assets/music/01-always.mp3');
+        expect(tracks.single.title, 'Always');
+        final audio = await rootBundle.load(tracks.single.assetPath);
+        expect(audio.lengthInBytes, greaterThan(0));
+      },
+    );
+
     test('filters supported music assets under the prefix and sorts them', () {
       const library = MusicAssetLibrary();
       final manifest = _FakeAssetManifest(<String>[

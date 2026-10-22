@@ -1,3 +1,7 @@
+import 'project_architecture.dart';
+import 'project_diagrams.dart';
+import 'portfolio_introduction.dart';
+
 class PortfolioIdentity {
   const PortfolioIdentity({
     required this.name,
@@ -6,6 +10,7 @@ class PortfolioIdentity {
     required this.githubUrl,
     required this.headline,
     required this.biography,
+    this.introduction,
   });
 
   final String name;
@@ -14,6 +19,7 @@ class PortfolioIdentity {
   final String githubUrl;
   final String headline;
   final String biography;
+  final String? introduction;
 }
 
 class PortfolioExperience {
@@ -102,6 +108,8 @@ enum PortfolioProjectSectionKind {
   affiliation('소속'),
   work('업무'),
   features('기능'),
+  coreTechnology('핵심 기술'),
+  technicalDecision('기술 의사결정'),
   problem('문제'),
   cause('원인'),
   measurement('측정'),
@@ -131,6 +139,7 @@ class PortfolioProjectArchitecture {
     required String title,
     required String description,
     required Iterable<String> nodes,
+    PortfolioArchitectureDiagram? diagram,
     PortfolioArchitecturePresentation presentation =
         PortfolioArchitecturePresentation.components,
   }) {
@@ -138,6 +147,7 @@ class PortfolioProjectArchitecture {
       title: title,
       description: description,
       nodes: List<String>.unmodifiable(nodes),
+      diagram: diagram,
       presentation: presentation,
     );
   }
@@ -146,12 +156,14 @@ class PortfolioProjectArchitecture {
     required this.title,
     required this.description,
     required this.nodes,
+    this.diagram,
     this.presentation = PortfolioArchitecturePresentation.components,
   });
 
   final String title;
   final String description;
   final List<String> nodes;
+  final PortfolioArchitectureDiagram? diagram;
   final PortfolioArchitecturePresentation presentation;
 }
 
@@ -278,9 +290,10 @@ class PortfolioData {
   String get name => identity.name;
   String get email => identity.email;
   String get githubUrl => identity.githubUrl;
+  String get introduction => identity.introduction ?? identity.biography;
   String get mailUrl => 'mailto:${identity.email}';
   String get monogram => _deriveMonogram(identity);
-  String get terminalPrompt => r'portfolio: ~$';
+  String get terminalPrompt => r'Portfolio: ~$';
   String get appTitle {
     final localName = identity.name.trim();
     final englishName = identity.englishName.trim();
@@ -295,6 +308,7 @@ class PortfolioData {
     identity.githubUrl,
     identity.headline,
     identity.biography,
+    introduction,
     for (final experience in experiences) ...<String>[
       experience.role,
       experience.organization,
@@ -415,6 +429,7 @@ const portfolioData = PortfolioData.constant(
     biography:
         '자바와 Flutter/Dart를 기반으로 모바일 앱 개발을 지향하는 2~3년 차 개발자입니다. '
         'IT 기업에서 여러 디지털 프로젝트를 경험했습니다.',
+    introduction: portfolioIntroduction,
   ),
   experiences: <PortfolioExperience>[
     PortfolioExperience(
@@ -508,6 +523,7 @@ const portfolioData = PortfolioData.constant(
       ],
       architecture: PortfolioProjectArchitecture.constant(
         title: 'HTML 채팅 로그에서 Flutter 화면과 문서 내보내기까지',
+        diagram: readingLogArchitecture,
         description:
             'Chrome 확장 프로그램으로 HTML 채팅 로그를 JSON으로 변환하고, '
             'Flutter 앱에서 JSON 스키마 구조에 따라 화면을 배치합니다. '
@@ -543,6 +559,36 @@ const portfolioData = PortfolioData.constant(
               '• 이펙트 디자인\n'
               '• 기타 프런트엔드 기능 구현',
         ),
+        PortfolioProjectSection(
+          kind: PortfolioProjectSectionKind.coreTechnology,
+          body:
+              'Flutter·Dart로 채팅·eBook·소설 리더의 화면과 프로젝트 세션을 구성하고, Chrome 확장 프로그램은 HTML 대화 기록을 앱이 읽는 JSON으로 변환합니다. 네이티브 파일 열기는 Isolate.run에서 JSON 파싱과 초기 표시 데이터를 함께 준비합니다. 웹에서는 별도 isolate를 사용하지 않는 경로를 둡니다.\n\nPDF·EPUB 내보내기는 같은 프로젝트 데이터를 문서로 변환합니다. Android·iOS의 음성 재생은 MethodChannel 명령과 EventChannel 이벤트로 네이티브 TTS 런타임에 연결됩니다.',
+        ),
+        PortfolioProjectSection(
+          kind: PortfolioProjectSectionKind.technicalDecision,
+          body:
+              '파일 형식을 바꾸기보다 읽기·파싱 경로를 먼저 정리했습니다. 기존 project.json과 스키마를 유지하면 확장 프로그램 및 이미 저장된 로그와의 호환성을 지킬 수 있기 때문입니다. 파일을 반복해서 읽거나 전체 목록을 중복 순회하는 대신, 한 번의 디코딩 결과에 초기 커서와 화자 이미지 준비 정보를 묶었습니다.\n\n앱 상태를 부분적으로 교체하지 않고 준비된 결과를 일괄 반영한 뒤 이미지 갱신을 수행합니다. 이는 완전히 준비되기 전의 화면 상태 노출을 줄이는 구조입니다. 대신 파일 전체를 준비하는 비용은 남으므로, 임의로 지연 로딩이나 새로운 저장 형식까지 도입하지 않았습니다.',
+        ),
+        PortfolioProjectSection(
+          kind: PortfolioProjectSectionKind.problem,
+          body:
+              '큰 로그를 여는 경로에서 파일 재읽기, 목록의 중복 순회, UI 실행 흐름에 남은 디코딩 작업이 함께 나타났습니다. 별도로 백그라운드·잠금 화면에서 진행되는 TTS와 Flutter 화면의 재생 위치가 서로 다른 상태를 가질 수 있는 문제도 다뤘습니다.',
+        ),
+        PortfolioProjectSection(
+          kind: PortfolioProjectSectionKind.cause,
+          body:
+              '프로젝트 열기의 여러 단계가 필요한 정보를 각자 다시 만들면 같은 데이터를 여러 번 처리하게 됩니다. TTS에서는 Flutter와 네이티브가 모두 현재 재생 상태를 독립적으로 갱신할 때 늦게 도착한 이벤트가 최신 위치를 덮을 수 있습니다.',
+        ),
+        PortfolioProjectSection(
+          kind: PortfolioProjectSectionKind.solution,
+          body:
+              '파일 열기는 단일 디코딩 결과를 준비하고 성공한 경우에만 프로젝트 세션을 일괄 갱신하도록 구성했습니다. 클라우드 미러는 프로젝트 ID와 기대 revision이 일치할 때만 재사용하며, 미완성 미러는 사전 확인 경로를 통과합니다.\n\nTTS는 네이티브 런타임의 snapshot을 재생 상태의 기준으로 삼고 Flutter는 그 상태를 화면에 투영합니다. snapshotVersion과 queueRevision을 비교해 오래된 스냅샷·큐 이벤트가 현재 재생 위치를 되돌리지 않도록 처리합니다.',
+        ),
+        PortfolioProjectSection(
+          kind: PortfolioProjectSectionKind.evaluation,
+          body:
+              '회귀 테스트는 디코딩 후 원문 라인 수 유지, 초기 커서 범위 보정, 화자 이미지 준비 정보 생성을 확인합니다. 프로젝트 열기 테스트에서는 완전한 미러와 불완전한 미러의 사전 확인 경로를 구분합니다. TTS 테스트는 최신 snapshot의 반영과 오래된 snapshotVersion·queueRevision의 무시를 검증합니다.\n\n이는 현재 코드와 테스트에서 확인한 동작입니다. 실기기 개방 시간·메모리 절감률이나 운영 장애 감소율은 측정 결과가 없어 수치로 제시하지 않습니다.',
+        ),
       ],
       links: <PortfolioProjectLink>[
         PortfolioProjectLink(
@@ -563,80 +609,127 @@ const portfolioData = PortfolioData.constant(
       ],
     ),
     PortfolioProject.constant(
-      title: 'PersonaChat AI Character Chat',
+      title: 'Portfolio',
       category: PortfolioProjectCategory.personal,
+      appIconAsset: 'assets/icons/settings-display-mode.svg',
       description:
-          'SNS 로그인, 캐릭터 생성/검색, AI 채팅, 이벤트 이미지, 크레딧 결제를 포함한 '
-          'Flutter 실무형 포트폴리오 프로젝트 설계',
-      period: '2026.07 - 설계',
-      technologies: <String>['Flutter', 'Riverpod', 'Firebase', 'IAP', 'AI'],
+          'macOS 데스크톱과 iPad·iPhone 홈 화면을 재현한 Flutter 포트폴리오입니다. '
+          '경력·기술·프로젝트를 앱과 폴더 형태로 탐색하고, 파일과 Safari에서 같은 프로젝트 상세를 확인할 수 있습니다.',
+      period: '2026.09 - 현재',
+      technologies: <String>[
+        'Flutter',
+        'Dart',
+        'Material 3',
+        'Cupertino',
+        'flutter_svg',
+        'url_launcher',
+        'http',
+        'just_audio',
+        'pdf',
+        'Flutter Test',
+      ],
       highlights: <String>[
-        '서비스 기획 및 기술 설계 · 기여도 100% (임시 예시)',
-        '인증·검색·AI 채팅·결제 흐름과 클라이언트·서버 책임 설계',
-        '데이터 모델, 테스트 전략, 4주 구현 마일스톤 정의',
+        '화면 너비와 플랫폼에 따른 macOS·iPad·iPhone 반응형 셸',
+        '파일과 Safari의 프로젝트 데이터·상세 보고서 공유',
+        '테마·음악 공통 상태, GitHub 기여 기록 조회, 웹 PDF 저장·인쇄',
+        '개발·운영 환경 분리와 iPhone 릴리스 빌드·설치·실행 검증',
       ],
       architecture: PortfolioProjectArchitecture.constant(
-        title: '기능과 서버 책임을 분리한 구성 요소',
-        description: '서로 연결되는 클라이언트·인증·데이터·AI·결제 검증의 책임을 구성 요소별로 나누었습니다.',
-        presentation: PortfolioArchitecturePresentation.components,
+        title: '데이터·반응형 셸·앱 콘텐츠·외부 기능의 구성',
+        diagram: portfolioArchitecture,
+        description:
+            'PortfolioApp이 PortfolioData와 테마·음악 컨트롤러를 반응형 셸에 전달합니다. '
+            '셸은 기기에 맞는 화면과 선택한 앱을 표시하고, 파일·Safari는 SafariProjectPage를 공유합니다. '
+            'GitHub 기여 기록은 외부 API에서 조회하며, PDF 생성과 인쇄는 웹 실행 경로에서 처리합니다.',
+        presentation: PortfolioArchitecturePresentation.flow,
         nodes: <String>[
-          'Flutter 앱',
-          'Firebase Auth · Firestore · Storage',
-          'Cloud API · 영수증 검증 · Credit Ledger',
-          'LLM Provider · Search Index',
+          'PortfolioData',
+          'PortfolioApp',
+          '공유 상태',
+          '반응형 셸',
+          '앱 콘텐츠',
+          '프로젝트 상세',
+          'GitHub 기여 기록',
+          '웹 PDF 출력',
         ],
       ),
       sections: <PortfolioProjectSection>[
         PortfolioProjectSection(
           kind: PortfolioProjectSectionKind.work,
           body:
-              'SNS 로그인, 캐릭터 생성/검색, AI 채팅, 이벤트 이미지, 크레딧 결제를 포함한 Flutter 실무형 포트폴리오 프로젝트 설계',
+              '개발자의 경력, 자기소개, 기술과 프로젝트를 Apple 스타일의 앱 화면으로 탐색하도록 구현했습니다. '
+              '데스크톱의 창·메뉴 막대·Dock과 모바일의 홈·앱 전환을 각각 구성하고, 같은 포트폴리오 데이터를 화면과 출력 문서에 사용합니다.',
         ),
         PortfolioProjectSection(
-          kind: PortfolioProjectSectionKind.problem,
+          kind: PortfolioProjectSectionKind.features,
           body:
-              '화면 구현만으로는 인증, 상태관리, API, 실시간 처리, 결제, 테스트처럼 Flutter 실무에서 함께 요구되는 역량을 보여주기 어려웠습니다.',
+              '데스크톱은 창 열기·최소화·복원과 Dock을 제공하고, iPad·iPhone은 홈 화면과 앱별 탐색 화면으로 전환됩니다. '
+              '파일에는 최근 항목·개인·회사 프로젝트를 나누고, 폴더마다 아이콘·목록 보기와 정렬 상태를 독립적으로 유지합니다. '
+              'Safari에서는 프로젝트 검색, 카드 탐색과 뒤로·앞으로 이동을 제공합니다.\n\n'
+              '프로필·자기소개·스킬·터미널·사진·음악·설정 화면을 앱 단위로 구성했습니다. '
+              '프로젝트 상세에는 아이콘·기간, 기술 스택, 구조도, 구성 요소 설명과 작업 링크를 표시합니다. '
+              'GitHub 기여 기록은 화면을 열거나 새로고침할 때 조회하고, 실패하면 앱에 포함된 저장 기록을 표시합니다.',
         ),
         PortfolioProjectSection(
-          kind: PortfolioProjectSectionKind.cause,
+          kind: PortfolioProjectSectionKind.coreTechnology,
           body:
-              '요구 역량이 로그인·탐색·채팅·결제·운영에 흩어져 있어 이를 연결하는 end-to-end 사용자 흐름이 필요했습니다.',
+              'Flutter와 Dart를 중심으로 Material 3·Cupertino 및 공통 Apple 스타일 위젯을 조합했습니다. '
+              'AdaptivePortfolioShell은 1024px 이상에서 데스크톱, 600px 이상에서 iPad, 그 미만에서 iPhone 화면을 선택하며, '
+              '모바일 브라우저에서는 넓은 화면도 모바일 셸을 사용합니다.\n\n'
+              'PortfolioThemeController와 MusicController는 ChangeNotifier로 공통 상태를 전달합니다. '
+              'flutter_svg는 SVG 아트워크, url_launcher는 외부 링크, http는 GitHub 기여 API 조회, '
+              'just_audio는 음악 재생, pdf는 한글 글꼴을 포함한 출력 문서 생성에 사용합니다.',
         ),
         PortfolioProjectSection(
-          kind: PortfolioProjectSectionKind.measurement,
+          kind: PortfolioProjectSectionKind.technicalDecision,
           body:
-              '2026-07-12 기준 Flutter 검색 결과 19개 활성 공고의 반복 키워드와 로그인부터 결제까지 이어지는 7단계 핵심 사용자 흐름을 설계 기준으로 삼았습니다.',
-        ),
-        PortfolioProjectSection(
-          kind: PortfolioProjectSectionKind.solution,
-          body:
-              'SNS 인증, 캐릭터 CRUD·검색, AI 스트리밍 채팅, 이벤트 이미지, 크레딧 결제를 연결하고 클라이언트와 서버의 책임을 분리했습니다.',
+              '기기마다 화면을 단순 축소하는 대신 탐색 방식에 맞는 셸을 분리했습니다. '
+              '앱 콘텐츠는 PortfolioAppContent가 선택하고, 프로젝트 정보는 PortfolioData 한 곳에서 관리합니다. '
+              '파일과 Safari가 SafariProjectPage를 공유하므로 소개·기술 스택·구조도를 수정하면 두 화면에 함께 반영됩니다.\n\n'
+              '테마와 음악은 PortfolioApp에서 소유해 앱 화면을 바꿔도 같은 상태를 사용합니다. '
+              'PDF·인쇄는 조건부 import로 웹과 네이티브 구현을 구분하고, 웹에서는 새 미리보기 창에 생성한 PDF와 인쇄용 HTML을 전달합니다.',
         ),
         PortfolioProjectSection(
           kind: PortfolioProjectSectionKind.evaluation,
-          body: '현재 설계 단계이며 아키텍처, 데이터 모델, 테스트 전략과 4주 구현 마일스톤까지 정의했습니다.',
+          body:
+              '위젯 테스트로 반응형 화면 전환, 창·앱 탐색, 파일과 Safari의 상세 표시, 폴더별 보기·정렬과 링크 동작을 검증합니다. '
+              '밝은·어두운 테마와 글자 크기 200%의 좁은 화면도 확인합니다. '
+              'GitHub 조회 실패 시 저장 기록 사용, 음악 상태, PDF·인쇄 문서 생성은 별도 테스트로 다룹니다. '
+              'iPhone에서는 운영 설정을 적용한 서명된 릴리스의 빌드·설치·실행을 확인했습니다.',
         ),
         PortfolioProjectSection(
           kind: PortfolioProjectSectionKind.learning,
           body:
-              'AI 채팅과 결제를 함께 설계하면서 응답 상태, 사용량 정산, 실패·복구 흐름을 초기에 정의해야 한다는 점을 배웠습니다. 화면뿐 아니라 서버 책임과 테스트 범위까지 연결해 설계했습니다.',
+              '화면별 탐색 상태는 각 앱에 두고, 테마·음악처럼 앱을 넘나드는 상태는 공통 컨트롤러에 두었습니다. '
+              '프로젝트 데이터와 상세 컴포넌트를 공유해 두 탐색 화면의 내용이 함께 갱신되도록 구성했습니다.',
         ),
         PortfolioProjectSection(
           kind: PortfolioProjectSectionKind.relevance,
           body:
-              'Flutter 채용 공고의 요구사항을 인증·상태관리·API·AI·결제·테스트 설계로 구체화했습니다. 구현 전 요구사항을 분석하고 기능의 경계를 정하는 역량과 연결됩니다.',
+              'Flutter의 반응형 UI, 상태 소유권, 플랫폼별 기능 분기와 위젯 테스트를 하나의 서비스 화면에서 보여 주는 프로젝트입니다. '
+              '외부 API 실패 처리부터 문서 생성과 실기기 릴리스까지 연결했습니다.',
         ),
         PortfolioProjectSection(
           kind: PortfolioProjectSectionKind.outcome,
           body:
-              '활성 공고 19개를 분석하고 핵심 사용자 흐름 7단계, 화면 9개, 데이터 모델 5종, 4주 구현 계획을 정의했습니다. 현재 수치는 설계 범위이며 출시·운영 성과와 구분합니다.',
+              '파일과 Safari에서 동일한 프로젝트를 탐색하고, 웹에서는 이력서·자기소개서·프로젝트를 PDF로 저장하거나 인쇄할 수 있습니다. '
+              'iPhone 운영 릴리스를 빌드하고 설치·실행하는 흐름도 확인했습니다.',
         ),
         PortfolioProjectSection(
           kind: PortfolioProjectSectionKind.note,
-          body: '스토어 출시 성과가 아닌 구현 전 설계 산출물이며, 실제 구현 결과와 지표는 개발 후 갱신합니다.',
+          body:
+              'APP_ENV를 config/development.json과 config/production.json으로 나누고, '
+              'Dart 실행 스크립트에서 개발 웹 실행과 운영 실기기 릴리스를 선택합니다. '
+              '별도 인증·결제 서버 없이 포트폴리오 데이터와 자산을 앱에 포함하며, GitHub 기여 기록 조회만 외부 API에 요청합니다. '
+              'PDF 저장·인쇄는 웹 브라우저에서 제공합니다.',
         ),
       ],
-      links: <PortfolioProjectLink>[],
+      links: <PortfolioProjectLink>[
+        PortfolioProjectLink(
+          label: 'GitHub',
+          url: 'https://github.com/hesu-dev/portfolio_hesu',
+        ),
+      ],
     ),
     PortfolioProject.constant(
       title: 'AI 역량 검사',
@@ -664,6 +757,7 @@ const portfolioData = PortfolioData.constant(
       ],
       architecture: PortfolioProjectArchitecture.constant(
         title: '응시 기록에서 진단 리포트까지',
+        diagram: aiAssessmentArchitecture,
         description:
             '응시 기록을 D1에 서버 정본으로 저장하고, Queue 기반 채점 결과를 개인·조직 리포트로 연결합니다.',
         presentation: PortfolioArchitecturePresentation.flow,
@@ -682,15 +776,34 @@ const portfolioData = PortfolioData.constant(
               '서비스 기획과 화면 디자인부터 응시·관리자 기능, AI 연동, 데이터 저장, 결과 리포트까지 전체 구성을 설계하고 개발했습니다.',
         ),
         PortfolioProjectSection(
+          kind: PortfolioProjectSectionKind.coreTechnology,
+          body:
+              'React·TypeScript가 응시·AI 협업·관리자·리포트 화면을 담당하고, Cloudflare Workers가 권한 검사와 대화·제출 API를 제공합니다. D1에는 대화 기록과 제출 시점의 스냅샷을 서버 정본으로 저장합니다. Queues는 채점을 비동기로 전달하고, 소비자는 D1에서 근거를 다시 읽어 OpenAI API로 구조화된 평가를 요청합니다.',
+        ),
+        PortfolioProjectSection(
+          kind: PortfolioProjectSectionKind.technicalDecision,
+          body:
+              '화면 복원용 상태와 채점 근거를 분리했습니다. 채점은 브라우저가 다시 보내는 대화가 아니라 제출 시점에 서버에 고정한 기록을 기준으로 수행합니다. Queue에는 전체 답안 대신 submissionId만 전달해, 재시도에서도 같은 서버 정본을 읽도록 했습니다.\n\nD1 저장과 Queue 전달을 하나의 트랜잭션으로 묶을 수 없으므로 먼저 제출을 영속 저장하고 나서 채점을 요청합니다. 이 구조는 즉시 결과를 보장하는 대신, 제출 접수와 채점 완료를 다른 상태로 다루고 복구 작업으로 미전달 건을 다시 전달하도록 합니다.',
+        ),
+        PortfolioProjectSection(
           kind: PortfolioProjectSectionKind.problem,
           body:
-              '정답 여부뿐 아니라 AI를 활용하는 과정과 판단 근거까지 살펴볼 수 있도록, 응시자의 답안·프롬프트·진단 결과를 연결하는 평가 흐름이 필요했습니다.',
+              'AI를 활용하는 과정과 판단 근거를 평가하려면 답안·프롬프트·진단 결과가 같은 제출 기록을 가리켜야 했습니다. 특히 제출 접수, 외부 AI 채점, 결과 조회가 다른 시점에 완료되므로 네트워크 실패와 재시도에도 이미 제출한 기록을 잃지 않는 흐름이 필요했습니다.',
+        ),
+        PortfolioProjectSection(
+          kind: PortfolioProjectSectionKind.cause,
+          body:
+              'D1 저장은 성공했지만 Queue 전송이 실패하거나 성공 여부를 알 수 없는 경우가 있습니다. 이때 제출 자체를 실패로 돌리면 이미 접수된 답안과 사용자 화면이 달라집니다. 반대로 중복 전달이나 늦게 끝난 채점을 무조건 기록하면 최신 결과를 덮을 수 있습니다.',
         ),
         PortfolioProjectSection(
           kind: PortfolioProjectSectionKind.solution,
           body:
-              'AI 대화와 제출 기록은 서버에 저장하고 제출 시점의 채점 근거를 고정했습니다. '
-              '기업별 조회 권한, 응시 중간 저장·복구, 비동기 채점·재시도와 리포트 조회를 연결했습니다.',
+              'D1에 대화와 제출 스냅샷을 저장한 뒤 Queue에 제출 ID를 전달합니다. Queue 전송 실패 시에도 저장된 접수 결과를 유지하고, 예약 실행 복구 작업이 미처리 제출을 다시 전달합니다. 채점 소비자는 처리권을 lease로 확보하고 D1 정본을 읽어 평가합니다.\n\n결과를 쓸 때는 처리 중 발급받은 claim token과 현재 상태가 일치하는지 조건부로 확인합니다. 중복 전달되거나 처리권이 만료된 이전 작업이 뒤늦게 끝나도 다른 작업의 결과를 덮지 않도록 제한했습니다. 기업별 조회 권한과 개인·조직 리포트는 이 저장된 결과에 연결됩니다.',
+        ),
+        PortfolioProjectSection(
+          kind: PortfolioProjectSectionKind.evaluation,
+          body:
+              '실패 조건을 재현한 테스트에서 DB 저장 실패 시 접수하지 않는지, Queue 전송 실패 후에도 영속 저장된 접수 응답을 유지하는지, 전달 상태가 모호한 재시도에서 기존 queued 제출을 다시 보낼 수 있는지 확인합니다. 완료된 제출은 기존 접수 결과를 유지해 불필요한 중복 큐잉을 피합니다.\n\n채점 소비자에는 제한된 시도 횟수·처리 기한과 claim token 조건부 갱신이 있습니다. 이는 구현과 회귀 테스트로 확인한 복구 경로이며, 실제 고객 환경의 장애 건수나 처리 시간 개선율을 측정한 운영 성과는 아닙니다.',
         ),
         PortfolioProjectSection(
           kind: PortfolioProjectSectionKind.learning,
@@ -743,6 +856,22 @@ const portfolioData = PortfolioData.constant(
       period: '',
       technologies: <String>['React', 'TypeScript'],
       highlights: <String>['React·TypeScript 기반 홈페이지 유지보수'],
+      architecture: PortfolioProjectArchitecture.constant(
+        title: '확인된 기술 구성과 담당 범위',
+        description: '확인된 기술 구성입니다. 세부 연동 구조는 아직 문서화되지 않았습니다.',
+        diagram: aiSwitchArchitecture,
+        nodes: <String>['React 화면', 'TypeScript 코드'],
+      ),
+      sections: <PortfolioProjectSection>[
+        PortfolioProjectSection(
+          kind: PortfolioProjectSectionKind.coreTechnology,
+          body: 'React·TypeScript로 구성된 AI Switch 홈페이지의 화면 코드 유지보수를 담당했습니다.',
+        ),
+        PortfolioProjectSection(
+          kind: PortfolioProjectSectionKind.technicalDecision,
+          body: '기술 선정 배경과 대안 비교에 대한 상세 기록은 준비 중입니다.',
+        ),
+      ],
       links: <PortfolioProjectLink>[
         PortfolioProjectLink(
           label: '사이트 방문하기',
@@ -762,10 +891,54 @@ const portfolioData = PortfolioData.constant(
         '기계 점검·안전 설비 보고서 작성 기능 기획과 구현 참여',
         'Flutter·Dart·Node.js 기반 모바일 서비스 개발',
       ],
+      architecture: PortfolioProjectArchitecture.constant(
+        title: '점검 보고서와 사진 첨부의 별도 전송 흐름',
+        description:
+            'Provider로 점검 화면의 상태를 관리하고 JSON API로 업무 데이터를 전송합니다. 사진은 별도 multipart로 전달하며, 실패한 사진은 로컬 캐시에서 다시 업로드합니다.',
+        diagram: blueMentorArchitecture,
+        nodes: <String>[
+          'Flutter 점검 화면',
+          'Provider 상태 관리',
+          'HTTP JSON API',
+          '로컬 파일 · Hive 캐시',
+          'Dio 사진 업로드',
+          'Firebase 관찰',
+        ],
+      ),
       sections: <PortfolioProjectSection>[
         PortfolioProjectSection(
           kind: PortfolioProjectSectionKind.work,
           body: '기계 점검 안전 설비 보고서 작성 앱 기획 및 개발',
+        ),
+        PortfolioProjectSection(
+          kind: PortfolioProjectSectionKind.coreTechnology,
+          body:
+              'Flutter·Dart로 기계 점검과 보고서 입력 화면을 구현하고, Provider의 로그인·대시보드·상세 점검 상태를 화면에 연결했습니다. 업무 데이터는 공통 HTTP 모듈에서 JSON으로 전송하고, 사진은 Dio의 multipart 요청으로 업로드합니다.\n\n업로드하지 못한 사진의 파일 경로와 점검 항목 정보는 Hive 캐시에 보관합니다. Firebase Analytics는 화면 이동 관찰에, Crashlytics는 Flutter 오류 기록에 연결됩니다. 기존 프로젝트 기술 기록에는 Node.js가 포함되며, 그림은 확인한 앱과 API 경계까지 표시합니다.',
+        ),
+        PortfolioProjectSection(
+          kind: PortfolioProjectSectionKind.technicalDecision,
+          body:
+              '코드에서 확인되는 구조는 보고서 JSON 요청과 사진 multipart 전송의 분리입니다. 사진 전송이 실패해도 해당 파일과 점검 항목 정보를 캐시에 남기고 별도로 다시 업로드하는 흐름이 있습니다. 공통 HTTP 모듈은 인증 만료 시 토큰을 갱신한 재시도를 1회로 제한합니다.\n\n이 설명은 구현을 바탕으로 정리한 설계 해석입니다. 당시 대안 비교 기록은 없지만, 현재 코드에서 확인되는 책임 분리는 화면 상태 관리, 업무 API 호출, 사진 전송·복구입니다.',
+        ),
+        PortfolioProjectSection(
+          kind: PortfolioProjectSectionKind.problem,
+          body:
+              '프로젝트 수정 이력에는 사진 업로드 후 로딩 표시가 끝나지 않는 문제를 개선한 기록이 있습니다. 네트워크 오류가 발생했을 때도 사용자가 점검 화면으로 돌아가고 실패한 사진을 다시 전송할 수 있는 흐름이 필요했습니다.',
+        ),
+        PortfolioProjectSection(
+          kind: PortfolioProjectSectionKind.cause,
+          body:
+              '수정 전후 코드를 비교하면 업로드 예외 경로에서 실패 처리와 제출 중 상태 해제가 충분히 연결되지 않았습니다. 사진 전송 결과와 화면의 로딩 상태를 각각 관리하면서, 예외가 정상 완료 경로를 건너뛰면 로딩 표시가 남을 수 있었습니다.',
+        ),
+        PortfolioProjectSection(
+          kind: PortfolioProjectSectionKind.solution,
+          body:
+              '프로젝트에서는 업로드 예외 시 실패 사진 처리 함수를 호출하고, 제출 중 상태를 해제하는 경로를 보강했습니다. 일부 제출 경로는 finally에서 로딩 상태를 정리합니다. 현재 코드에도 네트워크 오류 시 실패 안내와 재업로드 화면 이동, 캐시 유지 흐름이 남아 있습니다.\n\n사진 업로드는 기본 15초의 취소 토큰을 두고 Socket·Dio 예외를 공통 네트워크 오류로 전달합니다. 재업로드에 성공한 사진만 캐시에서 제거하므로 실패한 첨부를 다시 선택할 수 있습니다.',
+        ),
+        PortfolioProjectSection(
+          kind: PortfolioProjectSectionKind.evaluation,
+          body:
+              '2024-01-18의 “이미지 업로드 무한 로딩 개선” 커밋과 현재 오류·캐시 처리 코드를 함께 확인했습니다. 이 수정은 팀 프로젝트의 변경 이력이며 개인이 해당 커밋을 직접 작성한 성과로 제시하지 않습니다.\n\n해당 경로를 검증하는 전용 회귀 테스트는 확인되지 않았습니다. 따라서 검증 범위는 수정 이력과 코드의 제어 흐름이며, 실제 장애 감소율이나 자동 테스트 통과 실적을 주장하지 않습니다.',
         ),
         PortfolioProjectSection(
           kind: PortfolioProjectSectionKind.learning,
@@ -808,10 +981,24 @@ const portfolioData = PortfolioData.constant(
         '3D 증강현실 기반 교량 점검 시스템 연구 개발 참여',
         'React·Unity·MySQL 기술 구성을 활용한 개발 협업',
       ],
+      architecture: PortfolioProjectArchitecture.constant(
+        title: '확인된 기술 구성과 담당 범위',
+        description: '확인된 기술 구성입니다. 세부 연동 구조는 아직 문서화되지 않았습니다.',
+        diagram: irisArchitecture,
+        nodes: <String>['React', 'Unity', 'MySQL'],
+      ),
       sections: <PortfolioProjectSection>[
         PortfolioProjectSection(
           kind: PortfolioProjectSectionKind.work,
           body: '범부처통합연구지원시스템 R&D 참여: 3D 증강현실 기반 교량 점검 시스템 개발',
+        ),
+        PortfolioProjectSection(
+          kind: PortfolioProjectSectionKind.coreTechnology,
+          body: 'React·Unity·MySQL로 구성된 3D 증강현실 기반 교량 점검 R&D 개발에 참여했습니다.',
+        ),
+        PortfolioProjectSection(
+          kind: PortfolioProjectSectionKind.technicalDecision,
+          body: '기술 선정 배경과 대안 비교에 대한 상세 기록은 준비 중입니다.',
         ),
         PortfolioProjectSection(
           kind: PortfolioProjectSectionKind.learning,
@@ -856,10 +1043,25 @@ const portfolioData = PortfolioData.constant(
         'PHP·Flutter·Dart 환경의 애플리케이션 개발 참여',
         'Google Play에 출시된 서비스의 유지보수 담당',
       ],
+      architecture: PortfolioProjectArchitecture.constant(
+        title: '확인된 기술 구성과 담당 범위',
+        description: '확인된 기술 구성입니다. 세부 연동 구조는 아직 문서화되지 않았습니다.',
+        diagram: aiBverArchitecture,
+        nodes: <String>['Flutter 앱', 'Dart', 'PHP'],
+      ),
       sections: <PortfolioProjectSection>[
         PortfolioProjectSection(
           kind: PortfolioProjectSectionKind.work,
           body: 'AI-beaver 애플리케이션 개발 및 유지보수',
+        ),
+        PortfolioProjectSection(
+          kind: PortfolioProjectSectionKind.coreTechnology,
+          body:
+              'Flutter·Dart·PHP 환경에서 AI-beaver 애플리케이션 개발과 공개된 Android 서비스의 유지보수에 참여했습니다.',
+        ),
+        PortfolioProjectSection(
+          kind: PortfolioProjectSectionKind.technicalDecision,
+          body: '기술 선정 배경과 대안 비교에 대한 상세 기록은 준비 중입니다.',
         ),
         PortfolioProjectSection(
           kind: PortfolioProjectSectionKind.learning,
@@ -897,10 +1099,25 @@ const portfolioData = PortfolioData.constant(
         'Java·Apache 기반 서비스 페이지 수정과 유지보수 참여',
         '양대 모바일 스토어에 공개된 서비스의 운영 개발 경험',
       ],
+      architecture: PortfolioProjectArchitecture.constant(
+        title: '확인된 기술 구성과 담당 범위',
+        description: '확인된 기술 구성입니다. 세부 연동 구조는 아직 문서화되지 않았습니다.',
+        diagram: hiddenTagArchitecture,
+        nodes: <String>['Java 페이지 코드', 'Apache 환경'],
+      ),
       sections: <PortfolioProjectSection>[
         PortfolioProjectSection(
           kind: PortfolioProjectSectionKind.work,
           body: 'HiddenTag 애플리케이션 페이지 유지보수',
+        ),
+        PortfolioProjectSection(
+          kind: PortfolioProjectSectionKind.coreTechnology,
+          body:
+              'Java·Apache 환경에서 HiddenTag 애플리케이션의 기존 서비스 페이지 수정과 유지보수에 참여했습니다.',
+        ),
+        PortfolioProjectSection(
+          kind: PortfolioProjectSectionKind.technicalDecision,
+          body: '기술 선정 배경과 대안 비교에 대한 상세 기록은 준비 중입니다.',
         ),
         PortfolioProjectSection(
           kind: PortfolioProjectSectionKind.learning,

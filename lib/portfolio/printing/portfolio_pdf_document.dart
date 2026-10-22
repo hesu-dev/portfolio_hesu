@@ -4,6 +4,7 @@ import 'package:pdf/pdf.dart';
 import 'package:pdf/widgets.dart' as pw;
 
 import '../data/portfolio_data.dart';
+import '../models/introduction_section.dart';
 
 /// Builds the same selectable text document used by the print fallback.
 Future<Uint8List> buildPortfolioPdfDocument(
@@ -76,7 +77,14 @@ Future<Uint8List> buildPortfolioPdfDocument(
     pw.NewPage(),
     _eyebrow('SELF INTRODUCTION'),
     ..._heading('자기소개서'),
-    ..._paragraph(introduction, size: 11),
+    for (final section in introductionSections(introduction)) ...[
+      if (section.title case final title?) ..._heading(title, size: 13),
+      if (section.title != null)
+        ..._list(section.paragraphs)
+      else
+        for (final paragraph in section.paragraphs)
+          ..._paragraph(paragraph, size: 11),
+    ],
     pw.NewPage(),
     _eyebrow('PROJECTS'),
     ..._heading('프로젝트'),

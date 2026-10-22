@@ -1,21 +1,19 @@
-import 'dart:convert';
-
 import 'package:flutter/material.dart';
-import 'package:flutter/services.dart';
 
 import '../theme/apple_theme.dart';
+import '../services/github_contributions_loader.dart';
 
 class GitHubContributions extends StatefulWidget {
-  const GitHubContributions({this.dataFuture, super.key});
+  const GitHubContributions({this.dataFuture, this.dataLoader, super.key});
 
   final Future<Map<String, dynamic>>? dataFuture;
+  final Future<Map<String, dynamic>> Function()? dataLoader;
 
   @override
   State<GitHubContributions> createState() => _GitHubContributionsState();
 }
 
 class _GitHubContributionsState extends State<GitHubContributions> {
-  static const _assetPath = 'assets/github-profile/contributions.json';
   static const _cellSize = 11.0;
   static const _gap = 3.0;
   static const _step = _cellSize + _gap;
@@ -24,26 +22,25 @@ class _GitHubContributionsState extends State<GitHubContributions> {
   @override
   void initState() {
     super.initState();
-    _data = widget.dataFuture ?? _loadAsset();
+    _data = _load();
   }
 
   @override
   void didUpdateWidget(covariant GitHubContributions oldWidget) {
     super.didUpdateWidget(oldWidget);
-    if (oldWidget.dataFuture != widget.dataFuture) {
-      _data = widget.dataFuture ?? _loadAsset();
+    if (oldWidget.dataFuture != widget.dataFuture ||
+        oldWidget.dataLoader != widget.dataLoader) {
+      _data = _load();
     }
   }
 
-  Future<Map<String, dynamic>> _loadAsset() async {
-    return jsonDecode(await rootBundle.loadString(_assetPath))
-        as Map<String, dynamic>;
-  }
+  Future<Map<String, dynamic>> _load() =>
+      widget.dataFuture ??
+      (widget.dataLoader?.call() ?? loadGitHubContributions());
 
   void _retry() {
-    rootBundle.evict(_assetPath);
     setState(() {
-      _data = widget.dataFuture ?? _loadAsset();
+      _data = _load();
     });
   }
 
@@ -70,15 +67,19 @@ class _GitHubContributionsState extends State<GitHubContributions> {
     child: FutureBuilder<Map<String, dynamic>>(
       future: _data,
       builder: (context, snapshot) {
-        if (snapshot.connectionState != ConnectionState.done) {
-          return Text('기여 기록을 불러오는 중…', style: AppleTheme.caption(context));
-        }
         if (snapshot.hasData) {
           try {
-            return _calendar(context, snapshot.data!);
+            return _calendar(
+              context,
+              snapshot.data!,
+              refreshing: snapshot.connectionState != ConnectionState.done,
+            );
           } catch (_) {
             return _error(context);
           }
+        }
+        if (snapshot.connectionState != ConnectionState.done) {
+          return Text('기여 기록을 불러오는 중…', style: AppleTheme.caption(context));
         }
         return _error(context);
       },
@@ -99,11 +100,15 @@ class _GitHubContributionsState extends State<GitHubContributions> {
     ],
   );
 
-  Widget _calendar(BuildContext context, Map<String, dynamic> data) {
+  Widget _calendar(
+    BuildContext context,
+    Map<String, dynamic> data, {
+    required bool refreshing,
+  }) {
+    if (data['isFallback'] == true) {
+      throw const FormatException('Saved contribution calendars are disabled.');
+    }
     final username = data['username'] as String;
-    final fetchedAt = DateTime.parse(
-      data['fetchedAt'] as String,
-    ).toIso8601String().substring(0, 10);
     final weeks = (data['weeks'] as List).cast<Map<String, dynamic>>();
     final colors = (data['colors'] as List).cast<String>().map(_color).toList();
     final gridWidth = weeks.length * _step - _gap;
@@ -112,14 +117,31 @@ class _GitHubContributionsState extends State<GitHubContributions> {
       mainAxisSize: MainAxisSize.min,
       crossAxisAlignment: CrossAxisAlignment.stretch,
       children: <Widget>[
-        Semantics(
-          header: true,
-          child: Text(
-            username,
-            style: AppleTheme.body(
-              context,
-            ).copyWith(fontWeight: FontWeight.w600),
-          ),
+        Row(
+          children: [
+            Expanded(
+              child: Semantics(
+                header: true,
+                child: Text(
+                  username,
+                  style: AppleTheme.body(
+                    context,
+                  ).copyWith(fontWeight: FontWeight.w600),
+                ),
+              ),
+            ),
+            IconButton(
+              key: const Key('github-contributions-refresh'),
+              tooltip: '기여 기록 새로고침',
+              onPressed: refreshing ? null : _retry,
+              icon: refreshing
+                  ? const SizedBox.square(
+                      dimension: 24,
+                      child: CircularProgressIndicator(strokeWidth: 2),
+                    )
+                  : const Icon(Icons.refresh_rounded),
+            ),
+          ],
         ),
         const SizedBox(height: 14),
         if (weeks.isEmpty)
@@ -186,8 +208,6 @@ class _GitHubContributionsState extends State<GitHubContributions> {
             Text('많음', style: caption),
           ],
         ),
-        const SizedBox(height: 10),
-        Text('최신 반영: $fetchedAt', style: caption),
       ],
     );
   }

@@ -1,11 +1,11 @@
+import 'dart:math' as math;
+
 import 'package:flutter/material.dart';
 
 import '../data/portfolio_data.dart';
 import '../models/portfolio_app_id.dart';
-import '../theme/apple_theme.dart';
 import '../widgets/apple_app_artwork.dart';
 import '../widgets/apple_app_icon.dart';
-import '../widgets/portfolio_printer_shortcut.dart';
 
 class AppleHomeGrid extends StatelessWidget {
   const AppleHomeGrid({
@@ -26,65 +26,67 @@ class AppleHomeGrid extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final horizontalPadding = tablet ? 32.0 : 16.0;
-    final dockSafeInset = tablet ? 100.0 : 92.0;
-
     return KeyedSubtree(
       key: const Key('mobile-home-grid'),
       child: Padding(
-        padding: EdgeInsets.only(bottom: dockSafeInset),
-        child: CustomScrollView(
-          key: const Key('mobile-home-scroll'),
-          physics: const BouncingScrollPhysics(
-            parent: AlwaysScrollableScrollPhysics(),
-          ),
-          slivers: <Widget>[
-            SliverPadding(
-              padding: EdgeInsets.fromLTRB(
-                horizontalPadding,
-                tablet ? 22 : 10,
-                horizontalPadding,
-                0,
-              ),
-              sliver: SliverGrid(
-                delegate: SliverChildBuilderDelegate(
-                  (context, index) {
-                    if (index == apps.length) {
-                      return Center(
-                        key: const Key('home-app-printer'),
-                        child: PortfolioPrinterShortcut(
-                          data: data,
-                          iconSize: tablet ? 62 : 52,
-                          foregroundColor: AppleTheme.primaryLabel(context),
-                        ),
-                      );
-                    }
-                    final appId = apps[index];
-                    return Center(
-                      child: AppleAppIcon(
-                        key: Key('home-app-${appId.name}'),
-                        appId: appId,
-                        size: tablet ? 62 : 52,
-                        compact: !tablet,
-                        autofocus: index == 0,
-                        artworkSurface: AppleAppArtworkSurface.mobile,
-                        trashEmpty: trashEmpty,
-                        onTap: () => onOpen(appId),
-                      ),
-                    );
-                  },
-                  childCount: apps.length + 1,
-                  addAutomaticKeepAlives: false,
-                ),
-                gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
-                  crossAxisCount: tablet ? 6 : 4,
-                  mainAxisExtent: tablet ? 126 : 112,
-                  crossAxisSpacing: tablet ? 10 : 4,
-                  mainAxisSpacing: tablet ? 12 : 4,
-                ),
-              ),
-            ),
-            SliverToBoxAdapter(child: SizedBox(height: tablet ? 28 : 20)),
-          ],
+        padding: EdgeInsets.fromLTRB(
+          horizontalPadding,
+          tablet ? 22 : 10,
+          horizontalPadding,
+          0,
+        ),
+        child: LayoutBuilder(
+          builder: (context, constraints) {
+            final columns = tablet ? 6 : 4;
+            final rows = (apps.length / columns).ceil();
+            final gap = tablet ? 12.0 : 4.0;
+            final rowHeight = math.min(
+              tablet ? 126.0 : 112.0,
+              (constraints.maxHeight - gap * (rows - 1)) / rows,
+            );
+            final labelHeight =
+                MediaQuery.textScalerOf(context).scale(tablet ? 11.5 : 10.5) *
+                1.6;
+            final iconSize = math.min(
+              tablet ? 62.0 : 52.0,
+              math.max(24.0, rowHeight - labelHeight - (tablet ? 25 : 21)),
+            );
+            return Column(
+              children: [
+                for (var row = 0; row < rows; row++) ...[
+                  if (row > 0) SizedBox(height: gap),
+                  SizedBox(
+                    height: rowHeight,
+                    child: Row(
+                      children: [
+                        for (var column = 0; column < columns; column++)
+                          Expanded(
+                            child: row * columns + column >= apps.length
+                                ? const SizedBox.shrink()
+                                : Center(
+                                    child: AppleAppIcon(
+                                      key: Key(
+                                        'home-app-${apps[row * columns + column].name}',
+                                      ),
+                                      appId: apps[row * columns + column],
+                                      size: iconSize,
+                                      compact: !tablet,
+                                      autofocus: row == 0 && column == 0,
+                                      artworkSurface:
+                                          AppleAppArtworkSurface.mobile,
+                                      trashEmpty: trashEmpty,
+                                      onTap: () =>
+                                          onOpen(apps[row * columns + column]),
+                                    ),
+                                  ),
+                          ),
+                      ],
+                    ),
+                  ),
+                ],
+              ],
+            );
+          },
         ),
       ),
     );

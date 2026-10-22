@@ -4,6 +4,7 @@ import 'package:flutter/foundation.dart';
 
 import 'music_playback.dart';
 import 'music_session_store.dart';
+import 'music_system_controls.dart';
 import 'music_track.dart';
 
 enum MusicNavigationDirection { previous, next }
@@ -27,14 +28,19 @@ class MusicController extends ChangeNotifier {
 
   MusicPlayback? _playback;
   StreamSubscription<void>? _completionSubscription;
+  StreamSubscription<MusicRemoteCommand>? _remoteSubscription;
+  final _timelineSubscriptions = <StreamSubscription<dynamic>>[];
   Future<void> _commandQueue = Future<void>.value();
   MusicTrack? _loadedTrack;
+  MusicTrack? _timelineTrack;
   int? _pendingRestoredIndex;
   int _commandGeneration = 0;
   int _currentIndex = 0;
   MusicPlaybackMode _mode = MusicPlaybackMode.queue;
   double _volume = 1;
   bool _isPlaying = false;
+  Duration _position = Duration.zero;
+  Duration _duration = Duration.zero;
   String? _errorMessage;
   int _navigationRevision = 0;
   MusicNavigationDirection? _navigationDirection;
@@ -46,6 +52,14 @@ class MusicController extends ChangeNotifier {
   MusicPlaybackMode get mode => _mode;
   double get volume => _volume;
   bool get isPlaying => _isPlaying;
+  Duration get duration =>
+      _timelineTrack == currentTrack ? _duration : Duration.zero;
+  Duration get position => _timelineTrack != currentTrack
+      ? Duration.zero
+      : _duration > Duration.zero && _position > _duration
+      ? _duration
+      : _position;
+  bool get canSeek => _duration > Duration.zero && _loadedTrack == currentTrack;
   String? get errorMessage => _errorMessage;
   int get navigationRevision => _navigationRevision;
   MusicNavigationDirection? get navigationDirection => _navigationDirection;
@@ -133,6 +147,23 @@ class MusicController extends ChangeNotifier {
     _mode = mode;
     _persist();
     _notify();
+    unawaited(
+      _enqueue(_commandGeneration, () async {
+        await _playback?.setRepeatOne(_mode == MusicPlaybackMode.repeatOne);
+      }),
+    );
+  }
+
+  Future<void> seek(Duration position) async {
+    if (!canSeek) return;
+    final target = Duration(
+      microseconds: position.inMicroseconds.clamp(0, _duration.inMicroseconds),
+    );
+    _position = target;
+    _notify();
+    await _enqueue(_commandGeneration, () async {
+      await _playback?.seek(target);
+    });
   }
 
   Future<void> setVolume(double volume) async {
@@ -173,14 +204,19 @@ class MusicController extends ChangeNotifier {
     required bool restart,
   }) {
     return _enqueue(generation, () async {
+      _timelineTrack = track;
       final playback = _ensurePlayback();
       await playback.setVolume(_volume);
+      await playback.setRepeatOne(_mode == MusicPlaybackMode.repeatOne);
       if (!_isCurrentCommand(generation)) return;
       if (!restart && _loadedTrack == track) {
         await playback.resume();
       } else {
+        _position = Duration.zero;
+        if (_loadedTrack != track) _duration = Duration.zero;
         await playback.play(track);
         _loadedTrack = track;
+        _notify();
       }
     });
   }
@@ -210,6 +246,38 @@ class MusicController extends ChangeNotifier {
     _completionSubscription = playback.onComplete.listen((_) {
       unawaited(_handleCompletion());
     });
+    _timelineSubscriptions.addAll([
+      playback.onPlayingChanged.listen((playing) {
+        if (_disposed) return;
+        _isPlaying = playing;
+        _notify();
+      }),
+      playback.onPositionChanged.listen((position) {
+        _position = position < Duration.zero ? Duration.zero : position;
+        _notify();
+      }),
+      playback.onDurationChanged.listen((duration) {
+        _duration = duration < Duration.zero ? Duration.zero : duration;
+        _notify();
+      }),
+      playback.onError.listen((_) {
+        if (_disposed) return;
+        _commandGeneration++;
+        _setPlaybackError();
+      }),
+    ]);
+    if (playback is SystemMusicPlayback) {
+      _remoteSubscription = (playback as SystemMusicPlayback).remoteCommands
+          .listen((command) {
+            if (_disposed) return;
+            unawaited(switch (command) {
+              MusicRemoteCommand.play => play(),
+              MusicRemoteCommand.pause => pause(),
+              MusicRemoteCommand.next => next(),
+              MusicRemoteCommand.previous => previous(),
+            });
+          });
+    }
     return playback;
   }
 
@@ -260,6 +328,7 @@ class MusicController extends ChangeNotifier {
 
   void _setPlaybackError() {
     _isPlaying = false;
+    _loadedTrack = null;
     _errorMessage = playbackErrorMessage;
     _notify();
   }
@@ -272,6 +341,10 @@ class MusicController extends ChangeNotifier {
   void dispose() {
     _disposed = true;
     _commandGeneration += 1;
+    unawaited(_remoteSubscription?.cancel());
+    for (final subscription in _timelineSubscriptions) {
+      unawaited(subscription.cancel());
+    }
     unawaited(
       _disposeResources(
         subscription: _completionSubscription,

@@ -17,10 +17,60 @@ import 'support/music_test_controller.dart';
 void main() {
   group('mobile app navigation bar', () {
     testWidgets(
-      'every non-Projects iPhone app uses one circular back close button',
+      'Skills has one back control and returns channel → list → home',
+      (tester) async {
+        for (final scale in [1.0, 2.0]) {
+          await tester.pumpWidget(const SizedBox.shrink());
+          await _pumpSurface(
+            tester,
+            size: scale == 1 ? const Size(390, 844) : const Size(320, 480),
+            appId: PortfolioAppId.skills,
+            textScaler: TextScaler.linear(scale),
+          );
+          for (final group in portfolioData.skillGroups) {
+            final channel = find.byKey(
+              Key('skills-mobile-channel-${group.title}'),
+            );
+            await tester.ensureVisible(channel);
+            await tester.tap(channel);
+            await tester.pumpAndSettle();
+            expect(find.byType(AppleMobileNavigationHeader), findsOneWidget);
+            expect(
+              find.byKey(const Key('skills-mobile-detail-back')),
+              findsNothing,
+            );
+            expect(
+              find.byIcon(Icons.arrow_back_ios_new_rounded),
+              findsOneWidget,
+            );
+            final back = find.byKey(const Key('mobile-back-close-skills'));
+            expect(
+              tester.getSemantics(back).getSemanticsData().label,
+              'Back in 스킬',
+            );
+            await tester.tap(back);
+            await tester.pumpAndSettle();
+            expect(
+              find.byKey(const Key('skills-mobile-channel-list')),
+              findsOneWidget,
+            );
+            expect(find.byKey(const Key('mobile-app-surface')), findsOneWidget);
+            expect(find.byKey(const Key('mobile-home')), findsNothing);
+          }
+          await tester.tap(find.byKey(const Key('mobile-back-close-skills')));
+          await tester.pumpAndSettle();
+          expect(find.byKey(const Key('mobile-home')), findsOneWidget);
+          expect(tester.takeException(), isNull);
+        }
+      },
+    );
+    testWidgets(
+      'iPhone apps without an integrated toolbar use one shared header',
       (tester) async {
         for (final appId in PortfolioAppId.values.where(
-          (appId) => appId != PortfolioAppId.projects,
+          (appId) =>
+              appId != PortfolioAppId.projects &&
+              appId != PortfolioAppId.safari,
         )) {
           await tester.pumpWidget(const SizedBox.shrink());
           await _pumpSurface(tester, size: const Size(390, 844), appId: appId);
@@ -173,16 +223,43 @@ void main() {
             findsOneWidget,
             reason: '$size restored title',
           );
+          await tester.tap(find.byKey(const Key('photos-albums-tab')));
+          await tester.pumpAndSettle();
+          await tester.tap(find.byKey(const Key('photos-album-daily')));
+          await tester.pumpAndSettle();
+          expect(
+            find.byKey(const Key('mobile-app-navigation-bar')),
+            findsNothing,
+          );
+          expect(find.byKey(const Key('photos-album-back')), findsOneWidget);
+          await tester.tap(find.byKey(const Key('photos-photo-coffee')));
+          await tester.pumpAndSettle();
+          await tester.tap(find.byKey(const Key('photos-detail-close')));
+          await tester.pumpAndSettle();
+          expect(
+            find.byKey(const Key('mobile-app-navigation-bar')),
+            findsNothing,
+          );
+          expect(find.byKey(const Key('photos-album-back')), findsOneWidget);
+          await tester.tap(find.byKey(const Key('photos-album-back')));
+          await tester.pumpAndSettle();
+          expect(
+            find.byKey(const Key('mobile-app-navigation-bar')),
+            findsOneWidget,
+          );
+          expect(find.byKey(const Key('photos-albums-grid')), findsOneWidget);
           expect(tester.takeException(), isNull, reason: '$size');
         }
       },
     );
 
     testWidgets(
-      'every non-Projects iPad app uses the shared back close header',
+      'iPad apps without an integrated toolbar use the shared header',
       (tester) async {
         for (final appId in PortfolioAppId.values.where(
-          (appId) => appId != PortfolioAppId.projects,
+          (appId) =>
+              appId != PortfolioAppId.projects &&
+              appId != PortfolioAppId.safari,
         )) {
           await tester.pumpWidget(const SizedBox.shrink());
           await _pumpSurface(tester, size: const Size(834, 1194), appId: appId);
@@ -206,6 +283,57 @@ void main() {
             findsOneWidget,
           );
           expect(tester.takeException(), isNull, reason: appId.name);
+        }
+      },
+    );
+
+    testWidgets(
+      'Safari integrates search and back into one toolbar on iPhone and iPad',
+      (tester) async {
+        for (final size in const <Size>[Size(390, 844), Size(834, 1194)]) {
+          await tester.pumpWidget(const SizedBox.shrink());
+          await _pumpSurface(tester, size: size, appId: PortfolioAppId.safari);
+
+          final toolbar = find.byKey(const Key('safari-toolbar'));
+          final search = find.byKey(const Key('safari-search-field'));
+          final leading = find.byKey(const Key('mobile-back-close-safari'));
+          expect(toolbar, findsOneWidget);
+          expect(
+            find.byKey(const Key('mobile-app-navigation-bar')),
+            findsNothing,
+          );
+          expect(find.byKey(const Key('mobile-app-title')), findsNothing);
+          expect(find.byType(MacTrafficControls), findsNothing);
+          expect(
+            find.descendant(of: toolbar, matching: search),
+            findsOneWidget,
+          );
+          expect(
+            find.descendant(of: toolbar, matching: leading),
+            findsOneWidget,
+          );
+          expect(tester.getSize(leading), const Size(44, 44));
+          expect(find.byTooltip('Close 프로젝트 window'), findsOneWidget);
+
+          final projectCard = find.byKey(const Key('safari-project-card-0'));
+          await tester.ensureVisible(projectCard);
+          await tester.pumpAndSettle();
+          await tester.tap(projectCard);
+          await tester.pumpAndSettle();
+          expect(find.byKey(const Key('safari-project-title')), findsOneWidget);
+          expect(find.byTooltip('Back in 프로젝트'), findsOneWidget);
+
+          await tester.tap(leading);
+          await tester.pumpAndSettle();
+          expect(find.byKey(const Key('safari-start-page')), findsOneWidget);
+          expect(find.byKey(const Key('safari-project-title')), findsNothing);
+          expect(find.byTooltip('Close 프로젝트 window'), findsOneWidget);
+
+          await tester.tap(leading);
+          await tester.pumpAndSettle();
+          expect(find.byKey(const Key('mobile-home')), findsOneWidget);
+          expect(find.byKey(const Key('mobile-app-surface')), findsNothing);
+          expect(tester.takeException(), isNull, reason: '$size');
         }
       },
     );
@@ -332,10 +460,14 @@ void main() {
           );
           expect(find.byTooltip('Close 파일 window'), findsOneWidget);
 
+          await tester.tap(
+            find.byKey(const Key('projects-finder-location-career')),
+          );
+          await tester.pumpAndSettle();
           await tester.tap(find.byKey(const Key('projects-career-folder-0')));
           await tester.pumpAndSettle();
 
-          expect(find.byKey(const Key('project-detail-title')), findsOneWidget);
+          expect(find.byKey(const Key('safari-project-title')), findsOneWidget);
           expect(
             tester.getSemantics(circularControl).getSemanticsData().label,
             'Back in 파일',
@@ -346,7 +478,7 @@ void main() {
           await tester.tap(circularControl);
           await tester.pumpAndSettle();
 
-          expect(find.byKey(const Key('project-detail-title')), findsNothing);
+          expect(find.byKey(const Key('safari-project-title')), findsNothing);
           expect(
             find.byKey(const Key('projects-connection-directory')),
             findsOneWidget,

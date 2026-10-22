@@ -4,6 +4,7 @@ import 'package:flutter/services.dart';
 import '../models/portfolio_app_id.dart';
 import '../theme/apple_theme.dart';
 import 'apple_app_artwork.dart';
+import 'apple_app_label.dart';
 
 class AppleAppIcon extends StatefulWidget {
   static const String terminalWindowTitle = 'Terminal - Portfolio zsh';
@@ -50,7 +51,7 @@ class AppleAppIcon extends StatefulWidget {
     PortfolioAppId.projects => '파일',
     PortfolioAppId.safari => '프로젝트',
     PortfolioAppId.terminal => '터미널',
-    PortfolioAppId.music => '배경음',
+    PortfolioAppId.music => '음악',
     PortfolioAppId.photos => '사진',
     PortfolioAppId.settings => '설정',
     PortfolioAppId.thisMac => '프로젝트',
@@ -203,32 +204,10 @@ class _AppleAppIconState extends State<AppleAppIcon> {
                     ),
                     if (showLabel) ...<Widget>[
                       const SizedBox(height: 6),
-                      ConstrainedBox(
-                        constraints: BoxConstraints(
-                          maxWidth: compact ? 70 : 84,
-                        ),
-                        child: Text(
-                          label,
-                          maxLines: 1,
-                          overflow: TextOverflow.ellipsis,
-                          textAlign: TextAlign.center,
-                          style: Theme.of(context).textTheme.labelSmall
-                              ?.copyWith(
-                                color: AppleTheme.primaryLabel(context),
-                                fontSize: compact ? 10.5 : 11.5,
-                                fontWeight: selected
-                                    ? FontWeight.w700
-                                    : FontWeight.w500,
-                                shadows: <Shadow>[
-                                  Shadow(
-                                    color: AppleTheme.canvas(
-                                      context,
-                                    ).withValues(alpha: 0.5),
-                                    blurRadius: 2,
-                                  ),
-                                ],
-                              ),
-                        ),
+                      AppleAppLabel(
+                        label: label,
+                        compact: compact,
+                        selected: selected,
                       ),
                     ],
                     if (showLabel || running)

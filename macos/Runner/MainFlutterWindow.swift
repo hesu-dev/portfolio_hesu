@@ -11,5 +11,6 @@ class MainFlutterWindow: NSWindow {
     RegisterGeneratedPlugins(registry: flutterViewController)
 
     super.awakeFromNib()
+    title = Bundle.main.object(forInfoDictionaryKey: "CFBundleDisplayName") as? String ?? "Portfolio"
   }
 }

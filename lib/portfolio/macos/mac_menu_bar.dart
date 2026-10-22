@@ -585,7 +585,7 @@ class MacSystemMenuPanel extends StatelessWidget {
           Padding(
             padding: const EdgeInsets.symmetric(horizontal: 10),
             child: Text(
-              '$identityName · Flutter portfolio',
+              '$identityName · Flutter Portfolio',
               style: TextStyle(
                 fontSize: 10.5,
                 color: AppleTheme.isDark(context)

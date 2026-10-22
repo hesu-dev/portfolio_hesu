@@ -26,7 +26,7 @@ void main() {
         portfolioData,
         regularFont: regular,
         boldFont: bold,
-        introduction: '자기소개서 내용을 추가할 예정입니다.',
+        introduction: portfolioData.introduction,
       );
       final source = latin1.decode(bytes);
       expect(source, startsWith('%PDF-'));

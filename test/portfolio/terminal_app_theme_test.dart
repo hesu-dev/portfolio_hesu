@@ -24,7 +24,7 @@ void main() {
           .widget<TextField>(find.byKey(const Key('terminal-input')))
           .style!;
       final promptStyle = tester
-          .widget<Text>(find.text(r'portfolio: ~$'))
+          .widget<Text>(find.text(r'Portfolio: ~$'))
           .style!;
 
       await tester.enterText(find.byKey(const Key('terminal-input')), 'whoami');
@@ -32,7 +32,7 @@ void main() {
       await tester.pump();
 
       final styles = <TextStyle>[
-        tester.widget<Text>(find.text(r'portfolio: ~$ help')).style!,
+        tester.widget<Text>(find.text(r'Portfolio: ~$ help')).style!,
         tester.widget<Text>(find.text('flutter run')).style!,
         tester.widget<Text>(find.text('포트폴리오 개발 서버 실행')).style!,
         promptStyle,
@@ -243,7 +243,7 @@ void main() {
         find.byKey(const Key('terminal-input-surface')),
       );
       final inputDecoration = inputSurface.decoration! as BoxDecoration;
-      final line = tester.widget<Text>(find.text(r'portfolio: ~$ help'));
+      final line = tester.widget<Text>(find.text(r'Portfolio: ~$ help'));
       final input = tester.widget<TextField>(
         find.byKey(const Key('terminal-input')),
       );

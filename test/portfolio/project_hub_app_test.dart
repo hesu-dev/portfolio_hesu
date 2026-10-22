@@ -66,6 +66,8 @@ void main() {
     tester,
   ) async {
     await _pumpProjects(tester);
+    await tester.tap(find.byKey(const Key('projects-finder-location-career')));
+    await tester.pumpAndSettle();
 
     expect(find.byType(AppleFinderScaffold), findsOneWidget);
     expect(find.byType(AppleFinderToolbar), findsOneWidget);

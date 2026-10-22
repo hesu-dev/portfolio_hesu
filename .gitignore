@@ -33,6 +33,7 @@ migrate_working_dir/
 .pub/
 /build/
 /.flutter/
+.wrangler/
 
 # Flutter Web release output must live in build/web, never at repository root.
 /index.html

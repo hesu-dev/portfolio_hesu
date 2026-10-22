@@ -51,6 +51,7 @@ const List<PortfolioAppId> portfolioMacDesktopLauncherAppIds = <PortfolioAppId>[
 /// Apps shown as tiles on both the iPhone and iPad home surfaces.
 ///
 /// Profile is a mobile-only experience separate from the desktop About app.
+/// Settings is also pinned here for direct access to appearance controls.
 const List<PortfolioAppId> portfolioMobileLauncherAppIds = <PortfolioAppId>[
   PortfolioAppId.profile,
   PortfolioAppId.introduction,
@@ -59,6 +60,7 @@ const List<PortfolioAppId> portfolioMobileLauncherAppIds = <PortfolioAppId>[
   PortfolioAppId.terminal,
   PortfolioAppId.github,
   PortfolioAppId.skills,
+  PortfolioAppId.settings,
 ];
 
 /// Utility apps opened from the Files section on every form factor.

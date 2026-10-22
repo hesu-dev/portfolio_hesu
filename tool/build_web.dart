@@ -3,8 +3,6 @@ import 'dart:io';
 
 import 'package:portfolio_hesu/portfolio/terminal/terminal_git_history.dart';
 
-import 'refresh_github_contributions.dart';
-
 const _historyLimit = 8;
 
 String encodeTerminalGitHistory(String gitLogOutput) {
@@ -36,6 +34,7 @@ List<String> flutterBuildArguments(String encodedHistory) {
     'build',
     'web',
     '--release',
+    '--dart-define-from-file=config/production.json',
     '--base-href',
     '/',
     '--pwa-strategy=none',
@@ -60,14 +59,6 @@ Future<void> main(List<String> arguments) async {
   }
 
   final encodedHistory = encodeTerminalGitHistory(gitLog.stdout as String);
-  try {
-    await refreshGitHubContributions();
-  } catch (_) {
-    stderr.writeln(
-      'GitHub calendar refresh unavailable; using the dated bundled snapshot. '
-      'Refresh locally with dart run tool/refresh_github_contributions.dart.',
-    );
-  }
   final build = await Process.start(
     flutterBinary,
     flutterBuildArguments(encodedHistory),

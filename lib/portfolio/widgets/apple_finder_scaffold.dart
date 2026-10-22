@@ -4,6 +4,7 @@ import 'package:flutter/material.dart';
 
 import '../mobile/apple_mobile_dock_geometry.dart';
 import '../theme/apple_theme.dart';
+import 'apple_finder_icon.dart';
 import 'apple_mobile_navigation_header.dart';
 import 'apple_selection_control.dart';
 import 'project_app_icon.dart';
@@ -249,6 +250,7 @@ class AppleFinderToolbar extends StatelessWidget {
         title: currentLocation,
         keyPrefix: controlKeyPrefix,
         leading: leadingControls,
+        onMorePressed: onViewPressed,
         titleContainerKey: Key('$controlKeyPrefix-current-location'),
         titleStyle: Theme.of(context).textTheme.titleMedium?.copyWith(
           fontSize: 18,
@@ -852,21 +854,24 @@ class AppleFinderFolderTile extends StatelessWidget {
     required this.onPressed,
     this.selected = false,
     this.imageAsset,
+    this.artwork,
+    this.artworkHasBackground = false,
     super.key,
   });
 
   final String label;
   final String semanticsLabel;
   final bool compact;
-  final VoidCallback onPressed;
+  final VoidCallback? onPressed;
   final bool selected;
   final String? imageAsset;
+  final Widget? artwork;
+  final bool artworkHasBackground;
 
   @override
   Widget build(BuildContext context) {
     final tileHeight = compact ? 154.0 : 166.0;
     final folderSize = compact ? 50.0 : 58.0;
-    final selectedArtworkColor = AppleTheme.finderSelectionBackground(context);
 
     return AppleSelectionControl(
       semanticsLabel: semanticsLabel,
@@ -889,30 +894,26 @@ class AppleFinderFolderTile extends StatelessWidget {
         child: Column(
           mainAxisAlignment: MainAxisAlignment.center,
           children: <Widget>[
-            AnimatedContainer(
-              key: const Key('apple-finder-folder-artwork-background'),
-              duration: const Duration(milliseconds: 160),
-              width: folderSize + 14,
-              height: folderSize + 8,
-              alignment: Alignment.center,
-              decoration: BoxDecoration(
-                color: selected ? selectedArtworkColor : Colors.transparent,
-                borderRadius: BorderRadius.circular(10),
-              ),
-              child: imageAsset == null
-                  ? Icon(
-                      Icons.folder_rounded,
-                      key: const Key('apple-finder-folder-artwork'),
-                      size: folderSize,
-                      color: const Color(0xFF55B8F5),
-                    )
-                  : ClipRRect(
-                      borderRadius: BorderRadius.circular(folderSize * 0.22),
-                      child: ProjectAppIcon(
-                        assetPath: imageAsset!,
-                        size: folderSize,
-                      ),
-                    ),
+            AppleFinderIcon(
+              size: folderSize + 8,
+              selected: selected,
+              hasOwnBackground:
+                  artworkHasBackground ||
+                  ProjectAppIcon.hasOwnBackground(imageAsset),
+              child:
+                  artwork ??
+                  (imageAsset == null
+                      ? Icon(
+                          Icons.folder_rounded,
+                          key: const Key('apple-finder-folder-artwork'),
+                          size: folderSize,
+                          color: const Color(0xFF55B8F5),
+                        )
+                      : ProjectAppIcon(
+                          assetPath: imageAsset!,
+                          size: folderSize,
+                          alignment: Alignment.center,
+                        )),
             ),
             const SizedBox(height: 8),
             SizedBox(

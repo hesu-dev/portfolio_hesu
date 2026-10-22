@@ -37,4 +37,11 @@ void main() {
       contains('--dart-define=$terminalGitHistoryDefine=encoded-history'),
     );
   });
+
+  test('web deployment builds with production settings', () {
+    expect(
+      build_web.flutterBuildArguments('encoded-history'),
+      contains('--dart-define-from-file=config/production.json'),
+    );
+  });
 }

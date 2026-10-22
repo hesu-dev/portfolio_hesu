@@ -9,159 +9,203 @@ import 'package:portfolio_hesu/portfolio/theme/apple_theme.dart';
 import 'support/music_test_controller.dart';
 
 void main() {
-  testWidgets(
-    'desktop Safari opens from its icon and bookmarks navigate projects',
-    (tester) async {
-      await tester.binding.setSurfaceSize(const Size(1440, 1000));
-      addTearDown(() => tester.binding.setSurfaceSize(null));
-      await tester.pumpWidget(
-        PortfolioApp(
-          musicController: createTestMusicController(),
-          externalLauncher: CallbackExternalLauncher((_) async => true),
-        ),
-      );
-      await tester.pumpAndSettle();
-      final safari = find.byKey(const Key('desktop-app-safari'));
+  testWidgets('Safari shows portfolio and opens the current app architecture', (
+    tester,
+  ) async {
+    await _pumpSafari(tester, const Size(1000, 900));
+    await tester.enterText(
+      find.byKey(const Key('safari-search-field')),
+      'Portfolio',
+    );
+    await tester.pumpAndSettle();
+    expect(find.text('PersonaChat AI Character Chat'), findsNothing);
+    final card = find.byKey(const Key('safari-project-card-1'));
+    expect(
+      find.descendant(of: card, matching: find.text('Portfolio')),
+      findsOneWidget,
+    );
+    await tester.ensureVisible(card);
+    await tester.tap(card);
+    await tester.pumpAndSettle();
+    _expectProject(tester, 'Portfolio');
+    expect(find.byKey(const Key('architecture-diagram')), findsOneWidget);
+    expect(find.textContaining('SafariProjectPage'), findsWidgets);
+    expect(tester.takeException(), isNull);
+  });
+  testWidgets('desktop project icon opens the Safari project start page', (
+    tester,
+  ) async {
+    await tester.binding.setSurfaceSize(const Size(1440, 1000));
+    addTearDown(() => tester.binding.setSurfaceSize(null));
+    await tester.pumpWidget(
+      PortfolioApp(
+        musicController: createTestMusicController(),
+        externalLauncher: CallbackExternalLauncher((_) async => true),
+      ),
+    );
+    await tester.pumpAndSettle();
+    final safari = find.byKey(const Key('desktop-app-safari'));
+    expect(
+      find.descendant(of: safari, matching: find.text('프로젝트')),
+      findsOneWidget,
+    );
+    await tester.tap(safari);
+    await tester.pump(const Duration(milliseconds: 80));
+    await tester.tap(safari);
+    await tester.pumpAndSettle();
+
+    expect(find.byKey(const Key('safari-start-page')), findsOneWidget);
+    expect(find.byKey(const Key('safari-search-field')), findsOneWidget);
+    expect(find.byKey(const Key('safari-project-title')), findsNothing);
+    for (final entry in portfolioData.projects.indexed) {
+      final card = find.byKey(Key('safari-project-card-${entry.$1}'));
+      expect(card, findsOneWidget);
       expect(
-        find.descendant(of: safari, matching: find.text('프로젝트')),
+        find.descendant(of: card, matching: find.text(entry.$2.title)),
         findsOneWidget,
       );
-      await tester.tap(safari);
-      await tester.pump(const Duration(milliseconds: 80));
-      await tester.tap(safari);
-      await tester.pumpAndSettle();
-      expect(find.byKey(const Key('safari-bookmarks')), findsOneWidget);
-      expect(find.byKey(const Key('safari-sidebar')), findsNothing);
-      final introduction = tester.getRect(
-        find.byKey(const Key('safari-report-introduction')),
-      );
-      final page = tester.getRect(find.byKey(const Key('safari-page')));
-      expect(introduction.bottom, lessThanOrEqualTo(page.top));
-      expect(page.left, closeTo(introduction.left, .1));
-      expect(page.width, closeTo(introduction.width, .1));
-      for (final entry in portfolioData.projects.indexed) {
-        final bookmark = find.byKey(Key('safari-bookmark-${entry.$1}'));
-        final label = switch (entry.$2.title) {
-          'ReadingLog' => '리딩로그',
-          'PersonaChat AI Character Chat' => 'AI 챗',
-          _ => entry.$2.title,
-        };
-        expect(bookmark, findsOneWidget);
-        expect(
-          find.descendant(of: bookmark, matching: find.text(label)),
-          findsOneWidget,
-        );
-      }
-      expect(find.text('회사'), findsNothing);
-      expect(find.text('개인 프로젝트'), findsNothing);
       expect(
-        tester.widget<Text>(find.byKey(const Key('safari-project-title'))).data,
-        portfolioData.projects.first.title,
+        find.descendant(of: card, matching: find.text(entry.$2.description)),
+        findsOneWidget,
       );
-      await tester.tap(find.byKey(const Key('safari-bookmark-1')));
-      await tester.pumpAndSettle();
-      expect(
-        tester.widget<Text>(find.byKey(const Key('safari-project-title'))).data,
-        portfolioData.projects[1].title,
-      );
-      await tester.tap(find.byKey(const Key('safari-back')));
-      await tester.pumpAndSettle();
-      expect(
-        tester.widget<Text>(find.byKey(const Key('safari-project-title'))).data,
-        portfolioData.projects.first.title,
-      );
-      await tester.tap(find.byKey(const Key('safari-forward')));
-      await tester.pumpAndSettle();
-      expect(
-        tester.widget<Text>(find.byKey(const Key('safari-project-title'))).data,
-        portfolioData.projects[1].title,
-      );
-      expect(tester.takeException(), isNull);
-    },
-  );
-
-  testWidgets('desktop bookmarks share the full usable bar width', (
-    tester,
-  ) async {
-    for (final (width, scale) in <(double, double)>[
-      (800, 1),
-      (1400, 1),
-      (620, 2),
-    ]) {
-      await _pumpSafari(tester, Size(width, 700), scale: scale);
-      final bar = tester.getRect(find.byKey(const Key('safari-bookmarks')));
-      final bookmarks = <Rect>[
-        for (final entry in portfolioData.projects.indexed)
-          tester.getRect(find.byKey(Key('safari-bookmark-${entry.$1}'))),
-      ];
-      expect(bookmarks.first.left, closeTo(bar.left + 12, 0.1));
-      expect(bookmarks.last.right, closeTo(bar.right - 12, 0.1));
-      final itemWidth = (bar.width - 24) / bookmarks.length;
-      for (final (index, bookmark) in bookmarks.indexed) {
-        expect(bookmark.width, closeTo(itemWidth, 0.1));
-        if (index > 0) {
-          expect(bookmark.left, closeTo(bookmarks[index - 1].right, 0.1));
-        }
-      }
-      expect(tester.takeException(), isNull, reason: '$width at $scale');
     }
-  });
-
-  testWidgets('tablet bookmarks navigate projects above the full-width page', (
-    tester,
-  ) async {
-    await _pumpSafari(tester, const Size(834, 900), tablet: true);
-    expect(find.byKey(const Key('safari-sidebar')), findsNothing);
-    expect(find.byKey(const Key('safari-bookmarks')), findsOneWidget);
-    expect(
-      tester.getSize(find.byKey(const Key('safari-page'))).width,
-      834,
-    );
-    await tester.tap(find.byKey(const Key('safari-bookmark-1')));
-    await tester.pumpAndSettle();
-    expect(
-      tester.widget<Text>(find.byKey(const Key('safari-project-title'))).data,
-      portfolioData.projects[1].title,
-    );
     expect(tester.takeException(), isNull);
   });
 
   testWidgets(
-    'phone bottom tabs picker switches projects and respects safe area',
+    'project cards and browser navigation preserve start page history',
     (tester) async {
-      await _pumpSafari(
-        tester,
-        const Size(390, 844),
-        compact: true,
-        bottom: 34,
-      );
-      final tabs = find.byKey(const Key('safari-all-tabs'));
-      expect(
-        find.text('모든 탭(${portfolioData.projects.length})'),
-        findsOneWidget,
-      );
-      expect(tester.getBottomLeft(tabs).dy, lessThanOrEqualTo(844 - 34 - 17));
-      await tester.tap(tabs);
+      await _pumpSafari(tester, const Size(1000, 900), data: _searchData);
+      final firstCard = find.byKey(const Key('safari-project-card-0'));
+      await tester.ensureVisible(firstCard);
+      await tester.tap(firstCard);
       await tester.pumpAndSettle();
-      expect(find.byKey(const Key('safari-tabs-overview')), findsOneWidget);
-      for (final entry in portfolioData.projects.indexed) {
-        expect(find.byKey(Key('safari-tab-${entry.$1}')), findsOneWidget);
-      }
-      await tester.tap(find.byKey(const Key('safari-tab-1')));
+      _expectProject(tester, 'Atlas');
+
+      await tester.tap(find.byKey(const Key('safari-back')));
       await tester.pumpAndSettle();
-      expect(find.byKey(const Key('safari-tabs-overview')), findsNothing);
-      expect(
-        tester.widget<Text>(find.byKey(const Key('safari-project-title'))).data,
-        portfolioData.projects[1].title,
-      );
+      expect(find.byKey(const Key('safari-start-page')), findsOneWidget);
+      await tester.tap(find.byKey(const Key('safari-forward')));
+      await tester.pumpAndSettle();
+      _expectProject(tester, 'Atlas');
+
+      await tester.tap(find.byKey(const Key('safari-home')));
+      await tester.pumpAndSettle();
+      expect(find.byKey(const Key('safari-start-page')), findsOneWidget);
+      await tester.tap(find.byKey(const Key('safari-favorite-1')));
+      await tester.pumpAndSettle();
+      _expectProject(tester, 'Boreal');
+      await tester.tap(find.byKey(const Key('safari-back')));
+      await tester.pumpAndSettle();
+      expect(find.byKey(const Key('safari-start-page')), findsOneWidget);
       expect(tester.takeException(), isNull);
     },
   );
+
+  testWidgets('search filters project titles descriptions and technologies', (
+    tester,
+  ) async {
+    await _pumpSafari(tester, const Size(1000, 900), data: _searchData);
+    final search = find.byKey(const Key('safari-search-field'));
+    for (final (query, expectedIndex) in [
+      ('ATLas', 0),
+      ('  바다 관측  ', 1),
+      ('rust', 1),
+    ]) {
+      await tester.enterText(search, query);
+      await tester.pumpAndSettle();
+      expect(
+        find.byKey(Key('safari-project-card-$expectedIndex')),
+        findsOneWidget,
+        reason: query,
+      );
+      expect(
+        find.byKey(Key('safari-project-card-${1 - expectedIndex}')),
+        findsNothing,
+        reason: query,
+      );
+    }
+
+    await tester.enterText(search, 'no-such-project');
+    await tester.pumpAndSettle();
+    expect(find.byKey(const Key('safari-project-card-0')), findsNothing);
+    expect(find.byKey(const Key('safari-project-card-1')), findsNothing);
+    expect(find.textContaining('검색 결과'), findsWidgets);
+    await tester.tap(find.byKey(const Key('safari-search-clear')));
+    await tester.pumpAndSettle();
+    expect(tester.widget<TextField>(search).controller!.text, isEmpty);
+    expect(find.byKey(const Key('safari-project-card-0')), findsOneWidget);
+    expect(find.byKey(const Key('safari-project-card-1')), findsOneWidget);
+    expect(tester.takeException(), isNull);
+  });
+
+  testWidgets('typing in a project detail returns to searchable cards', (
+    tester,
+  ) async {
+    await _pumpSafari(tester, const Size(1000, 900), data: _searchData);
+    await tester.tap(find.byKey(const Key('safari-favorite-0')));
+    await tester.pumpAndSettle();
+    _expectProject(tester, 'Atlas');
+    await tester.enterText(
+      find.byKey(const Key('safari-search-field')),
+      'Boreal',
+    );
+    await tester.pumpAndSettle();
+    expect(find.byKey(const Key('safari-start-page')), findsOneWidget);
+    expect(find.byKey(const Key('safari-project-card-0')), findsNothing);
+    final card = find.byKey(const Key('safari-project-card-1'));
+    await tester.ensureVisible(card);
+    await tester.tap(card);
+    await tester.pumpAndSettle();
+    _expectProject(tester, 'Boreal');
+    expect(tester.takeException(), isNull);
+  });
+
+  for (final (name, size, compact, tablet, scale) in [
+    ('tablet', const Size(834, 900), false, true, 1.0),
+    ('phone', const Size(390, 844), true, false, 1.0),
+    ('phone with enlarged text', const Size(320, 700), true, false, 2.0),
+  ]) {
+    testWidgets('$name keeps search above usable project cards', (
+      tester,
+    ) async {
+      await _pumpSafari(
+        tester,
+        size,
+        compact: compact,
+        tablet: tablet,
+        bottom: 34,
+        scale: scale,
+        data: _searchData,
+      );
+      final search = find.byKey(const Key('safari-search-field'));
+      final startPage = find.byKey(const Key('safari-start-page'));
+      expect(search.hitTestable(), findsOneWidget);
+      expect(
+        tester.getBottomLeft(search).dy,
+        lessThanOrEqualTo(tester.getTopLeft(startPage).dy),
+      );
+      expect(find.byKey(const Key('safari-all-tabs')), findsNothing);
+      expect(find.byKey(const Key('safari-phone-toolbar')), findsNothing);
+      expect(tester.takeException(), isNull);
+      final lastCard = find.byKey(const Key('safari-project-card-1'));
+      await tester.ensureVisible(lastCard);
+      await tester.pumpAndSettle();
+      expect(lastCard.hitTestable(), findsOneWidget);
+      await tester.tap(lastCard);
+      await tester.pumpAndSettle();
+      _expectProject(tester, 'Boreal');
+      expect(search.hitTestable(), findsOneWidget);
+      expect(tester.takeException(), isNull);
+    });
+  }
 
   testWidgets('different projects have separate detail scroll positions', (
     tester,
   ) async {
     await _pumpSafari(tester, const Size(850, 650));
+    await tester.tap(find.byKey(const Key('safari-favorite-0')));
+    await tester.pumpAndSettle();
     await tester.drag(
       find.byKey(const Key('safari-page')),
       const Offset(0, -400),
@@ -171,8 +215,11 @@ void main() {
       find.byKey(const Key('safari-project-title')).hitTestable(),
       findsNothing,
     );
-    await tester.tap(find.byKey(const Key('safari-bookmark-1')));
+    await tester.tap(find.byKey(const Key('safari-home')));
     await tester.pumpAndSettle();
+    await tester.tap(find.byKey(const Key('safari-favorite-1')));
+    await tester.pumpAndSettle();
+    _expectProject(tester, portfolioData.projects[1].title);
     expect(
       find.byKey(const Key('safari-project-title')).hitTestable(),
       findsOneWidget,
@@ -180,17 +227,59 @@ void main() {
     expect(tester.takeException(), isNull);
   });
 
-  testWidgets('phone dark mode and enlarged text remain usable', (
+  testWidgets('removing the current project returns safely to start page', (
     tester,
   ) async {
-    await _pumpSafari(tester, const Size(320, 700), compact: true, scale: 2);
-    expect(tester.takeException(), isNull);
-    await tester.tap(find.byKey(const Key('safari-all-tabs')));
+    await _pumpSafari(tester, const Size(1000, 900), data: _searchData);
+    await tester.tap(find.byKey(const Key('safari-favorite-0')));
     await tester.pumpAndSettle();
-    expect(find.byKey(const Key('safari-tabs-overview')), findsOneWidget);
+    _expectProject(tester, 'Atlas');
+    await _pumpSafari(
+      tester,
+      const Size(1000, 900),
+      data: _dataWithProjects([_searchData.projects[1]]),
+    );
+    expect(find.byKey(const Key('safari-start-page')), findsOneWidget);
+    expect(find.byKey(const Key('safari-project-title')), findsNothing);
+    expect(find.byKey(const Key('safari-project-card-0')), findsOneWidget);
     expect(tester.takeException(), isNull);
   });
 }
+
+void _expectProject(WidgetTester tester, String title) {
+  expect(find.byKey(const Key('safari-start-page')), findsNothing);
+  expect(
+    tester.widget<Text>(find.byKey(const Key('safari-project-title'))).data,
+    title,
+  );
+}
+
+final _searchData = _dataWithProjects(const [
+  PortfolioProject.constant(
+    title: 'Atlas',
+    description: '여행 일정을 정리하는 지도',
+    period: '2026',
+    technologies: ['Dart'],
+    links: [],
+  ),
+  PortfolioProject.constant(
+    title: 'Boreal',
+    description: '바다 관측 기록을 보여주는 도구',
+    period: '2026',
+    technologies: ['Rust'],
+    category: PortfolioProjectCategory.personal,
+    links: [],
+  ),
+]);
+
+PortfolioData _dataWithProjects(List<PortfolioProject> projects) =>
+    PortfolioData(
+      identity: portfolioData.identity,
+      experiences: portfolioData.experiences,
+      education: portfolioData.education,
+      skillGroups: portfolioData.skillGroups,
+      projects: projects,
+    );
 
 Future<void> _pumpSafari(
   WidgetTester tester,
@@ -199,6 +288,7 @@ Future<void> _pumpSafari(
   bool tablet = false,
   double bottom = 0,
   double scale = 1,
+  PortfolioData? data,
 }) async {
   await tester.binding.setSurfaceSize(size);
   addTearDown(() => tester.binding.setSurfaceSize(null));
@@ -211,7 +301,7 @@ Future<void> _pumpSafari(
           padding: EdgeInsets.only(bottom: bottom),
         ),
         child: SafariApp(
-          data: portfolioData,
+          data: data ?? portfolioData,
           compact: compact,
           tablet: tablet,
           launcher: CallbackExternalLauncher((_) async => true),

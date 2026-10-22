@@ -12,13 +12,9 @@ void main() {
       expect(portfolioData.allUrls, everyElement(isNot(contains('juah'))));
     });
 
-    test('does not expose default repository names or links', () {
+    test('keeps the catalogue empty and exposes the portfolio source link', () {
       expect(portfolioData.repositories, isEmpty);
-      for (final name in <String>[
-        'portfolio_hesu',
-        'chrome_extension',
-        'code_study',
-      ]) {
+      for (final name in <String>['chrome_extension', 'code_study']) {
         expect(portfolioData.allSearchableText, isNot(contains(name)));
         expect(portfolioData.allUrls, everyElement(isNot(contains(name))));
       }
@@ -28,7 +24,7 @@ void main() {
       expect(
         portfolioData.projects.map((project) => project.title),
         containsAll(<String>[
-          'PersonaChat AI Character Chat',
+          'Portfolio',
           'ReadingLog',
           'Blue Mentor',
           'IRIS',
@@ -40,6 +36,30 @@ void main() {
       );
       expect(portfolioData.projects, hasLength(8));
     });
+
+    test(
+      'architecture drawings keep nodes and connections inside the canvas',
+      () {
+        for (final project in portfolioData.projects) {
+          final diagram = project.architecture?.diagram;
+          expect(diagram, isNotNull, reason: project.title);
+          final ids = diagram!.nodes.map((node) => node.id).toSet();
+          expect(ids.length, diagram.nodes.length, reason: project.title);
+          for (final node in diagram.nodes) {
+            expect(node.x, inInclusiveRange(72, diagram.width - 72));
+            expect(node.y, inInclusiveRange(56, diagram.height - 56));
+          }
+          for (final edge in diagram.edges) {
+            expect(ids, contains(edge.from), reason: project.title);
+            expect(ids, contains(edge.to), reason: project.title);
+            for (final point in edge.via) {
+              expect(point.x, inInclusiveRange(0, diagram.width));
+              expect(point.y, inInclusiveRange(0, diagram.height));
+            }
+          }
+        }
+      },
+    );
 
     test('contains only the verified information engineer certification', () {
       expect(portfolioData.certifications, <String>['정보처리기사']);
@@ -102,7 +122,7 @@ void main() {
       };
 
       expect(titlesByCategory[PortfolioProjectCategory.personal], <String>{
-        'PersonaChat AI Character Chat',
+        'Portfolio',
         'ReadingLog',
       });
       expect(titlesByCategory[PortfolioProjectCategory.career], <String>{
@@ -150,13 +170,13 @@ void main() {
             )
             .map((project) => project.title)
             .toList(),
-        <String>['ReadingLog', 'PersonaChat AI Character Chat'],
+        <String>['ReadingLog', 'Portfolio'],
       );
     });
 
     test('keeps every active project action', () {
       const expectedLinksByProject = <String, Set<String>>{
-        'PersonaChat AI Character Chat': <String>{},
+        'Portfolio': <String>{'https://github.com/hesu-dev/portfolio_hesu'},
         'ReadingLog': <String>{
           'https://play.google.com/store/apps/details?id=com.reha.readinglog',
           'https://apps.apple.com/kr/app/%EB%A6%AC%EB%94%A9%EB%A1%9C%EA%B7%B8/id6759693995',
@@ -437,6 +457,8 @@ void main() {
           '소속',
           '업무',
           '기능',
+          '핵심 기술',
+          '기술 의사결정',
           '문제',
           '원인',
           '측정',
@@ -584,7 +606,13 @@ void main() {
         expect(project.highlights, isNotEmpty, reason: project.title);
         if (project.title == 'AI Switch') {
           expect(project.period, isEmpty);
-          expect(project.sections, isEmpty);
+          expect(
+            project.sections.map((section) => section.kind),
+            containsAll([
+              PortfolioProjectSectionKind.coreTechnology,
+              PortfolioProjectSectionKind.technicalDecision,
+            ]),
+          );
           continue;
         }
         expect(
@@ -607,97 +635,147 @@ void main() {
       }
     });
 
-    test('documents ReadingLog roles, features, stack and ongoing operation', () {
-      final project = portfolioData.projects.singleWhere(
-        (project) => project.title == 'ReadingLog',
-      );
+    test(
+      'documents ReadingLog roles, features, stack and ongoing operation',
+      () {
+        final project = portfolioData.projects.singleWhere(
+          (project) => project.title == 'ReadingLog',
+        );
 
-      expect(project.architecture, isNotNull);
-      expect(
-        project.architecture!.presentation,
-        PortfolioArchitecturePresentation.flow,
-      );
-      expect(project.architecture!.nodes, <String>[
-        'HTML 채팅 로그',
-        'Chrome 확장 프로그램',
-        'JSON 변환',
-        '스키마 기반 Flutter 화면',
-        'PDF · EPUB 내보내기',
-      ]);
-      expect(project.sections.map((section) => section.kind.label), <String>[
-        '소속',
-        '업무',
-        '기능',
-      ]);
-      expect(project.category, PortfolioProjectCategory.personal);
-      expect(project.technologies, <String>[
-        'Flutter',
-        'Dart',
-        'JavaScript',
-        'Codex',
-        'GitHub',
-        'Firebase Hosting',
-      ]);
-      final content = <String>[
-        project.description,
-        ...project.highlights,
-        ...project.sections.map((section) => section.body),
-      ].join('\n');
-      for (final detail in <String>[
-        'UI/UX',
-        'JSON 파싱',
-        '채팅 로그 변환',
-        'Chrome 확장 프로그램 개발',
-        '언어 전환 및 다국어 설정',
-        'PDF·EPUB',
-        '검색 데이터 정비',
-        '세이프 텍스트 검수 자동화',
-        '백그라운드 오디오',
-        '이펙트 디자인',
-        '현재 운영 중',
-      ]) {
-        expect(content, contains(detail), reason: detail);
-      }
-      expect(content, isNot(contains('임시 예시')));
-      expect(content, isNot(contains('40%')));
-    });
+        expect(project.architecture, isNotNull);
+        expect(
+          project.architecture!.presentation,
+          PortfolioArchitecturePresentation.flow,
+        );
+        expect(project.architecture!.nodes, <String>[
+          'HTML 채팅 로그',
+          'Chrome 확장 프로그램',
+          'JSON 변환',
+          '스키마 기반 Flutter 화면',
+          'PDF · EPUB 내보내기',
+        ]);
+        expect(project.sections.map((section) => section.kind.label), <String>[
+          '소속',
+          '업무',
+          '기능',
+          '핵심 기술',
+          '기술 의사결정',
+          '문제',
+          '원인',
+          '해결',
+          '평가',
+        ]);
+        expect(project.category, PortfolioProjectCategory.personal);
+        expect(project.technologies, <String>[
+          'Flutter',
+          'Dart',
+          'JavaScript',
+          'Codex',
+          'GitHub',
+          'Firebase Hosting',
+        ]);
+        final content = <String>[
+          project.description,
+          ...project.highlights,
+          ...project.sections.map((section) => section.body),
+        ].join('\n');
+        for (final detail in <String>[
+          'UI/UX',
+          'JSON 파싱',
+          '채팅 로그 변환',
+          'Chrome 확장 프로그램 개발',
+          '언어 전환 및 다국어 설정',
+          'PDF·EPUB',
+          '검색 데이터 정비',
+          '세이프 텍스트 검수 자동화',
+          '백그라운드 오디오',
+          '이펙트 디자인',
+          '현재 운영 중',
+        ]) {
+          expect(content, contains(detail), reason: detail);
+        }
+        expect(content, isNot(contains('임시 예시')));
+        expect(content, isNot(contains('40%')));
+      },
+    );
 
-    test('marks PersonaChat as measured design work rather than a launch', () {
-      final project = portfolioData.projects.singleWhere(
-        (project) => project.title == 'PersonaChat AI Character Chat',
-      );
-
-      expect(project.architecture, isNotNull);
-      expect(
-        project.architecture!.presentation,
-        PortfolioArchitecturePresentation.components,
-      );
-      expect(
-        project.sections
-            .singleWhere(
-              (section) =>
-                  section.kind == PortfolioProjectSectionKind.measurement,
-            )
-            .body,
-        allOf(contains('2026-07-12'), contains('19개 활성 공고')),
-      );
-      expect(
-        project.sections
-            .singleWhere(
-              (section) =>
-                  section.kind == PortfolioProjectSectionKind.evaluation,
-            )
-            .body,
-        contains('설계 단계'),
-      );
-      expect(
-        project.sections
-            .singleWhere(
-              (section) => section.kind == PortfolioProjectSectionKind.note,
-            )
-            .body,
-        contains('출시 성과가 아닌'),
-      );
-    });
+    test(
+      'portfolio describes this implemented app instead of the chat design',
+      () {
+        final project = portfolioData.projects.singleWhere(
+          (project) => project.title == 'Portfolio',
+        );
+        expect(project.category, PortfolioProjectCategory.personal);
+        expect(project.period, '2026.09 - 현재');
+        expect(
+          project.technologies,
+          containsAll([
+            'Flutter',
+            'Dart',
+            'Cupertino',
+            'http',
+            'just_audio',
+            'pdf',
+          ]),
+        );
+        expect(
+          project.architecture!.presentation,
+          PortfolioArchitecturePresentation.flow,
+        );
+        final labels = project.architecture!.diagram!.nodes
+            .map((node) => node.label)
+            .toSet();
+        expect(
+          labels,
+          containsAll([
+            'PortfolioData',
+            'PortfolioApp',
+            '공유 상태',
+            '반응형 셸',
+            '앱 콘텐츠',
+            '프로젝트 상세',
+            'GitHub 기여 기록',
+            '웹 PDF 출력',
+          ]),
+        );
+        final content = [
+          project.description,
+          ...project.highlights,
+          project.architecture!.description,
+          project.architecture!.diagram!.summary,
+          for (final node in project.architecture!.diagram!.nodes)
+            '${node.label} ${node.detail}',
+          for (final section in project.sections) section.body,
+        ].join(' ');
+        for (final term in [
+          '1024',
+          '600',
+          'SafariProjectPage',
+          'ChangeNotifier',
+          'GitHub',
+          'PDF',
+          'APP_ENV',
+          '위젯 테스트',
+        ]) {
+          expect(content, contains(term), reason: term);
+        }
+        for (final stale in [
+          'PersonaChat',
+          'Riverpod',
+          'Firebase',
+          'IAP',
+          '크레딧',
+          '19개 활성 공고',
+          '4주 구현',
+        ]) {
+          expect(content, isNot(contains(stale)), reason: stale);
+        }
+        expect(portfolioData.allSearchableText, isNot(contains('PersonaChat')));
+        expect(
+          project.links.single.url,
+          'https://github.com/hesu-dev/portfolio_hesu',
+        );
+      },
+    );
   });
 }

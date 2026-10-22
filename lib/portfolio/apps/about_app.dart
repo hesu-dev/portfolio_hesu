@@ -4,6 +4,7 @@ import '../data/portfolio_data.dart';
 import '../services/external_launcher.dart';
 import '../theme/apple_theme.dart';
 import '../widgets/apple_notes_surface.dart';
+import '../widgets/career_timeline_entry.dart';
 
 class AboutApp extends StatelessWidget {
   const AboutApp({
@@ -113,11 +114,12 @@ class _AboutNotesBody extends StatelessWidget {
           subtitle: 'Professional experience',
         ),
         SizedBox(height: compact ? 12 : 16),
-        for (final experience in data.experiences.indexed) ...<Widget>[
-          _ExperienceCard(experience: experience.$2),
-          if (experience.$1 != data.experiences.length - 1)
-            const _NoteEntryDivider(),
-        ],
+        for (final entry in data.experiences.indexed)
+          CareerTimelineEntry(
+            experience: entry.$2,
+            isLast: entry.$1 == data.experiences.length - 1,
+            keyPrefix: 'about-career-${entry.$1}',
+          ),
         _NoteSectionDivider(compact: compact),
         const _NoteSectionTitle(
           title: '교육',
@@ -193,45 +195,6 @@ class _NoteSectionTitle extends StatelessWidget {
           ).copyWith(color: colors.sectionSecondary),
         ),
       ],
-    );
-  }
-}
-
-class _ExperienceCard extends StatelessWidget {
-  const _ExperienceCard({required this.experience});
-
-  final PortfolioExperience experience;
-
-  @override
-  Widget build(BuildContext context) {
-    final colors = _AboutNotePalette.of(context);
-    return Padding(
-      padding: const EdgeInsets.symmetric(vertical: 4),
-      child: Row(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: <Widget>[
-          Container(
-            width: 10,
-            height: 10,
-            margin: const EdgeInsets.only(top: 5),
-            decoration: const BoxDecoration(
-              color: AppleTheme.green,
-              shape: BoxShape.circle,
-            ),
-          ),
-          const SizedBox(width: 13),
-          Expanded(
-            child: _AboutHistoryEntry(
-              title: experience.organization,
-              period: experience.period,
-              body: Text(
-                experience.description,
-                style: AppleTheme.body(context).copyWith(color: colors.primary),
-              ),
-            ),
-          ),
-        ],
-      ),
     );
   }
 }

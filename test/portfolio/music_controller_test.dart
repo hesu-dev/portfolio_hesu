@@ -15,6 +15,64 @@ void main() {
   ];
 
   group('MusicController', () {
+    test('timeline seeks clamp to duration and never change volume', () async {
+      final playback = _FakePlayback();
+      final controller = MusicController(
+        tracks: tracks,
+        playbackFactory: () => playback,
+        sessionStore: _FakeSessionStore(),
+      );
+      expect(controller.canSeek, isFalse);
+      await controller.play();
+      playback.durations.add(const Duration(seconds: 120));
+      playback.positions.add(const Duration(seconds: 35));
+      await pumpEventQueue();
+      expect(controller.canSeek, isTrue);
+      expect(controller.position, const Duration(seconds: 35));
+      await controller.seek(const Duration(seconds: 90));
+      expect(playback.seekPosition, const Duration(seconds: 90));
+      expect(controller.volume, 1);
+      await controller.seek(const Duration(seconds: 999));
+      expect(playback.seekPosition, const Duration(seconds: 120));
+      await controller.seek(const Duration(seconds: -1));
+      expect(playback.seekPosition, Duration.zero);
+      await controller.pause();
+      await controller.select(1);
+      expect(controller.duration, Duration.zero);
+      expect(controller.position, Duration.zero);
+      expect(controller.canSeek, isFalse);
+      playback.positions.add(const Duration(seconds: 50));
+      playback.durations.add(const Duration(seconds: 120));
+      await pumpEventQueue();
+      expect(controller.duration, Duration.zero);
+      expect(controller.position, Duration.zero);
+      await controller.select(0);
+      await controller.play();
+      expect(controller.duration, const Duration(seconds: 120));
+      expect(controller.position, const Duration(seconds: 50));
+      expect(controller.canSeek, isTrue);
+      controller.dispose();
+      await playback.dispose();
+    });
+    test(
+      'configures native repeat before play and when mode changes',
+      () async {
+        final playback = _FakePlayback();
+        final controller = MusicController(
+          tracks: tracks,
+          playbackFactory: () => playback,
+          sessionStore: _FakeSessionStore(),
+        );
+        controller.setMode(MusicPlaybackMode.repeatOne);
+        await controller.play();
+        expect(playback.repeatOne, isTrue);
+        controller.setMode(MusicPlaybackMode.queue);
+        await pumpEventQueue();
+        expect(playback.repeatOne, isFalse);
+        controller.dispose();
+        await playback.dispose();
+      },
+    );
     test('starts paused and creates playback lazily', () {
       var factoryCalls = 0;
       final controller = MusicController(
@@ -509,6 +567,22 @@ void main() {
 }
 
 class _FakePlayback implements MusicPlayback {
+  final positions = StreamController<Duration>.broadcast();
+  final durations = StreamController<Duration>.broadcast();
+  Duration? seekPosition;
+  @override
+  Stream<Duration> get onPositionChanged => positions.stream;
+  @override
+  Stream<Duration> get onDurationChanged => durations.stream;
+  @override
+  Stream<Object> get onError => const Stream.empty();
+  @override
+  Stream<bool> get onPlayingChanged => const Stream.empty();
+  @override
+  Future<void> seek(Duration position) async {
+    seekPosition = position;
+  }
+
   _FakePlayback({this.playError, this.firstPlayGate});
 
   final Object? playError;
@@ -522,6 +596,11 @@ class _FakePlayback implements MusicPlayback {
   var disposeCalls = 0;
   var disposed = false;
   var completedPlayAfterDispose = false;
+  bool repeatOne = false;
+  @override
+  Future<void> setRepeatOne(bool enabled) async {
+    repeatOne = enabled;
+  }
 
   @override
   Stream<void> get onComplete => _completeController.stream;
@@ -562,6 +641,8 @@ class _FakePlayback implements MusicPlayback {
     if (!_completeController.isClosed) {
       await _completeController.close();
     }
+    if (!positions.isClosed) await positions.close();
+    if (!durations.isClosed) await durations.close();
   }
 }
 

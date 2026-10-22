@@ -66,12 +66,17 @@ void main() {
           tester,
           selected,
         );
-        expect(unselectedArtworkBackground.color, Colors.transparent);
+        expect(
+          unselectedArtworkBackground.color,
+          AppleTheme.surface(tester.element(unselected)),
+        );
         expect(selectedArtworkBackground.color, isNot(Colors.transparent));
         expect(selectedArtworkBackground.color!.a, 1);
         expect(_isNeutralGray(selectedArtworkBackground.color!), isTrue);
         expect(
-          selectedArtworkBackground.copyWith(color: Colors.transparent),
+          selectedArtworkBackground.copyWith(
+            color: unselectedArtworkBackground.color,
+          ),
           unselectedArtworkBackground,
         );
         expect(selectedArtworkBackground.border, isNull);
@@ -354,7 +359,7 @@ BoxDecoration _artworkBackgroundDecoration(WidgetTester tester, Finder tile) =>
 
 Finder _artworkBackgroundFinder(Finder tile) => find.descendant(
   of: tile,
-  matching: find.byKey(const Key('apple-finder-folder-artwork-background')),
+  matching: find.byKey(const Key('apple-finder-icon-background')),
 );
 
 Finder _labelFinder(Finder tile) => find.descendant(

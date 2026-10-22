@@ -13,8 +13,7 @@
       <stop offset="1" stop-color="#101534"/>
     </linearGradient>
   </defs>
-  <rect x="2" y="2" width="60" height="60" rx="14" fill="url(#panel)"/>
-  <rect x="2.75" y="2.75" width="58.5" height="58.5" rx="13.25" stroke="#FFFFFF" stroke-opacity=".52" stroke-width="1.5"/>
+  <rect width="64" height="64" fill="url(#panel)"/>
   <rect x="9" y="14" width="31" height="31" rx="6" fill="url(#day)"/>
   <path d="M9 21h31" stroke="#CBD4E0" stroke-width="1.5"/>
   <circle cx="14" cy="17.5" r="1.45" fill="#FF5F57"/>

@@ -1,5 +1,5 @@
-import 'dart:ui' show PointerDeviceKind;
-
+import 'package:flutter/foundation.dart';
+import 'package:flutter/gestures.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_test/flutter_test.dart';
@@ -17,7 +17,225 @@ import 'package:portfolio_hesu/portfolio/widgets/adaptive_portfolio_shell.dart';
 import 'support/music_test_controller.dart';
 
 void main() {
+  group('mobile home search', () {
+    testWidgets('home stays fixed with search above the Dock at small sizes', (
+      tester,
+    ) async {
+      for (final size in [
+        const Size(390, 844),
+        const Size(320, 480),
+        const Size(600, 400),
+        const Size(834, 1194),
+      ]) {
+        await tester.pumpWidget(const SizedBox.shrink());
+        await _pumpShell(
+          tester,
+          size: size,
+          textScaler: const TextScaler.linear(2),
+        );
+        final home = find.byKey(const Key('mobile-home'));
+        expect(
+          find.descendant(of: home, matching: find.byType(Scrollable)),
+          findsNothing,
+        );
+        final search = find.byKey(const Key('mobile-home-search'));
+        expect(search.hitTestable(), findsOneWidget);
+        final searchRect = tester.getRect(search);
+        final dockRect = tester.getRect(find.byKey(const Key('mobile-dock')));
+        expect(searchRect.bottom, lessThan(dockRect.top));
+        for (final app in _allAppNames) {
+          final tile = find.byKey(Key('home-app-$app'));
+          expect(tile.hitTestable(), findsOneWidget, reason: '$size/$app');
+          expect(
+            tester.getRect(tile).bottom,
+            lessThanOrEqualTo(searchRect.top),
+          );
+        }
+        final before = tester.getRect(
+          find.byKey(const Key('home-app-profile')),
+        );
+        await tester.drag(home, const Offset(0, -100));
+        await tester.pumpAndSettle();
+        expect(
+          tester.getRect(find.byKey(const Key('home-app-profile'))),
+          before,
+        );
+        expect(find.byKey(const Key('mobile-search-screen')), findsNothing);
+        expect(tester.takeException(), isNull);
+      }
+    });
+
+    testWidgets(
+      'search opens Siri suggestions, filters apps and launches a result',
+      (tester) async {
+        await _pumpShell(tester, size: const Size(390, 844));
+        await tester.tap(find.byKey(const Key('mobile-home-search')));
+        await tester.pumpAndSettle();
+        expect(find.byKey(const Key('mobile-search-screen')), findsOneWidget);
+        expect(find.text('Siri 제안'), findsOneWidget);
+        expect(
+          find.byKey(const Key('mobile-search-app-profile')),
+          findsOneWidget,
+        );
+        final field = find.byKey(const Key('mobile-search-input'));
+        await tester.enterText(field, '없는앱이름');
+        await tester.pumpAndSettle();
+        expect(find.text('검색 결과가 없습니다.'), findsOneWidget);
+        await tester.enterText(field, 'GITHUB');
+        await tester.pumpAndSettle();
+        expect(
+          find.byKey(const Key('mobile-search-app-github')),
+          findsOneWidget,
+        );
+        await tester.tap(find.byKey(const Key('mobile-search-clear')));
+        await tester.pumpAndSettle();
+        expect(find.text('Siri 제안'), findsOneWidget);
+        await tester.enterText(field, '음악');
+        await tester.pumpAndSettle();
+        final result = find.byKey(const Key('mobile-search-app-music'));
+        expect(result, findsOneWidget);
+        await tester.tap(result);
+        await tester.pumpAndSettle();
+        expect(find.byKey(const Key('music-app')), findsOneWidget);
+        expect(find.byKey(const Key('mobile-search-screen')), findsNothing);
+        await tester.tap(find.byKey(const Key('mobile-back-close-music')));
+        await tester.pumpAndSettle();
+        expect(find.byKey(const Key('mobile-home-search')), findsOneWidget);
+      },
+    );
+
+    testWidgets(
+      'pulling down or scrolling the wheel opens search; cancel restores home',
+      (tester) async {
+        await _pumpShell(tester, size: const Size(390, 844));
+        await tester.drag(
+          find.byKey(const Key('mobile-home')),
+          const Offset(0, 100),
+        );
+        await tester.pumpAndSettle();
+        expect(find.byKey(const Key('mobile-search-screen')), findsOneWidget);
+        await tester.tap(find.byKey(const Key('mobile-search-cancel')));
+        await tester.pumpAndSettle();
+        expect(find.byKey(const Key('mobile-search-screen')), findsNothing);
+        await tester.sendEventToBinding(
+          PointerScrollEvent(
+            position: tester.getCenter(find.byKey(const Key('mobile-home'))),
+            scrollDelta: const Offset(0, 100),
+          ),
+        );
+        await tester.pumpAndSettle();
+        expect(find.byKey(const Key('mobile-search-screen')), findsOneWidget);
+        await tester.sendKeyEvent(LogicalKeyboardKey.escape);
+        await tester.pumpAndSettle();
+        expect(find.byKey(const Key('mobile-search-screen')), findsNothing);
+        expect(tester.takeException(), isNull);
+      },
+    );
+
+    testWidgets(
+      'search stays usable with large text and an onscreen keyboard',
+      (tester) async {
+        for (final brightness in Brightness.values) {
+          for (final size in [const Size(320, 480), const Size(600, 400)]) {
+            await tester.pumpWidget(const SizedBox.shrink());
+            await _pumpShell(
+              tester,
+              size: size,
+              brightness: brightness,
+              textScaler: const TextScaler.linear(2),
+            );
+            tester.view.viewInsets = const FakeViewPadding(bottom: 180);
+            addTearDown(tester.view.resetViewInsets);
+            await tester.pump();
+            await tester.tap(find.byKey(const Key('mobile-home-search')));
+            await tester.pumpAndSettle();
+            final cancel = find.byKey(const Key('mobile-search-cancel'));
+            expect(cancel.hitTestable(), findsOneWidget);
+            await tester.enterText(
+              find.byKey(const Key('mobile-search-input')),
+              '파일',
+            );
+            await tester.pumpAndSettle();
+            expect(
+              find.byKey(const Key('mobile-search-app-projects')),
+              findsOneWidget,
+            );
+            expect(tester.takeException(), isNull, reason: '$size/$brightness');
+            await tester.tap(cancel);
+            await tester.pumpAndSettle();
+            expect(find.byKey(const Key('mobile-search-screen')), findsNothing);
+          }
+        }
+      },
+    );
+  });
+
   group('adaptive Apple mobile shells', () {
+    testWidgets(
+      'native iOS uses only the system home indicator and reapplies auto-hide on resume',
+      (tester) async {
+        final overlayCalls = <MethodCall>[];
+        tester.binding.defaultBinaryMessenger.setMockMethodCallHandler(
+          SystemChannels.platform,
+          (call) async {
+            if (call.method == 'SystemChrome.setEnabledSystemUIOverlays') {
+              overlayCalls.add(call);
+            }
+            return null;
+          },
+        );
+        addTearDown(
+          () => tester.binding.defaultBinaryMessenger.setMockMethodCallHandler(
+            SystemChannels.platform,
+            null,
+          ),
+        );
+
+        for (final size in const [Size(390, 844), Size(834, 1194)]) {
+          await tester.pumpWidget(const SizedBox.shrink());
+          overlayCalls.clear();
+          await _pumpShell(
+            tester,
+            size: size,
+            viewPadding: const EdgeInsets.only(bottom: 34),
+          );
+          expect(overlayCalls, hasLength(1));
+          expect(overlayCalls.single.arguments, ['SystemUiOverlay.top']);
+          expect(find.byKey(const Key('mobile-home-indicator')), findsNothing);
+          final dock = tester.getRect(find.byKey(const Key('mobile-dock')));
+          expect(dock.bottom, lessThan(size.height - 34));
+
+          await _openFileApp(tester, 'settings');
+          expect(find.byKey(const Key('mobile-home-indicator')), findsNothing);
+          expect(
+            tester
+                .getRect(find.byKey(const Key('mobile-app-surface')).last)
+                .bottom,
+            closeTo(size.height, 1),
+          );
+
+          tester.binding.handleAppLifecycleStateChanged(
+            AppLifecycleState.inactive,
+          );
+          tester.binding.handleAppLifecycleStateChanged(
+            AppLifecycleState.paused,
+          );
+          await tester.pump();
+          overlayCalls.clear();
+          tester.binding.handleAppLifecycleStateChanged(
+            AppLifecycleState.resumed,
+          );
+          await tester.pump();
+          expect(overlayCalls, hasLength(1));
+          expect(overlayCalls.single.arguments, ['SystemUiOverlay.top']);
+          expect(find.byKey(const Key('mobile-home-indicator')), findsNothing);
+          expect(tester.takeException(), isNull);
+        }
+      },
+      variant: TargetPlatformVariant.only(TargetPlatform.iOS),
+      skip: kIsWeb,
+    );
+
     testWidgets('selects exact iPhone, iPad, and Mac breakpoint boundaries', (
       tester,
     ) async {
@@ -288,19 +506,24 @@ void main() {
         await _pumpShell(tester, size: const Size(390, 844));
 
         expect(find.byKey(const Key('iphone-shell')), findsOneWidget);
-        expect(find.byKey(const Key('apple-status-bar')), findsOneWidget);
+        expect(find.byKey(const Key('apple-status-bar')), findsNothing);
         expect(find.byKey(const Key('mobile-home-grid')), findsOneWidget);
         expect(find.byKey(const Key('mobile-home-indicator')), findsOneWidget);
         expect(find.byKey(const Key('mobile-dock')), findsOneWidget);
         expect(find.byKey(const Key('mobile-dock-profile')), findsOneWidget);
         expect(find.byKey(const Key('mobile-dock-projects')), findsOneWidget);
-        expect(find.byKey(const Key('mobile-dock-printer')), findsOneWidget);
+        expect(find.byKey(const Key('mobile-dock-settings')), findsOneWidget);
         expect(find.byKey(const Key('mobile-dock-about')), findsNothing);
         expect(find.byKey(const Key('mobile-dock-trash')), findsNothing);
         _expectAllHomeApps();
 
         expect(_distinctHomeColumns(tester), 4);
         expect(tester.takeException(), isNull);
+        final settings = find.byKey(const Key('home-app-settings'));
+        expect(settings.hitTestable(), findsOneWidget);
+        await tester.tap(settings);
+        await tester.pumpAndSettle();
+        expect(find.byKey(const Key('settings-app')), findsOneWidget);
       },
     );
 
@@ -380,12 +603,12 @@ void main() {
         final separatorRect = tester.getRect(
           find.byKey(const Key('mobile-dock-separator')),
         );
-        final printerRect = tester.getRect(
-          find.byKey(const Key('mobile-dock-printer')),
+        final settingsRect = tester.getRect(
+          find.byKey(const Key('mobile-dock-settings')),
         );
         expect(profileRect.right, lessThanOrEqualTo(filesRect.left));
         expect(filesRect.right, lessThan(separatorRect.left));
-        expect(separatorRect.right, lessThan(printerRect.left));
+        expect(separatorRect.right, lessThan(settingsRect.left));
 
         await tester.tap(find.byKey(Key('mobile-dock-${scenario.$2.name}')));
         await tester.pumpAndSettle();
@@ -516,36 +739,37 @@ void main() {
       },
     );
 
-    testWidgets('remains scrollable without overflow on a small 200% screen', (
-      tester,
-    ) async {
-      await _pumpShell(
-        tester,
-        size: const Size(320, 480),
-        textScaler: const TextScaler.linear(2),
-      );
-
-      final dock = find.byKey(const Key('mobile-dock'));
-      expect(dock, findsOneWidget);
-      for (final appName in _allAppNames) {
-        final icon = find.byKey(Key('home-app-$appName'));
-        await _scrollHomeIconIntoView(tester, icon, reason: appName);
-        expect(
-          tester.getRect(icon).overlaps(tester.getRect(dock)),
-          isFalse,
-          reason: '$appName 아이콘을 Dock이 가리면 안 됩니다.',
+    testWidgets(
+      'keeps home fixed and app content scrollable on a small 200% screen',
+      (tester) async {
+        await _pumpShell(
+          tester,
+          size: const Size(320, 480),
+          textScaler: const TextScaler.linear(2),
         );
-      }
-      expect(tester.takeException(), isNull);
 
-      final profile = find.byKey(const Key('home-app-profile'));
-      await tester.ensureVisible(profile);
-      await tester.pumpAndSettle();
-      await tester.tap(profile);
-      await tester.pumpAndSettle();
-      expect(find.byKey(const Key('profile-scroll')), findsOneWidget);
-      expect(tester.takeException(), isNull);
-    });
+        final dock = find.byKey(const Key('mobile-dock'));
+        expect(dock, findsOneWidget);
+        for (final appName in _allAppNames) {
+          final icon = find.byKey(Key('home-app-$appName'));
+          _expectHomeIconVisible(tester, icon, reason: appName);
+          expect(
+            tester.getRect(icon).overlaps(tester.getRect(dock)),
+            isFalse,
+            reason: '$appName 아이콘을 Dock이 가리면 안 됩니다.',
+          );
+        }
+        expect(tester.takeException(), isNull);
+
+        final profile = find.byKey(const Key('home-app-profile'));
+        await tester.ensureVisible(profile);
+        await tester.pumpAndSettle();
+        await tester.tap(profile);
+        await tester.pumpAndSettle();
+        expect(find.byKey(const Key('profile-scroll')), findsOneWidget);
+        expect(tester.takeException(), isNull);
+      },
+    );
 
     testWidgets('keeps compact Skills and Projects controls usable at 200%', (
       tester,
@@ -566,6 +790,12 @@ void main() {
         await tester.tap(appIcon);
         await tester.pumpAndSettle();
 
+        if (scenario.$1 == PortfolioAppId.projects) {
+          await tester.tap(
+            find.byKey(const Key('projects-finder-location-career')),
+          );
+          await tester.pumpAndSettle();
+        }
         final control = find.byKey(Key(scenario.$2));
         expect(control, findsOneWidget);
         expect(tester.getSize(control).height, greaterThanOrEqualTo(44));
@@ -597,7 +827,7 @@ void main() {
           find.byKey(const Key('mobile-back-close-terminal')),
         );
         expect(closeSize, const Size(44, 44));
-        expect(find.text(r'portfolio: ~$'), findsOneWidget);
+        expect(find.text(r'Portfolio: ~$'), findsOneWidget);
         expect(find.byKey(const Key('terminal-submit')), findsNothing);
         final input = tester.widget<TextField>(
           find.byKey(const Key('terminal-input')),
@@ -611,7 +841,7 @@ void main() {
   });
 
   group('iPad home and app surface', () {
-    testWidgets('refreshes a 12-hour status time without a profile date', (
+    testWidgets('keeps the status time temporarily hidden across clock ticks', (
       tester,
     ) async {
       final clock = _MutableClock(DateTime(2026, 9, 3, 23, 59));
@@ -641,14 +871,14 @@ void main() {
         ),
       );
 
-      expect(find.byKey(const Key('apple-status-time')), findsOneWidget);
-      expect(find.text('11:59'), findsOneWidget);
+      expect(find.byKey(const Key('apple-status-time')), findsNothing);
+      expect(find.text('11:59'), findsNothing);
       expect(find.text('Thursday, September 3'), findsNothing);
 
       clock.current = DateTime(2026, 9, 4);
       await tester.pump(const Duration(seconds: 1));
 
-      expect(find.text('12:00'), findsOneWidget);
+      expect(find.text('12:00'), findsNothing);
       expect(find.text('Friday, September 4'), findsNothing);
       expect(find.text('11:59'), findsNothing);
       expect(find.text('Thursday, September 3'), findsNothing);
@@ -719,11 +949,19 @@ void main() {
         expect(find.byKey(const Key('mobile-app-surface')), findsOneWidget);
         expect(find.byKey(const Key('projects-app')), findsOneWidget);
         expect(
+          find.byKey(const Key('projects-files-app-grid')),
+          findsOneWidget,
+        );
+        await tester.tap(
+          find.byKey(const Key('projects-finder-location-career')),
+        );
+        await tester.pumpAndSettle();
+        expect(
           find.byKey(const Key('projects-collection-scroll')),
           findsOneWidget,
         );
         expect(find.byKey(const Key('projects-detail-scroll')), findsNothing);
-        expect(find.byKey(const Key('project-detail-title')), findsNothing);
+        expect(find.byKey(const Key('safari-project-title')), findsNothing);
         for (final index in const <int>[2, 3, 4, 5, 6, 7]) {
           expect(find.byKey(Key('project-selector-$index')), findsOneWidget);
         }
@@ -737,7 +975,7 @@ void main() {
         expect(find.byKey(const Key('projects-detail-scroll')), findsOneWidget);
         expect(
           tester
-              .widget<Text>(find.byKey(const Key('project-detail-title')))
+              .widget<Text>(find.byKey(const Key('safari-project-title')))
               .data,
           'IRIS',
         );
@@ -807,7 +1045,7 @@ void main() {
         await tester.pumpAndSettle();
 
         expect(find.byKey(const Key('terminal-app')), findsOneWidget);
-        expect(find.text(r'portfolio: ~$'), findsOneWidget);
+        expect(find.text(r'Portfolio: ~$'), findsOneWidget);
         expect(find.byKey(const Key('terminal-submit')), findsNothing);
         expect(
           tester
@@ -845,7 +1083,7 @@ void main() {
       }
     });
 
-    testWidgets('짧은 iPad에서도 Dock 위로 모든 홈 앱을 스크롤할 수 있다', (tester) async {
+    testWidgets('짧은 iPad에서도 모든 홈 앱이 스크롤 없이 Dock 위에 보인다', (tester) async {
       await _pumpShell(
         tester,
         size: const Size(600, 400),
@@ -859,7 +1097,7 @@ void main() {
 
       for (final appName in _allAppNames) {
         final icon = find.byKey(Key('home-app-$appName'));
-        await _scrollHomeIconIntoView(tester, icon, reason: appName);
+        _expectHomeIconVisible(tester, icon, reason: appName);
         expect(
           tester.getRect(icon).overlaps(tester.getRect(dock)),
           isFalse,
@@ -885,8 +1123,13 @@ Finder _launcherFrameFinder(Finder launcher) {
 }
 
 Future<void> _openFileApp(WidgetTester tester, String appName) async {
+  if (appName == 'settings') {
+    await tester.tap(find.byKey(const Key('home-app-settings')));
+    await tester.pumpAndSettle();
+    return;
+  }
   final files = find.byKey(const Key('home-app-projects'));
-  await _scrollHomeIconIntoView(tester, files, reason: 'files');
+  _expectHomeIconVisible(tester, files, reason: 'files');
   await tester.tap(files);
   await tester.pumpAndSettle();
   await tester.tap(find.byKey(const Key('projects-finder-location-files')));
@@ -898,30 +1141,18 @@ Future<void> _openFileApp(WidgetTester tester, String appName) async {
   await tester.pumpAndSettle();
 }
 
-Future<void> _scrollHomeIconIntoView(
+void _expectHomeIconVisible(
   WidgetTester tester,
   Finder icon, {
   required String reason,
-}) async {
-  final homeScroll = find.byKey(const Key('mobile-home-scroll'));
-
-  for (var attempt = 0; attempt < 16; attempt += 1) {
-    if (icon.evaluate().isNotEmpty) {
-      final scrollRect = tester.getRect(homeScroll);
-      final iconRect = tester.getRect(icon);
-      if (iconRect.top >= scrollRect.top + 4 &&
-          iconRect.bottom <= scrollRect.bottom - 4) {
-        break;
-      }
-    }
-    await tester.drag(homeScroll, const Offset(0, -100));
-    await tester.pumpAndSettle();
-  }
-
+}) {
   expect(icon, findsOneWidget, reason: reason);
+  expect(icon.hitTestable(), findsOneWidget, reason: reason);
   expect(
-    tester.getRect(homeScroll).overlaps(tester.getRect(icon)),
-    isTrue,
+    tester.getRect(icon).bottom,
+    lessThanOrEqualTo(
+      tester.getRect(find.byKey(const Key('mobile-home-search'))).top,
+    ),
     reason: reason,
   );
 }
@@ -934,19 +1165,14 @@ const List<String> _allAppNames = <String>[
   'safari',
   'terminal',
   'github',
+  'settings',
 ];
 
 void _expectAllHomeApps() {
   for (final appName in _allAppNames) {
     expect(find.byKey(Key('home-app-$appName')), findsOneWidget);
   }
-  for (final movedApp in <String>[
-    'music',
-    'photos',
-    'mail',
-    'settings',
-    'trash',
-  ]) {
+  for (final movedApp in <String>['music', 'photos', 'mail', 'trash']) {
     expect(find.byKey(Key('home-app-$movedApp')), findsNothing);
   }
   expect(find.byKey(const Key('home-app-about')), findsNothing);

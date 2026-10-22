@@ -1157,7 +1157,7 @@ void main() {
       semantics.dispose();
     });
 
-    testWidgets('경력 갤러리는 파일의 회사를 열고 닫으면 프로필로 돌아온다', (tester) async {
+    testWidgets('경력 갤러리는 파일 기본 위치를 열고 닫으면 프로필로 돌아온다', (tester) async {
       final semantics = tester.ensureSemantics();
 
       for (final scenario in const <(String, Size, bool)>[
@@ -1179,7 +1179,7 @@ void main() {
         final companyLink = find.byKey(
           const Key('profile-career-projects-link'),
         );
-        _expectButtonSemantics(tester, companyLink, label: '파일의 회사 열기');
+        _expectButtonSemantics(tester, companyLink, label: '파일 열기');
         final linkRect = tester.getRect(companyLink);
         expect(linkRect.width, greaterThanOrEqualTo(44));
         expect(linkRect.height, greaterThanOrEqualTo(44));
@@ -1195,7 +1195,7 @@ void main() {
         expect(
           tester
               .getSemantics(
-                find.byKey(const Key('projects-finder-location-career')),
+                find.byKey(const Key('projects-finder-location-files')),
               )
               .getSemanticsData()
               .flagsCollection
@@ -2228,7 +2228,17 @@ void main() {
         findsNothing,
       );
       expect(
-        _widgetsWithKeyPrefixInside(thread, 'profile-reel-reply-author-'),
+        find.descendant(
+          of: thread,
+          matching: find.byWidgetPredicate(
+            (widget) =>
+                widget.key is ValueKey<String> &&
+                (widget.key! as ValueKey<String>).value.startsWith(
+                  'profile-career-',
+                ) &&
+                (widget.key! as ValueKey<String>).value.endsWith('-author'),
+          ),
+        ),
         findsNWidgets(expectedItemKeys.length),
       );
       for (final forbidden in <String>[
@@ -2262,7 +2272,7 @@ void main() {
         );
         expect(
           find.descendant(of: item, matching: find.text(experience.role)),
-          findsNothing,
+          findsOneWidget,
         );
         expect(
           find.descendant(of: item, matching: find.text(data.identity.name)),
@@ -2511,10 +2521,18 @@ void main() {
             Key('profile-reel-reply-item-${history.kind}-0'),
           );
           final author = find.byKey(
-            Key('profile-reel-reply-author-${history.kind}-0'),
+            Key(
+              history.kind == 'experience'
+                  ? 'profile-career-0-author'
+                  : 'profile-reel-reply-author-${history.kind}-0',
+            ),
           );
           final content = find.byKey(
-            Key('profile-reel-reply-content-${history.kind}-0'),
+            Key(
+              history.kind == 'experience'
+                  ? 'profile-career-0-content'
+                  : 'profile-reel-reply-content-${history.kind}-0',
+            ),
           );
           final itemRect = tester.getRect(item);
           for (final rect in <Rect>[
@@ -3531,10 +3549,22 @@ void _expectReplyItem(
   required List<String> expectedText,
 }) {
   final item = find.byKey(Key('profile-reel-reply-item-$kind-$index'));
-  final author = find.byKey(Key('profile-reel-reply-author-$kind-$index'));
-  final content = find.byKey(Key('profile-reel-reply-content-$kind-$index'));
+  final author = find.byKey(
+    Key(
+      kind == 'experience'
+          ? 'profile-career-$index-author'
+          : 'profile-reel-reply-author-$kind-$index',
+    ),
+  );
+  final content = find.byKey(
+    Key(
+      kind == 'experience'
+          ? 'profile-career-$index-content'
+          : 'profile-reel-reply-content-$kind-$index',
+    ),
+  );
   expect(find.descendant(of: thread, matching: item), findsOneWidget);
-  _expectAvatarArtwork(tester, item);
+  if (kind == 'education') _expectAvatarArtwork(tester, item);
   expect(find.descendant(of: item, matching: author), findsOneWidget);
   expect(find.descendant(of: item, matching: content), findsOneWidget);
   expect(

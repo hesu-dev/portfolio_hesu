@@ -1,6 +1,8 @@
+import 'dart:async';
 import 'dart:math' as math;
 import 'dart:ui' as ui;
 
+import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_test/flutter_test.dart';
@@ -43,7 +45,9 @@ void main() {
         expect(_transportButton(tester, key).onPressed, isNull);
       }
       expect(
-        tester.widget<Slider>(find.byKey(const Key('music-volume'))).onChanged,
+        tester
+            .widget<CupertinoSlider>(find.byKey(const Key('music-volume')))
+            .onChanged,
         isNull,
       );
       expect(tester.takeException(), isNull);
@@ -77,11 +81,134 @@ void main() {
           expect(find.text(track.title), findsWidgets);
         }
         expect(controller.isPlaying, isFalse);
-        expect(find.byIcon(Icons.play_arrow_rounded), findsOneWidget);
+        expect(find.byIcon(CupertinoIcons.play_fill), findsOneWidget);
         expect(find.byKey(const Key('music-layout-desktop')), findsOneWidget);
         expect(tester.takeException(), isNull);
       },
     );
+
+    testWidgets('iPhone controls put progress before transport and volume', (
+      tester,
+    ) async {
+      final controller = MusicController(
+        tracks: tracks,
+        playbackFactory: _FakePlayback.new,
+        sessionStore: _FakeSessionStore(),
+      );
+      addTearDown(controller.dispose);
+      await _pumpMusic(
+        tester,
+        controller: controller,
+        size: const Size(390, 650),
+      );
+      final progress = find.byKey(const Key('music-progress'));
+      final play = find.byKey(const Key('music-play-pause'));
+      final volume = find.byKey(const Key('music-volume'));
+      expect(progress, findsOneWidget);
+      expect(
+        tester.getRect(progress).bottom,
+        lessThan(tester.getRect(play).top),
+      );
+      expect(
+        tester.getRect(play).bottom,
+        lessThanOrEqualTo(tester.getRect(volume).top),
+      );
+      expect(tester.getRect(volume).bottom, lessThanOrEqualTo(650));
+      expect(find.byIcon(CupertinoIcons.backward_end_fill), findsOneWidget);
+      expect(find.byIcon(CupertinoIcons.forward_end_fill), findsOneWidget);
+      expect(find.text('--:--'), findsOneWidget);
+      expect(tester.widget<CupertinoSlider>(progress).onChanged, isNull);
+    });
+
+    testWidgets(
+      'progress follows player time and seeks only after scrubbing ends',
+      (tester) async {
+        final playback = _FakePlayback();
+        final controller = MusicController(
+          tracks: tracks,
+          playbackFactory: () => playback,
+          sessionStore: _FakeSessionStore(),
+        );
+        addTearDown(controller.dispose);
+        await _pumpMusic(tester, controller: controller);
+        await controller.play();
+        playback.durations.add(const Duration(minutes: 4));
+        playback.positions.add(const Duration(minutes: 1));
+        await tester.pump();
+        final progress = find.byKey(const Key('music-progress'));
+        var slider = tester.widget<CupertinoSlider>(progress);
+        expect(slider.value, 0.25);
+        expect(find.text('1:00'), findsOneWidget);
+        expect(find.text('-3:00'), findsOneWidget);
+        final volume = controller.volume;
+        slider.onChangeStart!(slider.value);
+        slider.onChanged!(0.5);
+        await tester.pump();
+        expect(playback.seeks, isEmpty);
+        expect(find.text('2:00'), findsOneWidget);
+        playback.positions.add(const Duration(seconds: 61));
+        await tester.pump();
+        expect(tester.widget<CupertinoSlider>(progress).value, 0.5);
+        slider = tester.widget<CupertinoSlider>(progress);
+        slider.onChangeEnd!(0.5);
+        await tester.pumpAndSettle();
+        expect(playback.seeks, [const Duration(minutes: 2)]);
+        expect(controller.volume, volume);
+        expect(controller.currentIndex, 0);
+        final semantics = tester.ensureSemantics();
+        tester
+            .getSemantics(progress)
+            .owner!
+            .performAction(
+              tester.getSemantics(progress).id,
+              ui.SemanticsAction.increase,
+            );
+        await tester.pumpAndSettle();
+        expect(playback.seeks.last, const Duration(milliseconds: 132000));
+        semantics.dispose();
+        final position = controller.position;
+        tester
+            .widget<CupertinoSlider>(find.byKey(const Key('music-volume')))
+            .onChanged!(0.4);
+        await tester.pumpAndSettle();
+        expect(controller.position, position);
+        expect(controller.volume, 0.4);
+        expect(playback.seeks, hasLength(2));
+      },
+    );
+
+    testWidgets('iOS sliders stay neutral in light and dark compact layouts', (
+      tester,
+    ) async {
+      for (final brightness in Brightness.values) {
+        final controller = MusicController(
+          tracks: tracks,
+          playbackFactory: _FakePlayback.new,
+          sessionStore: _FakeSessionStore(),
+        );
+        await _pumpMusic(
+          tester,
+          controller: controller,
+          brightness: brightness,
+          size: const Size(320, 650),
+          textScaler: const TextScaler.linear(2),
+        );
+        final context = tester.element(find.byKey(const Key('music-progress')));
+        for (final key in [
+          const Key('music-progress'),
+          const Key('music-volume'),
+        ]) {
+          expect(
+            tester.widget<CupertinoSlider>(find.byKey(key)).activeColor,
+            AppleTheme.secondaryLabel(context),
+          );
+        }
+        await tester.ensureVisible(find.byKey(const Key('music-volume')));
+        expect(tester.takeException(), isNull);
+        await tester.pumpWidget(const SizedBox.shrink());
+        controller.dispose();
+      }
+    });
 
     testWidgets('play, previous, next, and list selection control playback', (
       tester,
@@ -100,7 +227,7 @@ void main() {
       await tester.pumpAndSettle();
       expect(controller.isPlaying, isTrue);
       expect(playback.playedTracks, <MusicTrack>[tracks[0]]);
-      expect(find.byIcon(Icons.pause_rounded), findsOneWidget);
+      expect(find.byIcon(CupertinoIcons.pause_fill), findsOneWidget);
 
       await tester.tap(find.byKey(const Key('music-previous')));
       await tester.pumpAndSettle();
@@ -111,6 +238,7 @@ void main() {
       await tester.pumpAndSettle();
       expect(controller.currentIndex, 0);
 
+      await tester.ensureVisible(find.byKey(const Key('music-track-row-1')));
       await tester.tap(find.byKey(const Key('music-track-row-1')));
       await tester.pumpAndSettle();
       expect(controller.currentIndex, 1);
@@ -177,7 +305,7 @@ void main() {
       await tester.pump();
       expect(controller.mode, MusicPlaybackMode.queue);
 
-      final slider = tester.widget<Slider>(
+      final slider = tester.widget<CupertinoSlider>(
         find.byKey(const Key('music-volume')),
       );
       slider.onChanged!(0.35);
@@ -262,7 +390,7 @@ void main() {
         final semantics = tester.ensureSemantics();
         await _pumpMusic(tester, controller: controller);
 
-        for (var index = 0; index < 5; index++) {
+        for (var index = 0; index < 6; index++) {
           await tester.sendKeyEvent(LogicalKeyboardKey.tab);
           await tester.pump();
         }
@@ -280,7 +408,9 @@ void main() {
         expect(controller.mode, MusicPlaybackMode.repeatOne);
         expect(controller.isPlaying, isFalse);
 
-        await tester.sendKeyEvent(LogicalKeyboardKey.tab);
+        Focus.of(
+          tester.element(find.byKey(const Key('music-volume'))),
+        ).requestFocus();
         await tester.pump();
         final previousVolume = controller.volume;
         await tester.sendKeyEvent(LogicalKeyboardKey.arrowLeft);
@@ -421,16 +551,43 @@ void main() {
 }
 
 class _FakePlayback implements MusicPlayback {
+  @override
+  Stream<bool> get onPlayingChanged => const Stream.empty();
   _FakePlayback({this.playError});
 
   final Object? playError;
   final List<MusicTrack> playedTracks = <MusicTrack>[];
+  final positions = StreamController<Duration>.broadcast(sync: true);
+  final durations = StreamController<Duration>.broadcast(sync: true);
+  final seeks = <Duration>[];
+  final volumes = <double>[];
+
+  @override
+  Stream<Duration> get onPositionChanged => positions.stream;
+
+  @override
+  Stream<Duration> get onDurationChanged => durations.stream;
+
+  @override
+  Future<void> seek(Duration position) async {
+    seeks.add(position);
+    positions.add(position);
+  }
+
+  @override
+  Future<void> setRepeatOne(bool repeatOne) async {}
 
   @override
   Stream<void> get onComplete => const Stream<void>.empty();
 
   @override
-  Future<void> dispose() async {}
+  Stream<Object> get onError => const Stream<Object>.empty();
+
+  @override
+  Future<void> dispose() async {
+    if (!positions.isClosed) await positions.close();
+    if (!durations.isClosed) await durations.close();
+  }
 
   @override
   Future<void> pause() async {}
@@ -447,7 +604,7 @@ class _FakePlayback implements MusicPlayback {
   Future<void> resume() async {}
 
   @override
-  Future<void> setVolume(double volume) async {}
+  Future<void> setVolume(double volume) async => volumes.add(volume);
 }
 
 class _FakeSessionStore implements MusicSessionStore {
@@ -483,6 +640,7 @@ Future<void> _pumpMusic(
   bool compact = true,
   bool tablet = false,
   TextScaler textScaler = TextScaler.noScaling,
+  Brightness brightness = Brightness.light,
 }) async {
   tester.view.devicePixelRatio = 1;
   tester.view.physicalSize = size;
@@ -493,6 +651,9 @@ Future<void> _pumpMusic(
     MaterialApp(
       theme: AppleTheme.light(),
       darkTheme: AppleTheme.dark(),
+      themeMode: brightness == Brightness.dark
+          ? ThemeMode.dark
+          : ThemeMode.light,
       builder: (context, child) => MediaQuery(
         data: MediaQuery.of(context).copyWith(textScaler: textScaler),
         child: child!,

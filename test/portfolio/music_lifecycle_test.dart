@@ -1,6 +1,6 @@
 import 'dart:async';
 
-import 'package:flutter/material.dart';
+import 'package:flutter/cupertino.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:portfolio_hesu/portfolio/music/music_controller.dart';
@@ -57,7 +57,7 @@ void main() {
 
     await _openDesktopMusic(tester);
     expect(find.text('Second Song'), findsWidgets);
-    expect(find.byIcon(Icons.play_arrow_rounded), findsOneWidget);
+    expect(find.byIcon(CupertinoIcons.play_fill), findsOneWidget);
     await tester.tap(find.byKey(const Key('music-play-pause')));
     await tester.pumpAndSettle();
     expect(controller.isPlaying, isTrue);
@@ -79,7 +79,7 @@ void main() {
     await tester.pumpAndSettle();
     expect(find.byKey(const Key('music-app')), findsOneWidget);
     expect(find.text('Second Song'), findsWidgets);
-    expect(find.byIcon(Icons.pause_rounded), findsOneWidget);
+    expect(find.byIcon(CupertinoIcons.pause_fill), findsOneWidget);
     expect(controller.currentIndex, 1);
     expect(controller.isPlaying, isTrue);
     expect(loaderCalls, 0);
@@ -122,7 +122,7 @@ void main() {
 
     await _openDesktopMusic(tester);
     expect(find.text('First Song'), findsWidgets);
-    expect(find.byIcon(Icons.play_arrow_rounded), findsOneWidget);
+    expect(find.byIcon(CupertinoIcons.play_fill), findsOneWidget);
     expect(factoryCalls, 0);
 
     await tester.tap(find.byKey(const Key('music-play-pause')));
@@ -263,6 +263,19 @@ Future<void> _openDesktopApp(WidgetTester tester, PortfolioAppId appId) async {
 }
 
 class _FakePlayback implements MusicPlayback {
+  @override
+  Stream<Duration> get onPositionChanged => const Stream.empty();
+  @override
+  Stream<Duration> get onDurationChanged => const Stream.empty();
+  @override
+  Stream<Object> get onError => const Stream.empty();
+  @override
+  Stream<bool> get onPlayingChanged => const Stream.empty();
+  @override
+  Future<void> seek(Duration position) async {}
+  @override
+  Future<void> setRepeatOne(bool enabled) async {}
+
   final List<MusicTrack> playedTracks = <MusicTrack>[];
   final StreamController<void> _completionController =
       StreamController<void>.broadcast();

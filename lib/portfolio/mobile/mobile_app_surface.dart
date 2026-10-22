@@ -66,8 +66,12 @@ class _MobileAppSurfaceState extends State<MobileAppSurface> {
     final radius = widget.tablet ? 28.0 : 0.0;
     final label = AppleAppIcon.labelFor(widget.appId);
     final windowTitle = AppleAppIcon.windowTitleFor(widget.appId);
-    final integratesFinderToolbar = widget.appId == PortfolioAppId.projects;
-    final ownsNavigationHeader = widget.appId == PortfolioAppId.profile;
+    final integratesFinderToolbar =
+        widget.appId == PortfolioAppId.projects ||
+        widget.appId == PortfolioAppId.safari;
+    final ownsNavigationHeader =
+        widget.appId == PortfolioAppId.profile ||
+        widget.appId == PortfolioAppId.skills;
     final finderWindowChrome = integratesFinderToolbar
         ? AppleFinderWindowChrome(
             leadingControls: MobileBackCloseButton(

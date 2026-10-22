@@ -1,0 +1,10 @@
+{
+  "name": "portfolio-hesu",
+  "account_id": "d7cde6ef4e8bac19e6870244af780e1a",
+  "compatibility_date": "2026-10-21",
+  "workers_dev": true,
+  "assets": {
+    "directory": "./build/web",
+    "not_found_handling": "single-page-application"
+  }
+}

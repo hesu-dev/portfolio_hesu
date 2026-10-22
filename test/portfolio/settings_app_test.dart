@@ -644,7 +644,7 @@ void main() {
       await tester.enterText(find.byKey(const Key('terminal-input')), 'help');
       await tester.testTextInput.receiveAction(TextInputAction.send);
       await tester.pumpAndSettle();
-      expect(find.text(r'portfolio: ~$ help'), findsNWidgets(2));
+      expect(find.text(r'Portfolio: ~$ help'), findsNWidgets(2));
 
       await _openSettings(tester, desktop: true);
       await tester.tap(find.byKey(const Key('theme-dark')));
@@ -652,7 +652,7 @@ void main() {
 
       expect(find.byKey(const Key('mac-window-terminal')), findsOneWidget);
       expect(find.byKey(const Key('mac-window-settings')), findsOneWidget);
-      expect(find.text(r'portfolio: ~$ help'), findsNWidgets(2));
+      expect(find.text(r'Portfolio: ~$ help'), findsNWidgets(2));
       expect(controller.preference, PortfolioThemePreference.dark);
     });
 
@@ -733,8 +733,9 @@ Future<void> _openSettings(WidgetTester tester, {required bool desktop}) async {
   if (desktop) {
     await _openDesktopApp(tester, PortfolioAppId.projects);
   } else {
-    await tester.tap(find.byKey(const Key('home-app-projects')));
+    await tester.tap(find.byKey(const Key('home-app-settings')));
     await tester.pumpAndSettle();
+    return;
   }
   await tester.tap(find.byKey(const Key('projects-finder-location-files')));
   await tester.pumpAndSettle();

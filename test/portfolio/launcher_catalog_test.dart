@@ -35,6 +35,7 @@ void main() {
       'terminal',
       'github',
       'skills',
+      'settings',
     ]);
     expect(
       portfolioMacDesktopLauncherAppIds.map((appId) => appId.name),
@@ -55,6 +56,7 @@ void main() {
     expect(AppleMobileDock.apps.map((appId) => appId.name), <String>[
       'profile',
       'projects',
+      'settings',
     ]);
     expect(portfolioFileAppIds.map((appId) => appId.name), <String>[
       'music',
@@ -86,7 +88,9 @@ void main() {
       expect(find.byKey(const Key('home-app-about')), findsNothing);
       expect(find.byKey(const Key('home-app-profile')), findsOneWidget);
       expect(find.byKey(const Key('home-app-introduction')), findsOneWidget);
+      expect(find.byKey(const Key('home-app-settings')), findsOneWidget);
       for (final appId in portfolioFileAppIds) {
+        if (appId == PortfolioAppId.settings) continue;
         expect(find.byKey(Key('home-app-${appId.name}')), findsNothing);
       }
     },

@@ -2,6 +2,8 @@ import 'package:flutter/material.dart';
 
 import '../data/portfolio_data.dart';
 import '../theme/apple_theme.dart';
+import '../widgets/project_architecture_diagram.dart';
+import '../widgets/project_app_icon.dart';
 
 class SafariProjectPage extends StatelessWidget {
   const SafariProjectPage({
@@ -27,6 +29,11 @@ class SafariProjectPage extends StatelessWidget {
     PortfolioProjectSectionKind.evaluation,
   ];
 
+  static const _technicalKinds = <PortfolioProjectSectionKind>[
+    PortfolioProjectSectionKind.coreTechnology,
+    PortfolioProjectSectionKind.technicalDecision,
+  ];
+
   TextStyle _body(BuildContext context) => AppleTheme.body(
     context,
   ).copyWith(fontSize: compact ? 15 : 16, height: 1.8);
@@ -43,8 +50,23 @@ class SafariProjectPage extends StatelessWidget {
         return SizedBox(
           key: const Key('safari-project-page'),
           width: double.infinity,
-          child: wide
-              ? Row(
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.stretch,
+            children: [
+              _header(context),
+              if (project.description.trim().isNotEmpty) ...[
+                const SizedBox(height: 16),
+                Text(
+                  project.description,
+                  style: _body(
+                    context,
+                  ).copyWith(color: AppleTheme.secondaryLabel(context)),
+                ),
+              ],
+              _links(context),
+              const SizedBox(height: 24),
+              if (wide)
+                Row(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
                     Expanded(child: main),
@@ -55,12 +77,67 @@ class SafariProjectPage extends StatelessWidget {
                     ),
                   ],
                 )
-              : Column(
-                  crossAxisAlignment: CrossAxisAlignment.stretch,
-                  children: [main, support],
-                ),
+              else ...[
+                support,
+                main,
+              ],
+            ],
+          ),
         );
       },
+    );
+  }
+
+  Widget _header(BuildContext context) {
+    return Row(
+      key: const Key('safari-project-header'),
+      crossAxisAlignment: CrossAxisAlignment.center,
+      children: [
+        Container(
+          key: const Key('project-detail-icon'),
+          width: 74,
+          height: 74,
+          clipBehavior: Clip.antiAlias,
+          decoration: BoxDecoration(
+            color: AppleTheme.surface(context),
+            borderRadius: BorderRadius.circular(20),
+            border: project.appIconAsset == null
+                ? Border.all(color: AppleTheme.separator(context))
+                : null,
+          ),
+          child: project.appIconAsset == null
+              ? null
+              : ProjectAppIcon(assetPath: project.appIconAsset!),
+        ),
+        SizedBox(width: compact ? 14 : 18),
+        Expanded(
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Semantics(
+                header: true,
+                child: Text(
+                  project.title,
+                  key: const Key('safari-project-title'),
+                  style:
+                      (compact
+                              ? Theme.of(context).textTheme.titleLarge
+                              : Theme.of(context).textTheme.headlineSmall)
+                          ?.copyWith(color: AppleTheme.primaryLabel(context)),
+                ),
+              ),
+              if (project.period.trim().isNotEmpty) ...[
+                const SizedBox(height: 9),
+                ApplePill(
+                  label: project.period,
+                  icon: Icons.calendar_month_rounded,
+                  color: AppleTheme.secondaryLabel(context),
+                ),
+              ],
+            ],
+          ),
+        ),
+      ],
     );
   }
 
@@ -79,28 +156,6 @@ class SafariProjectPage extends StatelessWidget {
       key: const Key('safari-report-main'),
       crossAxisAlignment: CrossAxisAlignment.stretch,
       children: [
-        Semantics(
-          header: true,
-          child: Text(
-            project.title,
-            key: const Key('safari-project-title'),
-            style: AppleTheme.largeTitle(context).copyWith(
-              color: AppleTheme.buttonBlue,
-              fontSize: compact ? 28 : 34,
-              height: 1.2,
-              letterSpacing: -.7,
-            ),
-          ),
-        ),
-        if (project.description.trim().isNotEmpty) ...[
-          const SizedBox(height: 12),
-          Text(
-            project.description,
-            style: body.copyWith(color: AppleTheme.secondaryLabel(context)),
-          ),
-        ],
-        const SizedBox(height: 24),
-        _summaries(context),
         _section(context, '프로젝트 구조', [
           if (architecture == null)
             Text('등록된 구조 설명이 없습니다.', style: AppleTheme.caption(context))
@@ -114,42 +169,28 @@ class SafariProjectPage extends StatelessWidget {
             ],
             if (architecture.description.trim().isNotEmpty)
               Text(architecture.description, style: body),
-            if (nodes.isNotEmpty) ...[
+            if (architecture.diagram case final diagram?) ...[
               const SizedBox(height: 22),
-              Wrap(
-                spacing: 10,
-                runSpacing: 12,
-                crossAxisAlignment: WrapCrossAlignment.center,
-                children: [
-                  for (final (index, node) in nodes.indexed) ...[
-                    if (index > 0 &&
-                        architecture.presentation ==
-                            PortfolioArchitecturePresentation.flow)
-                      Icon(
-                        Icons.arrow_forward_rounded,
-                        size: 18,
-                        color: AppleTheme.secondaryLabel(context),
-                      ),
-                    Container(
-                      padding: const EdgeInsets.symmetric(
-                        horizontal: 16,
-                        vertical: 14,
-                      ),
-                      decoration: BoxDecoration(
-                        color: AppleTheme.panel(context),
-                        border: Border.all(
-                          color: AppleTheme.separator(context),
-                        ),
-                        borderRadius: BorderRadius.circular(8),
-                      ),
-                      child: Text(node, style: body.copyWith(fontSize: 14)),
-                    ),
-                  ],
-                ],
+              ProjectArchitectureDiagram(diagram: diagram),
+            ] else if (nodes.isNotEmpty) ...[
+              const SizedBox(height: 16),
+              Text(
+                nodes.join(
+                  architecture.presentation ==
+                          PortfolioArchitecturePresentation.flow
+                      ? ' → '
+                      : '\n',
+                ),
+                style: body,
               ),
             ],
           ],
         ]),
+        _summaries(context),
+        for (final kind in _technicalKinds)
+          for (final section in project.sections)
+            if (section.kind == kind && section.body.trim().isNotEmpty)
+              _section(context, kind.label, [Text(section.body, style: body)]),
         if (project.highlights.any((item) => item.trim().isNotEmpty))
           _section(context, '담당 업무 · 기여', [
             for (final highlight in project.highlights)
@@ -186,7 +227,7 @@ class SafariProjectPage extends StatelessWidget {
                       Text(
                         section.kind.label,
                         style: AppleTheme.caption(context).copyWith(
-                          color: AppleTheme.buttonBlue,
+                          color: AppleTheme.primaryLabel(context),
                           fontWeight: FontWeight.w700,
                         ),
                       ),
@@ -200,6 +241,7 @@ class SafariProjectPage extends StatelessWidget {
         for (final section in project.sections)
           if (section.body.trim().isNotEmpty &&
               !_troubleshootingKinds.contains(section.kind) &&
+              !_technicalKinds.contains(section.kind) &&
               !(section.kind == PortfolioProjectSectionKind.work &&
                   section.body.trim() == project.description.trim()))
             _section(context, section.kind.label, [
@@ -255,57 +297,52 @@ class SafariProjectPage extends StatelessWidget {
         },
     }..remove(null);
     final architecture = project.architecture;
-    final nodeCount =
-        architecture?.nodes.where((node) => node.trim().isNotEmpty).length ?? 0;
-    final environment = _section(
-      context,
-      '운영 환경',
-      [
-        Text('작업 기간', style: AppleTheme.caption(context)),
-        const SizedBox(height: 4),
+    final components = architecture?.diagram != null
+        ? architecture!.diagram!.nodes
+              .map((node) => (node.label, node.detail))
+              .toList()
+        : [
+            for (final label in architecture?.nodes ?? <String>[])
+              if (label.trim().isNotEmpty) (label, ''),
+          ];
+    final environment = _section(context, '운영 환경', [
+      Text('공개 배포 채널', style: AppleTheme.caption(context)),
+      const SizedBox(height: 4),
+      Text(
+        channels.isEmpty ? '등록된 배포 정보가 없습니다.' : channels.join(' · '),
+        style: body,
+      ),
+    ], key: const Key('safari-environment-summary'));
+    final structure = _section(context, '구조 요약', [
+      if (architecture == null)
+        Text('등록된 구조 정보가 없습니다.', style: body)
+      else ...[
         Text(
-          project.period.trim().isEmpty ? '등록된 기간이 없습니다.' : project.period,
-          style: body,
+          architecture.presentation == PortfolioArchitecturePresentation.flow
+              ? '처리 흐름'
+              : '구성 요소',
+          style: AppleTheme.caption(context),
         ),
-        const SizedBox(height: 12),
-        Text('공개 배포 채널', style: AppleTheme.caption(context)),
         const SizedBox(height: 4),
-        Text(
-          channels.isEmpty ? '등록된 배포 정보가 없습니다.' : channels.join(' · '),
-          style: body,
-        ),
-      ],
-      key: const Key('safari-environment-summary'),
-      icon: Icons.dns_outlined,
-    );
-    final structure = _section(
-      context,
-      '구조 요약',
-      [
-        if (architecture == null)
-          Text('등록된 구조 정보가 없습니다.', style: body)
-        else ...[
+        if (architecture.title.trim().isNotEmpty)
+          Text(architecture.title, style: body),
+        if (components.isNotEmpty) ...[
+          const SizedBox(height: 12),
           Text(
-            architecture.presentation == PortfolioArchitecturePresentation.flow
-                ? '처리 흐름'
-                : '구성 요소',
-            style: AppleTheme.caption(context),
+            '${components.length}개 ${architecture.diagram == null && architecture.presentation == PortfolioArchitecturePresentation.flow ? '단계' : '구성 요소'}',
+            style: body.copyWith(fontWeight: FontWeight.w600),
           ),
-          const SizedBox(height: 4),
-          if (architecture.title.trim().isNotEmpty)
-            Text(architecture.title, style: body),
-          if (nodeCount > 0) ...[
-            const SizedBox(height: 12),
-            Text(
-              '$nodeCount개 ${architecture.presentation == PortfolioArchitecturePresentation.flow ? '단계' : '구성 요소'}',
-              style: body.copyWith(fontWeight: FontWeight.w600),
-            ),
-          ],
+        ],
+        for (final (index, component) in components.indexed) ...[
+          const SizedBox(height: 8),
+          Text(
+            '${index + 1}. ${component.$1}'
+            '${component.$2.trim().isEmpty ? '' : ' — ${component.$2}'}',
+            style: body,
+          ),
         ],
       ],
-      key: const Key('safari-structure-summary'),
-      icon: Icons.schema_outlined,
-    );
+    ], key: const Key('safari-structure-summary'));
     return LayoutBuilder(
       builder: (context, constraints) {
         if (constraints.maxWidth >= 560 &&
@@ -359,75 +396,84 @@ class SafariProjectPage extends StatelessWidget {
               ],
             ),
         ]),
-        _section(context, '작업 링크', [
-          if (project.links.isEmpty)
-            Text('공개된 작업 링크가 없습니다.', style: AppleTheme.caption(context))
-          else
-            for (final (index, link) in project.links.indexed)
-              Padding(
-                padding: EdgeInsets.only(
-                  bottom: index == project.links.length - 1 ? 0 : 10,
-                ),
-                child: SizedBox(
-                  width: double.infinity,
-                  child: OutlinedButton(
-                    key: Key('safari-project-link-$index'),
-                    onPressed: pendingLinks.contains(link.uri)
-                        ? null
-                        : () => onOpenLink(link),
-                    style: OutlinedButton.styleFrom(
-                      minimumSize: const Size(0, 58),
-                      padding: const EdgeInsets.all(12),
-                      alignment: Alignment.centerLeft,
-                      side: BorderSide(color: AppleTheme.separator(context)),
-                      shape: RoundedRectangleBorder(
-                        borderRadius: BorderRadius.circular(6),
+      ],
+    );
+  }
+
+  Widget _links(BuildContext context) {
+    final foreground = AppleTheme.primaryLabel(context);
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.stretch,
+      children: [
+        if (project.links.isNotEmpty) ...[
+          const SizedBox(height: 16),
+          Align(
+            alignment: Alignment.centerLeft,
+            child: Wrap(
+              key: const Key('safari-project-links'),
+              alignment: WrapAlignment.start,
+              spacing: 9,
+              runSpacing: 9,
+              children: [
+                for (final (index, link) in project.links.indexed)
+                  Tooltip(
+                    message: link.label,
+                    excludeFromSemantics: true,
+                    child: OutlinedButton(
+                      key: Key('safari-project-link-$index'),
+                      onPressed: pendingLinks.contains(link.uri)
+                          ? null
+                          : () => onOpenLink(link),
+                      style: OutlinedButton.styleFrom(
+                        minimumSize: const Size(48, 48),
+                        padding: const EdgeInsets.all(12),
+                        foregroundColor: foreground,
+                        backgroundColor: AppleTheme.panel(context),
+                        side: BorderSide(color: AppleTheme.separator(context)),
+                        shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(15),
+                        ),
                       ),
-                    ),
-                    child: Row(
-                      children: [
-                        Expanded(
-                          child: Column(
-                            crossAxisAlignment: CrossAxisAlignment.start,
+                      child: Semantics(
+                        label: link.label,
+                        child: SizedBox.square(
+                          dimension: 24,
+                          child: Stack(
+                            clipBehavior: Clip.none,
+                            alignment: Alignment.center,
                             children: [
-                              Text(
-                                link.label,
-                                style: const TextStyle(
-                                  fontWeight: FontWeight.w600,
+                              Icon(_projectLinkIcon(link.uri), size: 21),
+                              Positioned(
+                                bottom: -5,
+                                right: -5,
+                                child: DecoratedBox(
+                                  decoration: BoxDecoration(
+                                    color: AppleTheme.panel(context),
+                                    shape: BoxShape.circle,
+                                  ),
+                                  child: const Padding(
+                                    padding: EdgeInsets.all(1),
+                                    child: Icon(Icons.link_rounded, size: 12),
+                                  ),
                                 ),
-                              ),
-                              const SizedBox(height: 4),
-                              Text(
-                                link.uri.host,
-                                style: AppleTheme.caption(
-                                  context,
-                                ).copyWith(fontSize: 11),
                               ),
                             ],
                           ),
                         ),
-                        const SizedBox(width: 8),
-                        if (pendingLinks.contains(link.uri))
-                          const SizedBox(
-                            width: 14,
-                            height: 14,
-                            child: CircularProgressIndicator(strokeWidth: 1.5),
-                          )
-                        else
-                          const Icon(Icons.arrow_outward_rounded, size: 16),
-                      ],
+                      ),
                     ),
                   ),
-                ),
-              ),
-          if (feedback case final message? when message.trim().isNotEmpty) ...[
-            const SizedBox(height: 14),
-            AppleFeedbackBanner(
-              key: const Key('safari-project-feedback'),
-              message: message,
+              ],
             ),
-          ],
-        ]),
+          ),
+        ],
+        if (feedback case final message? when message.trim().isNotEmpty) ...[
+          const SizedBox(height: 14),
+          AppleFeedbackBanner(
+            key: const Key('safari-project-feedback'),
+            message: message,
+          ),
+        ],
       ],
     );
   }
@@ -437,19 +483,7 @@ class SafariProjectPage extends StatelessWidget {
     String title,
     List<Widget> children, {
     Key? key,
-    IconData? icon,
   }) {
-    final sectionIcon =
-        icon ??
-        switch (title) {
-          '프로젝트 구조' => Icons.account_tree_outlined,
-          'Troubleshooting' => Icons.build_outlined,
-          '담당 업무 · 기여' => Icons.task_alt_rounded,
-          '기술 스택' => Icons.layers_outlined,
-          '작업 링크' => Icons.link_rounded,
-          '프로젝트 화면' => Icons.image_outlined,
-          _ => Icons.article_outlined,
-        };
     return Container(
       key: key,
       margin: const EdgeInsets.only(bottom: 18),
@@ -464,19 +498,11 @@ class SafariProjectPage extends StatelessWidget {
         children: [
           Semantics(
             header: true,
-            child: Row(
-              children: [
-                Icon(sectionIcon, size: 19, color: AppleTheme.buttonBlue),
-                const SizedBox(width: 9),
-                Expanded(
-                  child: Text(
-                    title,
-                    style: AppleTheme.title(
-                      context,
-                    ).copyWith(color: AppleTheme.buttonBlue, fontSize: 16),
-                  ),
-                ),
-              ],
+            child: Text(
+              title,
+              style: AppleTheme.title(
+                context,
+              ).copyWith(color: AppleTheme.primaryLabel(context), fontSize: 16),
             ),
           ),
           const SizedBox(height: 16),
@@ -524,3 +550,11 @@ class SafariProjectPage extends StatelessWidget {
     );
   }
 }
+
+IconData _projectLinkIcon(Uri uri) => switch (uri.host) {
+  'apps.apple.com' => Icons.apple_rounded,
+  'play.google.com' => Icons.play_arrow_rounded,
+  'chromewebstore.google.com' => Icons.extension_rounded,
+  'www.dbpia.co.kr' => Icons.article_outlined,
+  _ => Icons.language_rounded,
+};

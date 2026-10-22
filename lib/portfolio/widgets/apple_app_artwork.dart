@@ -98,6 +98,7 @@ class AppleAppArtwork extends StatelessWidget {
     this.foregroundColor,
     this.trashEmpty = false,
     this.includeBackground = true,
+    this.includeEffects = true,
     super.key,
   }) : assert(size > 0);
 
@@ -106,6 +107,7 @@ class AppleAppArtwork extends StatelessWidget {
   final Color? foregroundColor;
   final bool trashEmpty;
   final bool includeBackground;
+  final bool includeEffects;
 
   static bool usesBespokeArtwork(PortfolioAppId appId) => switch (appId) {
     PortfolioAppId.profile ||
@@ -276,7 +278,10 @@ class AppleAppArtwork extends StatelessWidget {
               child: const SizedBox.expand(),
             ),
             _ when bespoke => CustomPaint(
-              painter: _AppleAppArtworkPainter(appId),
+              painter: _AppleAppArtworkPainter(
+                appId,
+                includeEffects: includeEffects,
+              ),
               child: const SizedBox.expand(),
             ),
             _ => Center(
@@ -305,10 +310,12 @@ class AppleAppArtwork extends StatelessWidget {
                     : colorsFor(appId),
               ),
               borderRadius: BorderRadius.circular(radius),
-              border: Border.all(
-                color: Colors.white.withValues(alpha: 0.44),
-                width: math.max(0.5, size * 0.014),
-              ),
+              border: includeEffects
+                  ? Border.all(
+                      color: Colors.white.withValues(alpha: 0.44),
+                      width: math.max(0.5, size * 0.014),
+                    )
+                  : null,
             ),
             child: ClipRRect(
               borderRadius: BorderRadius.circular(radius),
@@ -327,14 +334,20 @@ class AppleAppArtwork extends StatelessWidget {
 }
 
 class _AppleAppArtworkPainter extends CustomPainter {
-  const _AppleAppArtworkPainter(this.appId, {this.trashEmpty = false});
+  const _AppleAppArtworkPainter(
+    this.appId, {
+    this.trashEmpty = false,
+    this.includeEffects = true,
+  });
 
   final PortfolioAppId appId;
   final bool trashEmpty;
+  final bool includeEffects;
 
   @override
   void paint(Canvas canvas, Size size) {
-    if (!AppleAppArtwork.usesTransparentFrame(appId) &&
+    if (includeEffects &&
+        !AppleAppArtwork.usesTransparentFrame(appId) &&
         appId != PortfolioAppId.terminal) {
       _drawGlassHighlight(canvas, size);
     }
@@ -958,6 +971,8 @@ class _AppleAppArtworkPainter extends CustomPainter {
 
   @override
   bool shouldRepaint(covariant _AppleAppArtworkPainter oldDelegate) {
-    return oldDelegate.appId != appId || oldDelegate.trashEmpty != trashEmpty;
+    return oldDelegate.appId != appId ||
+        oldDelegate.trashEmpty != trashEmpty ||
+        oldDelegate.includeEffects != includeEffects;
   }
 }

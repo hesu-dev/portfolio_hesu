@@ -1,16 +1,15 @@
 import 'package:flutter/material.dart';
-import 'package:flutter_svg/flutter_svg.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:portfolio_hesu/portfolio/apps/projects_app.dart';
+import 'package:portfolio_hesu/portfolio/apps/safari_project_page.dart';
 import 'package:portfolio_hesu/portfolio/data/portfolio_data.dart';
 import 'package:portfolio_hesu/portfolio/services/external_launcher.dart';
 import 'package:portfolio_hesu/portfolio/theme/apple_theme.dart';
 import 'package:portfolio_hesu/portfolio/widgets/apple_finder_scaffold.dart';
-import 'package:portfolio_hesu/portfolio/widgets/project_app_icon.dart';
 
 void main() {
   group('Finder형 Projects 화면', () {
-    testWidgets('기본 회사 위치에서 분류된 폴더와 상세 뎁스를 탐색한다', (tester) async {
+    testWidgets('회사 위치에서 분류된 폴더와 상세 뎁스를 탐색한다', (tester) async {
       await _pumpProjects(tester, size: const Size(900, 650));
 
       expect(find.byKey(const Key('projects-finder-toolbar')), findsOneWidget);
@@ -52,7 +51,7 @@ void main() {
       );
       expect(collectionScroll, findsOneWidget);
       expect(find.byKey(const Key('projects-detail-scroll')), findsNothing);
-      expect(find.byKey(const Key('project-detail-title')), findsNothing);
+      expect(find.byKey(const Key('safari-project-title')), findsNothing);
       expect(
         tester.getSize(collectionScroll).height,
         closeTo(tester.getSize(sidebar).height, 1),
@@ -76,8 +75,9 @@ void main() {
       expect(find.byKey(const Key('projects-finder-grid')), findsNothing);
       expect(find.byKey(const Key('projects-collection-scroll')), findsNothing);
       expect(find.byKey(const Key('projects-detail-scroll')), findsOneWidget);
+      expect(find.byType(SafariProjectPage), findsOneWidget);
       expect(
-        tester.widget<Text>(find.byKey(const Key('project-detail-title'))).data,
+        tester.widget<Text>(find.byKey(const Key('safari-project-title'))).data,
         'IRIS',
       );
 
@@ -91,12 +91,12 @@ void main() {
             .selected,
         isTrue,
       );
-      expect(find.byKey(const Key('project-detail-title')), findsNothing);
+      expect(find.byKey(const Key('safari-project-title')), findsNothing);
 
       await tester.tap(find.byKey(const Key('projects-finder-forward')));
       await tester.pumpAndSettle();
       expect(
-        tester.widget<Text>(find.byKey(const Key('project-detail-title'))).data,
+        tester.widget<Text>(find.byKey(const Key('safari-project-title'))).data,
         'IRIS',
       );
     });
@@ -194,7 +194,7 @@ void main() {
         findsOneWidget,
       );
       expect(find.byKey(const Key('projects-detail-scroll')), findsNothing);
-      expect(find.byKey(const Key('project-detail-title')), findsNothing);
+      expect(find.byKey(const Key('safari-project-title')), findsNothing);
 
       final folders = <Finder>[
         for (var index = 0; index < 6; index++)
@@ -230,32 +230,30 @@ void main() {
       expect(find.byKey(const Key('projects-finder-grid')), findsNothing);
       expect(find.byKey(const Key('projects-detail-scroll')), findsOneWidget);
       expect(
-        tester.widget<Text>(find.byKey(const Key('project-detail-title'))).data,
+        tester.widget<Text>(find.byKey(const Key('safari-project-title'))).data,
         'AI Switch',
       );
       expect(
         find.text('React와 TypeScript로 제작된 AI Switch 홈페이지 유지보수 업무입니다.'),
         findsOneWidget,
       );
-      expect(find.text('#React'), findsOneWidget);
-      expect(find.text('#TypeScript'), findsOneWidget);
-      expect(find.text('React·TypeScript 기반 홈페이지 유지보수'), findsOneWidget);
-      expect(find.byKey(const Key('project-link-3-0')), findsOneWidget);
-      final headerIcon = find.byKey(const Key('project-detail-icon'));
-      expect(tester.getSize(headerIcon), const Size(74, 74));
-      final svg = tester.widget<SvgPicture>(
-        find.descendant(of: headerIcon, matching: find.byType(SvgPicture)),
+      expect(
+        find.descendant(
+          of: find.byKey(const Key('safari-report-support')),
+          matching: find.text('React'),
+        ),
+        findsOneWidget,
       );
       expect(
-        (svg.bytesLoader as SvgAssetLoader).assetName,
-        'assets/icons/projects/ai-switch.svg',
+        find.descendant(
+          of: find.byKey(const Key('safari-report-support')),
+          matching: find.text('TypeScript'),
+        ),
+        findsOneWidget,
       );
-      for (final contentType in <Type>[Image, Icon, Text]) {
-        expect(
-          find.descendant(of: headerIcon, matching: find.byType(contentType)),
-          findsNothing,
-        );
-      }
+      expect(find.text('React·TypeScript 기반 홈페이지 유지보수'), findsOneWidget);
+      expect(find.byKey(const Key('safari-project-link-0')), findsOneWidget);
+      expect(find.byType(SafariProjectPage), findsOneWidget);
       expect(tester.takeException(), isNull);
     });
 
@@ -312,7 +310,7 @@ void main() {
         findsOneWidget,
       );
       expect(find.byKey(const Key('projects-detail-scroll')), findsNothing);
-      expect(find.byKey(const Key('project-detail-title')), findsNothing);
+      expect(find.byKey(const Key('safari-project-title')), findsNothing);
 
       final folders = <Finder>[
         for (var index = 0; index < 6; index++)
@@ -355,96 +353,46 @@ void main() {
       expect(tester.takeException(), isNull);
     });
 
-    testWidgets('상세는 소개 안의 링크와 기술·기여도·회고를 순서대로 표시한다', (tester) async {
+    testWidgets('폴더 상세는 Safari 프로젝트 리포트를 공통으로 사용한다', (tester) async {
       await _pumpProjects(
         tester,
-        size: const Size(1024, 1600),
+        size: const Size(1200, 1600),
         data: _caseStudyData,
       );
-
       await tester.tap(find.byKey(const Key('projects-career-folder-0')));
       await tester.pumpAndSettle();
 
-      final iconPlaceholder = find.byKey(const Key('project-detail-icon'));
-      expect(iconPlaceholder, findsOneWidget);
-      expect(tester.getSize(iconPlaceholder), const Size(74, 74));
-      for (final contentType in <Type>[Image, Icon, Text]) {
-        expect(
-          find.descendant(
-            of: iconPlaceholder,
-            matching: find.byType(contentType),
-          ),
-          findsNothing,
-        );
-      }
-      expect(find.text('2026'), findsNothing);
-      expect(find.text('YEAR'), findsNothing);
-      expect(find.text(_caseStudyData.projects.single.period), findsOneWidget);
-      expect(find.byKey(const Key('project-detail-title')), findsOneWidget);
-      final introduction = find.byKey(const Key('project-introduction'));
-      expect(introduction, findsOneWidget);
-      expect(
-        find.descendant(
-          of: introduction,
-          matching: find.text('Case study overview'),
-        ),
-        findsOneWidget,
+      final report = tester.widget<SafariProjectPage>(
+        find.byType(SafariProjectPage),
       );
-      expect(
-        find.descendant(
-          of: introduction,
-          matching: find.byKey(const Key('project-link-0-0')),
-        ),
-        findsOneWidget,
-      );
-      expect(find.text('역할 · 기여도'), findsOneWidget);
-      expect(find.byKey(const Key('project-actions')), findsOneWidget);
-      expect(find.byKey(const Key('project-link-0-0')), findsOneWidget);
-      expect(find.byKey(const Key('project-technologies')), findsOneWidget);
-      expect(find.text('#Flutter'), findsOneWidget);
-      expect(find.text('#Dart'), findsOneWidget);
-      expect(find.byKey(const Key('project-architecture')), findsOneWidget);
-      expect(find.text('Client app'), findsOneWidget);
-      expect(find.text('Service API'), findsOneWidget);
-      expect(find.byKey(const Key('project-highlights')), findsOneWidget);
-
-      final orderedKeys = <Key>[
-        const Key('project-detail-header'),
-        const Key('project-introduction'),
-        const Key('project-technologies'),
-        const Key('project-highlights'),
-        const Key('project-architecture'),
-        const Key('project-narrative'),
-      ];
-      var previousTop = double.negativeInfinity;
-      for (final key in orderedKeys) {
-        final finder = find.byKey(key);
-        expect(finder, findsOneWidget, reason: key.toString());
-        final top = tester.getTopLeft(finder).dy;
-        expect(top, greaterThan(previousTop), reason: key.toString());
-        previousTop = top;
+      expect(report.project, same(_caseStudyData.projects.single));
+      expect(find.byKey(const Key('projects-detail-scroll')), findsOneWidget);
+      expect(find.byKey(const Key('safari-toolbar')), findsNothing);
+      expect(find.byKey(const Key('project-introduction')), findsNothing);
+      expect(find.byKey(const Key('safari-project-link-0')), findsOneWidget);
+      expect(find.text('Case study overview'), findsOneWidget);
+      for (final heading in [
+        '프로젝트 구조',
+        '담당 업무 · 기여',
+        'Troubleshooting',
+        '기술 스택',
+      ]) {
+        expect(find.text(heading), findsOneWidget);
       }
-
-      for (final item in _caseStudyData.projects.single.sections) {
-        final kind = item.kind;
-        final section = find.byKey(Key('project-section-${kind.name}'));
-        expect(section, findsOneWidget, reason: kind.label);
-        expect(
-          find.descendant(of: section, matching: find.text(kind.label)),
-          findsOneWidget,
-        );
+      for (final section in _caseStudyData.projects.single.sections) {
+        expect(find.text(section.body), findsOneWidget);
       }
       expect(tester.takeException(), isNull);
     });
 
-    testWidgets('출시 앱과 IRIS·AI 역량 검사는 목록과 상세에 같은 아이콘을 쓴다', (tester) async {
-      await _pumpProjects(tester, size: const Size(900, 650));
-      for (final index in <int>[2, 4, 6, 7]) {
+    testWidgets('프로젝트 목록의 아이콘과 선택한 리포트 데이터가 연결된다', (tester) async {
+      await _pumpProjects(tester, size: const Size(900, 900));
+      for (final (index, asset) in <(int, String)>[
+        (2, 'assets/icons/projects/aiq.png'),
+        (4, 'assets/icons/projects/blue-mentor.png'),
+        (5, 'assets/icons/projects/iris.svg'),
+      ]) {
         final tile = find.byKey(Key('project-selector-$index'));
-        expect(
-          find.descendant(of: tile, matching: find.byType(Image)),
-          findsOneWidget,
-        );
         expect(
           find.descendant(
             of: tile,
@@ -452,242 +400,111 @@ void main() {
           ),
           findsNothing,
         );
-      }
-      expect(
-        find.descendant(
-          of: find.byKey(const Key('project-selector-5')),
-          matching: find.byIcon(Icons.folder_rounded),
-        ),
-        findsNothing,
-      );
-      final iris = tester.widget<SvgPicture>(
-        find.descendant(
-          of: find.byKey(const Key('project-selector-5')),
-          matching: find.byType(SvgPicture),
-        ),
-      );
-      expect(
-        (iris.bytesLoader as SvgAssetLoader).assetName,
-        'assets/icons/projects/iris.svg',
-      );
-      final aiq = tester.widget<Image>(
-        find.descendant(
-          of: find.byKey(const Key('project-selector-2')),
-          matching: find.byType(Image),
-        ),
-      );
-      expect(aiq.image, const AssetImage('assets/icons/projects/aiq.png'));
-      expect(aiq.fit, BoxFit.contain);
-      for (final (index, asset) in <(int, String)>[
-        (2, 'assets/icons/projects/aiq.png'),
-        (4, 'assets/icons/projects/blue-mentor.png'),
-        (5, 'assets/icons/projects/iris.svg'),
-      ]) {
-        await tester.tap(find.byKey(Key('project-selector-$index')));
+        await tester.tap(tile);
         await tester.pumpAndSettle();
-        final detailIcon = find.byKey(const Key('project-detail-icon'));
-        final icon = find.descendant(
-          of: detailIcon,
-          matching: find.byType(ProjectAppIcon),
+        final report = tester.widget<SafariProjectPage>(
+          find.byType(SafariProjectPage),
         );
-        expect(icon, findsOneWidget);
-        expect(tester.widget<ProjectAppIcon>(icon).assetPath, asset);
-        expect(find.text('YEAR'), findsNothing);
+        expect(report.project, same(portfolioData.projects[index]));
+        expect(report.project.appIconAsset, asset);
+        expect(find.byKey(const Key('architecture-diagram')), findsOneWidget);
         await tester.tap(find.byKey(const Key('projects-finder-back')));
         await tester.pumpAndSettle();
       }
-      await tester.tap(
-        find.byKey(const Key('projects-finder-location-personal-projects')),
-      );
-      await tester.pumpAndSettle();
-      expect(
-        find.descendant(
-          of: find.byKey(const Key('project-selector-0')),
-          matching: find.byType(Image),
-        ),
-        findsOneWidget,
-      );
       expect(tester.takeException(), isNull);
     });
 
-    testWidgets('좁은 화면은 서사 라벨과 본문을 세로로 쌓고 빈 항목은 숨긴다', (tester) async {
-      await _pumpProjects(
-        tester,
-        size: const Size(320, 900),
-        compact: true,
-        textScaler: const TextScaler.linear(2),
-        data: _minimalCaseStudyData,
-      );
-
-      await tester.tap(find.byKey(const Key('projects-career-folder-0')));
-      await tester.pumpAndSettle();
-      await tester.ensureVisible(find.byKey(const Key('project-section-work')));
-      await tester.pumpAndSettle();
-
-      final label = find.byKey(const Key('project-section-work-label'));
-      final body = find.byKey(const Key('project-section-work-body'));
-      expect(label, findsOneWidget);
-      expect(body, findsOneWidget);
-      expect(
-        tester.getRect(body).top,
-        greaterThanOrEqualTo(tester.getRect(label).bottom),
-      );
-      expect(find.byKey(const Key('project-section-problem')), findsNothing);
-      expect(find.byKey(const Key('project-architecture')), findsNothing);
-      expect(find.byKey(const Key('project-highlights')), findsOneWidget);
-      expect(
-        tester.getSize(find.byKey(const Key('project-link-0-0'))).height,
-        greaterThanOrEqualTo(44),
-      );
-      expect(tester.takeException(), isNull);
+    testWidgets('좁은 Finder는 긴 리포트와 빈 메타데이터를 확대해도 잘리지 않는다', (tester) async {
+      for (final data in [
+        _minimalCaseStudyData,
+        _stressCaseStudyData,
+        _emptyTechnologyData,
+      ]) {
+        await tester.pumpWidget(const SizedBox.shrink());
+        await _pumpProjects(
+          tester,
+          size: const Size(320, 900),
+          compact: true,
+          textScaler: const TextScaler.linear(2),
+          theme: AppleTheme.dark(),
+          data: data,
+        );
+        await tester.tap(find.byKey(const Key('projects-career-folder-0')));
+        await tester.pumpAndSettle();
+        expect(find.byType(SafariProjectPage), findsOneWidget);
+        expect(find.text(data.projects.single.description), findsOneWidget);
+        final main = tester.getRect(
+          find.byKey(const Key('safari-report-main')),
+        );
+        final support = tester.getRect(
+          find.byKey(const Key('safari-report-support')),
+        );
+        expect(main.top, greaterThanOrEqualTo(support.bottom));
+        if (data.projects.single.technologies.every(
+          (item) => item.trim().isEmpty,
+        )) {
+          expect(find.text('등록된 기술 스택이 없습니다.'), findsOneWidget);
+        }
+        expect(tester.takeException(), isNull);
+      }
     });
 
-    testWidgets('기본 데스크톱 Finder 폭은 아키텍처와 서사를 가로로 읽는다', (tester) async {
+    testWidgets('넓은 Finder는 820px 제한 없이 리포트와 보조 정보를 나란히 표시한다', (tester) async {
       await _pumpProjects(
         tester,
-        size: const Size(900, 1400),
+        size: const Size(1500, 1600),
         data: _caseStudyData,
       );
-
       await tester.tap(find.byKey(const Key('projects-career-folder-0')));
       await tester.pumpAndSettle();
-
-      final firstNode = tester.getRect(
-        find.byKey(const Key('project-architecture-node-0')),
+      final page = tester.getRect(find.byKey(const Key('safari-project-page')));
+      final main = tester.getRect(find.byKey(const Key('safari-report-main')));
+      final support = tester.getRect(
+        find.byKey(const Key('safari-report-support')),
       );
-      final secondNode = tester.getRect(
-        find.byKey(const Key('project-architecture-node-1')),
-      );
-      expect(secondNode.left, greaterThan(firstNode.right));
-      expect(secondNode.top, closeTo(firstNode.top, 0.01));
-
-      final label = tester.getRect(
-        find.byKey(const Key('project-section-work-label')),
-      );
-      final body = tester.getRect(
-        find.byKey(const Key('project-section-work-body')),
-      );
-      expect(body.left, greaterThan(label.right));
-      expect(body.top, closeTo(label.top, 0.01));
+      expect(page.width, greaterThan(900));
+      expect(support.left, greaterThan(main.right));
+      expect(support.top, closeTo(main.top, 0.01));
       expect(tester.takeException(), isNull);
     });
 
-    testWidgets('스크린리더에는 헤더·태그·액션을 중복 없이 전달한다', (tester) async {
+    testWidgets('스크린리더는 공통 리포트 제목과 링크를 읽는다', (tester) async {
       final semantics = tester.ensureSemantics();
       await _pumpProjects(
         tester,
-        size: const Size(1024, 1600),
+        size: const Size(1500, 1600),
         data: _caseStudyData,
       );
-
       await tester.tap(find.byKey(const Key('projects-career-folder-0')));
       await tester.pumpAndSettle();
-
       expect(
         tester
-            .getSemantics(find.byKey(const Key('project-detail-title')))
+            .getSemantics(find.byKey(const Key('safari-project-title')))
             .getSemanticsData()
             .flagsCollection
             .isHeader,
         isTrue,
       );
-      expect(
-        tester
-            .getSemantics(find.byKey(const Key('project-actions-heading')))
-            .getSemanticsData()
-            .flagsCollection
-            .isHeader,
-        isTrue,
-      );
-      expect(
-        tester
-            .getSemantics(find.byKey(const Key('project-technologies-heading')))
-            .getSemanticsData()
-            .flagsCollection
-            .isHeader,
-        isTrue,
-      );
-      expect(
-        tester
-            .getSemantics(find.byKey(const Key('project-technology-0')))
-            .getSemanticsData()
-            .label,
-        '사용 기술 Flutter',
-      );
-      final action = tester
-          .getSemantics(find.byKey(const Key('project-link-0-0')))
-          .getSemanticsData();
-      expect(action.label, 'App Store');
+      final link = find.byKey(const Key('safari-project-link-0'));
+      await tester.ensureVisible(link);
+      final action = tester.getSemantics(link).getSemanticsData();
+      expect(action.label, contains('App Store'));
       expect(action.flagsCollection.isButton, isTrue);
-      expect(
-        find.bySemanticsLabel('Case Study Project App Store 새 탭에서 열기'),
-        findsNothing,
-      );
       semantics.dispose();
     });
 
-    testWidgets('구성 요소는 선형 흐름으로 오해할 화살표를 그리지 않는다', (tester) async {
+    testWidgets('구성 요소 리포트는 선형 흐름으로 오해할 화살표를 그리지 않는다', (tester) async {
       await _pumpProjects(
         tester,
         size: const Size(900, 1200),
         data: _componentCaseStudyData,
       );
-
       await tester.tap(find.byKey(const Key('projects-career-folder-0')));
       await tester.pumpAndSettle();
-
+      expect(find.text('Flutter\nAuth\nCloud API\nStorage'), findsOneWidget);
       expect(find.byIcon(Icons.arrow_forward_rounded), findsNothing);
       expect(find.byIcon(Icons.arrow_downward_rounded), findsNothing);
-      expect(
-        find.byKey(const Key('project-architecture-node-3')),
-        findsOneWidget,
-      );
       expect(tester.takeException(), isNull);
-    });
-
-    testWidgets('실제 긴 콘텐츠는 다크 모드·200% 확대에서도 잘리지 않는다', (tester) async {
-      await _pumpProjects(
-        tester,
-        size: const Size(320, 900),
-        compact: true,
-        textScaler: const TextScaler.linear(2),
-        theme: AppleTheme.dark(),
-        data: _stressCaseStudyData,
-      );
-
-      await tester.tap(find.byKey(const Key('projects-career-folder-0')));
-      await tester.pumpAndSettle();
-      await tester.ensureVisible(
-        find.byKey(const Key('project-highlight-index-0')),
-      );
-      await tester.pumpAndSettle();
-
-      expect(
-        tester
-            .getSize(find.byKey(const Key('project-highlight-index-0')))
-            .height,
-        greaterThan(24),
-      );
-      expect(find.byKey(const Key('project-link-0-2')), findsOneWidget);
-      expect(
-        find.byKey(const Key('project-architecture-node-3')),
-        findsOneWidget,
-      );
-      expect(tester.takeException(), isNull);
-    });
-
-    testWidgets('빈 기술 메타데이터는 제목만 남은 카드를 만들지 않는다', (tester) async {
-      await _pumpProjects(
-        tester,
-        size: const Size(900, 900),
-        data: _emptyTechnologyData,
-      );
-
-      await tester.tap(find.byKey(const Key('projects-career-folder-0')));
-      await tester.pumpAndSettle();
-
-      expect(find.byKey(const Key('project-technologies')), findsNothing);
-      expect(find.text('#'), findsNothing);
     });
 
     testWidgets('AI 역량 검사 폴더에서 화면을 확대하고 상세로 돌아온다', (tester) async {
@@ -706,24 +523,27 @@ void main() {
 
         expect(
           tester
-              .widget<Text>(find.byKey(const Key('project-detail-title')))
+              .widget<Text>(find.byKey(const Key('safari-project-title')))
               .data,
           'AI 역량 검사',
         );
         expect(find.text('2026.08 - 2026.09'), findsOneWidget);
-        expect(find.byKey(const Key('project-link-2-0')), findsOneWidget);
-        expect(find.byKey(const Key('project-screenshots')), findsOneWidget);
+        expect(find.byKey(const Key('safari-project-link-0')), findsOneWidget);
+        expect(find.text('프로젝트 화면'), findsOneWidget);
         for (var index = 0; index < 3; index++) {
-          expect(find.byKey(Key('project-screenshot-$index')), findsOneWidget);
+          expect(
+            find.byKey(Key('safari-project-screenshot-$index')),
+            findsOneWidget,
+          );
         }
 
-        final screenshot = find.byKey(const Key('project-screenshot-0'));
+        final screenshot = find.byKey(const Key('safari-project-screenshot-0'));
         await tester.ensureVisible(screenshot);
         await tester.pumpAndSettle();
         await tester.tap(screenshot);
         await tester.pumpAndSettle();
         expect(
-          find.byKey(const Key('project-screenshot-preview')),
+          find.byKey(const Key('safari-project-screenshot-preview')),
           findsOneWidget,
         );
         expect(find.byType(InteractiveViewer), findsOneWidget);
@@ -732,36 +552,11 @@ void main() {
         await tester.tap(find.byTooltip('닫기'));
         await tester.pumpAndSettle();
         expect(
-          find.byKey(const Key('project-screenshot-preview')),
+          find.byKey(const Key('safari-project-screenshot-preview')),
           findsNothing,
         );
-        expect(find.byKey(const Key('project-detail-title')), findsOneWidget);
+        expect(find.byKey(const Key('safari-project-title')), findsOneWidget);
         expect(tester.takeException(), isNull);
-      }
-    });
-
-    testWidgets('서사 라벨은 라이트·다크 배경에서 텍스트 대비를 보장한다', (tester) async {
-      for (final theme in <ThemeData>[AppleTheme.light(), AppleTheme.dark()]) {
-        await tester.pumpWidget(const SizedBox.shrink());
-        await _pumpProjects(
-          tester,
-          size: const Size(900, 1000),
-          theme: theme,
-          data: _caseStudyData,
-        );
-        await tester.tap(find.byKey(const Key('projects-career-folder-0')));
-        await tester.pumpAndSettle();
-
-        final label = tester.widget<Text>(
-          find.byKey(const Key('project-section-work-label')),
-        );
-        final surface = theme.brightness == Brightness.dark
-            ? const Color(0xFF1C1D21)
-            : Colors.white;
-        expect(
-          _contrastRatio(label.style!.color!, surface),
-          greaterThanOrEqualTo(4.5),
-        );
       }
     });
   });
@@ -803,16 +598,8 @@ Future<void> _pumpProjects(
     ),
   );
   await tester.pump();
-}
-
-double _contrastRatio(Color first, Color second) {
-  final lighter = first.computeLuminance() > second.computeLuminance()
-      ? first.computeLuminance()
-      : second.computeLuminance();
-  final darker = first.computeLuminance() > second.computeLuminance()
-      ? second.computeLuminance()
-      : first.computeLuminance();
-  return (lighter + 0.05) / (darker + 0.05);
+  await tester.tap(find.byKey(const Key('projects-finder-location-career')));
+  await tester.pumpAndSettle();
 }
 
 const PortfolioIdentity _testIdentity = PortfolioIdentity(

@@ -1,6 +1,8 @@
 import 'dart:math' as math;
 
+import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter_svg/flutter_svg.dart';
 
 import '../data/portfolio_data.dart';
 import '../mobile/apple_mobile_dock_geometry.dart';
@@ -8,8 +10,12 @@ import '../models/portfolio_app_id.dart';
 import '../services/external_launcher.dart';
 import '../theme/apple_theme.dart';
 import '../widgets/apple_app_icon.dart';
+import '../widgets/apple_app_artwork.dart';
 import '../widgets/apple_finder_scaffold.dart';
+import '../widgets/apple_finder_list_row.dart';
+import '../widgets/portfolio_printer_shortcut.dart';
 import '../widgets/project_app_icon.dart';
+import 'safari_project_page.dart';
 
 enum _ProjectsLocation {
   recent,
@@ -19,6 +25,26 @@ enum _ProjectsLocation {
   career,
   personalProjects,
 }
+
+enum _DirectoryView { icons, list }
+
+enum _DirectorySort {
+  name('이름'),
+  kind('종류'),
+  date('날짜'),
+  size('크기'),
+  tags('태그');
+
+  const _DirectorySort(this.label);
+  final String label;
+}
+
+typedef _DirectoryOptions = ({_DirectoryView view, _DirectorySort sort});
+
+const _defaultDirectoryOptions = (
+  view: _DirectoryView.icons,
+  sort: _DirectorySort.kind,
+);
 
 extension on _ProjectsLocation {
   String get id => switch (this) {
@@ -152,10 +178,64 @@ class _ProjectsAppState extends State<ProjectsApp> {
       );
 
   final List<_ProjectsDestination> _history = <_ProjectsDestination>[
-    _ProjectsDestination(_ProjectsLocation.career),
+    _ProjectsDestination(_ProjectsLocation.files),
   ];
   final Map<_ProjectsLocation, int?> _selectedProject =
       <_ProjectsLocation, int?>{};
+  // Each navigable folder owns its options, independently of navigation history.
+  final Map<_ProjectsLocation, _DirectoryOptions> _directoryOptions = {};
+
+  _DirectoryOptions _optionsFor(_ProjectsLocation location) =>
+      _directoryOptions[location] ?? _defaultDirectoryOptions;
+
+  Future<void> _showDirectoryOptions(BuildContext context) async {
+    final location = _currentDestination.location;
+    final options = _optionsFor(location);
+    final box = context.findRenderObject()! as RenderBox;
+    final origin = box.localToGlobal(Offset.zero);
+    final choice = await showGeneralDialog<Object>(
+      context: context,
+      barrierDismissible: true,
+      barrierLabel: '더보기 메뉴 닫기',
+      barrierColor: Colors.black.withValues(alpha: 0.12),
+      transitionDuration: const Duration(milliseconds: 180),
+      pageBuilder: (menuContext, _, _) => SafeArea(
+        child: LayoutBuilder(
+          builder: (context, constraints) {
+            final right = math.max(
+              12.0,
+              constraints.maxWidth - origin.dx - box.size.width + 12,
+            );
+            final top = (origin.dy + 58 - MediaQuery.paddingOf(menuContext).top)
+                .clamp(8.0, constraints.maxHeight * 0.35);
+            return Padding(
+              padding: EdgeInsets.fromLTRB(12, top, right, 12),
+              child: Align(
+                alignment: Alignment.topRight,
+                child: _DirectoryOptionsMenu(options: options),
+              ),
+            );
+          },
+        ),
+      ),
+      transitionBuilder: (context, animation, _, child) => FadeTransition(
+        opacity: animation,
+        child: ScaleTransition(
+          scale: Tween<double>(begin: 0.96, end: 1).animate(animation),
+          alignment: Alignment.topRight,
+          child: child,
+        ),
+      ),
+    );
+    if (!mounted || choice == null) return;
+    setState(() {
+      _directoryOptions[location] = (
+        view: choice is _DirectoryView ? choice : options.view,
+        sort: choice is _DirectorySort ? choice : options.sort,
+      );
+    });
+  }
+
   int _historyCursor = 0;
   int _launchRequestGeneration = 0;
   String? _launchFeedback;
@@ -191,9 +271,10 @@ class _ProjectsAppState extends State<ProjectsApp> {
       _launchRequestGeneration++;
       _history
         ..clear()
-        ..add(const _ProjectsDestination(_ProjectsLocation.career));
+        ..add(const _ProjectsDestination(_ProjectsLocation.files));
       _historyCursor = 0;
       _selectedProject.clear();
+      _directoryOptions.clear();
       _launchFeedback = null;
       _pendingLaunches.clear();
       return;
@@ -219,7 +300,7 @@ class _ProjectsAppState extends State<ProjectsApp> {
     if (historyIsInvalid) {
       _history
         ..clear()
-        ..add(const _ProjectsDestination(_ProjectsLocation.career));
+        ..add(const _ProjectsDestination(_ProjectsLocation.files));
       _historyCursor = 0;
       _selectedProject.clear();
       _launchFeedback = null;
@@ -346,6 +427,9 @@ class _ProjectsAppState extends State<ProjectsApp> {
       onBack: () => _moveThroughHistory(-1),
       onForward: () => _moveThroughHistory(1),
       windowChrome: widget.finderWindowChrome,
+      onViewPressed: projectIndex == null
+          ? () => _showDirectoryOptions(context)
+          : null,
       mobileBottomNavigation: mobileLayout
           ? AppleFinderMobileNavigationBar(
               keyPrefix: 'projects-finder',
@@ -379,10 +463,10 @@ class _ProjectsAppState extends State<ProjectsApp> {
   }) {
     final location = destination.location;
     final projectIndex = destination.projectIndex;
+    final options = _optionsFor(location);
     if (projectIndex != null) {
       return _ProjectDetail(
         project: widget.data.projects[projectIndex],
-        projectIndex: projectIndex,
         compact: compact,
         bottomContentInset: bottomContentInset,
         feedback: _launchFeedback,
@@ -392,15 +476,18 @@ class _ProjectsAppState extends State<ProjectsApp> {
     }
 
     return switch (location) {
-      _ProjectsLocation.recent => _ProjectConnectionDirectory(
-        key: const Key('projects-connection-directory'),
-        locationId: location.id,
-        locationLabel: location.label,
+      _ProjectsLocation.recent => _ApplicationsDirectory(
+        keyPrefix: 'projects-recent',
+        apps: _fileApps,
         projects: _projectsForLocation(location),
-        selectedIndex: _selectedProject[location],
+        selectedProject: _selectedProject[location],
+        onSelectProject: (index) => _selectProject(location, index),
+        printerData: widget.compact || widget.tablet ? widget.data : null,
+        options: options,
         compact: compact,
         bottomContentInset: bottomContentInset,
-        onSelected: (index) => _selectProject(location, index),
+        onOpenApp: widget.onOpenApp,
+        trashEmpty: widget.trashEmpty,
       ),
       _ProjectsLocation.iCloudDrive => _ScrollableEmptyDirectory(
         contentKey: const Key('projects-icloud-empty'),
@@ -411,7 +498,9 @@ class _ProjectsAppState extends State<ProjectsApp> {
       ),
       _ProjectsLocation.files => _ApplicationsDirectory(
         keyPrefix: 'projects-files',
-        apps: portfolioFileAppIds,
+        apps: _fileApps,
+        printerData: widget.compact || widget.tablet ? widget.data : null,
+        options: options,
         compact: compact,
         bottomContentInset: bottomContentInset,
         onOpenApp: widget.onOpenApp,
@@ -420,6 +509,7 @@ class _ProjectsAppState extends State<ProjectsApp> {
       _ProjectsLocation.desktop => _ApplicationsDirectory(
         keyPrefix: 'projects-desktop',
         apps: portfolioMacDesktopLauncherAppIds,
+        options: options,
         compact: compact,
         bottomContentInset: bottomContentInset,
         onOpenApp: widget.onOpenApp,
@@ -429,13 +519,255 @@ class _ProjectsAppState extends State<ProjectsApp> {
         key: const Key('projects-connection-directory'),
         locationId: location.id,
         locationLabel: location.label,
-        projects: _projectsForLocation(location),
+        projects: _sortedProjects(location, options.sort),
+        view: options.view,
         selectedIndex: _selectedProject[location],
         compact: compact,
         bottomContentInset: bottomContentInset,
         onSelected: (index) => _selectProject(location, index),
       ),
     };
+  }
+
+  List<PortfolioAppId> get _fileApps => [
+    for (final app in portfolioFileAppIds)
+      if (!(widget.compact || widget.tablet) || app != PortfolioAppId.settings)
+        app,
+  ];
+
+  List<_ProjectEntry> _sortedProjects(
+    _ProjectsLocation location,
+    _DirectorySort sort,
+  ) {
+    String sortValue(PortfolioProject project) => switch (sort) {
+      _DirectorySort.name => project.title.toLowerCase(),
+      _DirectorySort.kind =>
+        project.category == PortfolioProjectCategory.career
+            ? '회사 프로젝트'
+            : '개인 프로젝트',
+      _DirectorySort.date => _projectStartDate(project.period),
+      _DirectorySort.tags =>
+        (project.technologies.map((tag) => tag.toLowerCase()).toList()..sort())
+            .join(', '),
+      _DirectorySort.size => '',
+    };
+    return _projectsForLocation(location)..sort((a, b) {
+      final order = _compareAvailable(
+        sortValue(a.project),
+        sortValue(b.project),
+      );
+      return order == 0 ? a.index.compareTo(b.index) : order;
+    });
+  }
+}
+
+int _compareAvailable(String a, String b) {
+  if (a.isEmpty != b.isEmpty) return a.isEmpty ? 1 : -1;
+  return a.compareTo(b);
+}
+
+String _projectStartDate(String period) {
+  final match = RegExp(
+    r'((?:19|20)\d{2})(?:[./-](\d{1,2})(?:[./-](\d{1,2}))?)?',
+  ).firstMatch(period);
+  if (match == null) return '';
+  return '${match[1]}-${(match[2] ?? '1').padLeft(2, '0')}-${(match[3] ?? '1').padLeft(2, '0')}';
+}
+
+/// Files-style iOS popover: grouped controls on a translucent Cupertino surface.
+class _DirectoryOptionsMenu extends StatelessWidget {
+  const _DirectoryOptionsMenu({required this.options});
+
+  final _DirectoryOptions options;
+
+  @override
+  Widget build(BuildContext context) {
+    final foreground = AppleTheme.primaryLabel(context);
+    final secondary = AppleTheme.secondaryLabel(context);
+    Widget heading(String text) => Padding(
+      padding: const EdgeInsets.fromLTRB(16, 12, 16, 8),
+      child: Text(
+        text,
+        style: TextStyle(
+          fontSize: 13,
+          color: secondary,
+          fontWeight: FontWeight.w600,
+        ),
+      ),
+    );
+    Widget separator() =>
+        Container(height: 7, color: foreground.withValues(alpha: 0.05));
+    return SizedBox(
+      width: 288,
+      child: DecoratedBox(
+        decoration: BoxDecoration(
+          borderRadius: BorderRadius.circular(14),
+          boxShadow: [
+            BoxShadow(
+              color: Colors.black.withValues(alpha: 0.2),
+              blurRadius: 28,
+              offset: const Offset(0, 8),
+            ),
+          ],
+        ),
+        child: CupertinoTheme(
+          data: CupertinoThemeData(
+            brightness: Theme.of(context).brightness,
+            primaryColor: AppleTheme.blue,
+          ),
+          child: CupertinoPopupSurface(
+            child: DefaultTextStyle(
+              style: TextStyle(
+                fontFamily: Theme.of(context).textTheme.bodyLarge?.fontFamily,
+                fontSize: 17,
+                color: foreground,
+                height: 1.3,
+              ),
+              child: SingleChildScrollView(
+                key: const Key('projects-directory-options'),
+                child: Column(
+                  mainAxisSize: MainAxisSize.min,
+                  crossAxisAlignment: CrossAxisAlignment.stretch,
+                  children: [
+                    heading('보기'),
+                    Padding(
+                      padding: const EdgeInsets.fromLTRB(12, 0, 12, 12),
+                      child: Row(
+                        children: [
+                          for (final view in _DirectoryView.values)
+                            Expanded(
+                              child: Padding(
+                                padding: const EdgeInsets.symmetric(
+                                  horizontal: 3,
+                                ),
+                                child: Semantics(
+                                  key: Key('projects-view-${view.name}'),
+                                  selected: options.view == view,
+                                  button: true,
+                                  child: CupertinoButton(
+                                    padding: const EdgeInsets.symmetric(
+                                      vertical: 12,
+                                      horizontal: 4,
+                                    ),
+                                    color: options.view == view
+                                        ? foreground.withValues(alpha: 0.09)
+                                        : foreground.withValues(alpha: 0.025),
+                                    borderRadius: BorderRadius.circular(10),
+                                    onPressed: () =>
+                                        Navigator.pop(context, view),
+                                    child: Column(
+                                      mainAxisSize: MainAxisSize.min,
+                                      children: [
+                                        Icon(
+                                          view == _DirectoryView.icons
+                                              ? CupertinoIcons.square_grid_2x2
+                                              : CupertinoIcons.list_bullet,
+                                          color: foreground,
+                                          size: 23,
+                                        ),
+                                        const SizedBox(height: 7),
+                                        Text(
+                                          view == _DirectoryView.icons
+                                              ? '아이콘'
+                                              : '목록',
+                                          style: TextStyle(
+                                            fontSize: 14,
+                                            color: foreground,
+                                            fontWeight: options.view == view
+                                                ? FontWeight.w600
+                                                : FontWeight.w400,
+                                          ),
+                                        ),
+                                      ],
+                                    ),
+                                  ),
+                                ),
+                              ),
+                            ),
+                        ],
+                      ),
+                    ),
+                    separator(),
+                    heading('정렬 · 오름차순'),
+                    for (final sort in _DirectorySort.values)
+                      Semantics(
+                        key: Key('projects-sort-${sort.name}'),
+                        selected: options.sort == sort,
+                        enabled: sort != _DirectorySort.size,
+                        button: true,
+                        child: CupertinoButton(
+                          padding: const EdgeInsets.symmetric(
+                            horizontal: 16,
+                            vertical: 11,
+                          ),
+                          onPressed: sort == _DirectorySort.size
+                              ? null
+                              : () => Navigator.pop(context, sort),
+                          child: Row(
+                            children: [
+                              SizedBox(
+                                width: 26,
+                                child: options.sort == sort
+                                    ? Icon(
+                                        CupertinoIcons.check_mark,
+                                        color: foreground,
+                                        size: 18,
+                                      )
+                                    : null,
+                              ),
+                              Expanded(
+                                child: Text(
+                                  sort.label,
+                                  style: TextStyle(
+                                    color: sort == _DirectorySort.size
+                                        ? secondary.withValues(alpha: 0.55)
+                                        : foreground,
+                                    fontSize: 17,
+                                  ),
+                                ),
+                              ),
+                              Icon(
+                                switch (sort) {
+                                  _DirectorySort.name =>
+                                    CupertinoIcons.textformat_abc,
+                                  _DirectorySort.kind =>
+                                    CupertinoIcons.square_grid_2x2,
+                                  _DirectorySort.date =>
+                                    CupertinoIcons.calendar,
+                                  _DirectorySort.size =>
+                                    CupertinoIcons
+                                        .arrow_up_left_arrow_down_right,
+                                  _DirectorySort.tags => CupertinoIcons.tag,
+                                },
+                                size: 19,
+                                color: sort == _DirectorySort.size
+                                    ? secondary.withValues(alpha: 0.55)
+                                    : foreground,
+                              ),
+                            ],
+                          ),
+                        ),
+                      ),
+                    separator(),
+                    Padding(
+                      padding: const EdgeInsets.all(14),
+                      child: Text(
+                        '날짜: 프로젝트 시작일 · 바로가기 예시 날짜\n태그: 기술 스택 · 파일 분류\n크기: 정보가 없어 선택할 수 없음',
+                        style: TextStyle(
+                          fontSize: 11,
+                          color: secondary,
+                          height: 1.5,
+                        ),
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+            ),
+          ),
+        ),
+      ),
+    );
   }
 }
 
@@ -445,6 +777,7 @@ class _ProjectFolderGrid extends StatelessWidget {
     required this.projects,
     required this.selectedIndex,
     required this.compact,
+    required this.view,
     required this.onSelected,
   });
 
@@ -452,10 +785,40 @@ class _ProjectFolderGrid extends StatelessWidget {
   final List<_ProjectEntry> projects;
   final int? selectedIndex;
   final bool compact;
+  final _DirectoryView view;
   final ValueChanged<int> onSelected;
 
   @override
   Widget build(BuildContext context) {
+    if (view == _DirectoryView.list) {
+      return Column(
+        key: const Key('projects-finder-list'),
+        children: [
+          for (final entry in projects)
+            AppleFinderListRow(
+              key: Key('project-selector-${entry.index}'),
+              selected: selectedIndex == entry.index,
+              artworkHasBackground: ProjectAppIcon.hasOwnBackground(
+                entry.project.appIconAsset,
+              ),
+              artwork: entry.project.appIconAsset == null
+                  ? const Icon(Icons.folder_rounded, size: 40)
+                  : ProjectAppIcon(
+                      assetPath: entry.project.appIconAsset!,
+                      size: 40,
+                      alignment: Alignment.center,
+                    ),
+              title: entry.project.title,
+              subtitle: [
+                if (entry.project.period.isNotEmpty) entry.project.period,
+                if (entry.project.technologies.isNotEmpty)
+                  entry.project.technologies.join(' · '),
+              ].join(' · '),
+              onTap: () => onSelected(entry.index),
+            ),
+        ],
+      );
+    }
     return LayoutBuilder(
       key: const Key('projects-finder-grid'),
       builder: (context, constraints) {
@@ -516,6 +879,7 @@ class _ProjectConnectionDirectory extends StatelessWidget {
     required this.projects,
     required this.selectedIndex,
     required this.compact,
+    required this.view,
     required this.bottomContentInset,
     required this.onSelected,
     super.key,
@@ -526,6 +890,7 @@ class _ProjectConnectionDirectory extends StatelessWidget {
   final List<_ProjectEntry> projects;
   final int? selectedIndex;
   final bool compact;
+  final _DirectoryView view;
   final double bottomContentInset;
   final ValueChanged<int> onSelected;
 
@@ -546,6 +911,7 @@ class _ProjectConnectionDirectory extends StatelessWidget {
       projects: projects,
       selectedIndex: selectedIndex,
       compact: compact,
+      view: view,
       bottomContentInset: bottomContentInset,
       onSelectProject: onSelected,
     );
@@ -595,6 +961,7 @@ class _ProjectCollection extends StatelessWidget {
     required this.projects,
     required this.selectedIndex,
     required this.compact,
+    required this.view,
     required this.bottomContentInset,
     required this.onSelectProject,
   });
@@ -603,6 +970,7 @@ class _ProjectCollection extends StatelessWidget {
   final List<_ProjectEntry> projects;
   final int? selectedIndex;
   final bool compact;
+  final _DirectoryView view;
   final double bottomContentInset;
   final ValueChanged<int> onSelectProject;
 
@@ -622,6 +990,7 @@ class _ProjectCollection extends StatelessWidget {
           projects: projects,
           selectedIndex: selectedIndex,
           compact: compact,
+          view: view,
           onSelected: onSelectProject,
         ),
       ],
@@ -635,6 +1004,7 @@ class _FinderProjectCollection extends StatelessWidget {
     required this.projects,
     required this.selectedIndex,
     required this.compact,
+    required this.view,
     required this.onSelected,
   });
 
@@ -642,6 +1012,7 @@ class _FinderProjectCollection extends StatelessWidget {
   final List<_ProjectEntry> projects;
   final int? selectedIndex;
   final bool compact;
+  final _DirectoryView view;
   final ValueChanged<int> onSelected;
 
   @override
@@ -655,6 +1026,7 @@ class _FinderProjectCollection extends StatelessWidget {
           projects: projects,
           selectedIndex: selectedIndex,
           compact: compact,
+          view: view,
           onSelected: onSelected,
         ),
       ),
@@ -665,7 +1037,6 @@ class _FinderProjectCollection extends StatelessWidget {
 class _ProjectDetail extends StatelessWidget {
   const _ProjectDetail({
     required this.project,
-    required this.projectIndex,
     required this.compact,
     required this.bottomContentInset,
     required this.feedback,
@@ -674,7 +1045,6 @@ class _ProjectDetail extends StatelessWidget {
   });
 
   final PortfolioProject project;
-  final int projectIndex;
   final bool compact;
   final double bottomContentInset;
   final String? feedback;
@@ -692,12 +1062,11 @@ class _ProjectDetail extends StatelessWidget {
         (compact ? 16 : 30) + bottomContentInset,
       ),
       children: <Widget>[
-        _SelectedProjectDetail(
+        SafariProjectPage(
           project: project,
-          projectIndex: projectIndex,
           compact: compact,
           feedback: feedback,
-          pendingLaunches: pendingLaunches,
+          pendingLinks: pendingLaunches,
           onOpenLink: onOpenLink,
         ),
       ],
@@ -705,783 +1074,220 @@ class _ProjectDetail extends StatelessWidget {
   }
 }
 
-class _SelectedProjectDetail extends StatelessWidget {
-  const _SelectedProjectDetail({
-    required this.project,
-    required this.projectIndex,
-    required this.compact,
-    required this.feedback,
-    required this.pendingLaunches,
-    required this.onOpenLink,
-  });
+class _FileEntry {
+  const _FileEntry.app(PortfolioAppId value) : app = value, project = null;
+  const _FileEntry.project(_ProjectEntry value) : project = value, app = null;
+  const _FileEntry.printer() : project = null, app = null;
 
-  final PortfolioProject project;
-  final int projectIndex;
-  final bool compact;
-  final String? feedback;
-  final Set<Uri> pendingLaunches;
-  final ValueChanged<PortfolioProjectLink> onOpenLink;
+  final PortfolioAppId? app;
+  final _ProjectEntry? project;
+  bool get artworkHasBackground => project != null
+      ? ProjectAppIcon.hasOwnBackground(project!.project.appIconAsset)
+      : app != null && !AppleAppArtwork.usesMobileTranslucentTile(app!);
+  bool get isPrinter => app == null && project == null;
+  String get label =>
+      project?.project.title ??
+      (app == null ? '프린터' : AppleAppIcon.labelFor(app!));
+  String get kind => project != null
+      ? project!.project.category == PortfolioProjectCategory.career
+            ? '회사 프로젝트'
+            : '개인 프로젝트'
+      : isPrinter
+      ? '프린터'
+      : '앱';
 
-  @override
-  Widget build(BuildContext context) {
-    final sections = _orderedProjectSections(project);
-    final highlights = project.highlights
-        .where((highlight) => highlight.trim().isNotEmpty)
-        .toList(growable: false);
-    final technologies = project.technologies
-        .map((technology) => technology.trim())
-        .where((technology) => technology.isNotEmpty)
-        .toList(growable: false);
-    return Center(
-      child: ConstrainedBox(
-        constraints: const BoxConstraints(maxWidth: 820),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.stretch,
-          children: <Widget>[
-            _ProjectCaseStudyHeader(project: project, compact: compact),
-            SizedBox(height: compact ? 20 : 28),
-            _ProjectIntroduction(
-              project: project,
-              projectIndex: projectIndex,
-              pendingLaunches: pendingLaunches,
-              onOpenLink: onOpenLink,
-            ),
-            if (feedback case final message?) ...<Widget>[
-              const SizedBox(height: 14),
-              AppleFeedbackBanner(
-                key: const Key('project-launch-feedback'),
-                message: message,
-              ),
-            ],
-            if (technologies.isNotEmpty) ...<Widget>[
-              SizedBox(height: compact ? 16 : 20),
-              Semantics(
-                container: true,
-                explicitChildNodes: true,
-                child: AppleSurfaceCard(
-                  key: const Key('project-technologies'),
-                  radius: 17,
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: <Widget>[
-                      Semantics(
-                        header: true,
-                        child: Text(
-                          '사용 언어 · 기술',
-                          key: const Key('project-technologies-heading'),
-                          style: AppleTheme.title(context),
-                        ),
-                      ),
-                      const SizedBox(height: 12),
-                      Wrap(
-                        spacing: 8,
-                        runSpacing: 8,
-                        children: <Widget>[
-                          for (final entry in technologies.indexed)
-                            Semantics(
-                              key: Key('project-technology-${entry.$1}'),
-                              label: '사용 기술 ${entry.$2}',
-                              excludeSemantics: true,
-                              child: ApplePill(label: '#${entry.$2}'),
-                            ),
-                        ],
-                      ),
-                    ],
-                  ),
-                ),
-              ),
-            ],
-            if (highlights.isNotEmpty) ...<Widget>[
-              SizedBox(height: compact ? 16 : 20),
-              _ProjectHighlightsCard(highlights: highlights),
-            ],
-            if (project.architecture case final architecture?) ...<Widget>[
-              SizedBox(height: compact ? 16 : 20),
-              _ProjectArchitectureCard(
-                architecture: architecture,
-                compact: compact,
-              ),
-            ],
-            if (sections.isNotEmpty) ...<Widget>[
-              SizedBox(height: compact ? 16 : 20),
-              _ProjectNarrativeCard(sections: sections, compact: compact),
-            ],
-          ],
-        ),
-      ),
-    );
-  }
+  // Stable sample metadata for app shortcuts, all before the first project's
+  // December 2020 date. Project participation dates remain authoritative.
+  String get date => project != null
+      ? _projectStartDate(project!.project.period)
+      : switch (app) {
+          PortfolioAppId.music => '2019-07-18',
+          PortfolioAppId.photos => '2020-02-06',
+          PortfolioAppId.mail => '2018-10-23',
+          PortfolioAppId.settings => '2020-09-14',
+          PortfolioAppId.trash => '2017-04-09',
+          null => '2019-11-27',
+          _ =>
+            '2016-${(app!.index % 11 + 1).toString().padLeft(2, '0')}-${(app!.index % 27 + 1).toString().padLeft(2, '0')}',
+        };
+  String get tags => project != null
+      ? (project!.project.technologies.toList()..sort()).join(' · ')
+      : switch (app) {
+          PortfolioAppId.music => '음악',
+          PortfolioAppId.photos => '사진',
+          PortfolioAppId.mail => '연락',
+          PortfolioAppId.settings => '환경 설정',
+          PortfolioAppId.trash => '정리',
+          null => '문서',
+          _ => label,
+        };
+  String sortValue(_DirectorySort sort) => switch (sort) {
+    _DirectorySort.name => label.toLowerCase(),
+    _DirectorySort.kind => kind,
+    _DirectorySort.date => date,
+    _DirectorySort.tags =>
+      project == null
+          ? tags.toLowerCase()
+          : (project!.project.technologies
+                    .map((tag) => tag.toLowerCase())
+                    .toList()
+                  ..sort())
+                .join(', '),
+    _DirectorySort.size => '',
+  };
 }
-
-List<PortfolioProjectSection> _orderedProjectSections(
-  PortfolioProject project,
-) {
-  final sections = project.sections
-      .where(
-        (section) =>
-            section.body.trim().isNotEmpty &&
-            !(section.kind == PortfolioProjectSectionKind.work &&
-                section.body.trim() == project.description.trim()),
-      )
-      .toList(growable: true);
-  sections.sort((left, right) => left.kind.index.compareTo(right.kind.index));
-  return List<PortfolioProjectSection>.unmodifiable(sections);
-}
-
-class _ProjectCaseStudyHeader extends StatelessWidget {
-  const _ProjectCaseStudyHeader({required this.project, required this.compact});
-
-  final PortfolioProject project;
-  final bool compact;
-
-  @override
-  Widget build(BuildContext context) {
-    final appIcon = Container(
-      key: const Key('project-detail-icon'),
-      width: 74,
-      height: 74,
-      clipBehavior: Clip.antiAlias,
-      decoration: BoxDecoration(
-        color: AppleTheme.surface(context),
-        borderRadius: BorderRadius.circular(20),
-        border: project.appIconAsset == null
-            ? Border.all(color: AppleTheme.separator(context))
-            : null,
-      ),
-      child: project.appIconAsset == null
-          ? null
-          : ProjectAppIcon(assetPath: project.appIconAsset!),
-    );
-    final title = Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: <Widget>[
-        Semantics(
-          header: true,
-          child: Text(
-            project.title,
-            key: const Key('project-detail-title'),
-            style: compact
-                ? Theme.of(context).textTheme.titleLarge
-                : Theme.of(context).textTheme.headlineSmall,
-          ),
-        ),
-        if (project.period.trim().isNotEmpty) ...<Widget>[
-          const SizedBox(height: 9),
-          ApplePill(
-            label: project.period,
-            icon: Icons.calendar_month_rounded,
-            color: AppleTheme.indigo,
-          ),
-        ],
-      ],
-    );
-
-    return LayoutBuilder(
-      builder: (context, constraints) {
-        final stacked = compact || constraints.maxWidth < 460;
-        return Semantics(
-          container: true,
-          explicitChildNodes: true,
-          child: stacked
-              ? Column(
-                  key: const Key('project-detail-header'),
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: <Widget>[
-                    appIcon,
-                    const SizedBox(height: 16),
-                    title,
-                  ],
-                )
-              : Row(
-                  key: const Key('project-detail-header'),
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: <Widget>[
-                    appIcon,
-                    const SizedBox(width: 18),
-                    Expanded(child: title),
-                  ],
-                ),
-        );
-      },
-    );
-  }
-}
-
-class _ProjectArchitectureCard extends StatelessWidget {
-  const _ProjectArchitectureCard({
-    required this.architecture,
-    required this.compact,
-  });
-
-  final PortfolioProjectArchitecture architecture;
-  final bool compact;
-
-  @override
-  Widget build(BuildContext context) {
-    final nodes = architecture.nodes
-        .where((node) => node.trim().isNotEmpty)
-        .toList(growable: false);
-    final semanticPrefix =
-        architecture.presentation == PortfolioArchitecturePresentation.flow
-        ? '아키텍처 흐름'
-        : '아키텍처 구성 요소';
-    return Semantics(
-      container: true,
-      explicitChildNodes: true,
-      child: AppleSurfaceCard(
-        key: const Key('project-architecture'),
-        radius: 17,
-        color: Color.alphaBlend(
-          AppleTheme.blue.withValues(
-            alpha: AppleTheme.isDark(context) ? 0.1 : 0.05,
-          ),
-          AppleTheme.surface(context),
-        ),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: <Widget>[
-            Semantics(
-              header: true,
-              child: Text(architecture.title, style: AppleTheme.title(context)),
-            ),
-            if (architecture.description.trim().isNotEmpty) ...<Widget>[
-              const SizedBox(height: 8),
-              Text(
-                architecture.description,
-                style: AppleTheme.body(
-                  context,
-                ).copyWith(color: AppleTheme.secondaryLabel(context)),
-              ),
-            ],
-            if (nodes.isNotEmpty) ...<Widget>[
-              const SizedBox(height: 18),
-              Semantics(
-                label: '$semanticPrefix: ${nodes.join(', ')}',
-                excludeSemantics: true,
-                child: LayoutBuilder(
-                  builder: (context, constraints) {
-                    if (architecture.presentation ==
-                        PortfolioArchitecturePresentation.components) {
-                      return _buildComponents(nodes, constraints);
-                    }
-                    return _buildFlow(nodes, constraints);
-                  },
-                ),
-              ),
-            ],
-          ],
-        ),
-      ),
-    );
-  }
-
-  Widget _buildFlow(List<String> nodes, BoxConstraints constraints) {
-    final vertical = compact || constraints.maxWidth < 480;
-    if (vertical) {
-      return Column(
-        children: <Widget>[
-          for (final entry in nodes.indexed) ...<Widget>[
-            SizedBox(
-              width: double.infinity,
-              child: _ArchitectureNode(index: entry.$1, label: entry.$2),
-            ),
-            if (entry.$1 < nodes.length - 1)
-              const Padding(
-                padding: EdgeInsets.symmetric(vertical: 5),
-                child: Icon(
-                  Icons.arrow_downward_rounded,
-                  size: 18,
-                  color: AppleTheme.blue,
-                ),
-              ),
-          ],
-        ],
-      );
-    }
-    return Row(
-      crossAxisAlignment: CrossAxisAlignment.center,
-      children: <Widget>[
-        for (final entry in nodes.indexed) ...<Widget>[
-          Expanded(
-            child: _ArchitectureNode(index: entry.$1, label: entry.$2),
-          ),
-          if (entry.$1 < nodes.length - 1)
-            const Padding(
-              padding: EdgeInsets.symmetric(horizontal: 5),
-              child: Icon(
-                Icons.arrow_forward_rounded,
-                size: 18,
-                color: AppleTheme.blue,
-              ),
-            ),
-        ],
-      ],
-    );
-  }
-
-  Widget _buildComponents(List<String> nodes, BoxConstraints constraints) {
-    final singleColumn = compact || constraints.maxWidth < 480;
-    final nodeWidth = singleColumn
-        ? constraints.maxWidth
-        : (constraints.maxWidth - 10) / 2;
-    return Wrap(
-      spacing: 10,
-      runSpacing: 10,
-      children: <Widget>[
-        for (final entry in nodes.indexed)
-          SizedBox(
-            width: nodeWidth,
-            child: _ArchitectureNode(index: entry.$1, label: entry.$2),
-          ),
-      ],
-    );
-  }
-}
-
-class _ArchitectureNode extends StatelessWidget {
-  const _ArchitectureNode({required this.index, required this.label});
-
-  final int index;
-  final String label;
-
-  @override
-  Widget build(BuildContext context) {
-    return Container(
-      key: Key('project-architecture-node-$index'),
-      constraints: const BoxConstraints(minHeight: 62),
-      alignment: Alignment.center,
-      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 12),
-      decoration: BoxDecoration(
-        color: AppleTheme.surface(context),
-        borderRadius: BorderRadius.circular(14),
-        border: Border.all(color: AppleTheme.blue.withValues(alpha: 0.22)),
-      ),
-      child: Text(
-        label,
-        textAlign: TextAlign.center,
-        style: Theme.of(
-          context,
-        ).textTheme.labelLarge?.copyWith(fontWeight: FontWeight.w700),
-      ),
-    );
-  }
-}
-
-class _ProjectHighlightsCard extends StatelessWidget {
-  const _ProjectHighlightsCard({required this.highlights});
-
-  final List<String> highlights;
-
-  @override
-  Widget build(BuildContext context) {
-    return Semantics(
-      container: true,
-      explicitChildNodes: true,
-      child: AppleSurfaceCard(
-        key: const Key('project-highlights'),
-        radius: 17,
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: <Widget>[
-            Semantics(
-              header: true,
-              child: Text('역할 · 기여도', style: AppleTheme.title(context)),
-            ),
-            const SizedBox(height: 12),
-            for (final entry in highlights.indexed) ...<Widget>[
-              Semantics(
-                container: true,
-                label: '${entry.$1 + 1}. ${entry.$2}',
-                excludeSemantics: true,
-                child: Row(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: <Widget>[
-                    Container(
-                      key: Key('project-highlight-index-${entry.$1}'),
-                      constraints: const BoxConstraints(
-                        minWidth: 24,
-                        minHeight: 24,
-                      ),
-                      padding: const EdgeInsets.symmetric(
-                        horizontal: 7,
-                        vertical: 3,
-                      ),
-                      alignment: Alignment.center,
-                      decoration: BoxDecoration(
-                        color: AppleTheme.buttonBlue,
-                        borderRadius: BorderRadius.circular(8),
-                      ),
-                      child: Text(
-                        '${entry.$1 + 1}',
-                        style: Theme.of(context).textTheme.labelSmall?.copyWith(
-                          color: Colors.white,
-                          fontWeight: FontWeight.w800,
-                        ),
-                      ),
-                    ),
-                    const SizedBox(width: 10),
-                    Expanded(
-                      child: Text(
-                        entry.$2,
-                        style: Theme.of(context).textTheme.bodyLarge,
-                      ),
-                    ),
-                  ],
-                ),
-              ),
-              if (entry.$1 < highlights.length - 1) const SizedBox(height: 11),
-            ],
-          ],
-        ),
-      ),
-    );
-  }
-}
-
-class _ProjectNarrativeCard extends StatelessWidget {
-  const _ProjectNarrativeCard({required this.sections, required this.compact});
-
-  final List<PortfolioProjectSection> sections;
-  final bool compact;
-
-  @override
-  Widget build(BuildContext context) {
-    return Semantics(
-      container: true,
-      explicitChildNodes: true,
-      child: AppleSurfaceCard(
-        key: const Key('project-narrative'),
-        radius: 17,
-        padding: EdgeInsets.all(compact ? 17 : 22),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: <Widget>[
-            Semantics(
-              header: true,
-              child: Text('프로젝트 회고', style: AppleTheme.title(context)),
-            ),
-            const SizedBox(height: 8),
-            for (final entry in sections.indexed) ...<Widget>[
-              if (entry.$1 > 0)
-                Divider(height: 1, color: AppleTheme.separator(context)),
-              _ProjectNarrativeRow(section: entry.$2, compact: compact),
-            ],
-          ],
-        ),
-      ),
-    );
-  }
-}
-
-class _ProjectNarrativeRow extends StatelessWidget {
-  const _ProjectNarrativeRow({required this.section, required this.compact});
-
-  final PortfolioProjectSection section;
-  final bool compact;
-
-  @override
-  Widget build(BuildContext context) {
-    final keyPrefix = 'project-section-${section.kind.name}';
-    final accent = AppleTheme.isDark(context)
-        ? const Color(0xFF73B5FF)
-        : AppleTheme.buttonBlue;
-    final label = Semantics(
-      header: true,
-      child: Text(
-        section.kind.label,
-        key: Key('$keyPrefix-label'),
-        style: Theme.of(context).textTheme.titleMedium?.copyWith(
-          color: accent,
-          fontWeight: FontWeight.w800,
-        ),
-      ),
-    );
-    final body = Text(
-      section.body,
-      key: Key('$keyPrefix-body'),
-      style: Theme.of(context).textTheme.bodyLarge,
-    );
-
-    return LayoutBuilder(
-      key: Key(keyPrefix),
-      builder: (context, constraints) {
-        final stacked = compact || constraints.maxWidth < 480;
-        return Padding(
-          padding: const EdgeInsets.symmetric(vertical: 15),
-          child: stacked
-              ? Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: <Widget>[label, const SizedBox(height: 8), body],
-                )
-              : Row(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: <Widget>[
-                    SizedBox(width: 112, child: label),
-                    const SizedBox(width: 16),
-                    Expanded(child: body),
-                  ],
-                ),
-        );
-      },
-    );
-  }
-}
-
-class _ProjectIntroduction extends StatelessWidget {
-  const _ProjectIntroduction({
-    required this.project,
-    required this.projectIndex,
-    required this.pendingLaunches,
-    required this.onOpenLink,
-  });
-
-  final PortfolioProject project;
-  final int projectIndex;
-  final Set<Uri> pendingLaunches;
-  final ValueChanged<PortfolioProjectLink> onOpenLink;
-
-  @override
-  Widget build(BuildContext context) {
-    return Semantics(
-      container: true,
-      explicitChildNodes: true,
-      child: AppleSurfaceCard(
-        key: const Key('project-introduction'),
-        radius: 17,
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: <Widget>[
-            Semantics(
-              header: true,
-              child: Text('프로젝트 소개', style: AppleTheme.title(context)),
-            ),
-            if (project.description.trim().isNotEmpty) ...<Widget>[
-              const SizedBox(height: 12),
-              Text(project.description, style: AppleTheme.body(context)),
-            ],
-            const SizedBox(height: 20),
-            Semantics(
-              key: const Key('project-actions'),
-              header: true,
-              child: Text(
-                '프로젝트 링크',
-                key: const Key('project-actions-heading'),
-                style: Theme.of(
-                  context,
-                ).textTheme.labelLarge?.copyWith(fontWeight: FontWeight.w700),
-              ),
-            ),
-            if (project.links.isEmpty) ...<Widget>[
-              const SizedBox(height: 6),
-              Text(
-                '현재 공개된 외부 링크가 없습니다.',
-                style: AppleTheme.body(
-                  context,
-                ).copyWith(color: AppleTheme.secondaryLabel(context)),
-              ),
-            ],
-            if (project.links.isNotEmpty) ...<Widget>[
-              const SizedBox(height: 13),
-              Wrap(
-                spacing: 9,
-                runSpacing: 9,
-                children: <Widget>[
-                  for (final entry in project.links.indexed)
-                    OutlinedButton(
-                      key: Key('project-link-$projectIndex-${entry.$1}'),
-                      style: OutlinedButton.styleFrom(
-                        minimumSize: const Size(0, 56),
-                        padding: const EdgeInsets.fromLTRB(10, 10, 14, 10),
-                        backgroundColor: AppleTheme.panel(context),
-                        foregroundColor: AppleTheme.primaryLabel(context),
-                        side: BorderSide(color: AppleTheme.separator(context)),
-                        shape: RoundedRectangleBorder(
-                          borderRadius: BorderRadius.circular(15),
-                        ),
-                      ),
-                      onPressed: pendingLaunches.contains(entry.$2.uri)
-                          ? null
-                          : () => onOpenLink(entry.$2),
-                      child: Row(
-                        mainAxisSize: MainAxisSize.min,
-                        children: <Widget>[
-                          Container(
-                            width: 32,
-                            height: 32,
-                            decoration: BoxDecoration(
-                              color: AppleTheme.surface(context),
-                              borderRadius: BorderRadius.circular(9),
-                            ),
-                            child: Icon(
-                              _projectLinkIcon(entry.$2.uri),
-                              size: 21,
-                            ),
-                          ),
-                          const SizedBox(width: 10),
-                          Flexible(child: Text(entry.$2.label)),
-                          const SizedBox(width: 16),
-                          const Icon(Icons.arrow_outward_rounded, size: 17),
-                        ],
-                      ),
-                    ),
-                ],
-              ),
-            ],
-            if (project.screenshots.isNotEmpty) ...<Widget>[
-              const SizedBox(height: 24),
-              _ProjectScreenshots(screenshots: project.screenshots),
-            ],
-          ],
-        ),
-      ),
-    );
-  }
-}
-
-class _ProjectScreenshots extends StatelessWidget {
-  const _ProjectScreenshots({required this.screenshots});
-
-  final List<PortfolioProjectScreenshot> screenshots;
-
-  void _openScreenshot(
-    BuildContext context,
-    PortfolioProjectScreenshot screenshot,
-  ) {
-    showDialog<void>(
-      context: context,
-      builder: (context) => Dialog.fullscreen(
-        key: const Key('project-screenshot-preview'),
-        child: Scaffold(
-          backgroundColor: AppleTheme.canvas(context),
-          appBar: AppBar(
-            leading: IconButton(
-              tooltip: '닫기',
-              icon: const Icon(Icons.close_rounded),
-              onPressed: () => Navigator.of(context).pop(),
-            ),
-            title: Text(
-              screenshot.caption,
-              maxLines: 2,
-              overflow: TextOverflow.ellipsis,
-              style: AppleTheme.body(context),
-            ),
-          ),
-          body: Center(
-            child: InteractiveViewer(
-              maxScale: 5,
-              child: Image.asset(
-                screenshot.asset,
-                semanticLabel: screenshot.caption,
-                fit: BoxFit.contain,
-              ),
-            ),
-          ),
-        ),
-      ),
-    );
-  }
-
-  @override
-  Widget build(BuildContext context) {
-    return Column(
-      key: const Key('project-screenshots'),
-      crossAxisAlignment: CrossAxisAlignment.stretch,
-      children: <Widget>[
-        Semantics(
-          header: true,
-          child: Text('프로젝트 화면', style: AppleTheme.title(context)),
-        ),
-        const SizedBox(height: 6),
-        Text('이미지를 누르면 확대해서 볼 수 있습니다.', style: AppleTheme.caption(context)),
-        for (final entry in screenshots.indexed) ...<Widget>[
-          const SizedBox(height: 16),
-          Semantics(
-            label: '${entry.$2.caption} 확대 보기',
-            button: true,
-            child: Material(
-              color: AppleTheme.panel(context),
-              borderRadius: BorderRadius.circular(12),
-              clipBehavior: Clip.antiAlias,
-              child: AspectRatio(
-                aspectRatio: entry.$2.aspectRatio,
-                child: Ink.image(
-                  image: AssetImage(entry.$2.asset),
-                  fit: BoxFit.contain,
-                  child: InkWell(
-                    key: Key('project-screenshot-${entry.$1}'),
-                    onTap: () => _openScreenshot(context, entry.$2),
-                    focusColor: AppleTheme.blue.withValues(alpha: 0.18),
-                  ),
-                ),
-              ),
-            ),
-          ),
-          const SizedBox(height: 8),
-          Text(entry.$2.caption, style: AppleTheme.caption(context)),
-        ],
-      ],
-    );
-  }
-}
-
-IconData _projectLinkIcon(Uri uri) => switch (uri.host) {
-  'apps.apple.com' => Icons.apple_rounded,
-  'play.google.com' => Icons.play_arrow_rounded,
-  'chromewebstore.google.com' => Icons.extension_rounded,
-  'www.dbpia.co.kr' => Icons.article_outlined,
-  _ => Icons.language_rounded,
-};
 
 class _ApplicationsDirectory extends StatelessWidget {
   const _ApplicationsDirectory({
     required this.keyPrefix,
     required this.apps,
+    required this.options,
     required this.compact,
     required this.bottomContentInset,
     required this.onOpenApp,
     this.trashEmpty = false,
+    this.printerData,
+    this.projects = const [],
+    this.selectedProject,
+    this.onSelectProject,
   });
 
   final String keyPrefix;
   final List<PortfolioAppId> apps;
+  final _DirectoryOptions options;
   final bool compact;
   final double bottomContentInset;
   final ValueChanged<PortfolioAppId>? onOpenApp;
   final bool trashEmpty;
+  final PortfolioData? printerData;
+  final List<_ProjectEntry> projects;
+  final int? selectedProject;
+  final ValueChanged<int>? onSelectProject;
+
+  VoidCallback? _onOpen(BuildContext context, _FileEntry entry) {
+    if (entry.project case final project?) {
+      return onSelectProject == null
+          ? null
+          : () => onSelectProject!(project.index);
+    }
+    if (entry.app case final app?) {
+      return onOpenApp == null ? null : () => onOpenApp!(app);
+    }
+    return () => PortfolioPrinterShortcut.open(context, printerData!);
+  }
+
+  Widget _artwork(BuildContext context, _FileEntry entry) {
+    if (entry.project case final project?) {
+      return project.project.appIconAsset == null
+          ? const Icon(Icons.folder_rounded, color: Color(0xFF55B8F5), size: 40)
+          : ProjectAppIcon(
+              assetPath: project.project.appIconAsset!,
+              size: 40,
+              alignment: Alignment.center,
+            );
+    }
+    if (entry.app case final app?) {
+      return AppleAppArtwork(
+        appId: app,
+        size: 40,
+        trashEmpty: trashEmpty,
+        includeEffects: false,
+      );
+    }
+    return SvgPicture.asset(
+      'assets/icons/printer.svg',
+      width: 40,
+      height: 40,
+      theme: SvgTheme(currentColor: AppleTheme.primaryLabel(context)),
+    );
+  }
+
+  Key _entryKey(_FileEntry entry) => entry.project != null
+      ? Key('project-selector-${entry.project!.index}')
+      : Key('$keyPrefix-app-${entry.app?.name ?? 'printer'}');
 
   @override
   Widget build(BuildContext context) {
+    final entries = [
+      for (final project in projects) _FileEntry.project(project),
+      for (final app in apps) _FileEntry.app(app),
+      if (printerData != null) const _FileEntry.printer(),
+    ];
+    final originalOrder = entries.toList();
+    entries.sort((a, b) {
+      final order = _compareAvailable(
+        a.sortValue(options.sort),
+        b.sortValue(options.sort),
+      );
+      return order == 0
+          ? originalOrder.indexOf(a).compareTo(originalOrder.indexOf(b))
+          : order;
+    });
+    final padding = EdgeInsets.fromLTRB(
+      compact ? 16 : 24,
+      compact ? 16 : 24,
+      compact ? 16 : 24,
+      (compact ? 16 : 24) + bottomContentInset,
+    );
+    if (options.view == _DirectoryView.list) {
+      return ListView(
+        key: Key('$keyPrefix-app-list'),
+        padding: padding,
+        children: [
+          for (final entry in entries)
+            AppleFinderListRow(
+              key: _entryKey(entry),
+              artwork: _artwork(context, entry),
+              artworkHasBackground: entry.artworkHasBackground,
+              title: entry.label,
+              subtitle: switch (options.sort) {
+                _DirectorySort.date => entry.date,
+                _DirectorySort.tags => entry.tags,
+                _ => null,
+              },
+              selected:
+                  entry.project != null &&
+                  selectedProject == entry.project!.index,
+              onTap: _onOpen(context, entry),
+            ),
+        ],
+      );
+    }
     return GridView.builder(
       key: Key('$keyPrefix-app-grid'),
-      padding: EdgeInsets.fromLTRB(
-        compact ? 16 : 24,
-        compact ? 16 : 24,
-        compact ? 16 : 24,
-        (compact ? 16 : 24) + bottomContentInset,
-      ),
+      padding: padding,
       physics: const BouncingScrollPhysics(),
       gridDelegate: SliverGridDelegateWithMaxCrossAxisExtent(
         maxCrossAxisExtent: compact ? 118 : 132,
-        mainAxisExtent: compact ? 108 : 122,
+        mainAxisExtent:
+            (compact ? 154.0 : 166.0) +
+            math.max(0, MediaQuery.textScalerOf(context).scale(12) - 12),
         crossAxisSpacing: compact ? 6 : 10,
         mainAxisSpacing: compact ? 8 : 12,
       ),
-      itemCount: apps.length,
+      itemCount: entries.length,
       itemBuilder: (context, index) {
-        final appId = apps[index];
-        return Center(
-          child: AppleAppIcon(
-            key: Key('$keyPrefix-app-${appId.name}'),
-            appId: appId,
-            compact: compact,
-            size: compact ? 52 : 58,
-            trashEmpty: trashEmpty,
-            artworkForegroundColor: appId == PortfolioAppId.github
-                ? Colors.black
-                : null,
-            onTap: onOpenApp == null ? null : () => onOpenApp!(appId),
-          ),
+        final entry = entries[index];
+        final tile = AppleFinderFolderTile(
+          key: _entryKey(entry),
+          label: entry.label,
+          semanticsLabel: entry.project != null
+              ? 'Open project ${entry.label}'
+              : 'Open ${entry.label}',
+          selected:
+              entry.project != null && selectedProject == entry.project!.index,
+          artwork: _artwork(context, entry),
+          artworkHasBackground: entry.artworkHasBackground,
+          compact: compact,
+          onPressed: _onOpen(context, entry),
         );
+        if (entry.project case final project?) {
+          return SizedBox(
+            key: Key('$keyPrefix-folder-${project.index}'),
+            child: tile,
+          );
+        }
+        return tile;
       },
     );
   }

@@ -7,7 +7,6 @@ import '../models/portfolio_app_id.dart';
 import '../theme/apple_theme.dart';
 import '../widgets/apple_app_artwork.dart';
 import '../widgets/apple_app_icon.dart';
-import '../widgets/portfolio_printer_shortcut.dart';
 import 'apple_mobile_dock_geometry.dart';
 
 class AppleMobileDock extends StatelessWidget {
@@ -22,6 +21,7 @@ class AppleMobileDock extends StatelessWidget {
   static const List<PortfolioAppId> apps = <PortfolioAppId>[
     PortfolioAppId.profile,
     PortfolioAppId.projects,
+    PortfolioAppId.settings,
   ];
 
   final PortfolioData data;
@@ -67,7 +67,19 @@ class AppleMobileDock extends StatelessWidget {
               mainAxisSize: MainAxisSize.min,
               mainAxisAlignment: MainAxisAlignment.center,
               children: <Widget>[
-                for (final appId in apps)
+                for (final appId in apps) ...[
+                  if (appId == PortfolioAppId.settings)
+                    Padding(
+                      padding: const EdgeInsets.symmetric(horizontal: 8),
+                      child: Container(
+                        key: const Key('mobile-dock-separator'),
+                        width: 1,
+                        height: tablet ? 38 : 34,
+                        color: AppleTheme.secondaryLabel(
+                          context,
+                        ).withValues(alpha: 0.24),
+                      ),
+                    ),
                   AppleAppIcon(
                     key: Key('mobile-dock-${appId.name}'),
                     appId: appId,
@@ -79,23 +91,7 @@ class AppleMobileDock extends StatelessWidget {
                     artworkSurface: AppleAppArtworkSurface.mobile,
                     onTap: () => onOpen(appId),
                   ),
-                Padding(
-                  padding: const EdgeInsets.symmetric(horizontal: 8),
-                  child: Container(
-                    key: const Key('mobile-dock-separator'),
-                    width: 1,
-                    height: tablet ? 38 : 34,
-                    color: AppleTheme.secondaryLabel(
-                      context,
-                    ).withValues(alpha: 0.24),
-                  ),
-                ),
-                PortfolioPrinterShortcut(
-                  data: data,
-                  iconSize: tablet ? 54 : 49,
-                  showLabel: false,
-                  buttonKey: const Key('mobile-dock-printer'),
-                ),
+                ],
               ],
             ),
           ),

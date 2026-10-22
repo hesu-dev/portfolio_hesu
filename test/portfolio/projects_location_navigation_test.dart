@@ -12,9 +12,30 @@ import 'package:portfolio_hesu/portfolio/theme/apple_theme.dart';
 import 'package:portfolio_hesu/portfolio/widgets/apple_finder_scaffold.dart';
 
 void main() {
+  testWidgets(
+    'Files personal folder opens portfolio with the current app structure',
+    (tester) async {
+      await _pumpProjects(tester, size: const Size(390, 844), compact: true);
+      await tester.tap(
+        find.byKey(const Key('projects-finder-location-personal-projects')),
+      );
+      await tester.pumpAndSettle();
+      expect(find.text('Portfolio'), findsOneWidget);
+      expect(find.text('PersonaChat AI Character Chat'), findsNothing);
+      await tester.tap(find.byKey(const Key('project-selector-1')));
+      await tester.pumpAndSettle();
+      expect(
+        tester.widget<Text>(find.byKey(const Key('safari-project-title'))).data,
+        'Portfolio',
+      );
+      expect(find.byKey(const Key('architecture-diagram')), findsOneWidget);
+      expect(find.textContaining('SafariProjectPage'), findsWidgets);
+      expect(tester.takeException(), isNull);
+    },
+  );
   group('Projects Finder locations', () {
     testWidgets(
-      'defaults to 회사 and keeps Finder shortcuts above five locations',
+      'defaults to 파일 and keeps Finder shortcuts above five locations',
       (tester) async {
         await _pumpProjects(tester, size: const Size(900, 650));
 
@@ -45,20 +66,20 @@ void main() {
           find.descendant(of: sidebar, matching: find.text(portfolioData.name)),
           findsNothing,
         );
-        expect(_toolbarTitle(tester), '회사');
+        expect(_toolbarTitle(tester), '파일');
         expect(
           tester
               .getSemantics(
-                find.byKey(const Key('projects-finder-location-career')),
+                find.byKey(const Key('projects-finder-location-files')),
               )
               .getSemanticsData()
               .label,
-          '회사 위치 열기',
+          '파일 위치 열기',
         );
         expect(
           tester
               .getSemantics(
-                find.byKey(const Key('projects-finder-location-career')),
+                find.byKey(const Key('projects-finder-location-files')),
               )
               .getSemanticsData()
               .flagsCollection
@@ -73,10 +94,17 @@ void main() {
 
         expect(_toolbarTitle(tester), '최근 항목');
         for (var index = 0; index < portfolioData.projects.length; index++) {
-          expect(
-            find.byKey(Key('projects-recent-folder-$index')),
-            findsOneWidget,
+          final tile = find.byKey(Key('projects-recent-folder-$index'));
+          await tester.scrollUntilVisible(
+            tile,
+            100,
+            scrollable: find.descendant(
+              of: find.byKey(const Key('projects-recent-app-grid')),
+              matching: find.byType(Scrollable),
+            ),
           );
+          await tester.pumpAndSettle();
+          expect(tile, findsOneWidget);
         }
       },
     );
@@ -131,7 +159,7 @@ void main() {
       },
     );
 
-    testWidgets('데스크탑 location keeps GitHub artwork black in dark mode', (
+    testWidgets('데스크탑 location adapts GitHub artwork to dark mode', (
       tester,
     ) async {
       await _pumpProjects(
@@ -157,7 +185,7 @@ void main() {
 
       expect(
         (picture.bytesLoader as SvgAssetLoader).theme?.currentColor,
-        Colors.black,
+        AppleTheme.primaryLabel(tester.element(githubTile)),
       );
     });
 
@@ -167,6 +195,10 @@ void main() {
       final data = _categorizedData();
       await _pumpProjects(tester, size: const Size(900, 650), data: data);
 
+      await tester.tap(
+        find.byKey(const Key('projects-finder-location-career')),
+      );
+      await tester.pumpAndSettle();
       final commonDirectory = find.byKey(
         const Key('projects-connection-directory'),
       );
@@ -174,7 +206,7 @@ void main() {
       final directoryType = tester.widget(commonDirectory).runtimeType;
       expect(find.text('Career sample'), findsOneWidget);
       expect(find.text('Personal sample'), findsNothing);
-      expect(find.byKey(const Key('project-detail-title')), findsNothing);
+      expect(find.byKey(const Key('safari-project-title')), findsNothing);
 
       await tester.tap(
         find.byKey(const Key('projects-finder-location-personal-projects')),
@@ -192,10 +224,10 @@ void main() {
       await tester.pumpAndSettle();
       expect(find.byKey(const Key('projects-detail-scroll')), findsOneWidget);
       expect(
-        tester.widget<Text>(find.byKey(const Key('project-detail-title'))).data,
+        tester.widget<Text>(find.byKey(const Key('safari-project-title'))).data,
         'Personal sample',
       );
-      expect(find.byKey(const Key('project-introduction')), findsOneWidget);
+      expect(find.byKey(const Key('safari-project-page')), findsOneWidget);
       expect(find.text('Unused detail'), findsOneWidget);
       expect(find.byKey(const Key('project-narrative')), findsNothing);
 
@@ -212,20 +244,23 @@ void main() {
     });
 
     testWidgets('개인 프로젝트의 긴 폴더 제목은 iPad에서도 두 줄로 개행된다', (tester) async {
-      await _pumpProjects(tester, size: const Size(834, 700), tablet: true);
+      const longTitle = '긴 제목의 개인 프로젝트 폴더 이름 개행 확인';
+      await _pumpProjects(
+        tester,
+        size: const Size(834, 700),
+        tablet: true,
+        data: _categorizedData(personalTitle: longTitle),
+      );
 
       await tester.tap(
         find.byKey(const Key('projects-finder-location-personal-projects')),
       );
       await tester.pumpAndSettle();
 
-      final readingLog = find.text('ReadingLog');
-      final personaChat = find.text('PersonaChat AI Character Chat');
-      expect(
-        tester.getTopLeft(readingLog).dx,
-        lessThan(tester.getTopLeft(personaChat).dx),
-      );
-      expect(tester.getSize(personaChat).height, greaterThan(20));
+      final longProject = find.text(longTitle);
+      expect(longProject, findsOneWidget);
+      expect(tester.getSize(longProject).height, greaterThan(20));
+      expect(tester.takeException(), isNull);
     });
 
     testWidgets(
@@ -279,17 +314,17 @@ void main() {
           );
 
           expect(
-            _isSelected(tester, const Key('projects-finder-location-career')),
+            _isSelected(tester, const Key('projects-finder-location-files')),
             isTrue,
           );
           expect(
             tester
                 .getSemantics(
-                  find.byKey(const Key('projects-finder-location-career')),
+                  find.byKey(const Key('projects-finder-location-files')),
                 )
                 .getSemanticsData()
                 .label,
-            'Open 회사',
+            'Open 파일',
           );
 
           await tester.tap(
@@ -298,10 +333,17 @@ void main() {
           await tester.pumpAndSettle();
           expect(_toolbarTitle(tester), '최근 항목');
           for (var index = 0; index < portfolioData.projects.length; index++) {
-            expect(
-              find.byKey(Key('projects-recent-folder-$index')),
-              findsOneWidget,
+            final tile = find.byKey(Key('projects-recent-folder-$index'));
+            await tester.scrollUntilVisible(
+              tile,
+              100,
+              scrollable: find.descendant(
+                of: find.byKey(const Key('projects-recent-app-grid')),
+                matching: find.byType(Scrollable),
+              ),
             );
+            await tester.pumpAndSettle();
+            expect(tile, findsOneWidget);
           }
 
           await tester.tap(
@@ -356,7 +398,7 @@ void main() {
           final title = tester.widget<Text>(
             find.descendant(
               of: find.byKey(const Key('projects-finder-current-location')),
-              matching: find.text('회사'),
+              matching: find.text('파일'),
             ),
           );
 
@@ -406,7 +448,7 @@ void main() {
       expect(_toolbarTitle(tester), '데스크탑');
       await tester.tap(find.byKey(const Key('projects-finder-back')));
       await tester.pumpAndSettle();
-      expect(_toolbarTitle(tester), '회사');
+      expect(_toolbarTitle(tester), '파일');
       await tester.tap(find.byKey(const Key('projects-finder-forward')));
       await tester.pumpAndSettle();
       expect(_toolbarTitle(tester), '데스크탑');
@@ -441,7 +483,7 @@ void main() {
       await tester.pumpAndSettle();
 
       expect(
-        _isSelected(tester, const Key('projects-finder-location-career')),
+        _isSelected(tester, const Key('projects-finder-location-files')),
         isTrue,
       );
       await tester.tap(
@@ -454,7 +496,7 @@ void main() {
         isTrue,
       );
       expect(
-        _isSelected(tester, const Key('projects-finder-location-career')),
+        _isSelected(tester, const Key('projects-finder-location-files')),
         isFalse,
       );
     });
@@ -505,45 +547,44 @@ void main() {
       );
     });
 
-    testWidgets(
-      'replacing PortfolioData resets detail history to career root',
-      (tester) async {
-        await _pumpProjects(
-          tester,
-          size: const Size(900, 650),
-          data: _categorizedData(),
-        );
-        await tester.tap(find.byKey(const Key('projects-career-folder-0')));
-        await tester.pumpAndSettle();
-        expect(
-          tester
-              .widget<Text>(find.byKey(const Key('project-detail-title')))
-              .data,
-          'Career sample',
-        );
+    testWidgets('replacing PortfolioData resets detail history to files root', (
+      tester,
+    ) async {
+      await _pumpProjects(
+        tester,
+        size: const Size(900, 650),
+        data: _categorizedData(),
+      );
+      await tester.tap(
+        find.byKey(const Key('projects-finder-location-career')),
+      );
+      await tester.pumpAndSettle();
+      await tester.tap(find.byKey(const Key('projects-career-folder-0')));
+      await tester.pumpAndSettle();
+      expect(
+        tester.widget<Text>(find.byKey(const Key('safari-project-title'))).data,
+        'Career sample',
+      );
 
-        await _pumpProjects(
-          tester,
-          size: const Size(900, 650),
-          data: _categorizedData(careerTitle: 'Reordered career'),
-        );
-        await tester.pumpAndSettle();
+      await _pumpProjects(
+        tester,
+        size: const Size(900, 650),
+        data: _categorizedData(careerTitle: 'Reordered career'),
+      );
+      await tester.pumpAndSettle();
 
-        expect(find.byKey(const Key('project-detail-title')), findsNothing);
-        expect(
-          find.byKey(const Key('projects-collection-scroll')),
-          findsOneWidget,
-        );
-        expect(_toolbarTitle(tester), '회사');
-        expect(find.text('Reordered career'), findsOneWidget);
-        expect(
-          tester
-              .widget<IconButton>(find.byKey(const Key('projects-finder-back')))
-              .onPressed,
-          isNull,
-        );
-      },
-    );
+      expect(find.byKey(const Key('safari-project-title')), findsNothing);
+      expect(find.byKey(const Key('projects-collection-scroll')), findsNothing);
+      expect(_toolbarTitle(tester), '파일');
+      expect(find.text('Reordered career'), findsNothing);
+      expect(find.byKey(const Key('projects-files-app-grid')), findsOneWidget);
+      expect(
+        tester
+            .widget<IconButton>(find.byKey(const Key('projects-finder-back')))
+            .onPressed,
+        isNull,
+      );
+    });
 
     testWidgets('파일 app shortcuts open another macOS window', (tester) async {
       await _pumpPortfolio(tester, size: const Size(1280, 720));
@@ -589,7 +630,15 @@ void main() {
           await tester.pumpAndSettle();
           expect(_toolbarTitle(tester), '파일');
 
-          for (final appId in portfolioFileAppIds) {
+          final mobile = scenario.compact || scenario.tablet;
+          final fileApps = portfolioFileAppIds
+              .where((app) => !mobile || app != PortfolioAppId.settings)
+              .toList();
+          expect(
+            find.byKey(const Key('projects-files-app-printer')),
+            mobile ? findsOneWidget : findsNothing,
+          );
+          for (final appId in fileApps) {
             final app = find.byKey(Key('projects-files-app-${appId.name}'));
             await tester.ensureVisible(app);
             await tester.pumpAndSettle();
@@ -598,7 +647,7 @@ void main() {
             await tester.pump();
             expect(opened.last, appId);
           }
-          expect(opened, portfolioFileAppIds);
+          expect(opened, fileApps);
           expect(tester.takeException(), isNull, reason: '${scenario.size}');
         }
       },
@@ -623,7 +672,10 @@ bool _isSelected(WidgetTester tester, Key key) {
       ui.Tristate.isTrue;
 }
 
-PortfolioData _categorizedData({String careerTitle = 'Career sample'}) {
+PortfolioData _categorizedData({
+  String careerTitle = 'Career sample',
+  String personalTitle = 'Personal sample',
+}) {
   PortfolioProject project(String title, PortfolioProjectCategory category) {
     return PortfolioProject(
       title: title,
@@ -642,7 +694,7 @@ PortfolioData _categorizedData({String careerTitle = 'Career sample'}) {
     skillGroups: portfolioData.skillGroups,
     projects: <PortfolioProject>[
       project(careerTitle, PortfolioProjectCategory.career),
-      project('Personal sample', PortfolioProjectCategory.personal),
+      project(personalTitle, PortfolioProjectCategory.personal),
     ],
   );
 }

@@ -1,17 +1,23 @@
 import 'dart:async';
 
+import 'package:flutter/foundation.dart';
+import 'package:flutter/cupertino.dart';
+import 'package:flutter/gestures.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 
 import '../data/portfolio_data.dart';
 import '../models/portfolio_app_id.dart';
 import '../music/music_controller.dart';
 import '../services/external_launcher.dart';
 import '../theme/portfolio_theme_controller.dart';
+import '../theme/apple_theme.dart';
 import '../widgets/portfolio_guide_button.dart';
 import 'apple_home_grid.dart';
 import 'apple_mobile_dock.dart';
 import 'apple_mobile_dock_geometry.dart';
-import 'apple_status_bar.dart';
+import 'apple_mobile_search.dart';
+// import 'apple_status_bar.dart';
 import 'mobile_app_surface.dart';
 
 typedef AppleNow = DateTime Function();
@@ -46,15 +52,63 @@ class AppleMobileShell extends StatefulWidget {
   State<AppleMobileShell> createState() => _AppleMobileShellState();
 }
 
-class _AppleMobileShellState extends State<AppleMobileShell> {
+class _AppleMobileShellState extends State<AppleMobileShell>
+    with WidgetsBindingObserver {
   final List<PortfolioAppId> _appStack = <PortfolioAppId>[];
   Timer? _clockTimer;
   late DateTime _now;
+  bool _searchOpen = false;
+  double _homeDragDistance = 0;
+
+  Future<void> _showSearch() async {
+    if (_searchOpen || _appStack.isNotEmpty) return;
+    _searchOpen = true;
+    final app = await showGeneralDialog<PortfolioAppId>(
+      context: context,
+      barrierColor: Colors.transparent,
+      barrierLabel: '검색 닫기',
+      transitionDuration: const Duration(milliseconds: 200),
+      transitionBuilder: (context, animation, _, child) =>
+          FadeTransition(opacity: animation, child: child),
+      pageBuilder: (context, _, _) => AppleMobileSearch(
+        tablet: widget.tablet,
+        trashEmpty: widget.trashEmpty,
+        onOpenApp: (app) => Navigator.of(context).pop(app),
+        onClose: () => Navigator.of(context).pop(),
+      ),
+    );
+    _searchOpen = false;
+    if (mounted && app != null) _openApp(app);
+  }
+
+  bool get _usesNativeHomeIndicator =>
+      !kIsWeb && defaultTargetPlatform == TargetPlatform.iOS;
 
   @override
   void initState() {
     super.initState();
     _restartClock();
+    if (_usesNativeHomeIndicator) {
+      WidgetsBinding.instance.addObserver(this);
+      _enableNativeHomeIndicatorAutoHide();
+    }
+  }
+
+  void _enableNativeHomeIndicatorAutoHide() {
+    // iOS owns the indicator's position and fade; keep the status bar visible.
+    unawaited(
+      SystemChrome.setEnabledSystemUIMode(
+        SystemUiMode.manual,
+        overlays: const [SystemUiOverlay.top],
+      ),
+    );
+  }
+
+  @override
+  void didChangeAppLifecycleState(AppLifecycleState state) {
+    if (_usesNativeHomeIndicator && state == AppLifecycleState.resumed) {
+      _enableNativeHomeIndicatorAutoHide();
+    }
   }
 
   @override
@@ -91,6 +145,7 @@ class _AppleMobileShellState extends State<AppleMobileShell> {
 
   @override
   void dispose() {
+    WidgetsBinding.instance.removeObserver(this);
     _clockTimer?.cancel();
     super.dispose();
   }
@@ -136,7 +191,8 @@ class _AppleMobileShellState extends State<AppleMobileShell> {
               bottom: activeApp == null,
               child: Column(
                 children: <Widget>[
-                  AppleStatusBar(tablet: widget.tablet, now: _now),
+                  // 실제 기기 상태바와 중복되어 임시로 숨김. 복원 시 import도 해제.
+                  // AppleStatusBar(tablet: widget.tablet, now: _now),
                   Expanded(
                     child: AnimatedSwitcher(
                       duration: const Duration(milliseconds: 240),
@@ -219,11 +275,17 @@ class _AppleMobileShellState extends State<AppleMobileShell> {
                             ),
                     ),
                   ),
-                  if (activeApp == null) const _AppleHomeIndicator(),
+                  if (activeApp == null)
+                    if (_usesNativeHomeIndicator)
+                      const SizedBox(
+                        height: AppleMobileDockGeometry.homeIndicatorExtent,
+                      )
+                    else
+                      const _AppleHomeIndicator(),
                 ],
               ),
             ),
-            if (activeApp != null)
+            if (activeApp != null && !_usesNativeHomeIndicator)
               Positioned.fill(
                 child: IgnorePointer(
                   child: SafeArea(
@@ -258,33 +320,72 @@ class _AppleMobileShellState extends State<AppleMobileShell> {
   }
 
   Widget _buildHome() {
-    return SizedBox.expand(
-      key: const Key('mobile-home'),
-      child: Stack(
-        children: <Widget>[
-          Positioned.fill(
-            child: AppleHomeGrid(
-              data: widget.data,
-              tablet: widget.tablet,
-              trashEmpty: widget.trashEmpty,
-              onOpen: _openApp,
-            ),
-          ),
-          Positioned(
-            left: 12,
-            right: 12,
-            bottom: AppleMobileDockGeometry.homeBottomOffset(
-              tablet: widget.tablet,
-            ),
-            child: Center(
-              child: AppleMobileDock(
+    final dockBottom = AppleMobileDockGeometry.homeBottomOffset(
+      tablet: widget.tablet,
+    );
+    final dockHeight = AppleMobileDockGeometry.height(tablet: widget.tablet);
+    return Listener(
+      onPointerSignal: (event) {
+        if (event is PointerScrollEvent && event.scrollDelta.dy > 0) {
+          unawaited(_showSearch());
+        }
+      },
+      child: GestureDetector(
+        key: const Key('mobile-home'),
+        behavior: HitTestBehavior.opaque,
+        onVerticalDragStart: (_) => _homeDragDistance = 0,
+        onVerticalDragUpdate: (details) {
+          _homeDragDistance += details.delta.dy;
+          if (_homeDragDistance >= 48) unawaited(_showSearch());
+        },
+        child: Stack(
+          children: <Widget>[
+            Positioned.fill(
+              bottom: dockBottom + dockHeight + 68,
+              child: AppleHomeGrid(
                 data: widget.data,
                 tablet: widget.tablet,
+                trashEmpty: widget.trashEmpty,
                 onOpen: _openApp,
               ),
             ),
-          ),
-        ],
+            Positioned(
+              left: 16,
+              right: 16,
+              bottom: dockBottom + dockHeight + 12,
+              height: 44,
+              child: Center(
+                child: TextButton.icon(
+                  key: const Key('mobile-home-search'),
+                  onPressed: () => unawaited(_showSearch()),
+                  style: TextButton.styleFrom(
+                    foregroundColor: AppleTheme.primaryLabel(context),
+                    backgroundColor: AppleTheme.surface(
+                      context,
+                    ).withValues(alpha: 0.5),
+                    minimumSize: const Size(90, 44),
+                    padding: const EdgeInsets.symmetric(horizontal: 18),
+                    shape: const StadiumBorder(),
+                  ),
+                  icon: const Icon(CupertinoIcons.search, size: 16),
+                  label: const Text('검색'),
+                ),
+              ),
+            ),
+            Positioned(
+              left: 12,
+              right: 12,
+              bottom: dockBottom,
+              child: Center(
+                child: AppleMobileDock(
+                  data: widget.data,
+                  tablet: widget.tablet,
+                  onOpen: _openApp,
+                ),
+              ),
+            ),
+          ],
+        ),
       ),
     );
   }

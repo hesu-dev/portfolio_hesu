@@ -1,3 +1,4 @@
+import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:portfolio_hesu/portfolio/data/portfolio_data.dart';
@@ -17,12 +18,35 @@ void main() {
 
       expect(find.byType(MaterialApp), findsOneWidget);
       final app = tester.widget<MaterialApp>(find.byType(MaterialApp));
-      expect(app.title, '민희수 포트폴리오');
+      expect(app.title, '희수 포폴');
       expect(app.color, const Color(0xFFF4F4F7));
+      expect(app.debugShowCheckedModeBanner, isFalse);
       final shell = tester.widget<AdaptivePortfolioShell>(
         find.byType(AdaptivePortfolioShell),
       );
       expect(shell.externalLauncher, same(launcher));
+    });
+
+    testWidgets('uses Korean framework labels even on an English device', (
+      tester,
+    ) async {
+      tester.binding.platformDispatcher.localeTestValue = const Locale(
+        'en',
+        'US',
+      );
+      addTearDown(tester.binding.platformDispatcher.clearLocaleTestValue);
+      await _pumpAtWidth(tester, 390);
+      await tester.pumpAndSettle();
+
+      final context = tester.element(find.byType(AdaptivePortfolioShell));
+      final app = tester.widget<MaterialApp>(find.byType(MaterialApp));
+      expect(app.title, '희수 포폴');
+      expect(app.locale, const Locale('ko'));
+      expect(app.supportedLocales, [const Locale('ko')]);
+      expect(Localizations.localeOf(context), const Locale('ko'));
+      expect(MaterialLocalizations.of(context).closeButtonTooltip, '닫기');
+      expect(CupertinoLocalizations.of(context).copyButtonLabel, '복사');
+      expect(WidgetsLocalizations.of(context).textDirection, TextDirection.ltr);
     });
 
     testWidgets('shows only the canonical portfolio identity', (tester) async {
@@ -50,7 +74,7 @@ void main() {
       expect(find.textContaining('juah'), findsNothing);
     });
 
-    testWidgets('derives metadata and shell content from injected data', (
+    testWidgets('keeps the display name while injecting portfolio content', (
       tester,
     ) async {
       final data = PortfolioData(
@@ -74,7 +98,8 @@ void main() {
       );
 
       final app = tester.widget<MaterialApp>(find.byType(MaterialApp));
-      expect(app.title, '테스트 사용자 포트폴리오');
+      expect(app.title, '희수 포폴');
+      expect(data.appTitle, '테스트 사용자 포트폴리오');
       expect(app.color, const Color(0xFFF4F4F7));
       final shell = tester.widget<AdaptivePortfolioShell>(
         find.byType(AdaptivePortfolioShell),
@@ -102,7 +127,8 @@ void main() {
       final shellContext = tester.element(find.byType(AdaptivePortfolioShell));
       expect(app.themeMode, ThemeMode.light);
       expect(Theme.of(shellContext).brightness, Brightness.light);
-      expect(app.title, portfolioData.appTitle);
+      expect(app.title, '희수 포폴');
+      expect(portfolioData.appTitle, '민희수 포트폴리오');
       expect(app.color, const Color(0xFFF4F4F7));
     });
 

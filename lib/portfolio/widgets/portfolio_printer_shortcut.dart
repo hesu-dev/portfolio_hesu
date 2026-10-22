@@ -6,6 +6,7 @@ import 'package:flutter_svg/flutter_svg.dart';
 
 import '../data/portfolio_data.dart';
 import '../printing/open_print_document.dart';
+import 'apple_app_label.dart';
 
 class PortfolioPrinterShortcut extends StatelessWidget {
   const PortfolioPrinterShortcut({
@@ -14,6 +15,7 @@ class PortfolioPrinterShortcut extends StatelessWidget {
     this.iconSize = 50,
     this.foregroundColor,
     this.showLabel = true,
+    this.compact = false,
     this.buttonKey = const Key('desktop-printer'),
     super.key,
   });
@@ -23,9 +25,15 @@ class PortfolioPrinterShortcut extends StatelessWidget {
   final double iconSize;
   final Color? foregroundColor;
   final bool showLabel;
+  final bool compact;
   final Key buttonKey;
 
-  Future<void> _open(BuildContext context) async {
+  static Future<void> open(
+    BuildContext context,
+    PortfolioData data, {
+    FutureOr<bool> Function(PortfolioData data) openDocument =
+        openPrintDocument,
+  }) async {
     if (await openDocument(data) || !context.mounted) return;
     showDialog<void>(
       context: context,
@@ -55,7 +63,7 @@ class PortfolioPrinterShortcut extends StatelessWidget {
         height: showLabel ? null : iconSize + 8,
         child: TextButton(
           key: buttonKey,
-          onPressed: () => _open(context),
+          onPressed: () => open(context, data, openDocument: openDocument),
           style: ButtonStyle(
             foregroundColor: WidgetStatePropertyAll(
               foregroundColor ?? Colors.white,
@@ -67,7 +75,10 @@ class PortfolioPrinterShortcut extends StatelessWidget {
             ),
             minimumSize: const WidgetStatePropertyAll(Size.zero),
             padding: WidgetStatePropertyAll(
-              EdgeInsets.symmetric(horizontal: 6, vertical: showLabel ? 10 : 4),
+              EdgeInsets.symmetric(
+                horizontal: showLabel ? (compact ? 5 : 7) : 6,
+                vertical: showLabel ? (compact ? 4 : 6) : 4,
+              ),
             ),
             shape: WidgetStatePropertyAll(
               RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
@@ -85,24 +96,12 @@ class PortfolioPrinterShortcut extends StatelessWidget {
               ),
               if (showLabel) ...<Widget>[
                 const SizedBox(height: 6),
-                Text(
-                  '프린터',
-                  maxLines: 1,
-                  overflow: TextOverflow.ellipsis,
-                  style: TextStyle(
-                    fontSize: 11.5,
-                    fontWeight: FontWeight.w600,
-                    shadows: foregroundColor == null
-                        ? const <Shadow>[
-                            Shadow(
-                              color: Color(0xB3000000),
-                              blurRadius: 4,
-                              offset: Offset(0, 1),
-                            ),
-                          ]
-                        : null,
-                  ),
+                AppleAppLabel(
+                  label: '프린터',
+                  compact: compact,
+                  color: foregroundColor ?? Colors.white,
                 ),
+                const SizedBox(height: 7),
               ],
             ],
           ),

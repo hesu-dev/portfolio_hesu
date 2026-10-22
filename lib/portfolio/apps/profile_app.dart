@@ -11,6 +11,7 @@ import '../theme/apple_theme.dart';
 import '../widgets/apple_app_icon.dart';
 import '../widgets/apple_mobile_navigation_header.dart';
 import '../widgets/career_pixel_runner.dart';
+import '../widgets/career_timeline_entry.dart';
 import '../widgets/education_pixel_study.dart';
 
 /// Mobile-only social profile built independently from the reusable About app.
@@ -320,7 +321,7 @@ class _ProfileSidebar extends StatelessWidget {
                   const SizedBox(height: 6),
                   _ProfileSidebarAction(
                     actionKey: const Key('profile-sidebar-projects-action'),
-                    label: '파일의 회사 열기',
+                    label: '파일 열기',
                     icon: Icons.work_outline_rounded,
                     selectedIcon: Icons.work_rounded,
                     onTap: onOpenProjects,
@@ -915,7 +916,7 @@ class _ProfileHistoryGrid extends StatelessWidget {
                   summary: '${data.experiences.length}개',
                   kind: _ProfileHistoryKind.experience,
                   linkActionKey: const Key('profile-career-projects-link'),
-                  linkActionLabel: '파일의 회사 열기',
+                  linkActionLabel: '파일 열기',
                   onLinkTap: onOpenCareerProjects,
                   onTap: () => onOpenHistory(_ProfileHistoryKind.experience),
                 ),
@@ -1454,11 +1455,11 @@ class _ProfileReplyThread extends StatelessWidget {
     final items = switch (kind) {
       _ProfileHistoryKind.experience => <Widget>[
         for (final entry in data.experiences.indexed)
-          _ProfileReplyItem.experience(
+          CareerTimelineEntry(
             key: Key('profile-reel-reply-item-experience-${entry.$1}'),
-            index: entry.$1,
             experience: entry.$2,
-            compact: compact,
+            isLast: entry.$1 == data.experiences.length - 1,
+            keyPrefix: 'profile-career-${entry.$1}',
           ),
       ],
       _ProfileHistoryKind.education => <Widget>[
@@ -1490,7 +1491,7 @@ class _ProfileReplyThread extends StatelessWidget {
             crossAxisAlignment: CrossAxisAlignment.stretch,
             children: <Widget>[
               for (final item in items.indexed) ...<Widget>[
-                if (item.$1 > 0)
+                if (item.$1 > 0 && kind == _ProfileHistoryKind.education)
                   Padding(
                     padding: EdgeInsets.only(
                       left: compact ? 50 : 58,
@@ -1513,37 +1514,23 @@ class _ProfileReplyThread extends StatelessWidget {
 }
 
 class _ProfileReplyItem extends StatelessWidget {
-  const _ProfileReplyItem.experience({
-    required this.index,
-    required this.experience,
-    required this.compact,
-    super.key,
-  }) : kind = _ProfileHistoryKind.experience,
-       education = null,
-       onLaunch = null;
-
   const _ProfileReplyItem.education({
     required this.index,
     required this.education,
     required this.compact,
     required this.onLaunch,
     super.key,
-  }) : kind = _ProfileHistoryKind.education,
-       experience = null;
+  });
 
   final int index;
-  final _ProfileHistoryKind kind;
-  final PortfolioExperience? experience;
-  final PortfolioEducation? education;
+  final PortfolioEducation education;
   final bool compact;
   final Future<void> Function(Uri uri)? onLaunch;
 
   @override
   Widget build(BuildContext context) {
-    final kindName = kind.name;
-    final authorTitle = kind == _ProfileHistoryKind.experience
-        ? experience!.organization
-        : education!.institution;
+    const kindName = 'education';
+    final authorTitle = education.institution;
     final bodyStyle = AppleTheme.body(
       context,
     ).copyWith(color: AppleTheme.primaryLabel(context), height: 1.5);
@@ -1593,9 +1580,7 @@ class _ProfileReplyItem extends StatelessWidget {
                 child: Column(
                   key: Key('profile-reel-reply-content-$kindName-$index'),
                   crossAxisAlignment: CrossAxisAlignment.start,
-                  children: kind == _ProfileHistoryKind.experience
-                      ? _experienceContent(context, bodyStyle)
-                      : _educationContent(context, bodyStyle),
+                  children: _educationContent(context, bodyStyle),
                 ),
               ),
             ],
@@ -1605,22 +1590,8 @@ class _ProfileReplyItem extends StatelessWidget {
     );
   }
 
-  List<Widget> _experienceContent(BuildContext context, TextStyle bodyStyle) {
-    final item = experience!;
-    return <Widget>[
-      Text(
-        item.period,
-        style: AppleTheme.caption(
-          context,
-        ).copyWith(color: AppleTheme.secondaryLabel(context), height: 1.4),
-      ),
-      const SizedBox(height: 10),
-      Text(item.description, style: bodyStyle),
-    ];
-  }
-
   List<Widget> _educationContent(BuildContext context, TextStyle bodyStyle) {
-    final item = education!;
+    final item = education;
     return <Widget>[
       Text(
         item.period,

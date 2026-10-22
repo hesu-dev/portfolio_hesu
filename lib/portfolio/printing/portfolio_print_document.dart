@@ -1,6 +1,7 @@
 import 'dart:convert';
 
 import '../data/portfolio_data.dart';
+import '../models/introduction_section.dart';
 
 /// A text-based document so browser printing retains selectable Korean text.
 String buildPortfolioPrintDocument(
@@ -61,7 +62,7 @@ String buildPortfolioPrintDocument(
 <section class="sheet" id="introduction" aria-labelledby="introduction-title">
   <div class="eyebrow">SELF INTRODUCTION</div>
   <h2 id="introduction-title">자기소개서</h2>
-  ${_paragraph(introduction, className: 'introduction')}
+  ${_introduction(introduction)}
 </section>
 <section class="sheet" id="projects" aria-labelledby="projects-title">
   <div class="eyebrow">PROJECTS</div>
@@ -155,7 +156,10 @@ String buildPortfolioPrintDocument(
     li + li { margin-top: 3px; }
     .details > div { display: grid; grid-template-columns: 30mm minmax(0, 1fr); gap: 12px; padding: 7px 0; }
     dt { font-weight: 650; color: #555; }
-    .introduction { font-size: 11pt; line-height: 2; }
+    .introduction { font-size: 11pt; line-height: 1.75; }
+    .introduction h3 { display: flex; align-items: center; gap: 12px; color: #24594a; }
+    .introduction h3::after { content: ''; flex: 1; border-top: 1px solid #9cb6ad; }
+    .introduction li + li { margin-top: 7px; }
     .project + .project { margin-top: 30px; padding-top: 26px; border-top: 1px solid #ccc; }
     .project-category { margin-bottom: 5px; color: #777; font-size: 8pt; }
     .project h3 { margin: 0 0 12px; font-size: 16pt; letter-spacing: -.025em; }
@@ -232,3 +236,6 @@ String _link(String label, String url, {bool showUrl = true}) {
       '${_escape(label)}${showUrl ? ' <span class="link-url">${_escape(url)}</span>' : ''}';
   return safe ? '<a href="${_escape(url)}">$text</a>' : '<span>$text</span>';
 }
+
+String _introduction(String text) =>
+    '<div class="introduction">${introductionSections(text).map((section) => section.title == null ? section.paragraphs.map((paragraph) => _paragraph(paragraph)).join() : '<h3>${_escape(section.title!)}</h3>${_list(section.paragraphs)}').join()}</div>';

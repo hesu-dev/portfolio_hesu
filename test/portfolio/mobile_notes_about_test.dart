@@ -31,15 +31,15 @@ void main() {
         expect(find.text(portfolioData.identity.name), findsNothing);
 
         final profile = find.byKey(const Key('home-app-profile'));
-        final skills = find.byKey(const Key('home-app-skills'));
+        final introduction = find.byKey(const Key('home-app-introduction'));
         expect(profile, findsOneWidget);
-        expect(skills, findsOneWidget);
+        expect(introduction, findsOneWidget);
         expect(find.bySemanticsLabel('Open 프로필'), findsOneWidget);
 
         final profileRect = tester.getRect(profile);
-        final skillsRect = tester.getRect(skills);
-        expect(profileRect.top, closeTo(skillsRect.top, 0.1));
-        expect(profileRect.left, lessThan(skillsRect.left));
+        final introductionRect = tester.getRect(introduction);
+        expect(profileRect.top, closeTo(introductionRect.top, 0.1));
+        expect(profileRect.left, lessThan(introductionRect.left));
         semantics.dispose();
       });
     }
@@ -67,6 +67,7 @@ void main() {
         portfolioData.experiences.first.organization,
         portfolioData.experiences.first.period,
         portfolioData.experiences.first.description,
+        portfolioData.experiences.first.role,
         '교육',
         portfolioData.education.first.institution,
         portfolioData.education.first.period,
@@ -87,7 +88,6 @@ void main() {
         portfolioData.identity.email,
         'GitHub',
         portfolioData.identity.githubUrl,
-        portfolioData.experiences.first.role,
       ]) {
         expect(
           find.descendant(of: body, matching: find.text(removedText)),

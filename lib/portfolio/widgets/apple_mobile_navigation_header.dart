@@ -5,8 +5,8 @@ import '../theme/apple_theme.dart';
 /// Shared iPhone/iPad application header.
 ///
 /// The leading and trailing controls occupy fixed edge slots while the title
-/// stays centered against the full surface width. The trailing ellipsis is a
-/// visual placeholder and intentionally performs no action.
+/// stays centered against the full surface width. Apps may supply a trailing
+/// ellipsis action; otherwise it remains a visual placeholder.
 class AppleMobileNavigationHeader extends StatelessWidget {
   const AppleMobileNavigationHeader({
     required this.title,
@@ -15,6 +15,7 @@ class AppleMobileNavigationHeader extends StatelessWidget {
     this.titleKey,
     this.titleContainerKey,
     this.moreKey,
+    this.onMorePressed,
     this.titleStyle,
     this.height = 64,
     this.titleInset = 62,
@@ -27,6 +28,7 @@ class AppleMobileNavigationHeader extends StatelessWidget {
   final Key? titleKey;
   final Key? titleContainerKey;
   final Key? moreKey;
+  final VoidCallback? onMorePressed;
   final TextStyle? titleStyle;
   final double height;
   final double titleInset;
@@ -71,31 +73,39 @@ class AppleMobileNavigationHeader extends StatelessWidget {
             PositionedDirectional(
               end: 8,
               top: (height - 44) / 2,
-              child: GestureDetector(
-                key: moreKey ?? Key('$keyPrefix-more'),
-                behavior: HitTestBehavior.opaque,
-                excludeFromSemantics: true,
-                onTap: () {},
-                child: ExcludeSemantics(
-                  child: SizedBox.square(
-                    dimension: 44,
-                    child: Center(
-                      child: Container(
-                        width: 40,
-                        height: 40,
-                        alignment: Alignment.center,
-                        decoration: BoxDecoration(
-                          color: AppleTheme.panel(context),
-                          shape: BoxShape.circle,
-                          border: Border.all(
-                            color: AppleTheme.separator(context),
-                            width: 0.8,
+              child: ExcludeSemantics(
+                excluding: onMorePressed == null,
+                child: Semantics(
+                  label: '더보기',
+                  button: true,
+                  onTap: onMorePressed,
+                  child: GestureDetector(
+                    key: moreKey ?? Key('$keyPrefix-more'),
+                    behavior: HitTestBehavior.opaque,
+                    excludeFromSemantics: true,
+                    onTap: onMorePressed ?? () {},
+                    child: ExcludeSemantics(
+                      child: SizedBox.square(
+                        dimension: 44,
+                        child: Center(
+                          child: Container(
+                            width: 40,
+                            height: 40,
+                            alignment: Alignment.center,
+                            decoration: BoxDecoration(
+                              color: AppleTheme.panel(context),
+                              shape: BoxShape.circle,
+                              border: Border.all(
+                                color: AppleTheme.separator(context),
+                                width: 0.8,
+                              ),
+                            ),
+                            child: Icon(
+                              Icons.more_horiz_rounded,
+                              color: AppleTheme.primaryLabel(context),
+                              size: 23,
+                            ),
                           ),
-                        ),
-                        child: Icon(
-                          Icons.more_horiz_rounded,
-                          color: AppleTheme.primaryLabel(context),
-                          size: 23,
                         ),
                       ),
                     ),

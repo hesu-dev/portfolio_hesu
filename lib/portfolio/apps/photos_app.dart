@@ -1,3 +1,4 @@
+import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 
@@ -22,7 +23,7 @@ class PhotosApp extends StatefulWidget {
 
 class _PhotosAppState extends State<PhotosApp> {
   _PhotosTab _selectedTab = _PhotosTab.library;
-  _PhotoAlbum _selectedAlbum = _PhotoAlbum.daily;
+  _PhotoAlbum? _selectedAlbum;
   _GalleryPhoto? _selectedPhoto;
 
   void _openPhoto(_GalleryPhoto photo) {
@@ -32,6 +33,19 @@ class _PhotosAppState extends State<PhotosApp> {
 
   void _closePhoto() {
     setState(() => _selectedPhoto = null);
+    widget.onDetailVisibilityChanged?.call(_selectedAlbum != null);
+  }
+
+  void _closeAlbum() {
+    setState(() => _selectedAlbum = null);
+    widget.onDetailVisibilityChanged?.call(false);
+  }
+
+  void _selectTab(_PhotosTab tab) {
+    setState(() {
+      _selectedTab = tab;
+      _selectedAlbum = null;
+    });
     widget.onDetailVisibilityChanged?.call(false);
   }
 
@@ -40,128 +54,179 @@ class _PhotosAppState extends State<PhotosApp> {
     final selectedPhoto = _selectedPhoto;
     return AppleAppSurface(
       key: const Key('photos-app'),
-      child: AnimatedSwitcher(
-        duration: const Duration(milliseconds: 220),
-        switchInCurve: Curves.easeOutCubic,
-        switchOutCurve: Curves.easeInCubic,
-        child: selectedPhoto != null
-            ? _PhotoDetailView(
-                key: ValueKey<String>('photo-detail-${selectedPhoto.id}'),
-                photo: selectedPhoto,
-                compact: widget.compact,
-                onClose: _closePhoto,
-              )
-            : LayoutBuilder(
-                key: const ValueKey<String>('photo-gallery'),
-                builder: (context, constraints) {
-                  final horizontalPadding = widget.compact
-                      ? 14.0
-                      : widget.tablet
-                      ? 22.0
-                      : 26.0;
-                  final spacing = widget.compact ? 4.0 : 8.0;
-                  final columns = _columnCount(constraints.maxWidth);
-                  final visiblePhotos = _selectedTab == _PhotosTab.library
-                      ? _galleryPhotos
-                      : _galleryPhotos
-                            .where((photo) => photo.album == _selectedAlbum)
-                            .toList(growable: false);
+      child: selectedPhoto != null
+          ? _PhotoDetailView(
+              key: ValueKey<String>('photo-detail-${selectedPhoto.id}'),
+              photo: selectedPhoto,
+              compact: widget.compact,
+              onClose: _closePhoto,
+            )
+          : Column(
+              children: <Widget>[
+                Expanded(child: _gallery(context)),
+                _PhotosTabBar(
+                  selectedTab: _selectedTab,
+                  onSelected: _selectTab,
+                ),
+              ],
+            ),
+    );
+  }
 
-                  return CustomScrollView(
-                    key: const Key('photos-scroll'),
-                    physics: const BouncingScrollPhysics(
-                      parent: AlwaysScrollableScrollPhysics(),
-                    ),
-                    slivers: <Widget>[
-                      SliverPadding(
-                        padding: EdgeInsets.fromLTRB(
-                          horizontalPadding,
-                          widget.compact ? 14 : 22,
-                          horizontalPadding,
-                          widget.compact ? 14 : 20,
-                        ),
-                        sliver: SliverToBoxAdapter(
-                          child: Column(
-                            crossAxisAlignment: CrossAxisAlignment.stretch,
-                            children: <Widget>[
-                              _PhotosTabBar(
-                                selectedTab: _selectedTab,
-                                onSelected: (tab) =>
-                                    setState(() => _selectedTab = tab),
-                              ),
-                              SizedBox(height: widget.compact ? 18 : 24),
-                              if (_selectedTab == _PhotosTab.library)
-                                _GallerySectionHeading(
-                                  title: '최근 항목',
-                                  detail: '사진 ${_galleryPhotos.length}장',
-                                )
-                              else ...<Widget>[
-                                _AlbumPicker(
-                                  selectedAlbum: _selectedAlbum,
-                                  onSelected: (album) {
-                                    setState(() => _selectedAlbum = album);
-                                  },
-                                ),
-                                SizedBox(height: widget.compact ? 18 : 24),
-                                _GallerySectionHeading(
-                                  titleKey: const Key(
-                                    'photos-active-album-title',
-                                  ),
-                                  title: _selectedAlbum.label,
-                                  detail: '사진 ${visiblePhotos.length}장',
-                                ),
-                              ],
-                            ],
+  Widget _gallery(BuildContext context) {
+    return LayoutBuilder(
+      builder: (context, constraints) {
+        final horizontalPadding = widget.compact ? 14.0 : 24.0;
+        final selectedAlbum = _selectedAlbum;
+        final showAlbums =
+            _selectedTab == _PhotosTab.albums && selectedAlbum == null;
+        final visiblePhotos = selectedAlbum == null
+            ? _galleryPhotos
+            : _galleryPhotos
+                  .where((photo) => photo.album == selectedAlbum)
+                  .toList(growable: false);
+        return CallbackShortcuts(
+          bindings: <ShortcutActivator, VoidCallback>{
+            if (selectedAlbum != null)
+              const SingleActivator(LogicalKeyboardKey.escape): _closeAlbum,
+          },
+          child: KeyedSubtree(
+            key: const Key('photos-scroll'),
+            child: CustomScrollView(
+              key: PageStorageKey<String>(
+                'photos-${_selectedTab.name}-${selectedAlbum?.name ?? 'root'}',
+              ),
+              physics: const BouncingScrollPhysics(
+                parent: AlwaysScrollableScrollPhysics(),
+              ),
+              slivers: <Widget>[
+                SliverPadding(
+                  padding: EdgeInsets.fromLTRB(
+                    horizontalPadding,
+                    16,
+                    horizontalPadding,
+                    18,
+                  ),
+                  sliver: SliverToBoxAdapter(
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: <Widget>[
+                        if (selectedAlbum != null) ...<Widget>[
+                          TextButton.icon(
+                            key: const Key('photos-album-back'),
+                            onPressed: _closeAlbum,
+                            icon: const Icon(CupertinoIcons.back, size: 20),
+                            label: const Text('앨범'),
+                            style: TextButton.styleFrom(
+                              padding: EdgeInsets.zero,
+                              minimumSize: const Size(44, 44),
+                              alignment: Alignment.centerLeft,
+                            ),
                           ),
+                          const SizedBox(height: 8),
+                        ],
+                        Text(
+                          selectedAlbum?.label ?? (showAlbums ? '앨범' : '보관함'),
+                          key: selectedAlbum == null
+                              ? null
+                              : const Key('photos-active-album-title'),
+                          style: Theme.of(context).textTheme.headlineMedium
+                              ?.copyWith(
+                                color: AppleTheme.primaryLabel(context),
+                                fontWeight: FontWeight.w700,
+                              ),
                         ),
-                      ),
-                      SliverPadding(
-                        padding: EdgeInsets.symmetric(
-                          horizontal: horizontalPadding,
+                        const SizedBox(height: 6),
+                        Text(
+                          showAlbums
+                              ? '나의 앨범'
+                              : selectedAlbum == null
+                              ? '2026년 7월–9월 · 사진 ${visiblePhotos.length}장'
+                              : '사진 ${visiblePhotos.length}장',
+                          style: Theme.of(context).textTheme.bodyMedium
+                              ?.copyWith(
+                                color: AppleTheme.secondaryLabel(context),
+                              ),
                         ),
-                        sliver: SliverGrid(
+                      ],
+                    ),
+                  ),
+                ),
+                SliverPadding(
+                  padding: EdgeInsets.symmetric(
+                    horizontal: showAlbums ? horizontalPadding : 2,
+                  ),
+                  sliver: showAlbums
+                      ? SliverToBoxAdapter(
+                          child: LayoutBuilder(
+                            builder: (context, albumConstraints) {
+                              final columns = constraints.maxWidth >= 680
+                                  ? 3
+                                  : 2;
+                              final cardWidth =
+                                  (albumConstraints.maxWidth -
+                                      14 * (columns - 1)) /
+                                  columns;
+                              return Wrap(
+                                key: const Key('photos-albums-grid'),
+                                spacing: 14,
+                                runSpacing: 22,
+                                children: <Widget>[
+                                  for (final album in _PhotoAlbum.values)
+                                    SizedBox(
+                                      width: cardWidth,
+                                      child: _AlbumCard(
+                                        album: album,
+                                        onPressed: () {
+                                          setState(
+                                            () => _selectedAlbum = album,
+                                          );
+                                          widget.onDetailVisibilityChanged
+                                              ?.call(true);
+                                        },
+                                      ),
+                                    ),
+                                ],
+                              );
+                            },
+                          ),
+                        )
+                      : SliverGrid(
                           key: Key(
-                            _selectedTab == _PhotosTab.library
+                            selectedAlbum == null
                                 ? 'photos-library-grid'
                                 : 'photos-album-grid',
                           ),
+                          gridDelegate:
+                              SliverGridDelegateWithFixedCrossAxisCount(
+                                crossAxisCount: _columnCount(
+                                  constraints.maxWidth,
+                                ),
+                                mainAxisSpacing: 2,
+                                crossAxisSpacing: 2,
+                              ),
                           delegate: SliverChildBuilderDelegate(
                             (context, index) => _PhotoThumbnail(
                               photo: visiblePhotos[index],
-                              compact: widget.compact,
                               onPressed: () => _openPhoto(visiblePhotos[index]),
                             ),
                             childCount: visiblePhotos.length,
                           ),
-                          gridDelegate:
-                              SliverGridDelegateWithFixedCrossAxisCount(
-                                crossAxisCount: columns,
-                                mainAxisSpacing: spacing,
-                                crossAxisSpacing: spacing,
-                              ),
                         ),
-                      ),
-                      SliverToBoxAdapter(
-                        child: SizedBox(height: widget.compact ? 28 : 40),
-                      ),
-                    ],
-                  );
-                },
-              ),
-      ),
+                ),
+                const SliverToBoxAdapter(child: SizedBox(height: 24)),
+              ],
+            ),
+          ),
+        );
+      },
     );
   }
 
   int _columnCount(double width) {
-    if (widget.compact || width < 480) {
-      return 3;
-    }
-    if (width >= 900) {
-      return 6;
-    }
-    if (widget.tablet || width >= 680) {
-      return 5;
-    }
+    if (widget.compact || width < 480) return 3;
+    if (width >= 900) return 6;
+    if (widget.tablet || width >= 680) return 5;
     return 4;
   }
 }
@@ -174,224 +239,149 @@ class _PhotosTabBar extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return Semantics(
-      container: true,
-      label: '사진 보기',
-      child: Container(
-        key: const Key('photos-tab-bar'),
-        padding: const EdgeInsets.all(4),
-        decoration: BoxDecoration(
-          color: AppleTheme.panel(context),
-          borderRadius: BorderRadius.circular(13),
-          border: Border.all(
-            color: AppleTheme.separator(context).withValues(alpha: 0.72),
-            width: 0.7,
-          ),
-        ),
-        child: Row(
-          children: <Widget>[
-            for (final tab in _PhotosTab.values)
-              Expanded(
-                child: AppleSelectionControl(
-                  key: Key('photos-${tab.name}-tab'),
-                  semanticsLabel: '${tab.label} 탭',
-                  selected: selectedTab == tab,
-                  onPressed: () => onSelected(tab),
-                  borderRadius: BorderRadius.circular(10),
-                  child: AnimatedContainer(
-                    duration: const Duration(milliseconds: 160),
-                    curve: Curves.easeOutCubic,
-                    constraints: const BoxConstraints(minHeight: 42),
-                    padding: const EdgeInsets.symmetric(
-                      horizontal: 10,
-                      vertical: 8,
-                    ),
-                    decoration: BoxDecoration(
-                      color: selectedTab == tab
-                          ? AppleTheme.surface(context)
-                          : Colors.transparent,
-                      borderRadius: BorderRadius.circular(10),
-                    ),
-                    alignment: Alignment.center,
-                    child: Text(
-                      tab.label,
-                      maxLines: 1,
-                      overflow: TextOverflow.ellipsis,
-                      style: Theme.of(context).textTheme.labelLarge?.copyWith(
-                        color: selectedTab == tab
-                            ? AppleTheme.primaryLabel(context)
-                            : AppleTheme.secondaryLabel(context),
-                        fontWeight: selectedTab == tab
-                            ? FontWeight.w700
-                            : FontWeight.w600,
+    const radius = BorderRadius.all(Radius.circular(999));
+    return Padding(
+      key: const Key('photos-tab-bar'),
+      padding: const EdgeInsets.fromLTRB(14, 8, 14, 12),
+      child: Center(
+        heightFactor: 1,
+        child: ConstrainedBox(
+          constraints: const BoxConstraints(maxWidth: 440),
+          child: Container(
+            key: const Key('photos-tab-capsule'),
+            padding: const EdgeInsets.all(5),
+            decoration: BoxDecoration(
+              color: AppleTheme.panel(context),
+              border: Border.all(color: AppleTheme.separator(context)),
+              borderRadius: radius,
+            ),
+            child: Row(
+              children: <Widget>[
+                for (final (index, tab) in _PhotosTab.values.indexed) ...[
+                  if (index > 0) const SizedBox(width: 4),
+                  Expanded(
+                    child: AppleSelectionControl(
+                      key: Key('photos-${tab.name}-tab'),
+                      semanticsLabel: '${tab.label} 탭',
+                      selected: selectedTab == tab,
+                      onPressed: () => onSelected(tab),
+                      borderRadius: radius,
+                      child: AnimatedContainer(
+                        key: Key('photos-${tab.name}-tab-surface'),
+                        width: double.infinity,
+                        duration: const Duration(milliseconds: 160),
+                        constraints: const BoxConstraints(minHeight: 58),
+                        padding: const EdgeInsets.symmetric(
+                          vertical: 8,
+                          horizontal: 12,
+                        ),
+                        decoration: BoxDecoration(
+                          color: selectedTab == tab
+                              ? AppleTheme.blue.withValues(alpha: 0.12)
+                              : Colors.transparent,
+                          borderRadius: radius,
+                        ),
+                        child: Column(
+                          mainAxisSize: MainAxisSize.min,
+                          mainAxisAlignment: MainAxisAlignment.center,
+                          children: <Widget>[
+                            Icon(
+                              tab == _PhotosTab.library
+                                  ? CupertinoIcons.photo_on_rectangle
+                                  : CupertinoIcons.rectangle_stack,
+                              size: 24,
+                              color: selectedTab == tab
+                                  ? AppleTheme.blue
+                                  : AppleTheme.secondaryLabel(context),
+                            ),
+                            const SizedBox(height: 3),
+                            Text(
+                              tab.label,
+                              maxLines: 1,
+                              overflow: TextOverflow.ellipsis,
+                              style: Theme.of(context).textTheme.labelSmall
+                                  ?.copyWith(
+                                    color: selectedTab == tab
+                                        ? AppleTheme.blue
+                                        : AppleTheme.secondaryLabel(context),
+                                    fontSize: 11,
+                                    height: 1.2,
+                                    fontWeight: FontWeight.w600,
+                                  ),
+                            ),
+                          ],
+                        ),
                       ),
                     ),
                   ),
-                ),
-              ),
-          ],
+                ],
+              ],
+            ),
+          ),
         ),
       ),
     );
   }
 }
 
-class _GallerySectionHeading extends StatelessWidget {
-  const _GallerySectionHeading({
-    required this.title,
-    required this.detail,
-    this.titleKey,
-  });
-
-  final String title;
-  final String detail;
-  final Key? titleKey;
-
-  @override
-  Widget build(BuildContext context) {
-    return Row(
-      crossAxisAlignment: CrossAxisAlignment.end,
-      children: <Widget>[
-        Expanded(
-          child: Text(
-            title,
-            key: titleKey,
-            maxLines: 1,
-            overflow: TextOverflow.ellipsis,
-            style: AppleTheme.title(context),
-          ),
-        ),
-        const SizedBox(width: 12),
-        Text(
-          detail,
-          maxLines: 1,
-          style: AppleTheme.caption(
-            context,
-          ).copyWith(color: AppleTheme.secondaryLabel(context)),
-        ),
-      ],
-    );
-  }
-}
-
-class _AlbumPicker extends StatelessWidget {
-  const _AlbumPicker({required this.selectedAlbum, required this.onSelected});
-
-  final _PhotoAlbum selectedAlbum;
-  final ValueChanged<_PhotoAlbum> onSelected;
-
-  @override
-  Widget build(BuildContext context) {
-    return Column(
-      key: const Key('photos-album-picker'),
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: <Widget>[
-        Text('나의 앨범', style: AppleTheme.title(context)),
-        const SizedBox(height: 12),
-        Wrap(
-          spacing: 8,
-          runSpacing: 8,
-          children: <Widget>[
-            for (final album in _PhotoAlbum.values)
-              _AlbumChoice(
-                album: album,
-                selected: selectedAlbum == album,
-                count: _galleryPhotos
-                    .where((photo) => photo.album == album)
-                    .length,
-                onPressed: () => onSelected(album),
-              ),
-          ],
-        ),
-      ],
-    );
-  }
-}
-
-class _AlbumChoice extends StatelessWidget {
-  const _AlbumChoice({
-    required this.album,
-    required this.selected,
-    required this.count,
-    required this.onPressed,
-  });
+class _AlbumCard extends StatelessWidget {
+  const _AlbumCard({required this.album, required this.onPressed});
 
   final _PhotoAlbum album;
-  final bool selected;
-  final int count;
   final VoidCallback onPressed;
 
   @override
   Widget build(BuildContext context) {
-    final borderRadius = BorderRadius.circular(13);
+    final photos = _galleryPhotos
+        .where((photo) => photo.album == album)
+        .toList(growable: false);
     return AppleSelectionControl(
       key: Key('photos-album-${album.name}'),
-      semanticsLabel: '${album.label} 앨범, 사진 $count장',
-      selected: selected,
+      semanticsLabel: '${album.label} 앨범, 사진 ${photos.length}장',
+      selected: false,
       onPressed: onPressed,
-      borderRadius: borderRadius,
-      child: AnimatedContainer(
-        duration: const Duration(milliseconds: 160),
-        curve: Curves.easeOutCubic,
-        constraints: const BoxConstraints(minWidth: 104, minHeight: 52),
-        padding: const EdgeInsets.symmetric(horizontal: 11, vertical: 9),
-        decoration: BoxDecoration(
-          color: selected
-              ? AppleTheme.selectionBackground(context, album.accent)
-              : AppleTheme.surface(context),
-          borderRadius: borderRadius,
-          border: Border.all(
-            color: selected
-                ? album.accent.withValues(alpha: 0.55)
-                : AppleTheme.separator(context).withValues(alpha: 0.75),
-          ),
-        ),
-        child: Row(
-          mainAxisSize: MainAxisSize.min,
-          children: <Widget>[
-            Icon(album.icon, color: album.accent, size: 19),
-            const SizedBox(width: 8),
-            Column(
-              mainAxisSize: MainAxisSize.min,
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: <Widget>[
-                Text(
-                  album.label,
-                  style: Theme.of(context).textTheme.labelLarge?.copyWith(
-                    color: AppleTheme.primaryLabel(context),
-                    fontWeight: FontWeight.w700,
-                  ),
-                ),
-                Text(
-                  '$count장',
-                  style: AppleTheme.caption(context).copyWith(
-                    color: AppleTheme.secondaryLabel(context),
-                    fontSize: 10.5,
-                  ),
-                ),
-              ],
+      borderRadius: BorderRadius.circular(8),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: <Widget>[
+          AspectRatio(
+            aspectRatio: 1,
+            child: ClipRRect(
+              borderRadius: BorderRadius.circular(8),
+              child: _PhotoArtwork(photo: photos.first),
             ),
-          ],
-        ),
+          ),
+          const SizedBox(height: 7),
+          Text(
+            album.label,
+            maxLines: 1,
+            overflow: TextOverflow.ellipsis,
+            style: Theme.of(context).textTheme.bodyLarge?.copyWith(
+              color: AppleTheme.primaryLabel(context),
+            ),
+          ),
+          Text(
+            '${photos.length}',
+            maxLines: 1,
+            style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+              color: AppleTheme.secondaryLabel(context),
+            ),
+          ),
+        ],
       ),
     );
   }
 }
 
 class _PhotoThumbnail extends StatelessWidget {
-  const _PhotoThumbnail({
-    required this.photo,
-    required this.compact,
-    required this.onPressed,
-  });
+  const _PhotoThumbnail({required this.photo, required this.onPressed});
 
   final _GalleryPhoto photo;
-  final bool compact;
   final VoidCallback onPressed;
 
   @override
   Widget build(BuildContext context) {
-    final radius = BorderRadius.circular(compact ? 7 : 11);
+    const radius = BorderRadius.zero;
     return AppleSelectionControl(
       key: Key('photos-photo-${photo.id}'),
       semanticsLabel: '${photo.title} 열기, ${photo.album.label} 앨범',
@@ -404,7 +394,7 @@ class _PhotoThumbnail extends StatelessWidget {
       focusColor: Colors.white,
       child: ClipRRect(
         borderRadius: radius,
-        child: _PhotoArtwork(photo: photo, compact: compact),
+        child: _PhotoArtwork(photo: photo),
       ),
     );
   }
@@ -502,8 +492,7 @@ class _PhotoDetailView extends StatelessWidget {
                           child: _PhotoArtwork(
                             key: Key('photos-detail-artwork-${photo.id}'),
                             photo: photo,
-                            compact: false,
-                            detailed: true,
+                            fit: BoxFit.contain,
                           ),
                         ),
                       ),
@@ -553,103 +542,20 @@ class _PhotoDetailView extends StatelessWidget {
 class _PhotoArtwork extends StatelessWidget {
   const _PhotoArtwork({
     required this.photo,
-    required this.compact,
-    this.detailed = false,
+    this.fit = BoxFit.cover,
     super.key,
   });
 
   final _GalleryPhoto photo;
-  final bool compact;
-  final bool detailed;
+  final BoxFit fit;
 
   @override
-  Widget build(BuildContext context) {
-    return LayoutBuilder(
-      builder: (context, constraints) {
-        final extent = constraints.biggest.shortestSide;
-        final artworkExtent = extent.isFinite
-            ? extent
-            : compact
-            ? 84.0
-            : 120.0;
-        final highlightSize = detailed
-            ? artworkExtent * 0.62
-            : compact
-            ? 66.0
-            : 88.0;
-        final iconSize = detailed
-            ? artworkExtent * 0.3
-            : compact
-            ? 33.0
-            : 44.0;
-
-        return Stack(
-          fit: StackFit.expand,
-          children: <Widget>[
-            DecoratedBox(
-              decoration: BoxDecoration(
-                gradient: LinearGradient(
-                  begin: Alignment.topLeft,
-                  end: Alignment.bottomRight,
-                  colors: photo.colors,
-                ),
-              ),
-            ),
-            Positioned(
-              left: detailed ? -artworkExtent * 0.14 : -18,
-              top: detailed ? -artworkExtent * 0.2 : -24,
-              child: Container(
-                width: highlightSize,
-                height: highlightSize,
-                decoration: BoxDecoration(
-                  color: Colors.white.withValues(alpha: 0.2),
-                  shape: BoxShape.circle,
-                ),
-              ),
-            ),
-            Center(
-              child: Icon(
-                photo.icon,
-                size: iconSize,
-                color: Colors.white.withValues(alpha: 0.9),
-                shadows: const <Shadow>[
-                  Shadow(
-                    color: Color(0x4D000000),
-                    blurRadius: 10,
-                    offset: Offset(0, 3),
-                  ),
-                ],
-              ),
-            ),
-            Align(
-              alignment: Alignment.bottomCenter,
-              child: Container(
-                height: detailed
-                    ? artworkExtent * 0.2
-                    : compact
-                    ? 18
-                    : 24,
-                decoration: BoxDecoration(
-                  gradient: LinearGradient(
-                    begin: Alignment.topCenter,
-                    end: Alignment.bottomCenter,
-                    colors: <Color>[
-                      Colors.transparent,
-                      Colors.black.withValues(alpha: 0.28),
-                    ],
-                  ),
-                ),
-              ),
-            ),
-          ],
-        );
-      },
-    );
-  }
+  Widget build(BuildContext context) =>
+      Image.asset(photo.assetName, fit: fit, excludeFromSemantics: true);
 }
 
 enum _PhotosTab {
-  library('라이브러리'),
+  library('보관함'),
   albums('앨범');
 
   const _PhotosTab(this.label);
@@ -672,116 +578,102 @@ enum _PhotoAlbum {
 class _GalleryPhoto {
   const _GalleryPhoto({
     required this.id,
+    required this.assetName,
     required this.title,
     required this.dateLabel,
     required this.album,
-    required this.icon,
-    required this.colors,
   });
 
   final String id;
+  final String assetName;
   final String title;
   final String dateLabel;
   final _PhotoAlbum album;
-  final IconData icon;
-  final List<Color> colors;
 }
 
 const List<_GalleryPhoto> _galleryPhotos = <_GalleryPhoto>[
   _GalleryPhoto(
     id: 'coffee',
+    assetName: 'assets/photos/img1.png',
     title: '오후의 커피',
     dateLabel: '2026년 9월 4일 오후 3:24',
     album: _PhotoAlbum.daily,
-    icon: Icons.coffee_rounded,
-    colors: <Color>[Color(0xFF7C4A32), Color(0xFFE6A15B)],
   ),
   _GalleryPhoto(
     id: 'sunlight',
+    assetName: 'assets/photos/img2.png',
     title: '창가의 햇빛',
     dateLabel: '2026년 8월 30일 오전 9:18',
     album: _PhotoAlbum.daily,
-    icon: Icons.wb_sunny_rounded,
-    colors: <Color>[Color(0xFFFFC857), Color(0xFFFF7A59)],
   ),
   _GalleryPhoto(
     id: 'dinner',
+    assetName: 'assets/photos/img3.png',
     title: '저녁 식탁',
     dateLabel: '2026년 8월 27일 오후 7:42',
     album: _PhotoAlbum.daily,
-    icon: Icons.restaurant_rounded,
-    colors: <Color>[Color(0xFFD1495B), Color(0xFF5B2A86)],
   ),
   _GalleryPhoto(
     id: 'vinyl',
+    assetName: 'assets/photos/img4.png',
     title: '오늘의 음악',
     dateLabel: '2026년 8월 21일 오후 10:06',
     album: _PhotoAlbum.daily,
-    icon: Icons.album_rounded,
-    colors: <Color>[Color(0xFF353A47), Color(0xFF8C6FF7)],
   ),
   _GalleryPhoto(
     id: 'workspace',
+    assetName: 'assets/photos/img5.png',
     title: '작업 공간',
     dateLabel: '2026년 8월 18일 오전 11:35',
     album: _PhotoAlbum.work,
-    icon: Icons.laptop_mac_rounded,
-    colors: <Color>[Color(0xFF0A84FF), Color(0xFF5E5CE6)],
   ),
   _GalleryPhoto(
     id: 'prototype',
+    assetName: 'assets/photos/img6.png',
     title: '프로토타입',
     dateLabel: '2026년 8월 14일 오후 2:12',
     album: _PhotoAlbum.work,
-    icon: Icons.view_quilt_rounded,
-    colors: <Color>[Color(0xFF36C5F0), Color(0xFF2EB67D)],
   ),
   _GalleryPhoto(
     id: 'whiteboard',
+    assetName: 'assets/photos/img7.png',
     title: '아이디어 보드',
     dateLabel: '2026년 8월 9일 오후 4:48',
     album: _PhotoAlbum.work,
-    icon: Icons.draw_rounded,
-    colors: <Color>[Color(0xFFFF375F), Color(0xFFFF9F0A)],
   ),
   _GalleryPhoto(
     id: 'launch',
+    assetName: 'assets/photos/img8.png',
     title: '릴리스 데이',
     dateLabel: '2026년 8월 2일 오후 6:30',
     album: _PhotoAlbum.work,
-    icon: Icons.rocket_launch_rounded,
-    colors: <Color>[Color(0xFF5856D6), Color(0xFFFF2D55)],
   ),
   _GalleryPhoto(
     id: 'coast',
+    assetName: 'assets/photos/img9.png',
     title: '푸른 해안',
     dateLabel: '2026년 7월 24일 오후 1:15',
     album: _PhotoAlbum.travel,
-    icon: Icons.waves_rounded,
-    colors: <Color>[Color(0xFF00C7BE), Color(0xFF007AFF)],
   ),
   _GalleryPhoto(
     id: 'forest',
+    assetName: 'assets/photos/img10.png',
     title: '숲길',
     dateLabel: '2026년 7월 22일 오전 10:08',
     album: _PhotoAlbum.travel,
-    icon: Icons.park_rounded,
-    colors: <Color>[Color(0xFF30D158), Color(0xFF006A5C)],
   ),
   _GalleryPhoto(
     id: 'city',
+    assetName: 'assets/photos/img11.png',
     title: '도시 산책',
     dateLabel: '2026년 7월 18일 오후 5:51',
     album: _PhotoAlbum.travel,
-    icon: Icons.location_city_rounded,
-    colors: <Color>[Color(0xFF7D8CA3), Color(0xFF27364D)],
   ),
   _GalleryPhoto(
     id: 'night-train',
+    assetName: 'assets/photos/img12.png',
     title: '밤 기차',
     dateLabel: '2026년 7월 17일 오후 11:03',
     album: _PhotoAlbum.travel,
-    icon: Icons.train_rounded,
-    colors: <Color>[Color(0xFF1A1F4B), Color(0xFF8E5CFF)],
   ),
 ];

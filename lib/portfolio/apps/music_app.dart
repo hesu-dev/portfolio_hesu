@@ -1,6 +1,7 @@
 import 'dart:async';
 import 'dart:math' as math;
 
+import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 
@@ -208,6 +209,8 @@ class _MusicEmptyView extends StatelessWidget {
               message: 'assets/music 폴더에 음악 파일을 추가하면 목록에 표시됩니다.',
             ),
           ),
+          _PlaybackProgress(controller: controller),
+          const SizedBox(height: 8),
           _TransportControls(controller: controller, enabled: false),
           const SizedBox(height: 12),
           _VolumeControl(controller: controller, enabled: false),
@@ -246,7 +249,7 @@ class _NowPlayingPane extends StatelessWidget {
           onDragUpdate: onDragUpdate,
           onDragEnd: onDragEnd,
         ),
-        const SizedBox(height: 18),
+        const SizedBox(height: 14),
         Text(
           track.title,
           maxLines: 2,
@@ -270,11 +273,18 @@ class _NowPlayingPane extends StatelessWidget {
           AppleFeedbackBanner(message: message),
           const SizedBox(height: 12),
         ],
+        _PlaybackProgress(
+          key: ValueKey(
+            'progress-${track.assetPath}-${controller.navigationRevision}',
+          ),
+          controller: controller,
+        ),
+        const SizedBox(height: 8),
         _TransportControls(controller: controller),
+        const SizedBox(height: 8),
+        _VolumeControl(controller: controller),
         const SizedBox(height: 12),
         _PlaybackModePicker(controller: controller),
-        const SizedBox(height: 12),
-        _VolumeControl(controller: controller),
       ],
     );
   }
@@ -452,7 +462,7 @@ class _TransportControls extends StatelessWidget {
                   ? () => unawaited(controller.previous())
                   : null,
               iconSize: 30,
-              icon: const Icon(Icons.skip_previous_rounded),
+              icon: const Icon(CupertinoIcons.backward_end_fill),
             ),
           ),
           const SizedBox(width: 14),
@@ -463,23 +473,21 @@ class _TransportControls extends StatelessWidget {
             onTap: enabled
                 ? () => unawaited(controller.togglePlayback())
                 : null,
-            child: IconButton.filled(
+            child: IconButton(
               tooltip: controller.isPlaying ? '일시 정지' : '재생',
               onPressed: enabled
                   ? () => unawaited(controller.togglePlayback())
                   : null,
-              iconSize: 34,
-              padding: const EdgeInsets.all(14),
+              iconSize: 44,
+              padding: const EdgeInsets.all(12),
               style: IconButton.styleFrom(
-                backgroundColor: AppleTheme.red,
-                foregroundColor: Colors.white,
-                disabledBackgroundColor: AppleTheme.separator(context),
-                disabledForegroundColor: AppleTheme.secondaryLabel(context),
+                foregroundColor: AppleTheme.primaryLabel(context),
+                disabledForegroundColor: AppleTheme.separator(context),
               ),
               icon: Icon(
                 controller.isPlaying
-                    ? Icons.pause_rounded
-                    : Icons.play_arrow_rounded,
+                    ? CupertinoIcons.pause_fill
+                    : CupertinoIcons.play_fill,
               ),
             ),
           ),
@@ -493,7 +501,7 @@ class _TransportControls extends StatelessWidget {
               tooltip: '다음 곡',
               onPressed: enabled ? () => unawaited(controller.next()) : null,
               iconSize: 30,
-              icon: const Icon(Icons.skip_next_rounded),
+              icon: const Icon(CupertinoIcons.forward_end_fill),
             ),
           ),
         ],
@@ -638,6 +646,173 @@ class _ModeChoice extends StatelessWidget {
   }
 }
 
+class _PlaybackProgress extends StatefulWidget {
+  const _PlaybackProgress({required this.controller, super.key});
+
+  final MusicController controller;
+
+  @override
+  State<_PlaybackProgress> createState() => _PlaybackProgressState();
+}
+
+class _PlaybackProgressState extends State<_PlaybackProgress> {
+  double? _preview;
+  bool _dragging = false;
+
+  @override
+  Widget build(BuildContext context) {
+    final controller = widget.controller;
+    final duration = controller.duration;
+    final length = duration.inMilliseconds;
+    final value =
+        _preview ??
+        (length > 0
+            ? (controller.position.inMilliseconds / length).clamp(0.0, 1.0)
+            : 0.0);
+    final position = Duration(milliseconds: (value * length).round());
+    final canSeek = controller.canSeek && length > 0;
+    void commit(double value) {
+      unawaited(
+        controller.seek(Duration(milliseconds: (value * length).round())),
+      );
+    }
+
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.stretch,
+      children: [
+        _MusicSlider(
+          sliderKey: const Key('music-progress'),
+          label: '재생 위치',
+          formatValue: (value) => length > 0
+              ? '${_formatTime(Duration(milliseconds: (value * length).round()))} / ${_formatTime(duration)}'
+              : '길이 확인 중',
+          value: value,
+          onChangeStart: canSeek
+              ? (value) => setState(() {
+                  _dragging = true;
+                  _preview = value;
+                })
+              : null,
+          onChanged: canSeek
+              ? (value) {
+                  if (_dragging) {
+                    setState(() => _preview = value);
+                  } else {
+                    commit(value);
+                  }
+                }
+              : null,
+          onChangeEnd: canSeek
+              ? (value) {
+                  setState(() {
+                    _dragging = false;
+                    _preview = null;
+                  });
+                  commit(value);
+                }
+              : null,
+        ),
+        Padding(
+          padding: const EdgeInsets.symmetric(horizontal: 8),
+          child: Row(
+            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+            children: [
+              Text(
+                _formatTime(position),
+                key: const Key('music-elapsed'),
+                style: AppleTheme.caption(context),
+              ),
+              Text(
+                length > 0 ? '-${_formatTime(duration - position)}' : '--:--',
+                key: const Key('music-remaining'),
+                style: AppleTheme.caption(context),
+              ),
+            ],
+          ),
+        ),
+      ],
+    );
+  }
+}
+
+String _formatTime(Duration duration) {
+  final seconds = duration.inSeconds;
+  final minutes = seconds ~/ 60;
+  final remainder = (seconds % 60).toString().padLeft(2, '0');
+  if (minutes < 60) return '$minutes:$remainder';
+  return '${minutes ~/ 60}:${(minutes % 60).toString().padLeft(2, '0')}:$remainder';
+}
+
+class _MusicSlider extends StatelessWidget {
+  const _MusicSlider({
+    required this.sliderKey,
+    required this.label,
+    required this.formatValue,
+    required this.value,
+    required this.onChanged,
+    this.onChangeStart,
+    this.onChangeEnd,
+  });
+
+  final Key sliderKey;
+  final String label;
+  final String Function(double) formatValue;
+  final double value;
+  final ValueChanged<double>? onChanged;
+  final ValueChanged<double>? onChangeStart;
+  final ValueChanged<double>? onChangeEnd;
+
+  @override
+  Widget build(BuildContext context) {
+    void adjust(double delta) =>
+        onChanged?.call((value + delta).clamp(0.0, 1.0));
+    return Focus(
+      canRequestFocus: onChanged != null,
+      onKeyEvent: (_, event) {
+        if (onChanged == null || event is! KeyDownEvent) {
+          return KeyEventResult.ignored;
+        }
+        if (event.logicalKey == LogicalKeyboardKey.arrowLeft) {
+          adjust(-0.05);
+          return KeyEventResult.handled;
+        }
+        if (event.logicalKey == LogicalKeyboardKey.arrowRight) {
+          adjust(0.05);
+          return KeyEventResult.handled;
+        }
+        return KeyEventResult.ignored;
+      },
+      child: Semantics(
+        label: label,
+        value: formatValue(value),
+        increasedValue: onChanged == null
+            ? null
+            : formatValue((value + 0.05).clamp(0.0, 1.0)),
+        decreasedValue: onChanged == null
+            ? null
+            : formatValue((value - 0.05).clamp(0.0, 1.0)),
+        slider: true,
+        enabled: onChanged != null,
+        excludeSemantics: true,
+        onIncrease: onChanged == null ? null : () => adjust(0.05),
+        onDecrease: onChanged == null ? null : () => adjust(-0.05),
+        child: SizedBox(
+          height: 44,
+          child: CupertinoSlider(
+            key: sliderKey,
+            value: value,
+            activeColor: AppleTheme.secondaryLabel(context),
+            thumbColor: AppleTheme.primaryLabel(context),
+            onChanged: onChanged,
+            onChangeStart: onChangeStart,
+            onChangeEnd: onChangeEnd,
+          ),
+        ),
+      ),
+    );
+  }
+}
+
 class _VolumeControl extends StatelessWidget {
   const _VolumeControl({required this.controller, this.enabled = true});
 
@@ -646,33 +821,30 @@ class _VolumeControl extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return Semantics(
-      container: true,
-      label: '음량 ${(controller.volume * 100).round()}퍼센트',
-      child: Row(
-        children: <Widget>[
-          Icon(
-            controller.volume == 0
-                ? Icons.volume_off_rounded
-                : Icons.volume_down_rounded,
-            color: AppleTheme.secondaryLabel(context),
+    return Row(
+      children: <Widget>[
+        Icon(
+          CupertinoIcons.speaker_1_fill,
+          size: 19,
+          color: AppleTheme.secondaryLabel(context),
+        ),
+        Expanded(
+          child: _MusicSlider(
+            sliderKey: const Key('music-volume'),
+            label: '음량',
+            formatValue: (value) => '${(value * 100).round()}퍼센트',
+            value: controller.volume,
+            onChanged: enabled
+                ? (value) => unawaited(controller.setVolume(value))
+                : null,
           ),
-          Expanded(
-            child: Slider(
-              key: const Key('music-volume'),
-              value: controller.volume,
-              activeColor: AppleTheme.red,
-              onChanged: enabled
-                  ? (value) => unawaited(controller.setVolume(value))
-                  : null,
-            ),
-          ),
-          Icon(
-            Icons.volume_up_rounded,
-            color: AppleTheme.secondaryLabel(context),
-          ),
-        ],
-      ),
+        ),
+        Icon(
+          CupertinoIcons.speaker_3_fill,
+          size: 23,
+          color: AppleTheme.secondaryLabel(context),
+        ),
+      ],
     );
   }
 }

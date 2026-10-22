@@ -17,6 +17,7 @@ import 'package:portfolio_hesu/portfolio/widgets/adaptive_portfolio_shell.dart';
 import 'package:portfolio_hesu/portfolio/widgets/apple_app_artwork.dart';
 
 import 'support/music_test_controller.dart';
+import 'package:portfolio_hesu/portfolio/widgets/github_contributions.dart';
 
 void main() {
   group('macOS adaptive shell', () {
@@ -62,6 +63,25 @@ void main() {
       );
     });
   });
+
+  testWidgets(
+    'opening Git again reloads its calendar without moving its window',
+    (tester) async {
+      await _pumpPortfolio(tester);
+      await _openDesktopApp(tester, PortfolioAppId.github);
+      final first = tester.state(find.byType(GitHubContributions));
+      final rect = tester.getRect(find.byKey(const Key('mac-window-github')));
+      await tester.tap(find.byKey(const Key('window-minimize-github')));
+      await tester.pumpAndSettle();
+      await _openDesktopApp(tester, PortfolioAppId.github);
+      expect(
+        identical(tester.state(find.byType(GitHubContributions)), first),
+        isFalse,
+      );
+      expect(tester.getRect(find.byKey(const Key('mac-window-github'))), rect);
+      expect(tester.takeException(), isNull);
+    },
+  );
 
   group('macOS desktop icons', () {
     testWidgets('shows the complete desktop catalog without a hint badge', (
@@ -546,13 +566,17 @@ void main() {
         );
         await tester.pumpAndSettle();
         await _openDesktopApp(tester, PortfolioAppId.projects);
+        await tester.tap(
+          find.byKey(const Key('projects-finder-location-career')),
+        );
+        await tester.pumpAndSettle();
         await tester.tap(find.byKey(const Key('project-selector-5')));
         await tester.pumpAndSettle();
 
-        expect(find.text(r'portfolio: ~$ skills'), findsOneWidget);
+        expect(find.text(r'Portfolio: ~$ skills'), findsOneWidget);
         expect(
           tester
-              .widget<Text>(find.byKey(const Key('project-detail-title')))
+              .widget<Text>(find.byKey(const Key('safari-project-title')))
               .data,
           'IRIS',
         );
@@ -574,10 +598,10 @@ void main() {
           find.byKey(const Key('mac-window-active-terminal')),
           findsOneWidget,
         );
-        expect(find.text(r'portfolio: ~$ skills'), findsOneWidget);
+        expect(find.text(r'Portfolio: ~$ skills'), findsOneWidget);
         expect(
           tester
-              .widget<Text>(find.byKey(const Key('project-detail-title')))
+              .widget<Text>(find.byKey(const Key('safari-project-title')))
               .data,
           'IRIS',
         );
@@ -634,7 +658,7 @@ void main() {
         await _openDesktopApp(tester, PortfolioAppId.terminal);
 
         expect(find.byKey(const Key('mac-window-terminal')), findsOneWidget);
-        expect(find.text(r'portfolio: ~$ skills'), findsOneWidget);
+        expect(find.text(r'Portfolio: ~$ skills'), findsOneWidget);
         semantics.dispose();
       },
     );
@@ -649,8 +673,8 @@ void main() {
       await tester.tap(find.byKey(const Key('mac-system-menu-button')));
       await tester.pumpAndSettle();
 
-      expect(find.text('Custom Developer · Flutter portfolio'), findsOneWidget);
-      expect(find.text('Min He-su · Flutter portfolio'), findsNothing);
+      expect(find.text('Custom Developer · Flutter Portfolio'), findsOneWidget);
+      expect(find.text('Min He-su · Flutter Portfolio'), findsNothing);
       expect(find.text('커스텀 개발자 프로필 보기'), findsOneWidget);
       expect(find.text('민희수 프로필 보기'), findsNothing);
     });

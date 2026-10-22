@@ -1,0 +1,4 @@
+{
+  "APP_ENV": "production",
+  "GITHUB_CONTRIBUTIONS_URL": "https://portfolio-hesu-api.portfolio-hesu.workers.dev/api/github/contributions"
+}

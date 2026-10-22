@@ -16,7 +16,7 @@ class AppleSelectionControl extends StatefulWidget {
 
   final String semanticsLabel;
   final bool selected;
-  final VoidCallback onPressed;
+  final VoidCallback? onPressed;
   final BorderRadius borderRadius;
   final Widget child;
   final Color? focusColor;
@@ -43,7 +43,8 @@ class _AppleSelectionControlState extends State<AppleSelectionControl> {
       label: widget.semanticsLabel,
       selected: widget.selected,
       button: true,
-      focusable: true,
+      enabled: widget.onPressed != null,
+      focusable: widget.onPressed != null,
       focused: _focused,
       onTap: widget.onPressed,
       excludeSemantics: true,

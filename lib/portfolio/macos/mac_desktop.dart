@@ -49,6 +49,7 @@ class _MacDesktopState extends State<MacDesktop> {
   MacSystemPanel _openPanel = MacSystemPanel.none;
   Size _viewport = const Size(1440, 900);
   int _cascadeIndex = 0;
+  Key _githubWindowKey = UniqueKey();
 
   PortfolioAppId? get _activeApp {
     for (final appId in _zOrder.reversed) {
@@ -69,6 +70,7 @@ class _MacDesktopState extends State<MacDesktop> {
 
   void _openApp(PortfolioAppId appId) {
     setState(() {
+      if (appId == PortfolioAppId.github) _githubWindowKey = UniqueKey();
       _selectedDesktopApp = appId;
       _openPanel = MacSystemPanel.none;
       final existing = _windows[appId];
@@ -282,18 +284,25 @@ class _MacDesktopState extends State<MacDesktop> {
   }
 
   Widget _buildDesktopIcons() {
+    final captionLineHeight = Theme.of(context).textTheme.labelSmall!.height!;
+    final extraCaptionHeight =
+        (MediaQuery.textScalerOf(context).scale(11.5) - 11.5).clamp(
+          0.0,
+          double.infinity,
+        ) *
+        captionLineHeight;
     return Positioned(
       top: 48,
       right: 17,
       width: 384,
-      height: 216,
+      height: 216 + extraCaptionHeight * 2,
       child: GridView.builder(
         key: const Key('mac-desktop-icons'),
         padding: EdgeInsets.zero,
         physics: const NeverScrollableScrollPhysics(),
-        gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
+        gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
           crossAxisCount: 4,
-          childAspectRatio: 0.88,
+          mainAxisExtent: 93 / 0.88 + extraCaptionHeight,
           mainAxisSpacing: 2,
           crossAxisSpacing: 4,
         ),
@@ -327,6 +336,7 @@ class _MacDesktopState extends State<MacDesktop> {
         visible: !window.minimized,
         maintainState: true,
         child: MacWindow(
+          key: appId == PortfolioAppId.github ? _githubWindowKey : null,
           appId: appId,
           data: widget.data,
           launcher: widget.externalLauncher,

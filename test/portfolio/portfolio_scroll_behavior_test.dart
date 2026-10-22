@@ -35,6 +35,24 @@ void main() {
           await tester.pumpWidget(const SizedBox.shrink());
           await _pumpAppContent(tester, layout: layout, target: target);
 
+          if (target.appId == PortfolioAppId.projects) {
+            final sidebar = find.byKey(const Key('projects-finder-sidebar'));
+            if (sidebar.evaluate().isNotEmpty) {
+              await tester.scrollUntilVisible(
+                find.byKey(const Key('projects-finder-location-career')),
+                80,
+                scrollable: find.descendant(
+                  of: sidebar,
+                  matching: find.byType(Scrollable),
+                ),
+              );
+              await tester.pumpAndSettle();
+            }
+            await tester.tap(
+              find.byKey(const Key('projects-finder-location-career')),
+            );
+            await tester.pumpAndSettle();
+          }
           if (target.appId == PortfolioAppId.terminal) {
             await _fillTerminalTranscript(tester);
           }

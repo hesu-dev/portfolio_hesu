@@ -37,7 +37,7 @@ Future<bool> openPrintDocument(PortfolioData data) async {
           data,
           regularFont: fonts[0],
           boldFont: fonts[1],
-          introduction: data.identity.biography,
+          introduction: data.introduction,
         );
         if (preview.closed) return true;
         final pdf = web.Blob(
@@ -61,7 +61,7 @@ Future<bool> openPrintDocument(PortfolioData data) async {
         'returnUrl': web.window.location.href,
         'html': buildPortfolioPrintDocument(
           data,
-          introduction: data.identity.biography,
+          introduction: data.introduction,
         ),
         'pdfUrl': pdfUrl,
       }.jsify(),

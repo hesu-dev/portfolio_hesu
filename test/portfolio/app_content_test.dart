@@ -13,6 +13,7 @@ import 'package:portfolio_hesu/portfolio/services/external_launcher.dart';
 import 'package:portfolio_hesu/portfolio/theme/apple_theme.dart';
 import 'package:portfolio_hesu/portfolio/theme/portfolio_theme_controller.dart';
 import 'package:portfolio_hesu/portfolio/widgets/apple_app_icon.dart';
+import 'package:portfolio_hesu/portfolio/widgets/apple_finder_scaffold.dart';
 
 import 'support/music_test_controller.dart';
 
@@ -45,7 +46,7 @@ void main() {
         'projects': '파일',
         'safari': '프로젝트',
         'terminal': '터미널',
-        'music': '배경음',
+        'music': '음악',
         'photos': '사진',
         'settings': '설정',
         'thisMac': '프로젝트',
@@ -324,7 +325,29 @@ void main() {
     });
 
     testWidgets(
-      'Introduction is a separate scrollable document without invented copy',
+      'Introduction uses the injected biography when no letter exists',
+      (tester) async {
+        final data = _dataWithIdentity(
+          name: '테스트 사용자',
+          englishName: 'Test User',
+          email: 'test@example.com',
+        );
+        await _pumpApp(
+          tester,
+          appId: PortfolioAppId.introduction,
+          launcher: _FakeExternalLauncher(),
+          data: data,
+          size: const Size(390, 600),
+          compact: true,
+        );
+
+        expect(find.text(data.identity.biography), findsOneWidget);
+        expect(find.text('자기소개서 내용을 추가할 예정입니다.'), findsNothing);
+      },
+    );
+
+    testWidgets(
+      'Introduction is a separate scrollable document with the Flutter letter',
       (tester) async {
         await _pumpApp(
           tester,
@@ -339,15 +362,9 @@ void main() {
         final document = find.byKey(const Key('introduction-document'));
         expect(document, findsOneWidget);
         expect(scroll, findsOneWidget);
-        expect(
-          tester
-              .widgetList<Text>(
-                find.descendant(of: document, matching: find.byType(Text)),
-              )
-              .map((text) => text.data)
-              .whereType<String>(),
-          orderedEquals(<String>['자기소개', '자기소개서 내용을 추가할 예정입니다.']),
-        );
+        expect(find.text('1. 자기소개'), findsOneWidget);
+        expect(find.text('6. 입사 후 기여'), findsOneWidget);
+        expect(find.text(portfolioData.introduction), findsNothing);
         expect(find.byKey(const Key('profile-app')), findsNothing);
         expect(find.byKey(const Key('about-app')), findsNothing);
 
@@ -381,7 +398,7 @@ void main() {
           final document = find.byKey(const Key('introduction-document'));
           final message = find.descendant(
             of: document,
-            matching: find.text('자기소개서 내용을 추가할 예정입니다.'),
+            matching: find.text('Flutter와 Dart로 Android와 iOS 앱을 개발하는 민희수입니다.'),
           );
           expect(
             tester.widget<AppleAppSurface>(surface).color,
@@ -394,10 +411,15 @@ void main() {
           );
           expect(
             tester.widget<Text>(message).style?.color,
-            AppleTheme.secondaryLabel(tester.element(message)),
+            AppleTheme.primaryLabel(tester.element(message)),
           );
           expect(find.bySemanticsLabel('자기소개'), findsWidgets);
-          expect(find.bySemanticsLabel('자기소개서 내용을 추가할 예정입니다.'), findsOneWidget);
+          expect(
+            find.bySemanticsLabel(
+              'Flutter와 Dart로 Android와 iOS 앱을 개발하는 민희수입니다.',
+            ),
+            findsOneWidget,
+          );
 
           final scroll = find.byKey(const Key('introduction-scroll'));
           final scrollable = tester.state<ScrollableState>(
@@ -493,7 +515,7 @@ void main() {
       );
       expect(find.text('경력'), findsOneWidget);
       expect(find.text('Career'), findsNothing);
-      expect(find.text(portfolioData.experiences.first.role), findsNothing);
+      expect(find.text(portfolioData.experiences.first.role), findsWidgets);
       expect(
         find.text(portfolioData.experiences.first.organization),
         findsOneWidget,
@@ -671,6 +693,7 @@ void main() {
           size: const Size(900, 650),
         );
 
+        await _openProjectsLocation(tester, 'career');
         for (final index in const <int>[2, 3, 4, 5, 6, 7]) {
           expect(find.byKey(Key('project-selector-$index')), findsOneWidget);
         }
@@ -690,13 +713,13 @@ void main() {
         final readingLog = portfolioData.projects[0];
         expect(find.byKey(const Key('projects-finder-grid')), findsNothing);
         expect(
-          _textAtKey(tester, const Key('project-detail-title')),
+          _textAtKey(tester, const Key('safari-project-title')),
           readingLog.title,
         );
         expect(find.text(readingLog.period), findsOneWidget);
         expect(find.text(readingLog.description), findsOneWidget);
         for (final technology in readingLog.technologies) {
-          expect(find.text('#$technology'), findsOneWidget);
+          expect(find.text(technology), findsOneWidget);
         }
         expect(tester.takeException(), isNull);
       },
@@ -713,6 +736,7 @@ void main() {
           size: const Size(900, 650),
         );
 
+        await _openProjectsLocation(tester, 'career');
         final firstProject = portfolioData.projects[2];
         final firstSelector = find.byKey(const Key('project-selector-2'));
         expect(tester.getSize(firstSelector).height, greaterThanOrEqualTo(44));
@@ -746,7 +770,7 @@ void main() {
         await tester.pumpAndSettle();
 
         expect(
-          _textAtKey(tester, const Key('project-detail-title')),
+          _textAtKey(tester, const Key('safari-project-title')),
           firstProject.title,
         );
         expect(firstSelector, findsNothing);
@@ -765,7 +789,7 @@ void main() {
           returnedFirstData.flagsCollection.isSelected,
           ui.Tristate.isTrue,
         );
-        expect(find.byKey(const Key('project-detail-title')), findsNothing);
+        expect(find.byKey(const Key('safari-project-title')), findsNothing);
         semantics.dispose();
       },
     );
@@ -787,13 +811,16 @@ void main() {
               brightness: brightness,
             );
 
+            if (scenario.$1 == PortfolioAppId.projects) {
+              await _openProjectsLocation(tester, 'career');
+            }
             final selector = find.byKey(Key(scenario.$2));
             final initialSize = tester.getSize(selector);
             final background = scenario.$1 == PortfolioAppId.projects
                 ? find.descendant(
                     of: selector,
                     matching: find.byKey(
-                      const Key('apple-finder-folder-artwork-background'),
+                      const Key('apple-finder-icon-background'),
                     ),
                   )
                 : find.descendant(
@@ -804,7 +831,7 @@ void main() {
                 tester.widget<AnimatedContainer>(background).decoration
                     as BoxDecoration;
             final resolvedBackground = Color.alphaBlend(
-              selectedDecoration.color!,
+              selectedDecoration.color ?? Colors.transparent,
               AppleTheme.panel(tester.element(selector)),
             );
             final focusOutline = find.descendant(
@@ -846,7 +873,7 @@ void main() {
     );
 
     testWidgets(
-      'selected project highlights only artwork and leaves label unchanged',
+      'selected project preserves branded artwork and leaves label unchanged',
       (tester) async {
         for (final brightness in Brightness.values) {
           await tester.pumpWidget(const SizedBox.shrink());
@@ -858,6 +885,7 @@ void main() {
             brightness: brightness,
           );
 
+          await _openProjectsLocation(tester, 'career');
           final selector = find.byKey(const Key('projects-career-folder-0'));
           final tile = find.descendant(
             of: selector,
@@ -865,9 +893,7 @@ void main() {
           );
           final artworkBackground = find.descendant(
             of: selector,
-            matching: find.byKey(
-              const Key('apple-finder-folder-artwork-background'),
-            ),
+            matching: find.byKey(const Key('apple-finder-icon-background')),
           );
           final labelBackground = find.descendant(
             of: selector,
@@ -891,7 +917,7 @@ void main() {
           final initialLabelStyle = tester.widget<Text>(label).style;
 
           expect(initialTileDecoration.color, Colors.transparent);
-          expect(initialArtworkDecoration.color, Colors.transparent);
+          expect(initialArtworkDecoration.color, isNull);
           expect(initialLabelDecoration.color, Colors.transparent);
 
           await tester.tap(selector);
@@ -920,7 +946,7 @@ void main() {
                         find.descendant(
                           of: returnedSelector,
                           matching: find.byKey(
-                            const Key('apple-finder-folder-artwork-background'),
+                            const Key('apple-finder-icon-background'),
                           ),
                         ),
                       )
@@ -948,19 +974,17 @@ void main() {
               .style;
 
           expect(returnedTileDecoration, initialTileDecoration);
-          expect(selectedArtworkDecoration.color, isNot(Colors.transparent));
-          expect(selectedArtworkDecoration.color!.a, 1);
+          expect(selectedArtworkDecoration.color, isNull);
           expect(
-            (selectedArtworkDecoration.color!.r -
-                    selectedArtworkDecoration.color!.g)
-                .abs(),
-            lessThanOrEqualTo(0.001),
-          );
-          expect(
-            (selectedArtworkDecoration.color!.g -
-                    selectedArtworkDecoration.color!.b)
-                .abs(),
-            lessThanOrEqualTo(0.001),
+            tester
+                .widget<AppleFinderFolderTile>(
+                  find.descendant(
+                    of: returnedSelector,
+                    matching: find.byType(AppleFinderFolderTile),
+                  ),
+                )
+                .selected,
+            isTrue,
           );
           expect(returnedLabelBackground, initialLabelDecoration);
           expect(returnedLabelBackground.color, Colors.transparent);
@@ -984,13 +1008,16 @@ void main() {
 
       await tester.tap(find.byKey(const Key('project-selector-0')));
       await tester.pumpAndSettle();
-      await tester.ensureVisible(find.byKey(const Key('project-link-0-0')));
+      await tester.ensureVisible(
+        find.byKey(const Key('safari-project-link-0')),
+      );
+      await tester.pump();
       await tester.pumpAndSettle();
-      await tester.tap(find.byKey(const Key('project-link-0-0')));
+      await tester.tap(find.byKey(const Key('safari-project-link-0')));
       await tester.pumpAndSettle();
 
       expect(launcher.launched, <Uri>[portfolioData.projects[0].links[0].uri]);
-      expect(find.byKey(const Key('project-launch-feedback')), findsOneWidget);
+      expect(find.byKey(const Key('safari-project-feedback')), findsOneWidget);
       expect(find.textContaining('열 수 없습니다'), findsOneWidget);
       expect(tester.takeException(), isNull);
     });
@@ -1009,8 +1036,9 @@ void main() {
 
         await tester.tap(find.byKey(const Key('project-selector-0')));
         await tester.pumpAndSettle();
-        final link = find.byKey(const Key('project-link-0-0'));
+        final link = find.byKey(const Key('safari-project-link-0'));
         await tester.ensureVisible(link);
+        await tester.pump();
         await tester.tap(link);
         await tester.pump();
 
@@ -1023,7 +1051,7 @@ void main() {
         launcher.complete(0, false);
         await tester.pumpAndSettle();
         expect(
-          find.byKey(const Key('project-launch-feedback')),
+          find.byKey(const Key('safari-project-feedback')),
           findsOneWidget,
         );
         expect(tester.widget<OutlinedButton>(link).onPressed, isNotNull);
@@ -1031,7 +1059,7 @@ void main() {
         await tester.tap(link);
         await tester.pump();
         expect(launcher.requests, hasLength(2));
-        expect(find.byKey(const Key('project-launch-feedback')), findsNothing);
+        expect(find.byKey(const Key('safari-project-feedback')), findsNothing);
 
         launcher.complete(1, true);
         await tester.pumpAndSettle();
@@ -1053,8 +1081,9 @@ void main() {
 
         await tester.tap(find.byKey(const Key('project-selector-0')));
         await tester.pumpAndSettle();
-        final link = find.byKey(const Key('project-link-0-0'));
+        final link = find.byKey(const Key('safari-project-link-0'));
         await tester.ensureVisible(link);
+        await tester.pump();
         await tester.tap(link);
         await tester.pump();
 
@@ -1063,13 +1092,14 @@ void main() {
         await tester.tap(find.byKey(const Key('project-selector-0')));
         await tester.pumpAndSettle();
         await tester.ensureVisible(link);
+        await tester.pump();
         await tester.tap(link);
         await tester.pump();
         expect(launcher.requests, hasLength(2));
         expect(tester.widget<OutlinedButton>(link).onPressed, isNull);
 
         launcher.complete(0, false);
-        await tester.pumpAndSettle();
+        await tester.pump();
         expect(tester.widget<OutlinedButton>(link).onPressed, isNull);
         await tester.tap(link);
         await tester.pump();
@@ -1096,23 +1126,29 @@ void main() {
 
         await tester.tap(find.byKey(const Key('project-selector-0')));
         await tester.pumpAndSettle();
-        await tester.ensureVisible(find.byKey(const Key('project-link-0-0')));
-        await tester.tap(find.byKey(const Key('project-link-0-0')));
+        await tester.ensureVisible(
+          find.byKey(const Key('safari-project-link-0')),
+        );
         await tester.pump();
-        await tester.ensureVisible(find.byKey(const Key('project-link-0-1')));
-        await tester.tap(find.byKey(const Key('project-link-0-1')));
+        await tester.tap(find.byKey(const Key('safari-project-link-0')));
+        await tester.pump();
+        await tester.ensureVisible(
+          find.byKey(const Key('safari-project-link-1')),
+        );
+        await tester.pump();
+        await tester.tap(find.byKey(const Key('safari-project-link-1')));
         await tester.pump();
 
         expect(launcher.requests, hasLength(2));
         launcher.complete(1, true);
-        await tester.pumpAndSettle();
+        await tester.pump();
         expect(find.text('App Store 링크를 열었습니다.'), findsNothing);
-        expect(find.byKey(const Key('project-launch-feedback')), findsNothing);
+        expect(find.byKey(const Key('safari-project-feedback')), findsNothing);
 
         launcher.complete(0, false);
         await tester.pumpAndSettle();
         expect(find.text('App Store 링크를 열었습니다.'), findsNothing);
-        expect(find.byKey(const Key('project-launch-feedback')), findsNothing);
+        expect(find.byKey(const Key('safari-project-feedback')), findsNothing);
         expect(find.textContaining('Google Play 링크를 열 수 없습니다'), findsNothing);
         expect(tester.takeException(), isNull);
       },
@@ -1132,8 +1168,11 @@ void main() {
 
       await tester.tap(find.byKey(const Key('project-selector-0')));
       await tester.pumpAndSettle();
-      await tester.ensureVisible(find.byKey(const Key('project-link-0-0')));
-      await tester.tap(find.byKey(const Key('project-link-0-0')));
+      await tester.ensureVisible(
+        find.byKey(const Key('safari-project-link-0')),
+      );
+      await tester.pump();
+      await tester.tap(find.byKey(const Key('safari-project-link-0')));
       await tester.pump();
       expect(launcher.requests, hasLength(1));
 
@@ -1146,10 +1185,10 @@ void main() {
       await tester.pumpAndSettle();
 
       expect(
-        _textAtKey(tester, const Key('project-detail-title')),
+        _textAtKey(tester, const Key('safari-project-title')),
         portfolioData.projects[2].title,
       );
-      expect(find.byKey(const Key('project-launch-feedback')), findsNothing);
+      expect(find.byKey(const Key('safari-project-feedback')), findsNothing);
       expect(find.textContaining('열 수 없습니다'), findsNothing);
       expect(tester.takeException(), isNull);
     });
@@ -1165,7 +1204,7 @@ void main() {
         compact: true,
       );
 
-      expect(find.text(r'portfolio: ~$ help'), findsOneWidget);
+      expect(find.text(r'Portfolio: ~$ help'), findsOneWidget);
       expect(find.text('flutter run'), findsOneWidget);
       expect(find.text('포트폴리오 개발 서버 실행'), findsOneWidget);
       await _finishTerminalReveal(tester, lineCount: 9);
@@ -1199,7 +1238,7 @@ void main() {
       await tester.pumpAndSettle();
       expect(find.textContaining('Min He-su'), findsNothing);
       expect(find.textContaining('command not found'), findsNothing);
-      expect(find.text(r'portfolio: ~$ help'), findsNothing);
+      expect(find.text(r'Portfolio: ~$ help'), findsNothing);
       expect(find.byKey(const Key('terminal-output')), findsOneWidget);
       expect(
         find.descendant(
@@ -1269,8 +1308,8 @@ void main() {
           inInclusiveRange(0, 12),
         );
         expect(find.text('portfolio — zsh'), findsNothing);
-        expect(find.text(r'portfolio: ~$'), findsOneWidget);
-        expect(find.text(r'portfolio: ~$ help'), findsOneWidget);
+        expect(find.text(r'Portfolio: ~$'), findsOneWidget);
+        expect(find.text(r'Portfolio: ~$ help'), findsOneWidget);
         expect(find.byKey(const Key('terminal-submit')), findsNothing);
         final input = tester.widget<TextField>(
           find.byKey(const Key('terminal-input')),
@@ -1290,7 +1329,7 @@ void main() {
         final decoration = inputSurface.decoration! as BoxDecoration;
         expect(decoration.border, isNull);
         expect(
-          (tester.getCenter(find.text(r'portfolio: ~$')).dy -
+          (tester.getCenter(find.text(r'Portfolio: ~$')).dy -
                   tester.getCenter(find.byKey(const Key('terminal-input'))).dy)
               .abs(),
           lessThan(1),
@@ -1387,7 +1426,7 @@ void main() {
         englishName: 'Ada Lovelace',
         email: 'ada.dev@example.com',
       );
-      const prompt = r'portfolio: ~$';
+      const prompt = r'Portfolio: ~$';
       await _pumpApp(
         tester,
         appId: PortfolioAppId.terminal,
@@ -1434,7 +1473,7 @@ void main() {
       );
       await _finishTerminalReveal(tester, lineCount: 9);
 
-      expect(find.text(r'portfolio: ~$'), findsOneWidget);
+      expect(find.text(r'Portfolio: ~$'), findsOneWidget);
       expect(find.textContaining('invalid email'), findsNothing);
     });
 

@@ -146,7 +146,7 @@ void main() {
         reason: '$size',
       );
       expect(
-        find.descendant(of: finderToolbar, matching: find.text('회사')),
+        find.descendant(of: finderToolbar, matching: find.text('파일')),
         findsOneWidget,
         reason: '$size',
       );

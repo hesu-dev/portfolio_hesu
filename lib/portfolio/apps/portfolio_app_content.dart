@@ -73,6 +73,7 @@ class PortfolioAppContent extends StatelessWidget {
         tablet: tablet,
       ),
       PortfolioAppId.introduction => IntroductionApp(
+        introduction: data.introduction,
         compact: compact,
         tablet: tablet,
       ),
@@ -81,6 +82,7 @@ class PortfolioAppContent extends StatelessWidget {
         compact: compact,
         mobile: mobile,
         tablet: tablet,
+        onClose: onClose,
       ),
       PortfolioAppId.projects => ProjectsApp(
         data: data,

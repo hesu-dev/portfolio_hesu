@@ -9,6 +9,61 @@ import 'package:portfolio_hesu/portfolio/data/portfolio_data.dart';
 import 'package:portfolio_hesu/portfolio/theme/apple_theme.dart';
 
 void main() {
+  testWidgets('three channels reuse member badge between member and tab counts', (
+    tester,
+  ) async {
+    for (final scenario in [
+      (const Size(390, 700), true, false),
+      (const Size(834, 700), true, true),
+      (const Size(1100, 700), false, false),
+    ]) {
+      await tester.pumpWidget(const SizedBox.shrink());
+      await _pumpSkills(
+        tester,
+        size: scenario.$1,
+        data: _mobileData,
+        compact: scenario.$2 && !scenario.$3,
+        mobile: scenario.$2,
+        tablet: scenario.$3,
+      );
+      for (final group in _mobileData.skillGroups) {
+        final phone = scenario.$2 && !scenario.$3;
+        final channel = find.byKey(
+          Key(
+            '${phone ? 'skills-mobile-channel' : 'skills-category'}-${group.title}',
+          ),
+        );
+        await tester.ensureVisible(channel);
+        await tester.tap(channel);
+        await tester.pumpAndSettle();
+        final badge = find.byKey(const Key('skills-channel-member-badge'));
+        expect(badge, findsOneWidget);
+        expect(
+          find.descendant(of: badge, matching: find.text(_mobileData.name)),
+          findsOneWidget,
+        );
+        final decoration =
+            tester.widget<Container>(badge).decoration! as BoxDecoration;
+        expect(decoration.borderRadius, isNotNull);
+        final member = tester.getCenter(find.text('1명의 멤버'));
+        final name = tester.getCenter(badge);
+        final tabs = tester.getCenter(find.text('1개의 탭'));
+        expect(name.dy, greaterThanOrEqualTo(member.dy));
+        if ((name.dy - member.dy).abs() < 1) {
+          expect(name.dx, greaterThan(member.dx));
+        }
+        expect(tabs.dy, greaterThanOrEqualTo(name.dy));
+        if ((tabs.dy - name.dy).abs() < 1) {
+          expect(tabs.dx, greaterThan(name.dx));
+        }
+        if (phone) {
+          await tester.tap(find.byKey(const Key('mobile-back-close-skills')));
+          await tester.pumpAndSettle();
+        }
+        expect(tester.takeException(), isNull);
+      }
+    }
+  });
   group('Slack-inspired Skills wide layout', () {
     testWidgets('uses portfolio groups in a three-pane workspace', (
       tester,
@@ -327,7 +382,7 @@ void main() {
 
             if (configuration.mobile && !configuration.tablet) {
               await tester.tap(
-                find.byKey(const Key('skills-mobile-detail-back')),
+                find.byKey(const Key('mobile-back-close-skills')),
               );
               await tester.pumpAndSettle();
             }
@@ -583,7 +638,7 @@ void main() {
       expect(find.text('# Collaboration'), findsNothing);
       expect(find.text('# Design & UI/UX'), findsNothing);
 
-      final back = find.byKey(const Key('skills-mobile-detail-back'));
+      final back = find.byKey(const Key('mobile-back-close-skills'));
       expect(tester.getSize(back).height, greaterThanOrEqualTo(44));
       expect(tester.getSize(back).width, greaterThanOrEqualTo(44));
       final backSemantics = tester.getSemantics(back).getSemanticsData();
@@ -625,9 +680,12 @@ void main() {
         now: _fixedNow,
       );
 
-      await tester.tap(
-        find.byKey(const Key('skills-mobile-channel-Development')),
+      final channel = find.byKey(
+        const Key('skills-mobile-channel-Development'),
       );
+      await tester.ensureVisible(channel);
+      await tester.pumpAndSettle();
+      await tester.tap(channel);
       await tester.pumpAndSettle();
 
       final header = find.byKey(const Key('skills-mobile-channel-header'));
@@ -759,9 +817,11 @@ void main() {
           expect(channelSemantics.flagsCollection.isButton, isTrue);
           expect(channelSemantics.hasAction(ui.SemanticsAction.tap), isTrue);
 
+          await tester.ensureVisible(development);
+          await tester.pumpAndSettle();
           await tester.tap(development);
           await tester.pumpAndSettle();
-          final back = find.byKey(const Key('skills-mobile-detail-back'));
+          final back = find.byKey(const Key('mobile-back-close-skills'));
           expect(tester.getSize(back).height, greaterThanOrEqualTo(44));
           expect(
             tester

@@ -1,0 +1,53 @@
+name: Deploy production to Cloudflare
+
+on:
+  push:
+    branches: [main]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: cloudflare-production
+  cancel-in-progress: false
+
+jobs:
+  deploy:
+    if: github.ref == 'refs/heads/main'
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@d23441a48e516b6c34aea4fa41551a30e30af803 # v6
+        with:
+          fetch-depth: 8
+      - uses: actions/setup-node@249970729cb0ef3589644e2896645e5dc5ba9c38 # v6
+        with:
+          node-version: '24'
+      - uses: subosito/flutter-action@1a449444c387b1966244ae4d4f8c696479add0b2 # v2
+        with:
+          flutter-version: '3.38.9'
+          channel: stable
+          cache: true
+      - name: Install Flutter dependencies
+        run: flutter pub get
+      - name: Analyze and test
+        run: |
+          flutter analyze
+          flutter test
+          node --test backend/worker.test.mjs
+      - name: Build production website
+        run: dart run tool/build_web.dart
+      - name: Deploy API and website
+        uses: cloudflare/wrangler-action@953926a2e2182532811c01a25e53647d93bf07c0 # v4
+        with:
+          apiToken: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+          accountId: d7cde6ef4e8bac19e6870244af780e1a
+          wranglerVersion: '4.151.3'
+          command: |
+            deploy --config backend/wrangler.json
+            deploy --config wrangler.json
+      - name: Verify production endpoints
+        run: |
+          curl --fail --silent --show-error --retry 3 --retry-delay 5 --max-time 20 https://portfolio-hesu-api.portfolio-hesu.workers.dev/health
+          curl --fail --silent --show-error --retry 3 --retry-delay 5 --max-time 20 --output /dev/null https://portfolio-hesu.portfolio-hesu.workers.dev/

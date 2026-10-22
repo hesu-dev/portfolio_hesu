@@ -1,6 +1,7 @@
 {
-    "name": "민희수 포트폴리오",
-    "short_name": "민희수",
+    "name": "희수 포폴",
+    "short_name": "희수 포폴",
+    "lang": "ko",
     "start_url": ".",
     "scope": ".",
     "display": "standalone",
