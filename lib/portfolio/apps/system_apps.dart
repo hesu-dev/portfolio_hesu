@@ -842,193 +842,352 @@ class _ExternalProfilePageState extends State<_ExternalProfilePage> {
 
   @override
   Widget build(BuildContext context) {
-    final padding = widget.compact ? 16.0 : (widget.tablet ? 24.0 : 30.0);
-    return AppleAppSurface(
-      key: Key(widget.rootKey),
-      child: ListView(
-        key: Key('${widget.rootKey}-scroll'),
-        padding: EdgeInsets.all(padding),
-        children: <Widget>[
-          Center(
-            child: ConstrainedBox(
-              constraints: const BoxConstraints(maxWidth: 900),
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.stretch,
-                children: <Widget>[
-                  AppleSurfaceCard(
-                    key: const Key('github-profile-card'),
-                    padding: EdgeInsets.all(widget.compact ? 20 : 28),
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.stretch,
-                      children: <Widget>[
-                        Semantics(
-                          link: true,
-                          child: InkWell(
-                            key: const Key('github-profile-link'),
-                            onTap: () => _launch(),
-                            borderRadius: BorderRadius.circular(10),
-                            child: Row(
-                              children: <Widget>[
-                                _GitHubAvatar(
-                                  asset: _githubProfile.avatarAsset,
-                                  size: 56,
-                                ),
-                                const SizedBox(width: 14),
-                                Expanded(
-                                  child: Column(
-                                    crossAxisAlignment:
-                                        CrossAxisAlignment.start,
-                                    children: <Widget>[
-                                      Text(
-                                        _githubProfile.name,
-                                        style: AppleTheme.title(context),
-                                      ),
-                                      const SizedBox(height: 4),
-                                      Text(
-                                        _githubProfile.username,
-                                        style: AppleTheme.caption(context),
-                                      ),
-                                    ],
-                                  ),
-                                ),
-                              ],
-                            ),
-                          ),
-                        ),
-                        const SizedBox(height: 20),
-                        FutureBuilder<String>(
-                          future: _readme,
-                          builder: (context, snapshot) {
-                            if (snapshot.hasError) {
-                              return const Text('프로필을 불러올 수 없습니다.');
-                            }
-                            if (!snapshot.hasData) {
-                              return const Text('프로필을 불러오는 중입니다.');
-                            }
-                            return MarkdownBody(
-                              key: const Key('github-profile-markdown'),
-                              data: snapshot.data!,
-                              styleSheet:
-                                  MarkdownStyleSheet.fromTheme(
-                                    Theme.of(context),
-                                  ).copyWith(
-                                    p: AppleTheme.body(context),
-                                    blockSpacing: 16,
-                                    h4Padding: const EdgeInsets.symmetric(
-                                      vertical: 6,
-                                    ),
-                                    h6Padding: const EdgeInsets.symmetric(
-                                      vertical: 4,
-                                    ),
-                                    a: AppleTheme.body(context).copyWith(
-                                      color: AppleTheme.blue,
-                                      decoration: TextDecoration.underline,
-                                    ),
-                                  ),
-                              imageBuilder: (uri, title, alt) {
-                                final image = Image.asset(
-                                  uri.path,
-                                  height: alt == 'header' ? null : 28,
-                                  fit: BoxFit.contain,
-                                  semanticLabel: alt == 'header'
-                                      ? '반갑습니다! 👋'
-                                      : alt,
-                                );
-                                return alt == 'header'
-                                    ? AspectRatio(
-                                        aspectRatio: 854 / 300,
-                                        child: image,
-                                      )
-                                    : Padding(
-                                        padding: const EdgeInsets.symmetric(
-                                          vertical: 4,
-                                        ),
-                                        child: image,
-                                      );
-                              },
-                              onTapLink: (text, href, title) {
-                                if (href != null) {
-                                  _launch(rawTarget: href);
-                                }
-                              },
-                            );
-                          },
-                        ),
-                      ],
-                    ),
-                  ),
-                  if (_feedback case final message?) ...<Widget>[
-                    const SizedBox(height: 14),
-                    AppleFeedbackBanner(
+    return Theme(
+      data: AppleTheme.dark(),
+      child: Builder(
+        builder: (context) {
+          final padding = widget.compact ? 16.0 : (widget.tablet ? 24.0 : 30.0);
+          return Material(
+            key: Key(widget.rootKey),
+            color: Colors.black,
+            child: Column(
+              children: [
+                if (_feedback case final message?)
+                  Padding(
+                    padding: const EdgeInsets.all(12),
+                    child: AppleFeedbackBanner(
                       key: Key(widget.feedbackKey),
                       message: message,
                       success: false,
                     ),
-                  ],
-                  const SizedBox(height: 18),
-                  const GitHubContributions(),
-                  const SizedBox(height: 18),
-                  Column(
-                    key: const Key('github-accounts-section'),
-                    crossAxisAlignment: CrossAxisAlignment.stretch,
+                  ),
+                Expanded(
+                  child: ListView(
+                    key: Key('${widget.rootKey}-scroll'),
+                    padding: EdgeInsets.fromLTRB(padding, 12, padding, 32),
                     children: [
-                      for (final account in _githubAccounts)
-                        Padding(
-                          padding: const EdgeInsets.only(bottom: 10),
-                          child: AppleSurfaceCard(
-                            padding: EdgeInsets.zero,
-                            child: Material(
-                              type: MaterialType.transparency,
-                              child: ListTile(
-                                key: Key('github-account-${account.username}'),
-                                contentPadding: const EdgeInsets.symmetric(
-                                  horizontal: 18,
-                                  vertical: 10,
-                                ),
-                                leading: _GitHubAvatar(
-                                  asset: account.avatarAsset,
-                                  size: 44,
-                                ),
-                                title: Text(
-                                  account.name,
-                                  style: AppleTheme.body(
-                                    context,
-                                  ).copyWith(fontWeight: FontWeight.w600),
-                                ),
-                                subtitle: account.name == account.username
-                                    ? null
-                                    : Text(
-                                        account.username,
-                                        style: AppleTheme.caption(context),
+                      Center(
+                        child: ConstrainedBox(
+                          constraints: const BoxConstraints(maxWidth: 780),
+                          child: Column(
+                            crossAxisAlignment: CrossAxisAlignment.stretch,
+                            children: [
+                              Row(
+                                children: [
+                                  IconButton(
+                                    tooltip: 'GitHub 프로필 열기',
+                                    onPressed: () => _launch(),
+                                    style: IconButton.styleFrom(
+                                      backgroundColor: const Color(0xFF1C1C1E),
+                                      side: const BorderSide(
+                                        color: Color(0xFF38383A),
                                       ),
-                                trailing: Icon(
-                                  Icons.open_in_new_rounded,
-                                  size: 18,
-                                  color: AppleTheme.secondaryLabel(context),
-                                ),
-                                onTap: () => _launch(
-                                  target:
-                                      account.username ==
-                                          _githubProfile.username
-                                      ? widget.uri
-                                      : Uri.parse(
-                                          'https://github.com/${account.username}',
+                                    ),
+                                    icon: const Icon(
+                                      Icons.code_rounded,
+                                      size: 21,
+                                    ),
+                                  ),
+                                  const Expanded(
+                                    child: Text(
+                                      'Git',
+                                      textAlign: TextAlign.center,
+                                      style: TextStyle(
+                                        fontSize: 24,
+                                        fontWeight: FontWeight.w700,
+                                        letterSpacing: -0.8,
+                                      ),
+                                    ),
+                                  ),
+                                  OutlinedButton.icon(
+                                    key: const Key('github-open-profile'),
+                                    onPressed: () => _launch(),
+                                    icon: const Icon(
+                                      Icons.north_east_rounded,
+                                      size: 16,
+                                    ),
+                                    label: const Text('GitHub'),
+                                    style: OutlinedButton.styleFrom(
+                                      foregroundColor: Colors.white,
+                                      backgroundColor: const Color(0xFF1C1C1E),
+                                      side: const BorderSide(
+                                        color: Color(0xFF38383A),
+                                      ),
+                                      shape: const StadiumBorder(),
+                                      padding: const EdgeInsets.symmetric(
+                                        horizontal: 12,
+                                      ),
+                                    ),
+                                  ),
+                                ],
+                              ),
+                              const SizedBox(height: 20),
+                              _GitHubPanel(
+                                key: const Key('github-profile-card'),
+                                accent: const Color(0xFFAA9DF2),
+                                child: InkWell(
+                                  key: const Key('github-profile-link'),
+                                  onTap: () => _launch(),
+                                  borderRadius: BorderRadius.circular(28),
+                                  child: Padding(
+                                    padding: const EdgeInsets.all(20),
+                                    child: Row(
+                                      children: [
+                                        _GitHubAvatar(
+                                          asset: _githubProfile.avatarAsset,
+                                          size: 52,
                                         ),
+                                        const SizedBox(width: 14),
+                                        Expanded(
+                                          child: Column(
+                                            crossAxisAlignment:
+                                                CrossAxisAlignment.start,
+                                            children: [
+                                              Text(
+                                                _githubProfile.name,
+                                                style: AppleTheme.title(
+                                                  context,
+                                                ),
+                                              ),
+                                              const SizedBox(height: 3),
+                                              const Text(
+                                                '@hesu-dev',
+                                                style: TextStyle(
+                                                  color: Color(0xFFC0B4FF),
+                                                  fontSize: 13,
+                                                ),
+                                              ),
+                                              const SizedBox(height: 8),
+                                              const Text(
+                                                '매일 조금씩, 코드로 쌓는 기록.',
+                                                style: TextStyle(
+                                                  color: Color(0xFFC9C3DC),
+                                                  fontSize: 12,
+                                                ),
+                                              ),
+                                            ],
+                                          ),
+                                        ),
+                                        const SizedBox(width: 8),
+                                        const Icon(
+                                          Icons.north_east_rounded,
+                                          color: Color(0xFFC0B4FF),
+                                          size: 22,
+                                        ),
+                                      ],
+                                    ),
+                                  ),
                                 ),
                               ),
-                            ),
+                              const SizedBox(height: 16),
+                              const GitHubContributions(),
+                              const SizedBox(height: 16),
+                              _GitHubPanel(
+                                accent: const Color(0xFFE1C541),
+                                child: Padding(
+                                  padding: const EdgeInsets.all(20),
+                                  child: FutureBuilder<String>(
+                                    future: _readme,
+                                    builder: (context, snapshot) {
+                                      if (snapshot.hasError) {
+                                        return const Text('프로필을 불러올 수 없습니다.');
+                                      }
+                                      if (!snapshot.hasData) {
+                                        return const Text('프로필을 불러오는 중입니다.');
+                                      }
+                                      return MarkdownBody(
+                                        key: const Key(
+                                          'github-profile-markdown',
+                                        ),
+                                        data: snapshot.data!,
+                                        styleSheet:
+                                            MarkdownStyleSheet.fromTheme(
+                                              Theme.of(context),
+                                            ).copyWith(
+                                              p: AppleTheme.body(context),
+                                              blockSpacing: 16,
+                                              h4: AppleTheme.title(
+                                                context,
+                                              ).copyWith(fontSize: 18),
+                                              h6: AppleTheme.body(context)
+                                                  .copyWith(
+                                                    color: const Color(
+                                                      0xFFD8CD8D,
+                                                    ),
+                                                    fontSize: 13,
+                                                  ),
+                                              h4Padding:
+                                                  const EdgeInsets.symmetric(
+                                                    vertical: 6,
+                                                  ),
+                                              h6Padding:
+                                                  const EdgeInsets.symmetric(
+                                                    vertical: 4,
+                                                  ),
+                                              horizontalRuleDecoration:
+                                                  const BoxDecoration(
+                                                    border: Border(
+                                                      top: BorderSide(
+                                                        color: Color(
+                                                          0xFF50471E,
+                                                        ),
+                                                      ),
+                                                    ),
+                                                  ),
+                                              a: AppleTheme.body(context)
+                                                  .copyWith(
+                                                    color: const Color(
+                                                      0xFFFFE475,
+                                                    ),
+                                                    decoration: TextDecoration
+                                                        .underline,
+                                                  ),
+                                            ),
+                                        imageBuilder: (uri, title, alt) {
+                                          if (alt == 'header') {
+                                            return const SizedBox.shrink();
+                                          }
+                                          return Padding(
+                                            padding: const EdgeInsets.symmetric(
+                                              vertical: 4,
+                                            ),
+                                            child: Image.asset(
+                                              uri.path,
+                                              height: 28,
+                                              fit: BoxFit.contain,
+                                              semanticLabel: alt,
+                                            ),
+                                          );
+                                        },
+                                        onTapLink: (text, href, title) {
+                                          if (href != null) {
+                                            _launch(rawTarget: href);
+                                          }
+                                        },
+                                      );
+                                    },
+                                  ),
+                                ),
+                              ),
+                              const SizedBox(height: 24),
+                              const Padding(
+                                padding: EdgeInsets.only(left: 4, bottom: 12),
+                                child: Text(
+                                  '연결된 계정',
+                                  style: TextStyle(
+                                    color: Color(0xFFB1B1B7),
+                                    fontSize: 13,
+                                    fontWeight: FontWeight.w600,
+                                  ),
+                                ),
+                              ),
+                              Column(
+                                key: const Key('github-accounts-section'),
+                                crossAxisAlignment: CrossAxisAlignment.stretch,
+                                children: [
+                                  for (final (index, account)
+                                      in _githubAccounts.indexed)
+                                    Padding(
+                                      padding: const EdgeInsets.only(
+                                        bottom: 10,
+                                      ),
+                                      child: _GitHubPanel(
+                                        accent: const [
+                                          Color(0xFFFFA339),
+                                          Color(0xFF64C9D7),
+                                          Color(0xFFB4A4F5),
+                                        ][index],
+                                        child: ListTile(
+                                          key: Key(
+                                            'github-account-${account.username}',
+                                          ),
+                                          shape: RoundedRectangleBorder(
+                                            borderRadius: BorderRadius.circular(
+                                              28,
+                                            ),
+                                          ),
+                                          contentPadding:
+                                              const EdgeInsets.symmetric(
+                                                horizontal: 20,
+                                                vertical: 10,
+                                              ),
+                                          leading: _GitHubAvatar(
+                                            asset: account.avatarAsset,
+                                            size: 44,
+                                          ),
+                                          title: Text(
+                                            account.name,
+                                            style: AppleTheme.body(context)
+                                                .copyWith(
+                                                  fontWeight: FontWeight.w600,
+                                                ),
+                                          ),
+                                          subtitle:
+                                              account.name == account.username
+                                              ? null
+                                              : Text(
+                                                  account.username,
+                                                  style: AppleTheme.caption(
+                                                    context,
+                                                  ),
+                                                ),
+                                          trailing: const Icon(
+                                            Icons.north_east_rounded,
+                                            size: 20,
+                                            color: Colors.white70,
+                                          ),
+                                          onTap: () => _launch(
+                                            target:
+                                                account.username ==
+                                                    _githubProfile.username
+                                                ? widget.uri
+                                                : Uri.parse(
+                                                    'https://github.com/${account.username}',
+                                                  ),
+                                          ),
+                                        ),
+                                      ),
+                                    ),
+                                ],
+                              ),
+                            ],
                           ),
                         ),
+                      ),
                     ],
                   ),
-                ],
-              ),
+                ),
+              ],
             ),
-          ),
-        ],
+          );
+        },
       ),
     );
   }
+}
+
+class _GitHubPanel extends StatelessWidget {
+  const _GitHubPanel({required this.accent, required this.child, super.key});
+
+  final Color accent;
+  final Widget child;
+
+  @override
+  Widget build(BuildContext context) => Container(
+    decoration: BoxDecoration(
+      gradient: LinearGradient(
+        begin: Alignment.topLeft,
+        end: Alignment.bottomRight,
+        colors: [
+          Color.alphaBlend(accent.withValues(alpha: 0.23), Colors.black),
+          Color.alphaBlend(accent.withValues(alpha: 0.09), Colors.black),
+        ],
+      ),
+      borderRadius: BorderRadius.circular(28),
+      border: Border.all(color: accent.withValues(alpha: 0.3)),
+    ),
+    child: Material(type: MaterialType.transparency, child: child),
+  );
 }
 
 class _GitHubAvatar extends StatelessWidget {

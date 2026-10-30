@@ -6,6 +6,61 @@ import 'package:portfolio_hesu/portfolio/theme/apple_theme.dart';
 import 'package:portfolio_hesu/portfolio/widgets/github_contributions.dart';
 
 void main() {
+  testWidgets(
+    'date tiles preserve calendar days across daylight saving changes',
+    (tester) async {
+      await _pumpContributions(
+        tester,
+        dataFuture: Future.value({
+          ..._snapshot,
+          'weeks': [
+            {
+              'firstDay': '2026-03-08',
+              'contributionDays': [
+                for (final day in [8, 9])
+                  {
+                    'date': '2026-03-0$day',
+                    'weekday': day - 8,
+                    'contributionCount': 1,
+                    'color': '#9be9a8',
+                  },
+              ],
+            },
+          ],
+        }),
+      );
+      final sunday = find.byKey(const Key('github-date-2026-03-08'));
+      expect(sunday, findsOneWidget);
+      await tester.tap(sunday);
+      await tester.pumpAndSettle();
+      expect(find.text('3월 8일 · 1회 기여'), findsOneWidget);
+      expect(tester.takeException(), isNull);
+    },
+  );
+
+  testWidgets('date tiles select actual activity without another request', (
+    tester,
+  ) async {
+    var requests = 0;
+    await _pumpContributions(
+      tester,
+      dataLoader: () async {
+        requests++;
+        return _snapshot;
+      },
+    );
+
+    expect(find.text('2월 8일 · 4회 기여'), findsOneWidget);
+    await tester.tap(find.byKey(const Key('github-date-2026-02-02')));
+    await tester.pumpAndSettle();
+    expect(find.text('2월 2일 · 2회 기여'), findsOneWidget);
+    expect(requests, 1);
+    await tester.tap(find.byKey(const Key('github-date-2026-02-03')));
+    await tester.pumpAndSettle();
+    expect(find.text('2월 3일 · 기록 없음'), findsOneWidget);
+    expect(tester.takeException(), isNull);
+  });
+
   testWidgets('positions real dates by week and weekday with supplied colors', (
     tester,
   ) async {
@@ -40,9 +95,28 @@ void main() {
     await tester.longPress(monday);
     await tester.pumpAndSettle();
     expect(find.text('2026-01-26'), findsOneWidget);
-    expect(find.textContaining('회 기여'), findsNothing);
+    expect(find.text('2월 8일 · 4회 기여'), findsOneWidget);
     expect(tester.takeException(), isNull);
   });
+
+  testWidgets(
+    'date selection stays reachable on a small phone with large text',
+    (tester) async {
+      await tester.binding.setSurfaceSize(const Size(320, 600));
+      addTearDown(() => tester.binding.setSurfaceSize(null));
+      await _pumpContributions(
+        tester,
+        dataFuture: Future.value(_snapshot),
+        textScale: 2,
+      );
+      final date = find.byKey(const Key('github-date-2026-02-02'));
+      await tester.ensureVisible(date);
+      await tester.tap(date);
+      await tester.pumpAndSettle();
+      expect(find.text('2월 2일 · 2회 기여'), findsOneWidget);
+      expect(tester.takeException(), isNull);
+    },
+  );
 
   testWidgets('keeps the full year readable and scrollable on a phone', (
     tester,
@@ -174,16 +248,25 @@ Future<void> _pumpContributions(
   WidgetTester tester, {
   Future<Map<String, dynamic>>? dataFuture,
   Future<Map<String, dynamic>> Function()? dataLoader,
+  double textScale = 1,
 }) async {
   await tester.pumpWidget(
     MaterialApp(
       theme: AppleTheme.dark(),
+      builder: (context, child) => MediaQuery(
+        data: MediaQuery.of(
+          context,
+        ).copyWith(textScaler: TextScaler.linear(textScale)),
+        child: child!,
+      ),
       home: Scaffold(
         body: Padding(
           padding: const EdgeInsets.all(16),
-          child: GitHubContributions(
-            dataFuture: dataFuture,
-            dataLoader: dataLoader,
+          child: SingleChildScrollView(
+            child: GitHubContributions(
+              dataFuture: dataFuture,
+              dataLoader: dataLoader,
+            ),
           ),
         ),
       ),

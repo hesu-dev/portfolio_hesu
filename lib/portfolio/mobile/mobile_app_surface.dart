@@ -129,11 +129,16 @@ class _MobileAppSurfaceState extends State<MobileAppSurface> {
                     key: const Key('mobile-app-navigation-slot'),
                     child: _photoDetailVisible
                         ? null
-                        : _MobileAppNavigationBar(
-                            appId: widget.appId,
-                            label: label,
-                            title: windowTitle,
-                            onClose: widget.onClose,
+                        : Theme(
+                            data: widget.appId == PortfolioAppId.github
+                                ? AppleTheme.dark()
+                                : Theme.of(context),
+                            child: _MobileAppNavigationBar(
+                              appId: widget.appId,
+                              label: label,
+                              title: windowTitle,
+                              onClose: widget.onClose,
+                            ),
                           ),
                   ),
                 Expanded(

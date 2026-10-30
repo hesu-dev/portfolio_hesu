@@ -690,6 +690,12 @@ void main() {
       await tester.pumpAndSettle();
 
       expect(find.byKey(const Key('github-app')), findsOneWidget);
+      expect(
+        Theme.of(
+          tester.element(find.byKey(const Key('mobile-app-title'))),
+        ).brightness,
+        Brightness.dark,
+      );
       expect(launcher.uris, isEmpty);
       expect(find.byKey(const Key('github-external-action')), findsNothing);
 

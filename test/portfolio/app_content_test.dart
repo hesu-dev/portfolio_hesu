@@ -1477,6 +1477,27 @@ void main() {
       expect(find.textContaining('invalid email'), findsNothing);
     });
 
+    testWidgets(
+      'GitHub launch failures stay visible above the scroll content',
+      (tester) async {
+        await _pumpApp(
+          tester,
+          appId: PortfolioAppId.github,
+          launcher: _FakeExternalLauncher(succeeds: false),
+          size: const Size(360, 600),
+          compact: true,
+        );
+        await tester.tap(find.byKey(const Key('github-open-profile')));
+        await tester.pumpAndSettle();
+        final feedback = tester.getRect(
+          find.byKey(const Key('github-launch-feedback')),
+        );
+        expect(feedback.top, greaterThanOrEqualTo(0));
+        expect(feedback.bottom, lessThanOrEqualTo(600));
+        expect(tester.takeException(), isNull);
+      },
+    );
+
     testWidgets('system actions use the injected launcher and report failure', (
       tester,
     ) async {
@@ -1508,7 +1529,7 @@ void main() {
     });
 
     testWidgets(
-      'GitHub shows contributions below Markdown followed by three account cards',
+      'GitHub shows activity before the tech stack and three account cards',
       (tester) async {
         final launcher = _FakeExternalLauncher();
         const accounts = <String, String>{
@@ -1562,8 +1583,8 @@ void main() {
         expect(accountSection, findsOneWidget);
         expect(find.byKey(const Key('github-profile-link')), findsOneWidget);
         expect(
-          tester.getTopLeft(contributions).dy,
-          greaterThan(tester.getBottomLeft(markdown).dy),
+          tester.getTopLeft(markdown).dy,
+          greaterThan(tester.getBottomLeft(contributions).dy),
         );
         expect(
           tester.getTopLeft(accountSection).dy,
